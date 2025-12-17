@@ -46,59 +46,22 @@ import GDPRCompliance from './components/GDPRCompliance';
 import NotificationSettings from './components/NotificationSettings';
 import AuthModal from './components/AuthModal';
 import { User, Notification, EventNexusEvent } from './types';
-import { MOCK_EVENTS, CATEGORIES } from './constants';
+import { CATEGORIES } from './constants';
+import { 
+  getEvents, 
+  getUser, 
+  createUser, 
+  updateUser, 
+  getNotifications, 
+  createNotification, 
+  markNotificationRead, 
+  deleteNotification,
+  getCurrentUser,
+  signInUser,
+  signOutUser
+} from './services/dbService';
 
-const MOCK_USER: User = {
-  id: 'u1',
-  name: 'Rivera Productions',
-  email: 'alex@rivera.events',
-  bio: 'Pioneering immersive experiences across the global Nexus network. We specialize in transforming industrial spaces into cultural hubs through light, sound, and flavor. Our events are more than gatherings—they are shared memories written in light.',
-  location: 'New York, NY',
-  role: 'admin', 
-  subscription: 'enterprise',
-  avatar: 'https://picsum.photos/seed/rivera/100',
-  credits: 1000,
-  agencySlug: 'rivera-productions',
-  followedOrganizers: [],
-  branding: {
-    primaryColor: '#6366f1', 
-    accentColor: '#818cf8',
-    tagline: 'The Future of Events is Map-First.',
-    customDomain: 'rivera.nexus.events',
-    bannerUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=2070&auto=format&fit=crop',
-    socialLinks: {
-      twitter: 'riveraprod',
-      instagram: 'rivera_events',
-      website: 'rivera.events'
-    },
-    services: [
-      { id: 's1', icon: 'Volume2', name: 'Heli-Audio Design', desc: 'Custom soundscapes for industrial spaces.' },
-      { id: 's2', icon: 'Lightbulb', name: 'Visual Mapping', desc: 'Projection mapping and custom lighting rigs.' },
-      { id: 's3', icon: 'Briefcase', name: 'Node Strategy', desc: 'Strategic event placement and map promotion.' },
-      { id: 's4', icon: 'Headphones', name: 'Artist Booking', desc: 'Access to elite Nexus-exclusive artists.' }
-    ]
-  },
-  notificationPrefs: {
-    pushEnabled: true,
-    emailEnabled: true,
-    proximityAlerts: true,
-    alertRadius: 10,
-    interestedCategories: ['Party', 'Concert']
-  }
-};
-
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: 'n1',
-    title: 'Venue Change: Techno RAVE',
-    message: 'Due to logistical issues, the rave has moved to Pier 17. Same time, better sound system!',
-    type: 'announcement',
-    eventId: 'e1',
-    senderName: 'Nexus Elite',
-    timestamp: new Date().toISOString(),
-    isRead: false
-  }
-];
+// Real user data will be loaded from Supabase
 
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const R = 6371;
@@ -113,10 +76,39 @@ const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => 
 
 const App: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(MOCK_USER);
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [user, setUser] = useState<User | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifiedEventIds, setNotifiedEventIds] = useState<Set<string>>(new Set());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [events, setEvents] = useState<EventNexusEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load user and initial data
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+          const userData = await getUser(currentUser.id);
+          setUser(userData);
+          
+          if (userData) {
+            const userNotifications = await getNotifications(userData.id);
+            setNotifications(userNotifications);
+          }
+        }
+        
+        const eventsData = await getEvents();
+        setEvents(eventsData);
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadInitialData();
+  }, []);
 
   useEffect(() => {
     if (!user || !user.notificationPrefs.proximityAlerts || !("geolocation" in navigator)) return;
@@ -124,7 +116,7 @@ const App: React.FC = () => {
     const watchId = navigator.geolocation.watchPosition((position) => {
       const { latitude, longitude } = position.coords;
       
-      MOCK_EVENTS.forEach(event => {
+      events.forEach(event => {
         if (notifiedEventIds.has(event.id)) return;
         if (!user.notificationPrefs.interestedCategories.includes(event.category)) return;
 
@@ -151,33 +143,47 @@ const App: React.FC = () => {
     return () => navigator.geolocation.clearWatch(watchId);
   }, [user, notifiedEventIds]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOutUser();
     setUser(null);
     setNotifications([]);
     setNotifiedEventIds(new Set());
   };
 
-  const handleLogin = (userData: User) => {
+  const handleLogin = async (userData: User) => {
     setUser(userData);
-    setNotifications(MOCK_NOTIFICATIONS);
+    const userNotifications = await getNotifications(userData.id);
+    setNotifications(userNotifications);
   };
 
-  const handleUpdateUser = (updatedData: Partial<User>) => {
-    setUser(prev => prev ? { ...prev, ...updatedData } : null);
-  };
-
-  const handleMarkRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-  };
-
-  const handleDeleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  const handleAddNotification = (notif: Partial<Notification>) => {
+  const handleUpdateUser = async (updatedData: Partial<User>) => {
     if (!user) return;
-    const newNotif: Notification = {
-      id: Math.random().toString(36).substr(2, 9),
+    
+    const updatedUser = await updateUser(user.id, updatedData);
+    if (updatedUser) {
+      setUser(updatedUser);
+    }
+  };
+
+  const handleMarkRead = async (id: string) => {
+    const success = await markNotificationRead(id);
+    if (success) {
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    }
+  };
+
+  const handleDeleteNotification = async (id: string) => {
+    const success = await deleteNotification(id);
+    if (success) {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }
+  };
+
+  const handleAddNotification = async (notif: Partial<Notification>) => {
+    if (!user) return;
+    
+    const newNotif = await createNotification({
+      user_id: user.id,
       title: notif.title || 'Nexus Alert',
       message: notif.message || '',
       type: notif.type || 'update',
@@ -185,8 +191,11 @@ const App: React.FC = () => {
       timestamp: new Date().toISOString(),
       isRead: false,
       eventId: notif.eventId
-    };
-    setNotifications(prev => [newNotif, ...prev]);
+    });
+    
+    if (newNotif) {
+      setNotifications(prev => [newNotif, ...prev]);
+    }
   };
 
   const handleToggleFollow = (organizerId: string) => {
