@@ -211,3 +211,53 @@ export const getCurrentUser = async () => {
   const { data: { user } } = await supabase.auth.getUser();
   return user;
 };
+
+// Tickets
+export const getUserTickets = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('tickets')
+    .select('*')
+    .eq('user_id', userId);
+  
+  if (error) {
+    console.error('Error fetching tickets:', error);
+    return [];
+  }
+  
+  return data || [];
+};
+
+export const validateTicket = async (ticketId: string) => {
+  const { data, error } = await supabase
+    .from('tickets')
+    .select('*')
+    .eq('id', ticketId)
+    .eq('status', 'valid')
+    .single();
+  
+  if (error) {
+    console.error('Error validating ticket:', error);
+    return null;
+  }
+  
+  return data;
+};
+
+// Platform statistics for admin
+export const getPlatformStats = async () => {
+  try {
+    const { data: events } = await supabase.from('events').select('*');
+    const { data: users } = await supabase.from('users').select('*');
+    const { data: tickets } = await supabase.from('tickets').select('*');
+    
+    return {
+      totalEvents: events?.length || 0,
+      totalUsers: users?.length || 0,
+      totalTickets: tickets?.length || 0,
+      totalRevenue: events?.reduce((acc, event) => acc + (event.attendees_count * event.price), 0) || 0
+    };
+  } catch (error) {
+    console.error('Error fetching platform stats:', error);
+    return { totalEvents: 0, totalUsers: 0, totalTickets: 0, totalRevenue: 0 };
+  }
+};
