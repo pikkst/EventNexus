@@ -1,43 +1,59 @@
 
 import React, { useState } from 'react';
 import { X, Mail, Lock, Github, Chrome, Facebook, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { signInUser, getUser } from '../services/dbService';
+import { User } from '../types';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (userData: any) => void;
+  onLogin: (userData: User) => void;
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      onLogin({
-        id: 'u1',
-        name: 'Alex Rivera',
-        email: 'alex@example.com',
-        role: 'attendee',
-        subscription: 'free',
-        avatar: 'https://picsum.photos/seed/rivera/100',
-        followedOrganizers: [],
-        notificationPrefs: {
-          pushEnabled: true,
-          emailEnabled: true,
-          proximityAlerts: true,
-          alertRadius: 10,
-          interestedCategories: ['Party', 'Concert']
+    setError('');
+    
+    try {
+      if (mode === 'login') {
+        const { user: authUser, error: authError } = await signInUser(email, password);
+        
+        if (authError) {
+          setError(authError.message || 'Login failed');
+          setIsLoading(false);
+          return;
         }
-      });
+        
+        if (authUser) {
+          const userData = await getUser(authUser.id);
+          if (userData) {
+            onLogin(userData);
+            onClose();
+            setEmail('');
+            setPassword('');
+          } else {
+            setError('User profile not found');
+          }
+        }
+      } else {
+        setError('Registration not implemented yet');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+      console.error('Auth error:', err);
+    } finally {
       setIsLoading(false);
-      onClose();
-    }, 1500);
+    }
   };
 
   return (
@@ -79,6 +95,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
               <input 
                 type="email" 
                 placeholder="Email Address" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-12 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all"
               />
@@ -91,6 +109,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
               <input 
                 type="password" 
                 placeholder="Password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-12 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all"
               />
@@ -98,6 +118,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
                 <Lock className="w-5 h-5" />
               </div>
             </div>
+
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm text-center">
+                {error}
+              </div>
+            )}
 
             <button 
               type="submit"

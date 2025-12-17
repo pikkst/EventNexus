@@ -69,7 +69,10 @@ These instructions help AI coding agents work productively in this repo.
 - **Don’t:** access `@google/genai` directly from components; use the service.
 - **Don’t:** introduce global state without need; follow local state + props pattern in `App.tsx`.
 
-## Troubleshooting (Gemini)
+## Troubleshooting (Supabase Auth)
+- **Email not confirmed:** Run `confirm-admin-user.sql` in Supabase SQL Editor to confirm admin user email and create profile.
+- **Missing user profile:** The SQL script also ensures the user profile exists in `public.users` table with admin role.
+- **Auth errors:** Check `.env.local` has correct `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` values.
 - **Missing key:** 401/403 or empty responses → ensure `.env.local` has `GEMINI_API_KEY`, restart dev (`Ctrl+C`; `npm run dev`). Confirm `vite.config.ts` injects it to `process.env.API_KEY`.
 - **Streaming fails:** In `components/ChatBot.tsx`, `sendMessageStream` may error on network/ad-blockers. Catch already logs; re-init chat with `createNexusChat()` after failures.
 - **Model mismatch:** Preview models (`gemini-3-*`) may be limited. If errors persist, try `gemini-2.5-flash` variants where compatible.

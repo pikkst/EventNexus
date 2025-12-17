@@ -111,18 +111,18 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!user || !user.notificationPrefs.proximityAlerts || !("geolocation" in navigator)) return;
+    if (!user || !user.notification_prefs?.proximityAlerts || !("geolocation" in navigator)) return;
 
     const watchId = navigator.geolocation.watchPosition((position) => {
       const { latitude, longitude } = position.coords;
       
       events.forEach(event => {
         if (notifiedEventIds.has(event.id)) return;
-        if (!user.notificationPrefs.interestedCategories.includes(event.category)) return;
+        if (!user.notification_prefs?.interestedCategories?.includes(event.category)) return;
 
         const distance = getDistance(latitude, longitude, event.location.lat, event.location.lng);
 
-        if (distance <= user.notificationPrefs.alertRadius) {
+        if (distance <= (user.notification_prefs?.alertRadius || 10)) {
           const newNotif: Notification = {
             id: 'radar-' + event.id,
             title: 'Nexus Radar: Event nearby!',
@@ -217,7 +217,7 @@ const App: React.FC = () => {
 
   const handleUpdatePrefs = (newPrefs: any) => {
     if (!user) return;
-    setUser(prev => prev ? ({ ...prev, notificationPrefs: newPrefs }) : null);
+    setUser(prev => prev ? ({ ...prev, notification_prefs: newPrefs }) : null);
   };
 
   return (
