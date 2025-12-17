@@ -8,8 +8,9 @@ import {
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline } from 'react-leaflet';
 import L from 'leaflet';
-import { MOCK_EVENTS, CATEGORIES } from '../constants';
+import { CATEGORIES } from '../constants';
 import { EventNexusEvent } from '../types';
+import { getEvents } from '../services/dbService';
 
 // Distance calculation helper (Haversine formula)
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -37,12 +38,29 @@ const MapEffects = ({ center, isFollowing }: { center: [number, number], isFollo
 
 const HomeMap: React.FC = () => {
   const navigate = useNavigate();
+  const [events, setEvents] = useState<EventNexusEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchRadius, setSearchRadius] = useState(25); 
   const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]); 
   const [selectedEvent, setSelectedEvent] = useState<EventNexusEvent | null>(null);
   const [isFollowingUser, setIsFollowingUser] = useState(true);
   const [routeToEvent, setRouteToEvent] = useState<EventNexusEvent | null>(null);
+
+  // Load events from database
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        const eventsData = await getEvents();
+        setEvents(eventsData);
+      } catch (error) {
+        console.error('Error loading events:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadEvents();
+  }, []);
 
   useEffect(() => {
     if ("geolocation" in navigator) {
@@ -59,11 +77,11 @@ const HomeMap: React.FC = () => {
   }, []);
 
   const filteredEvents = useMemo(() => {
-    return MOCK_EVENTS.filter(event => {
+    return events.filter(event => {
       const dist = calculateDistance(userLocation[0], userLocation[1], event.location.lat, event.location.lng);
       return dist <= searchRadius && (!activeCategory || event.category === activeCategory);
     });
-  }, [activeCategory, searchRadius, userLocation]);
+  }, [events, activeCategory, searchRadius, userLocation]);
 
   const nearestEvent = useMemo(() => {
     if (filteredEvents.length === 0) return null;

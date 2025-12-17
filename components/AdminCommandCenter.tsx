@@ -20,14 +20,9 @@ import {
 } from 'recharts';
 import { User, PlatformCampaign, Notification } from '../types';
 import { generatePlatformGrowthCampaign, generateAdImage } from '../services/geminiService';
+import { getEvents } from '../services/dbService';
 
-// Mock Data for the expanded admin dashboard
-const MOCK_PLATFORM_USERS: User[] = [
-  { id: 'u1', name: 'Rivera Productions', email: 'alex@rivera.events', role: 'admin', subscription: 'enterprise', avatar: 'https://picsum.photos/seed/1/100', credits: 1200, followedOrganizers: [], notificationPrefs: { pushEnabled: true, emailEnabled: true, proximityAlerts: true, alertRadius: 10, interestedCategories: [] } },
-  { id: 'u2', name: 'Elite Nights', email: 'info@elitenights.de', role: 'organizer', subscription: 'premium', avatar: 'https://picsum.photos/seed/2/100', credits: 450, followedOrganizers: [], notificationPrefs: { pushEnabled: true, emailEnabled: true, proximityAlerts: true, alertRadius: 10, interestedCategories: [] } },
-  { id: 'u3', name: 'Marco Rossi', email: 'marco@gmail.com', role: 'attendee', subscription: 'free', avatar: 'https://picsum.photos/seed/3/100', credits: 30, followedOrganizers: [], notificationPrefs: { pushEnabled: true, emailEnabled: true, proximityAlerts: true, alertRadius: 10, interestedCategories: [] } },
-  { id: 'u4', name: 'Neon City Events', email: 'contact@neon.city', role: 'agency', subscription: 'pro', avatar: 'https://picsum.photos/seed/4/100', credits: 150, followedOrganizers: [], notificationPrefs: { pushEnabled: true, emailEnabled: true, proximityAlerts: true, alertRadius: 10, interestedCategories: [] } },
-];
+// Real data will be loaded from Supabase
 
 const REVENUE_BY_TIER = [
   { name: 'Pro', value: 45000, color: '#6366f1', count: 2250 },

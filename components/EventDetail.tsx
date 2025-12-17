@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   MapPin, 
@@ -18,8 +18,8 @@ import {
   UserMinus,
   Star
 } from 'lucide-react';
-import { MOCK_EVENTS } from '../constants';
-import { User } from '../types';
+import { getEvents } from '../services/dbService';
+import { User, EventNexusEvent } from '../types';
 
 interface EventDetailProps {
   user: User;
@@ -28,25 +28,73 @@ interface EventDetailProps {
 
 const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow }) => {
   const { id } = useParams();
-  const event = MOCK_EVENTS.find(e => e.id === id) || MOCK_EVENTS[0];
-  
-  const [currentAttendees, setCurrentAttendees] = useState(event.attendeesCount);
+  const [event, setEvent] = useState<EventNexusEvent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentAttendees, setCurrentAttendees] = useState(0);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [ticketCount, setTicketCount] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Load event from database
+  useEffect(() => {
+    const loadEvent = async () => {
+      try {
+        const events = await getEvents();
+        const foundEvent = events.find(e => e.id === id);
+        if (foundEvent) {
+          setEvent(foundEvent);
+          setCurrentAttendees(foundEvent.attendeesCount);
+        }
+      } catch (error) {
+        console.error('Error loading event:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (id) loadEvent();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading event...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Event not found</h2>
+          <p className="text-slate-400">The event you're looking for doesn't exist.</p>
+        </div>
+      </div>
+    );
+  }
 
   const remaining = event.maxAttendees - currentAttendees;
   const totalRevenue = currentAttendees * event.price;
   const isFollowing = user.followedOrganizers.includes(event.organizerId);
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (remaining < ticketCount) return;
     setIsPurchasing(true);
-    setTimeout(() => {
+    
+    try {
+      // TODO: Implement real ticket purchasing via dbService
+      // For now, simulate the purchase
+      await new Promise(resolve => setTimeout(resolve, 1200));
       setCurrentAttendees(prev => prev + ticketCount);
-      setIsPurchasing(false);
       setShowSuccess(true);
-    }, 1200);
+    } catch (error) {
+      console.error('Purchase failed:', error);
+    } finally {
+      setIsPurchasing(false);
+    }
   };
 
   return (

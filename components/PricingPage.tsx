@@ -78,12 +78,19 @@ interface PricingPageProps {
 const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade }) => {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
 
-  const handleTierSwitch = (tier: 'free' | 'pro' | 'premium' | 'enterprise') => {
+  const handleTierSwitch = async (tier: 'free' | 'pro' | 'premium' | 'enterprise') => {
     setLoadingTier(tier);
-    setTimeout(() => {
+    
+    try {
+      // TODO: Implement real subscription upgrade via payment service
+      // For now, simulate the upgrade process
+      await new Promise(resolve => setTimeout(resolve, 1500));
       onUpgrade(tier);
+    } catch (error) {
+      console.error('Subscription upgrade failed:', error);
+    } finally {
       setLoadingTier(null);
-    }, 1500);
+    }
   };
 
   return (

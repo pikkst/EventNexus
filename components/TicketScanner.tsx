@@ -40,18 +40,31 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
     }
   };
 
-  const simulateScan = () => {
-    const isSuccess = Math.random() > 0.2;
-    setResult({
-      success: isSuccess,
-      message: isSuccess ? "Access Granted" : "Invalid Ticket",
-      data: isSuccess ? {
-        name: "John Doe",
-        type: "General Admission",
-        ref: "TKT-" + Math.random().toString(36).substr(2, 6).toUpperCase()
-      } : null
-    });
-    setTimeout(() => setResult(null), 4000);
+  const validateTicket = async (ticketId: string) => {
+    try {
+      // TODO: Implement real ticket validation via dbService
+      // For now, simulate validation with realistic logic
+      const isSuccess = Math.random() > 0.2;
+      setResult({
+        success: isSuccess,
+        message: isSuccess ? "Access Granted" : "Invalid Ticket",
+        data: isSuccess ? {
+          name: "Event Attendee",
+          type: "General Admission",
+          ref: ticketId || "TKT-" + Math.random().toString(36).substr(2, 6).toUpperCase()
+        } : null
+      });
+      
+      // Auto-clear result after 4 seconds
+      setTimeout(() => setResult(null), 4000);
+    } catch (error) {
+      console.error('Ticket validation failed:', error);
+      setResult({
+        success: false,
+        message: "Validation Error",
+        data: null
+      });
+    }
   };
 
   useEffect(() => {
@@ -170,7 +183,7 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
         </button>
         
         <button 
-          onClick={simulateScan}
+          onClick={() => validateTicket('')}
           className="relative group"
         >
           <div className="absolute inset-0 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: brandColor }}></div>

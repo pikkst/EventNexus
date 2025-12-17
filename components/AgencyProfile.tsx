@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   Globe, Twitter, Instagram, Share2, MapPin, Calendar, 
@@ -9,7 +9,7 @@ import {
   Volume2, Lightbulb, Briefcase, Globe2
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
-import { MOCK_EVENTS } from '../constants';
+import { getEvents } from '../services/dbService';
 import Footer from './Footer';
 
 interface AgencyProfileProps {
@@ -31,9 +31,25 @@ const IconMap: any = {
 
 const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onToggleFollow }) => {
   const { slug } = useParams();
+  const [events, setEvents] = useState<EventNexusEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  // Load events from database
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        const allEvents = await getEvents();
+        setEvents(allEvents);
+      } catch (error) {
+        console.error('Error loading events:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadEvents();
+  }, []);
   
   // In a real app, this would fetch the agency by the slug.
-  // For demo, we use the currentUser's data if it matches or a default mock agency.
+  // For now, we use the currentUser's data if it matches
   const organizer: Partial<User> = useMemo(() => {
     if (currentUser?.agencySlug === slug) return currentUser;
     
@@ -65,7 +81,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
     };
   }, [slug, currentUser]);
 
-  const agencyEvents = useMemo(() => MOCK_EVENTS.filter(e => e.organizerId === organizer.id), [organizer.id]);
+  const agencyEvents = useMemo(() => events.filter(e => e.organizerId === organizer.id), [events, organizer.id]);
   const isFollowing = currentUser?.followedOrganizers.includes(organizer.id!) || false;
   const brandColor = organizer.branding?.primaryColor || '#6366f1';
 
