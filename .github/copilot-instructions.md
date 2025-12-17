@@ -83,18 +83,21 @@ These instructions help AI coding agents work productively in this repo.
 
 ## Supabase Integration
 - **Project:** Name `EventNexus`; URL `https://anlivujgkjmajkcgbaxw.supabase.co`; ID `anlivujgkjmajkcgbaxw`.
-- **Client:** Create `services/supabase.ts` using `@supabase/supabase-js`:
-  ```ts
-  import { createClient } from '@supabase/supabase-js';
-  const supabase = createClient(import.meta.env.VITE_SUPABASE_URL!, import.meta.env.VITE_SUPABASE_ANON_KEY!);
-  export default supabase;
+- **Tables:** `users`, `events`, `notifications`, `tickets` with RLS policies enabled.
+- **Client:** `services/supabase.ts` using `@supabase/supabase-js`.
+- **Database Functions:** `services/dbService.ts` provides typed CRUD operations:
+  - Events: `getEvents()`, `createEvent()`, `updateEvent()`, `deleteEvent()`
+  - Users: `getUser()`, `createUser()`, `updateUser()`
+  - Notifications: `getNotifications()`, `createNotification()`, `markNotificationRead()`, `deleteNotification()`
+  - Auth: `signInUser()`, `signOutUser()`, `getCurrentUser()`
+- **Env:** Set in `.env.local`:
   ```
-- **Env:** Add to `.env.local` (do not commit secrets):
-  - `VITE_SUPABASE_URL=https://anlivujgkjmajkcgbaxw.supabase.co`
-  - `VITE_SUPABASE_ANON_KEY=<YOUR_ANON_KEY>`
-  Vite exposes `import.meta.env.VITE_*`; prefer this over `process.env`.
-- **Pattern:** Write typed helpers (e.g., `getEvents(): Promise<EventNexusEvent[]>`, `upsertEvent(event: EventNexusEvent)`) mapping DB rows to `types.ts`.
-- **Usage:** Call helpers via `App.tsx` orchestration; update local state from results. Do not expand `MOCK_EVENTS`.
+  VITE_SUPABASE_URL=https://anlivujgkjmajkcgbaxw.supabase.co
+  VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFubGl2dWpna2ptYWprY2diYXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5OTY0OTQsImV4cCI6MjA4MTU3MjQ5NH0.5SzkZg_PMqgdMClS1ftg4ZT_Ddyq1zOi-ZOLe1yuRgY
+  GEMINI_API_KEY=***REMOVED***
+  ```
+- **Pattern:** All components use real database calls via `services/dbService.ts`. No mock data expansion.
+- **Usage:** `App.tsx` loads user/events on mount; real-time data flows through state management.
 
 ## Deployment Notes
 - **Build:** `npm run build` → static assets in `dist/`.
