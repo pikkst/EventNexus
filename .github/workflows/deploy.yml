@@ -17,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      NPM_CONFIG_LEGACY_PEER_DEPS: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,8 +29,11 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Enforce legacy peer deps
+        run: npm config set legacy-peer-deps true
+
+      - name: Install dependencies (legacy peer deps)
+        run: npm ci --legacy-peer-deps
 
       - name: Build
         run: npm run build
