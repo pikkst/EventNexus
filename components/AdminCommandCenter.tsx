@@ -20,16 +20,9 @@ import {
 } from 'recharts';
 import { User, PlatformCampaign, Notification } from '../types';
 import { generatePlatformGrowthCampaign, generateAdImage } from '../services/geminiService';
-import { getEvents, getAllUsers } from '../services/dbService';
+import { getEvents, getAllUsers, getPlatformStats, getInfrastructureStats } from '../services/dbService';
 
 // Real data will be loaded from Supabase
-
-const REVENUE_BY_TIER = [
-  { name: 'Pro', value: 45000, color: '#6366f1', count: 2250 },
-  { name: 'Premium', value: 82000, color: '#10b981', count: 1640 },
-  { name: 'Enterprise', value: 156000, color: '#f97316', count: 104 },
-  { name: 'Market Fees', value: 28000, color: '#a855f7', count: 0 },
-];
 
 const INITIAL_CAMPAIGNS: PlatformCampaign[] = [
   { 
@@ -89,6 +82,10 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [broadcastMsg, setBroadcastMsg] = useState('');
   const [platformUsers, setPlatformUsers] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [platformStats, setPlatformStats] = useState<any>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [infrastructureStats, setInfrastructureStats] = useState<any>(null);
+  const [isLoadingInfra, setIsLoadingInfra] = useState(true);
 
   if (user.role !== 'admin') return <div className="p-20 text-center font-black bg-slate-950 min-h-screen text-red-500">UNAUTHORIZED_ACCESS_DENIED</div>;
 
@@ -100,21 +97,31 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     });
   }, [platformUsers, userSearch, userRoleFilter]);
 
-  // Load users on component mount
+  // Load users, stats and infrastructure data on component mount
   useEffect(() => {
-    const loadUsers = async () => {
+    const loadData = async () => {
       setIsLoadingUsers(true);
+      setIsLoadingStats(true);
+      setIsLoadingInfra(true);
       try {
-        const users = await getAllUsers();
+        const [users, stats, infra] = await Promise.all([
+          getAllUsers(),
+          getPlatformStats(),
+          getInfrastructureStats()
+        ]);
         setPlatformUsers(users);
+        setPlatformStats(stats);
+        setInfrastructureStats(infra);
       } catch (error) {
-        console.error('Error loading users:', error);
+        console.error('Error loading data:', error);
       } finally {
         setIsLoadingUsers(false);
+        setIsLoadingStats(false);
+        setIsLoadingInfra(false);
       }
     };
 
-    loadUsers();
+    loadData();
   }, []);
 
   const handleVerifySecurity = () => {
@@ -220,27 +227,33 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h2 className="text-4xl font-black tracking-tighter uppercase">{activeTab.replace('_', ' ')}</h2>
-            <p className="text-slate-500 font-bold">Protocol Status: <span className="text-emerald-500">Live & Encrypted</span></p>
+            <p className="text-slate-500 font-bold">Protocol Status: <span className="text-emerald-500">{infrastructureStats?.protocolStatus || 'Loading...'}</span></p>
           </div>
           <div className="flex flex-wrap gap-4">
              {/* Maintenance Mode Toggle (Admin Idea) */}
              <div className="bg-slate-900 border border-slate-800 px-6 py-3 rounded-2xl flex items-center gap-4 shadow-2xl">
                 <div className="text-right">
                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Maintenance</p>
-                   <p className={`text-sm font-black ${isMaintenanceMode ? 'text-orange-500' : 'text-emerald-500'}`}>
-                     {isMaintenanceMode ? 'ACTIVE' : 'OFF'}
+                   <p className={`text-sm font-black ${(infrastructureStats?.maintenanceMode || isMaintenanceMode) ? 'text-orange-500' : 'text-emerald-500'}`}>
+                     {(infrastructureStats?.maintenanceMode || isMaintenanceMode) ? 'ACTIVE' : 'OFF'}
                    </p>
                 </div>
                 <button 
                   disabled={isMasterLocked}
                   onClick={() => setIsMaintenanceMode(!isMaintenanceMode)}
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isMasterLocked ? 'opacity-20 cursor-not-allowed' : ''} ${isMaintenanceMode ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-500'}`}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isMasterLocked ? 'opacity-20 cursor-not-allowed' : ''} ${(infrastructureStats?.maintenanceMode || isMaintenanceMode) ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-500'}`}
                 >
                   <Power size={18} />
                 </button>
              </div>
 
              <div className="bg-slate-900 border border-slate-800 px-6 py-3 rounded-2xl flex items-center gap-4 shadow-2xl relative">
+                <div className="text-right">
+                   <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Master Security</p>
+                   <p className={`text-sm font-black ${isMasterLocked ? 'text-yellow-500' : 'text-red-500'}`}>
+                     {infrastructureStats?.securityStatus || 'UNKNOWN'}
+                   </p>
+                </div>
                 {!isMasterLocked && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />}
                 <div className="text-right">
                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Master Security</p>
@@ -260,39 +273,57 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
 
         {activeTab === 'analytics' && (
           <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatCard label="Monthly GPV" value="€842k" change="+12%" trend="up" icon={<DollarSign />} color="emerald" />
-              <StatCard label="Platform Conversion" value="4.8%" change="+0.4%" trend="up" icon={<Target />} color="orange" />
-              <StatCard label="Global Fee" value={`${globalTicketFee}%`} change="Stable" trend="neutral" icon={<CreditCard />} color="blue" />
-              <StatCard label="Credit Pool" value="1.2M" change="+5%" trend="neutral" icon={<Gift />} color="violet" />
-            </div>
-            
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-              <div className="xl:col-span-2 bg-slate-900 border border-slate-800 rounded-[48px] p-10 shadow-2xl space-y-8">
-                 <h3 className="text-xl font-black tracking-tight">Revenue Stream Velocity</h3>
-                 <div className="h-[350px]">
-                   <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={REVENUE_BY_TIER}>
-                        <defs>
-                          <linearGradient id="colorTier" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <Area type="monotone" dataKey="value" stroke="#6366f1" fill="url(#colorTier)" strokeWidth={4} />
-                        <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px' }} />
-                      </AreaChart>
-                   </ResponsiveContainer>
-                 </div>
+            {isLoadingStats ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 animate-pulse">
+                    <div className="h-4 bg-slate-800 rounded mb-2"></div>
+                    <div className="h-8 bg-slate-800 rounded mb-1"></div>
+                    <div className="h-3 bg-slate-800 rounded w-1/2"></div>
+                  </div>
+                ))}
               </div>
-              <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 shadow-2xl flex flex-col justify-center items-center text-center space-y-6">
-                 <div className="w-24 h-24 rounded-full border-8 border-indigo-500/20 border-t-indigo-500 flex items-center justify-center">
-                    <span className="text-2xl font-black">74%</span>
-                 </div>
-                 <h4 className="text-xl font-black">Retention Rate</h4>
-                 <p className="text-sm text-slate-500 font-medium">User loyalty is exceeding platform targets by <span className="text-emerald-500">+14%</span> this quarter.</p>
+            ) : platformStats ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <StatCard label="Monthly GPV" value={platformStats.monthlyGPV} change="+12%" trend="up" icon={<DollarSign />} color="emerald" />
+                  <StatCard label="Platform Conversion" value={`${platformStats.platformConversion}%`} change="+0.4%" trend="up" icon={<Target />} color="orange" />
+                  <StatCard label="Global Fee" value={`${platformStats.globalFee}%`} change="Stable" trend="neutral" icon={<CreditCard />} color="blue" />
+                  <StatCard label="Credit Pool" value={platformStats.creditPool} change="+5%" trend="neutral" icon={<Gift />} color="violet" />
+                </div>
+                
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                  <div className="xl:col-span-2 bg-slate-900 border border-slate-800 rounded-[48px] p-10 shadow-2xl space-y-8">
+                     <h3 className="text-xl font-black tracking-tight">Revenue Stream Velocity</h3>
+                     <div className="h-[350px]">
+                       <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={platformStats.revenueByTier}>
+                            <defs>
+                              <linearGradient id="colorTier" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <Area type="monotone" dataKey="value" stroke="#6366f1" fill="url(#colorTier)" strokeWidth={4} />
+                            <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px' }} />
+                          </AreaChart>
+                       </ResponsiveContainer>
+                     </div>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 shadow-2xl flex flex-col justify-center items-center text-center space-y-6">
+                     <div className="w-24 h-24 rounded-full border-8 border-indigo-500/20 border-t-indigo-500 flex items-center justify-center">
+                        <span className="text-2xl font-black">{platformStats.retentionRate}%</span>
+                     </div>
+                     <h4 className="text-xl font-black">Retention Rate</h4>
+                     <p className="text-sm text-slate-500 font-medium">User loyalty based on platform activity and engagement metrics.</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-slate-500">Unable to load analytics data</p>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -498,40 +529,69 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
 
         {activeTab === 'infrastructure' && (
            <div className="space-y-8 animate-in fade-in duration-500">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                 <StatCard label="Cluster Uptime" value="99.998%" change="0.00%" trend="neutral" icon={<Cpu />} color="emerald" />
-                 <StatCard label="API Latency" value="14ms" change="-2ms" trend="up" icon={<Activity />} color="blue" />
-                 <StatCard label="DB Connections" value="12,402" change="+12%" trend="neutral" icon={<Database />} color="violet" />
-                 <StatCard label="Storage Burn" value="4.2 TB" change="+0.4%" trend="down" icon={<Layers />} color="orange" />
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-2xl overflow-hidden font-mono text-xs">
-                   <div className="flex items-center justify-between mb-6">
-                      <h3 className="font-bold flex items-center gap-2 text-slate-400"><Terminal size={16} /> Event Stream</h3>
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> <span className="text-[10px] text-slate-500 font-black uppercase">Live</span></div>
-                   </div>
-                   <div className="space-y-2 max-h-[300px] overflow-y-auto scrollbar-hide">
-                      <p className="text-slate-400"><span className="text-emerald-500 font-bold">[SYNC]</span> Cluster #920: Environment variables reloaded.</p>
-                      <p className="text-slate-400"><span className="text-blue-500 font-bold">[NET]</span> Incoming API request from 192.168.1.1 (Stripe Hook).</p>
-                      <p className="text-slate-400"><span className="text-yellow-500 font-bold">[AUTH]</span> Admin session elevated to Master Clearance.</p>
-                      <p className="text-slate-400"><span className="text-orange-500 font-bold">[WARN]</span> Latency spike in us-east-1 region. Shifting traffic to us-east-2.</p>
-                   </div>
+              {isLoadingInfra ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 animate-pulse">
+                      <div className="h-4 bg-slate-800 rounded mb-2"></div>
+                      <div className="h-8 bg-slate-800 rounded mb-1"></div>
+                      <div className="h-3 bg-slate-800 rounded w-1/2"></div>
+                    </div>
+                  ))}
                 </div>
-                
-                <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-2xl flex flex-col items-center justify-center text-center space-y-6">
-                   <div className="w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center text-emerald-500">
-                      <ShieldCheck size={40} />
-                   </div>
-                   <div>
-                      <h4 className="text-xl font-black text-white">System Integrity</h4>
-                      <p className="text-sm text-slate-500 font-medium">No critical anomalies detected in the last 24 hours.</p>
-                   </div>
-                   <button className="w-full py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all">
-                      Run Diagnostic Scan
-                   </button>
+              ) : infrastructureStats ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                     <StatCard label="Cluster Uptime" value={`${infrastructureStats.clusterUptime.toFixed(3)}%`} change="0.00%" trend="neutral" icon={<Cpu />} color="emerald" />
+                     <StatCard label="API Latency" value={`${infrastructureStats.apiLatency}ms`} change="-2ms" trend="up" icon={<Activity />} color="blue" />
+                     <StatCard label="DB Connections" value={infrastructureStats.dbConnections.toLocaleString()} change="+12%" trend="neutral" icon={<Database />} color="violet" />
+                     <StatCard label="Storage Burn" value={`${infrastructureStats.storageBurn} TB`} change="+0.4%" trend="down" icon={<Layers />} color="orange" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-2xl overflow-hidden font-mono text-xs">
+                       <div className="flex items-center justify-between mb-6">
+                          <h3 className="font-bold flex items-center gap-2 text-slate-400"><Terminal size={16} /> Event Stream</h3>
+                          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> <span className="text-[10px] text-slate-500 font-black uppercase">Live</span></div>
+                       </div>
+                       <div className="space-y-2 max-h-[300px] overflow-y-auto scrollbar-hide">
+                          {infrastructureStats.systemLogs.map((log, index) => (
+                            <p key={index} className="text-slate-400">
+                              <span className={`font-bold ${
+                                log.includes('[SYNC]') ? 'text-emerald-500' :
+                                log.includes('[NET]') ? 'text-blue-500' :
+                                log.includes('[AUTH]') ? 'text-yellow-500' :
+                                log.includes('[WARN]') ? 'text-orange-500' :
+                                log.includes('[INFO]') ? 'text-cyan-500' :
+                                log.includes('[SYS]') ? 'text-purple-500' :
+                                'text-red-500'
+                              }`}>
+                                {log.match(/\\[\\w+\\]/)?.[0] || '[LOG]'}
+                              </span> {log.replace(/\\[\\w+\\]\\s*/, '')}
+                            </p>
+                          ))}
+                       </div>
+                    </div>
+                    
+                    <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-2xl flex flex-col items-center justify-center text-center space-y-6">
+                       <div className="w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center text-emerald-500">
+                          <ShieldCheck size={40} />
+                       </div>
+                       <div>
+                          <h4 className="text-xl font-black text-white">System Integrity</h4>
+                          <p className="text-sm text-slate-500 font-medium">{infrastructureStats.systemIntegrity}</p>
+                       </div>
+                       <button className="w-full py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all">
+                          Run Diagnostic Scan
+                       </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-slate-500">Unable to load infrastructure data</p>
                 </div>
-              </div>
+              )}
            </div>
         )}
 
@@ -595,15 +655,15 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                     <div className="flex-1 min-h-[300px]">
                        <ResponsiveContainer width="100%" height="100%">
                           <RePieChart>
-                             <Pie data={REVENUE_BY_TIER} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80}>
-                                {REVENUE_BY_TIER.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                             <Pie data={platformStats?.revenueByTier || []} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80}>
+                                {(platformStats?.revenueByTier || []).map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                              </Pie>
                              <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px' }} />
                           </RePieChart>
                        </ResponsiveContainer>
                     </div>
                     <div className="space-y-3 mt-6">
-                       {REVENUE_BY_TIER.map(t => (
+                       {(platformStats?.revenueByTier || []).map(t => (
                           <div key={t.name} className="flex justify-between items-center px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl">
                              <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
