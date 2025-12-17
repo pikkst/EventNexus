@@ -16,6 +16,20 @@ export const getEvents = async (): Promise<EventNexusEvent[]> => {
   return data || [];
 };
 
+export const getAllUsers = async (): Promise<User[]> => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
+  
+  return data || [];
+};
+
 export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<EventNexusEvent | null> => {
   const { data, error } = await supabase
     .from('events')

@@ -20,7 +20,7 @@ import {
 } from 'recharts';
 import { User, PlatformCampaign, Notification } from '../types';
 import { generatePlatformGrowthCampaign, generateAdImage } from '../services/geminiService';
-import { getEvents } from '../services/dbService';
+import { getEvents, getAllUsers } from '../services/dbService';
 
 // Real data will be loaded from Supabase
 
@@ -87,16 +87,35 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [broadcastTarget, setBroadcastTarget] = useState<'all' | 'organizers' | 'attendees'>('all');
   const [broadcastMsg, setBroadcastMsg] = useState('');
+  const [platformUsers, setPlatformUsers] = useState<User[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
 
   if (user.role !== 'admin') return <div className="p-20 text-center font-black bg-slate-950 min-h-screen text-red-500">UNAUTHORIZED_ACCESS_DENIED</div>;
 
   const filteredUsers = useMemo(() => {
-    return MOCK_PLATFORM_USERS.filter(u => {
+    return platformUsers.filter(u => {
       const matchesSearch = u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase());
       const matchesRole = userRoleFilter === 'all' || u.role === userRoleFilter;
       return matchesSearch && matchesRole;
     });
-  }, [userSearch, userRoleFilter]);
+  }, [platformUsers, userSearch, userRoleFilter]);
+
+  // Load users on component mount
+  useEffect(() => {
+    const loadUsers = async () => {
+      setIsLoadingUsers(true);
+      try {
+        const users = await getAllUsers();
+        setPlatformUsers(users);
+      } catch (error) {
+        console.error('Error loading users:', error);
+      } finally {
+        setIsLoadingUsers(false);
+      }
+    };
+
+    loadUsers();
+  }, []);
 
   const handleVerifySecurity = () => {
     if (securityPass === 'NEXUS_MASTER_2025') {
