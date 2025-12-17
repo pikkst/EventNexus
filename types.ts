@@ -102,7 +102,7 @@ export interface User {
   agencySlug?: string;
   followedOrganizers: string[];
   branding?: UserBranding;
-  notificationPrefs: NotificationPreferences;
+  notification_prefs: NotificationPreferences;
 }
 
 export interface Ticket {

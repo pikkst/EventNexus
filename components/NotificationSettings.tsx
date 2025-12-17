@@ -21,7 +21,7 @@ interface NotificationSettingsProps {
 }
 
 const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user, onUpdatePrefs }) => {
-  const prefs = user.notificationPrefs;
+  const prefs = user.notification_prefs;
 
   const toggleCategory = (cat: string) => {
     const newCats = prefs.interestedCategories.includes(cat)

@@ -149,12 +149,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
               className="p-5 rounded-3xl bg-slate-800/30 border border-slate-700/50 flex items-center justify-between group cursor-pointer"
             >
               <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-2xl ${user.notificationPrefs.proximityAlerts ? 'bg-indigo-600 text-white animate-pulse' : 'bg-slate-800 text-slate-500'}`}>
+                <div className={`p-3 rounded-2xl ${user.notification_prefs.proximityAlerts ? 'bg-indigo-600 text-white animate-pulse' : 'bg-slate-800 text-slate-500'}`}>
                   <Radar size={20} />
                 </div>
                 <div>
-                  <h4 className="font-black text-xs text-white">Radar {user.notificationPrefs.proximityAlerts ? 'Active' : 'Off'}</h4>
-                  <p className="text-[9px] text-slate-500 font-bold">{user.notificationPrefs.alertRadius}km radius</p>
+                  <h4 className="font-black text-xs text-white">Radar {user.notification_prefs.proximityAlerts ? 'Active' : 'Off'}</h4>
+                  <p className="text-[9px] text-slate-500 font-bold">{user.notification_prefs.alertRadius}km radius</p>
                 </div>
               </div>
               <ChevronRight size={14} className="text-slate-600 group-hover:translate-x-1 transition-transform" />
