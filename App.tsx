@@ -1,0 +1,471 @@
+
+import React, { useState, useEffect } from 'react';
+import { HashRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  Map as MapIcon, 
+  PlusCircle, 
+  LayoutDashboard, 
+  LogOut, 
+  Menu, 
+  X, 
+  Compass,
+  Ticket as TicketIcon,
+  Settings,
+  Scan,
+  Zap,
+  Languages,
+  ShieldAlert,
+  Globe,
+  Briefcase,
+  Bell,
+  Trash2,
+  ExternalLink,
+  Info,
+  ShieldCheck,
+  Radar,
+  User as UserIcon,
+  ChevronDown,
+  Edit
+} from 'lucide-react';
+import HomeMap from './components/HomeMap';
+import EventCreationFlow from './components/EventCreationFlow';
+import Dashboard from './components/Dashboard';
+import UserProfile from './components/UserProfile';
+import EventDetail from './components/EventDetail';
+import LandingPage from './components/LandingPage';
+import TicketScanner from './components/TicketScanner';
+import PricingPage from './components/PricingPage';
+import AgencyProfile from './components/AgencyProfile';
+import AdminCommandCenter from './components/AdminCommandCenter';
+import Footer from './components/Footer';
+import HelpCenter from './components/HelpCenter';
+import TermsOfService from './components/TermsOfService';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import CookieSettings from './components/CookieSettings';
+import GDPRCompliance from './components/GDPRCompliance';
+import NotificationSettings from './components/NotificationSettings';
+import AuthModal from './components/AuthModal';
+import { User, Notification, EventNexusEvent } from './types';
+import { MOCK_EVENTS, CATEGORIES } from './constants';
+
+const MOCK_USER: User = {
+  id: 'u1',
+  name: 'Rivera Productions',
+  email: 'alex@rivera.events',
+  bio: 'Pioneering immersive experiences across the global Nexus network. We specialize in transforming industrial spaces into cultural hubs through light, sound, and flavor. Our events are more than gatherings—they are shared memories written in light.',
+  location: 'New York, NY',
+  role: 'admin', 
+  subscription: 'enterprise',
+  avatar: 'https://picsum.photos/seed/rivera/100',
+  credits: 1000,
+  agencySlug: 'rivera-productions',
+  followedOrganizers: [],
+  branding: {
+    primaryColor: '#6366f1', 
+    accentColor: '#818cf8',
+    tagline: 'The Future of Events is Map-First.',
+    customDomain: 'rivera.nexus.events',
+    bannerUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=2070&auto=format&fit=crop',
+    socialLinks: {
+      twitter: 'riveraprod',
+      instagram: 'rivera_events',
+      website: 'rivera.events'
+    },
+    services: [
+      { id: 's1', icon: 'Volume2', name: 'Heli-Audio Design', desc: 'Custom soundscapes for industrial spaces.' },
+      { id: 's2', icon: 'Lightbulb', name: 'Visual Mapping', desc: 'Projection mapping and custom lighting rigs.' },
+      { id: 's3', icon: 'Briefcase', name: 'Node Strategy', desc: 'Strategic event placement and map promotion.' },
+      { id: 's4', icon: 'Headphones', name: 'Artist Booking', desc: 'Access to elite Nexus-exclusive artists.' }
+    ]
+  },
+  notificationPrefs: {
+    pushEnabled: true,
+    emailEnabled: true,
+    proximityAlerts: true,
+    alertRadius: 10,
+    interestedCategories: ['Party', 'Concert']
+  }
+};
+
+const MOCK_NOTIFICATIONS: Notification[] = [
+  {
+    id: 'n1',
+    title: 'Venue Change: Techno RAVE',
+    message: 'Due to logistical issues, the rave has moved to Pier 17. Same time, better sound system!',
+    type: 'announcement',
+    eventId: 'e1',
+    senderName: 'Nexus Elite',
+    timestamp: new Date().toISOString(),
+    isRead: false
+  }
+];
+
+const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
+const App: React.FC = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(MOCK_USER);
+  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [notifiedEventIds, setNotifiedEventIds] = useState<Set<string>>(new Set());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!user || !user.notificationPrefs.proximityAlerts || !("geolocation" in navigator)) return;
+
+    const watchId = navigator.geolocation.watchPosition((position) => {
+      const { latitude, longitude } = position.coords;
+      
+      MOCK_EVENTS.forEach(event => {
+        if (notifiedEventIds.has(event.id)) return;
+        if (!user.notificationPrefs.interestedCategories.includes(event.category)) return;
+
+        const distance = getDistance(latitude, longitude, event.location.lat, event.location.lng);
+
+        if (distance <= user.notificationPrefs.alertRadius) {
+          const newNotif: Notification = {
+            id: 'radar-' + event.id,
+            title: 'Nexus Radar: Event nearby!',
+            message: `"${event.name}" is only ${distance.toFixed(1)}km away! It matches your interests. Check it out now!`,
+            type: 'proximity_radar',
+            eventId: event.id,
+            senderName: 'Nexus AI Radar',
+            timestamp: new Date().toISOString(),
+            isRead: false
+          };
+          
+          setNotifications(prev => [newNotif, ...prev]);
+          setNotifiedEventIds(prev => new Set(prev).add(event.id));
+        }
+      });
+    }, (err) => console.error(err), { enableHighAccuracy: true });
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [user, notifiedEventIds]);
+
+  const handleLogout = () => {
+    setUser(null);
+    setNotifications([]);
+    setNotifiedEventIds(new Set());
+  };
+
+  const handleLogin = (userData: User) => {
+    setUser(userData);
+    setNotifications(MOCK_NOTIFICATIONS);
+  };
+
+  const handleUpdateUser = (updatedData: Partial<User>) => {
+    setUser(prev => prev ? { ...prev, ...updatedData } : null);
+  };
+
+  const handleMarkRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleDeleteNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleAddNotification = (notif: Partial<Notification>) => {
+    if (!user) return;
+    const newNotif: Notification = {
+      id: Math.random().toString(36).substr(2, 9),
+      title: notif.title || 'Nexus Alert',
+      message: notif.message || '',
+      type: notif.type || 'update',
+      senderName: notif.senderName || 'Nexus System',
+      timestamp: new Date().toISOString(),
+      isRead: false,
+      eventId: notif.eventId
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+  };
+
+  const handleToggleFollow = (organizerId: string) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setUser(prev => {
+      if (!prev) return null;
+      const isFollowing = prev.followedOrganizers.includes(organizerId);
+      return {
+        ...prev,
+        followedOrganizers: isFollowing 
+          ? prev.followedOrganizers.filter(id => id !== organizerId)
+          : [...prev.followedOrganizers, organizerId]
+      };
+    });
+  };
+
+  const handleUpdatePrefs = (newPrefs: any) => {
+    if (!user) return;
+    setUser(prev => prev ? ({ ...prev, notificationPrefs: newPrefs }) : null);
+  };
+
+  return (
+    <Router>
+      <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
+        <Navbar 
+          toggleSidebar={() => setSidebarOpen(true)} 
+          user={user} 
+          notifications={notifications}
+          onMarkRead={handleMarkRead}
+          onDelete={handleDeleteNotification}
+          onLogout={handleLogout}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+        />
+        <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} user={user} />
+        
+        <main className="pt-16 flex-grow">
+          <Routes>
+            <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/map" element={<HomeMap />} />
+            <Route path="/create" element={user ? <EventCreationFlow user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/event/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/scanner" element={user ? <TicketScanner user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
+            <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/help" element={<HelpCenter />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/cookies" element={<CookieSettings />} />
+            <Route path="/gdpr" element={<GDPRCompliance />} />
+            <Route path="/notifications" element={user ? <NotificationSettings user={user} onUpdatePrefs={handleUpdatePrefs} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+          </Routes>
+        </main>
+
+        <ConditionalFooter />
+        
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
+          onLogin={handleLogin} 
+        />
+      </div>
+    </Router>
+  );
+};
+
+// Component to handle footer visibility
+const ConditionalFooter = () => {
+  const location = useLocation();
+  // Don't show global footer on Agency Profile as it has its own branded footer
+  if (location.pathname.startsWith('/org/')) return null;
+  return <Footer />;
+}
+
+const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLogout, onOpenAuth }: any) => {
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const unreadCount = notifications.filter((n: any) => !n.isRead).length;
+  const navigate = useNavigate();
+
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-[1000] h-16 border-b bg-slate-950/80 border-slate-800 backdrop-blur-md text-white">
+      <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={toggleSidebar} className="p-2 hover:bg-slate-800/20 rounded-lg">
+            <Menu className="w-6 h-6" />
+          </button>
+          <Link to="/" className="flex items-center gap-2 font-bold text-xl tracking-tighter">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-600">
+              <Compass className="w-5 h-5 text-white" />
+            </div>
+            <span className="hidden sm:inline">EventNexus</span>
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-4">
+          {user ? (
+            <>
+              <div className="relative">
+                <button 
+                  onClick={() => setShowNotifs(!showNotifs)}
+                  className="p-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl hover:bg-slate-800 transition-all relative text-white"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-500 rounded-full text-[10px] font-black flex items-center justify-center border-2 border-slate-950">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifs && (
+                  <div className="absolute top-full mt-4 right-0 w-80 sm:w-96 bg-slate-900 border border-slate-800 rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+                      <h4 className="font-black text-xs uppercase tracking-[0.2em] text-indigo-400">Notification Center</h4>
+                      <button onClick={() => setShowNotifs(false)}><X className="w-4 h-4 text-slate-500" /></button>
+                    </div>
+                    <div className="max-h-[400px] overflow-y-auto divide-y divide-slate-800 scrollbar-hide">
+                      {notifications.length === 0 ? (
+                        <div className="p-10 text-center text-slate-600 italic text-sm">No notifications yet.</div>
+                      ) : (
+                        notifications.map((n: any) => (
+                          <div 
+                            key={n.id} 
+                            className={`block p-5 space-y-3 transition-colors ${n.isRead ? 'opacity-60' : 'bg-indigo-600/5'}`} 
+                            onClick={() => { onMarkRead(n.id); }}
+                          >
+                            <div className="flex justify-between items-start gap-3">
+                              <Link 
+                                to={n.eventId ? `/event/${n.eventId}` : '#'}
+                                className="space-y-1"
+                                onClick={() => setShowNotifs(false)}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {n.type === 'proximity_radar' && <Radar className="w-3 h-3 text-indigo-400" />}
+                                  <h5 className="font-black text-sm text-white">{n.title}</h5>
+                                </div>
+                                <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">{n.senderName}</p>
+                              </Link>
+                              <button 
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(n.id); }}
+                                className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <p className="text-xs text-slate-400 leading-relaxed font-medium">{n.message}</p>
+                            {n.type === 'proximity_radar' && (
+                              <Link 
+                                to={n.eventId ? `/event/${n.eventId}` : '#'}
+                                onClick={() => setShowNotifs(false)}
+                                className="block bg-indigo-600 py-2 rounded-xl text-center text-[10px] font-black uppercase tracking-widest text-white mt-2"
+                              >
+                                 Buy ticket now
+                              </Link>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <button 
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center gap-2 bg-slate-800/50 p-1 pr-3 rounded-full hover:bg-slate-800 transition-all border border-slate-700 group"
+                >
+                  <img src={user.avatar} className="w-8 h-8 rounded-full border border-indigo-500" alt="avatar" />
+                  <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showProfileMenu && (
+                  <div className="absolute top-full mt-4 right-0 w-64 bg-slate-900 border border-slate-800 rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="p-6 border-b border-slate-800 bg-slate-950/50">
+                      <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">{user.subscription} plan</p>
+                      <h4 className="font-black text-white truncate">{user.name}</h4>
+                    </div>
+                    <div className="p-2">
+                      <ProfileMenuItem 
+                        icon={<UserIcon />} 
+                        label="My Profile" 
+                        onClick={() => { setShowProfileMenu(false); navigate('/profile'); }} 
+                      />
+                      <ProfileMenuItem 
+                        icon={<Settings />} 
+                        label="Settings" 
+                        onClick={() => { setShowProfileMenu(false); navigate('/notifications'); }} 
+                      />
+                      <div className="h-px bg-slate-800 my-2 mx-4" />
+                      <ProfileMenuItem 
+                        icon={<LogOut />} 
+                        label="Log Out" 
+                        variant="danger"
+                        onClick={() => { setShowProfileMenu(false); onLogout(); navigate('/'); }} 
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <button 
+              onClick={onOpenAuth}
+              className="bg-indigo-600 hover:bg-indigo-700 px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all shadow-xl active:scale-95"
+            >
+              Sign In
+            </button>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+const ProfileMenuItem = ({ icon, label, onClick, variant }: any) => (
+  <button 
+    onClick={onClick}
+    className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-sm font-bold ${
+      variant === 'danger' ? 'text-red-400 hover:bg-red-400/10' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+    }`}
+  >
+    <span className="shrink-0">{React.cloneElement(icon, { size: 18 })}</span>
+    {label}
+  </button>
+);
+
+const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
+  return (
+    <>
+      {isOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1050]" onClick={closeSidebar} />}
+      <aside className={`fixed inset-y-0 left-0 z-[1100] w-72 bg-slate-900 transform transition-transform duration-300 ease-in-out border-r border-slate-800 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 flex items-center justify-between border-b border-slate-800">
+          <div className="flex items-center gap-2">
+            <Compass className="w-6 h-6 text-indigo-500" />
+            <span className="font-black text-xl tracking-tighter text-white">EventNexus</span>
+          </div>
+          <button onClick={closeSidebar} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="p-4 space-y-1">
+          <SidebarItem icon={<MapIcon />} label="Explore Map" to="/map" onClick={closeSidebar} />
+          <SidebarItem icon={<PlusCircle />} label="Create Event" to="/create" onClick={closeSidebar} />
+          <SidebarItem icon={<TicketIcon />} label="My Tickets" to="/profile" onClick={closeSidebar} />
+          <SidebarItem icon={<Radar />} label="Nexus Radar" to="/notifications" onClick={closeSidebar} />
+          <SidebarItem icon={<Zap />} label="Pricing" to="/pricing" onClick={closeSidebar} />
+          
+          <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">User</div>
+          <SidebarItem icon={<Settings />} label="Settings" to="/notifications" onClick={closeSidebar} />
+          <SidebarItem icon={<LayoutDashboard />} label="Organizer Hub" to="/dashboard" onClick={closeSidebar} />
+
+          {user?.role === 'admin' && (
+            <>
+              <div className="pt-6 pb-2 px-3 text-[10px] font-black text-orange-500 uppercase tracking-widest">Admin</div>
+              <SidebarItem icon={<ShieldCheck />} label="Command Center" to="/admin" onClick={closeSidebar} />
+            </>
+          )}
+        </div>
+      </aside>
+    </>
+  );
+};
+
+const SidebarItem = ({ icon, label, to, onClick }: any) => (
+  <Link 
+    to={to} 
+    onClick={onClick}
+    className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-indigo-600/10 text-slate-300 hover:text-indigo-400 transition-all group"
+  >
+    <span className="w-5 h-5 text-slate-500 group-hover:text-indigo-400 transition-colors">{icon}</span>
+    <span className="text-sm font-bold tracking-tight">{label}</span>
+  </Link>
+);
+
+export default App;

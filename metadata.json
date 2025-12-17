@@ -1,0 +1,9 @@
+
+{
+  "name": "EventNexus",
+  "description": "A map-first event discovery and ticketing platform for public and private gatherings, featuring AI-powered translation and advanced organizer tools.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}
