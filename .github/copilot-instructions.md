@@ -67,8 +67,11 @@ These instructions help AI coding agents work productively in this repo.
 - **Do:** add new AI features in `services/geminiService.ts` and consume via components.
 - **Do:** keep route protection patterns intact; reuse `LandingPage` for auth prompts.
 - **Don’t:** access `@google/genai` directly from components; use the service.
-- **Don’t:** introduce global state without need; follow local state + props pattern in `App.tsx`.
-
+- **Don’t:** introduce global state without need; follow local state + props pattern in `App.tsx`.- **CRITICAL - Don't break the build:**
+  - **Never modify `index.html` script paths** - `<script type="module" src="/index.tsx">` must remain absolute. Vite transforms this during build.
+  - **Never change `vite.config.ts` base path** - `base: '/EventNexus/'` is required for GitHub Pages deployment.
+  - **Test locally before pushing** - Run `npm run build && npm run preview` to verify production build works.
+  - **Environment variables must be in `define` block** - Any `import.meta.env.*` values used at runtime must be explicitly defined in `vite.config.ts` define section for build-time injection.
 ## Troubleshooting (Supabase Auth)
 - **Email not confirmed:** Run `confirm-admin-user.sql` in Supabase SQL Editor to confirm admin user email and create profile.
 - **Missing user profile:** The SQL script also ensures the user profile exists in `public.users` table with admin role.
