@@ -91,7 +91,7 @@ export const getUser = async (id: string): Promise<User | null> => {
   return data;
 };
 
-export const createUser = async (user: Omit<User, 'id'>): Promise<User | null> => {
+export const createUser = async (user: User): Promise<User | null> => {
   const { data, error } = await supabase
     .from('users')
     .insert([user])
