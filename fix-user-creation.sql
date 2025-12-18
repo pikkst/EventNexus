@@ -7,7 +7,8 @@ WHERE tablename = 'users';
 
 -- 2. Add INSERT policy for users table
 -- This allows new users to create their profile during registration
-CREATE POLICY IF NOT EXISTS "Users can insert their own profile during signup" ON users
+DROP POLICY IF EXISTS "Users can insert their own profile during signup" ON users;
+CREATE POLICY "Users can insert their own profile during signup" ON users
     FOR INSERT 
     WITH CHECK (auth.uid() = id);
 
