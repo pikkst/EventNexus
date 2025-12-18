@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { X, Mail, Lock, Github, Chrome, Facebook, ArrowRight, Loader2, Sparkles } from 'lucide-react';
-import { signInUser, signUpUser, getUser, createUser } from '../services/dbService';
+import { signInUser, signUpUser, getUser, updateUser } from '../services/dbService';
 import { User } from '../types';
 
 interface AuthModalProps {
@@ -57,35 +57,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
         }
         
         if (authUser) {
-          // Create user profile in the database
-          const newUserData: User = {
-            id: authUser.id, // Use the auth user's ID
-            name: fullName || email.split('@')[0],
-            email: authUser.email || email,
-            role: 'attendee',
-            subscription: 'free',
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.id}`,
-            credits: 0,
-            followedOrganizers: [],
-            notification_prefs: {
-              pushEnabled: true,
-              emailEnabled: true,
-              proximityAlerts: true,
-              alertRadius: 5,
-              interestedCategories: [],
-            },
-          };
+          // Wait a moment for the database trigger to create the user profile
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
-          const userData = await createUser(newUserData);
+          // Fetch the auto-created user profile
+          const userData = await getUser(authUser.id);
           
           if (userData) {
+            // Update the name if provided
+            if (fullName && fullName !== email.split('@')[0]) {
+              await updateUser(authUser.id, { name: fullName });
+              userData.name = fullName;
+            }
+            
             onLogin(userData);
             onClose();
             setEmail('');
             setPassword('');
             setFullName('');
           } else {
-            setError('Failed to create user profile');
+            setError('Failed to load user profile. Please try logging in.');
           }
         }
       }
