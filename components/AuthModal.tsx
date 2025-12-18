@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { X, Mail, Lock, Github, Chrome, Facebook, ArrowRight, Loader2, Sparkles } from 'lucide-react';
-import { signInUser, getUser } from '../services/dbService';
+import { signInUser, signUpUser, getUser, createUser } from '../services/dbService';
 import { User } from '../types';
 
 interface AuthModalProps {
@@ -15,6 +15,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
@@ -46,7 +47,47 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
           }
         }
       } else {
-        setError('Registration not implemented yet');
+        // Registration flow
+        const { user: authUser, error: authError } = await signUpUser(email, password);
+        
+        if (authError) {
+          setError(authError.message || 'Registration failed');
+          setIsLoading(false);
+          return;
+        }
+        
+        if (authUser) {
+          // Create user profile in the database
+          const newUserData: User = {
+            id: authUser.id, // Use the auth user's ID
+            name: fullName || email.split('@')[0],
+            email: authUser.email || email,
+            role: 'attendee',
+            subscription: 'free',
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.id}`,
+            credits: 0,
+            followedOrganizers: [],
+            notification_prefs: {
+              pushEnabled: true,
+              emailEnabled: true,
+              proximityAlerts: true,
+              alertRadius: 5,
+              interestedCategories: [],
+            },
+          };
+          
+          const userData = await createUser(newUserData);
+          
+          if (userData) {
+            onLogin(userData);
+            onClose();
+            setEmail('');
+            setPassword('');
+            setFullName('');
+          } else {
+            setError('Failed to create user profile');
+          }
+        }
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -82,6 +123,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
                 <input 
                   type="text" 
                   placeholder="Full Name" 
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   required
                   className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-12 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all"
                 />
