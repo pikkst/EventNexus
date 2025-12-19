@@ -38,16 +38,17 @@ import {
   updateSystemConfig,
   Campaign
 } from '../services/dbService';
+import MasterAuthModal from './MasterAuthModal';
 
 const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [activeTab, setActiveTab] = useState('analytics');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Master Config State
+  // Master Auth State
   const [isMasterLocked, setIsMasterLocked] = useState(true);
-  const [showSecurityModal, setShowSecurityModal] = useState(false);
-  const [securityPass, setSecurityPass] = useState('');
+  const [showMasterAuthModal, setShowMasterAuthModal] = useState(false);
+  const [pendingOperation, setPendingOperation] = useState<string>('');
   const [globalTicketFee, setGlobalTicketFee] = useState(2.5);
   const [creditValue, setCreditValue] = useState(0.50);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
@@ -120,6 +121,66 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         if (config.global_ticket_fee) setGlobalTicketFee(parseFloat(config.global_ticket_fee));
         if (config.credit_value) setCreditValue(parseFloat(config.credit_value));
         if (config.maintenance_mode) setIsMaintenanceMode(config.maintenance_mode === 'true');
+        
+        // Load API settings from database
+        if (config.stripe_pk || config.stripe_sk || config.stripe_wh) {
+          setApiSettings(prev => ({
+            ...prev,
+            stripe: {
+              pk: config.stripe_pk || prev.stripe.pk,
+              sk: config.stripe_sk || prev.stripe.sk,
+              wh: config.stripe_wh || prev.stripe.wh
+            }
+          }));
+        }
+        if (config.supabase_url || config.supabase_anon || config.supabase_svc) {
+          setApiSettings(prev => ({
+            ...prev,
+            supabase: {
+              url: config.supabase_url || prev.supabase.url,
+              anon: config.supabase_anon || prev.supabase.anon,
+              svc: config.supabase_svc || prev.supabase.svc
+            }
+          }));
+        }
+        if (config.gemini_key || config.gemini_model) {
+          setApiSettings(prev => ({
+            ...prev,
+            gemini: {
+              key: config.gemini_key || prev.gemini.key,
+              model: config.gemini_model || prev.gemini.model
+            }
+          }));
+        }
+        if (config.mapbox_token || config.mapbox_styleId) {
+          setApiSettings(prev => ({
+            ...prev,
+            mapbox: {
+              token: config.mapbox_token || prev.mapbox.token,
+              styleId: config.mapbox_styleId || prev.mapbox.styleId
+            }
+          }));
+        }
+        if (config.github_appId || config.github_secret || config.github_repo) {
+          setApiSettings(prev => ({
+            ...prev,
+            github: {
+              appId: config.github_appId || prev.github.appId,
+              secret: config.github_secret || prev.github.secret,
+              repo: config.github_repo || prev.github.repo
+            }
+          }));
+        }
+        if (config.email_provider || config.email_key || config.email_from) {
+          setApiSettings(prev => ({
+            ...prev,
+            email: {
+              provider: config.email_provider || prev.email.provider,
+              key: config.email_key || prev.email.key,
+              from: config.email_from || prev.email.from
+            }
+          }));
+        }
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -133,14 +194,18 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     loadData();
   }, []);
 
-  const handleVerifySecurity = () => {
-    if (securityPass === 'NEXUS_MASTER_2025') {
+  const requestMasterAuth = (operationName: string) => {
+    setPendingOperation(operationName);
+    setShowMasterAuthModal(true);
+  };
+
+  const handleMasterAuth = (success: boolean) => {
+    if (success) {
       setIsMasterLocked(false);
-      setShowSecurityModal(false);
-      setSecurityPass('');
-    } else {
-      alert('Security clearance failed.');
+      // Auto-lock after 10 minutes of authenticated session
+      setTimeout(() => setIsMasterLocked(true), 600000);
     }
+    setPendingOperation('');
   };
 
   const handleAiCampaignGenerate = async () => {
@@ -197,8 +262,24 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     setEditingCampaign(null);
   };
 
+  const handleApiFieldChange = (key: string, value: string) => {
+    const [service, field] = key.split('.');
+    setApiSettings(prev => ({
+      ...prev,
+      [service]: {
+        ...prev[service as keyof typeof prev],
+        [field]: value
+      }
+    }));
+  };
+
   const handleBroadcastNotification = async () => {
     if (!broadcastMsg.trim()) return;
+    
+    if (isMasterLocked) {
+      requestMasterAuth('Broadcast Platform Notification');
+      return;
+    }
     
     const count = await broadcastNotification(
       'Platform Announcement',
@@ -215,6 +296,11 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   };
 
   const handleSuspendUser = async (userId: string) => {
+    if (isMasterLocked) {
+      requestMasterAuth('Suspend User');
+      return;
+    }
+    
     const reason = prompt('Reason for suspension:');
     if (!reason) return;
     
@@ -228,6 +314,11 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   };
 
   const handleBanUser = async (userId: string) => {
+    if (isMasterLocked) {
+      requestMasterAuth('Ban User');
+      return;
+    }
+    
     const reason = prompt('Reason for ban:');
     if (!reason) return;
     
@@ -243,11 +334,42 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   };
 
   const handleSaveSystemConfig = async () => {
+    if (isMasterLocked) {
+      requestMasterAuth('Update System Configuration');
+      return;
+    }
+    
+    // Save system config and API settings
     await Promise.all([
+      // System config
       updateSystemConfig('global_ticket_fee', globalTicketFee.toString()),
       updateSystemConfig('credit_value', creditValue.toString()),
-      updateSystemConfig('maintenance_mode', isMaintenanceMode.toString())
+      updateSystemConfig('maintenance_mode', isMaintenanceMode.toString()),
+      // API settings - Stripe
+      updateSystemConfig('stripe_pk', apiSettings.stripe.pk),
+      updateSystemConfig('stripe_sk', apiSettings.stripe.sk),
+      updateSystemConfig('stripe_wh', apiSettings.stripe.wh),
+      // API settings - Supabase
+      updateSystemConfig('supabase_url', apiSettings.supabase.url),
+      updateSystemConfig('supabase_anon', apiSettings.supabase.anon),
+      updateSystemConfig('supabase_svc', apiSettings.supabase.svc),
+      // API settings - Gemini
+      updateSystemConfig('gemini_key', apiSettings.gemini.key),
+      updateSystemConfig('gemini_model', apiSettings.gemini.model),
+      // API settings - Mapbox
+      updateSystemConfig('mapbox_token', apiSettings.mapbox.token),
+      updateSystemConfig('mapbox_styleId', apiSettings.mapbox.styleId),
+      // API settings - GitHub
+      updateSystemConfig('github_appId', apiSettings.github.appId),
+      updateSystemConfig('github_secret', apiSettings.github.secret),
+      updateSystemConfig('github_repo', apiSettings.github.repo),
+      // API settings - Email
+      updateSystemConfig('email_provider', apiSettings.email.provider),
+      updateSystemConfig('email_key', apiSettings.email.key),
+      updateSystemConfig('email_from', apiSettings.email.from)
     ]);
+    
+    alert('✅ Configuration saved successfully. Note: Some services may require restart to use new keys.');
     alert('System configuration updated successfully');
   };
 
@@ -331,8 +453,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                    </p>
                 </div>
                 <button 
-                  onClick={() => isMasterLocked ? setShowSecurityModal(true) : setIsMasterLocked(true)}
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isMasterLocked ? 'bg-slate-800 text-slate-500' : 'bg-red-500 text-white shadow-xl shadow-red-600/20'}`}
+                  onClick={() => isMasterLocked ? requestMasterAuth('Unlock Master Controls') : setIsMasterLocked(true)}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isMasterLocked ? 'bg-slate-800 text-slate-500 hover:bg-slate-700' : 'bg-red-500 text-white shadow-xl shadow-red-600/20 hover:bg-red-600'}`}
+                  title={isMasterLocked ? 'Unlock Master Controls' : 'Lock Master Controls'}
                 >
                   {isMasterLocked ? <Lock size={20}/> : <Unlock size={20}/>}
                 </button>
@@ -623,6 +746,55 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
 
         {activeTab === 'settings' && (
            <div className="space-y-8 animate-in fade-in duration-500">
+              {/* Master Auth Info Banner */}
+              <div className="bg-gradient-to-r from-red-500/10 via-amber-500/10 to-red-500/10 border border-red-500/30 rounded-3xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <ShieldAlert className="w-8 h-8 text-red-500" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-lg font-black text-white mb-2 flex items-center gap-2">
+                      Master Authentication Required
+                      {isMasterLocked ? (
+                        <span className="text-xs font-bold px-3 py-1 bg-slate-800 text-slate-400 rounded-full">LOCKED</span>
+                      ) : (
+                        <span className="text-xs font-bold px-3 py-1 bg-red-500 text-white rounded-full animate-pulse">ELEVATED</span>
+                      )}
+                    </h4>
+                    <p className="text-sm text-slate-400 mb-3">
+                      Critical platform operations require secondary authentication. This includes:
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <Key className="w-3 h-3 text-red-500" />
+                        <span>API Key Management</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <Settings className="w-3 h-3 text-red-500" />
+                        <span>System Configuration</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <Ban className="w-3 h-3 text-red-500" />
+                        <span>User Suspension/Ban</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <BellRing className="w-3 h-3 text-red-500" />
+                        <span>Platform Broadcasts</span>
+                      </div>
+                    </div>
+                    {isMasterLocked && (
+                      <button
+                        onClick={() => requestMasterAuth('Unlock Master Controls')}
+                        className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg transition-all"
+                      >
+                        <KeyRound className="w-4 h-4" />
+                        Unlock Master Controls
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="flex flex-col md:flex-row justify-between items-end gap-6">
                  <div>
                     <h3 className="text-2xl font-black tracking-tighter">System Matrix</h3>
@@ -639,6 +811,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                  <SettingsCard 
                    icon={<CreditCard />} title="Finance Matrix (Stripe)" 
                    locked={isMasterLocked}
+                   onFieldChange={handleApiFieldChange}
                    fields={[
                      { label: 'Public Key', value: apiSettings.stripe.pk, key: 'stripe.pk' },
                      { label: 'Secret Key', value: apiSettings.stripe.sk, key: 'stripe.sk', type: 'password' },
@@ -650,6 +823,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                  <SettingsCard 
                    icon={<HardDrive />} title="Data Matrix (Supabase)" 
                    locked={isMasterLocked}
+                   onFieldChange={handleApiFieldChange}
                    fields={[
                      { label: 'Project URL', value: apiSettings.supabase.url, key: 'supabase.url' },
                      { label: 'Anon Public Key', value: apiSettings.supabase.anon, key: 'supabase.anon' },
@@ -661,6 +835,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                  <SettingsCard 
                    icon={<Zap />} title="Intelligence Matrix (Gemini)" 
                    locked={isMasterLocked}
+                   onFieldChange={handleApiFieldChange}
                    fields={[
                      { label: 'API Key', value: apiSettings.gemini.key, key: 'gemini.key', type: 'password' },
                      { label: 'Primary Model', value: apiSettings.gemini.model, key: 'gemini.model' }
@@ -671,6 +846,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                  <SettingsCard 
                    icon={<MapIcon />} title="Map Shards (Mapbox)" 
                    locked={isMasterLocked}
+                   onFieldChange={handleApiFieldChange}
                    fields={[
                      { label: 'Access Token', value: apiSettings.mapbox.token, key: 'mapbox.token' },
                      { label: 'Default Style ID', value: apiSettings.mapbox.styleId, key: 'mapbox.styleId' }
@@ -681,6 +857,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                  <SettingsCard 
                    icon={<Github />} title="Dev Matrix (GitHub)" 
                    locked={isMasterLocked}
+                   onFieldChange={handleApiFieldChange}
                    fields={[
                      { label: 'App ID', value: apiSettings.github.appId, key: 'github.appId' },
                      { label: 'Client Secret', value: apiSettings.github.secret, key: 'github.secret', type: 'password' },
@@ -692,6 +869,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                  <SettingsCard 
                    icon={<MailIcon />} title="Communication Matrix (Email)" 
                    locked={isMasterLocked}
+                   onFieldChange={handleApiFieldChange}
                    fields={[
                      { label: 'Provider', value: apiSettings.email.provider, key: 'email.provider' },
                      { label: 'API Key', value: apiSettings.email.key, key: 'email.key', type: 'password' },
@@ -1067,11 +1245,19 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
             </div>
          </div>
       )}
+
+      {/* Master Auth Modal */}
+      <MasterAuthModal
+        isOpen={showMasterAuthModal}
+        onClose={() => setShowMasterAuthModal(false)}
+        onAuthenticate={handleMasterAuth}
+        operationName={pendingOperation}
+      />
     </div>
   );
 };
 
-const SettingsCard = ({ icon, title, locked, fields }: any) => (
+const SettingsCard = ({ icon, title, locked, fields, onFieldChange }: any) => (
   <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-2xl relative overflow-hidden group">
     <div className="flex justify-between items-center mb-8">
        <div className="flex items-center gap-4">
@@ -1095,7 +1281,9 @@ const SettingsCard = ({ icon, title, locked, fields }: any) => (
                type={field.type || 'text'} 
                disabled={locked}
                value={locked ? '••••••••••••••••' : field.value}
+               onChange={(e) => !locked && onFieldChange && onFieldChange(field.key, e.target.value)}
                className={`w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3.5 text-xs font-mono tracking-wider outline-none transition-all ${locked ? 'text-slate-700 cursor-not-allowed' : 'text-indigo-400 focus:border-indigo-500'}`}
+               placeholder={locked ? '' : `Enter ${field.label.toLowerCase()}`}
              />
           </div>
        ))}
