@@ -217,31 +217,64 @@ AS $$
 DECLARE
   result JSON;
 BEGIN
+  WITH pending_data AS (
+    SELECT 
+      e.id as event_id,
+      e.name as event_name,
+      e.date as event_date,
+      u.name as organizer_name,
+      u.subscription_tier,
+      COUNT(t.id) as ticket_count,
+      SUM(t.price * 100)::BIGINT as gross_amount,
+      e.date + INTERVAL '2 days' as eligible_date
+    FROM public.events e
+    JOIN public.users u ON e.organizer_id = u.id
+    LEFT JOIN public.tickets t ON t.event_id = e.id AND t.payment_status = 'paid' AND t.status != 'cancelled'
+    WHERE e.date < NOW() - INTERVAL '2 days'
+      AND e.payout_processed = FALSE
+      AND u.stripe_connect_charges_enabled = TRUE
+    GROUP BY e.id, e.name, e.date, u.name, u.subscription_tier
+    HAVING COUNT(t.id) > 0
+  ),
+  calculated_amounts AS (
+    SELECT 
+      *,
+      CASE subscription_tier
+        WHEN 'free' THEN ROUND(gross_amount * 0.05)
+        WHEN 'pro' THEN ROUND(gross_amount * 0.03)
+        WHEN 'premium' THEN ROUND(gross_amount * 0.025)
+        WHEN 'enterprise' THEN ROUND(gross_amount * 0.015)
+        ELSE ROUND(gross_amount * 0.05)
+      END::BIGINT as platform_fee,
+      CASE subscription_tier
+        WHEN 'free' THEN gross_amount - ROUND(gross_amount * 0.05)
+        WHEN 'pro' THEN gross_amount - ROUND(gross_amount * 0.03)
+        WHEN 'premium' THEN gross_amount - ROUND(gross_amount * 0.025)
+        WHEN 'enterprise' THEN gross_amount - ROUND(gross_amount * 0.015)
+        ELSE gross_amount - ROUND(gross_amount * 0.05)
+      END::BIGINT as net_amount
+    FROM pending_data
+  )
   SELECT json_build_object(
     'count', COUNT(*),
     'total_amount', COALESCE(SUM(net_amount), 0),
     'total_gross', COALESCE(SUM(gross_amount), 0),
     'total_fees', COALESCE(SUM(platform_fee), 0),
-    'events', json_agg(json_build_object(
-      'event_id', e.id,
-      'event_name', e.name,
-      'event_date', e.date,
-      'organizer_name', u.name,
-      'ticket_count', COUNT(t.id),
-      'gross_amount', SUM(t.price * 100)::BIGINT,
-      'eligible_date', e.date + INTERVAL '2 days'
-    ))
+    'events', COALESCE(json_agg(json_build_object(
+      'event_id', event_id,
+      'event_name', event_name,
+      'event_date', event_date,
+      'organizer_name', organizer_name,
+      'ticket_count', ticket_count,
+      'gross_amount', gross_amount,
+      'platform_fee', platform_fee,
+      'net_amount', net_amount,
+      'eligible_date', eligible_date
+    )) FILTER (WHERE event_id IS NOT NULL), '[]'::json)
   ) INTO result
-  FROM public.events e
-  JOIN public.users u ON e.organizer_id = u.id
-  LEFT JOIN public.tickets t ON t.event_id = e.id AND t.payment_status = 'paid' AND t.status != 'cancelled'
-  WHERE e.date < NOW() - INTERVAL '2 days'
-    AND e.payout_processed = FALSE
-    AND u.stripe_connect_charges_enabled = TRUE
-  GROUP BY e.id, e.name, e.date, u.name
-  HAVING COUNT(t.id) > 0;
+  FROM calculated_amounts;
   
-  RETURN COALESCE(result, '{}'::json);
+  RETURN COALESCE(result, '{"count": 0, "total_amount": 0, "total_gross": 0, "total_fees": 0, "events": []}'::json);
 END;
 $$;
 
@@ -277,7 +310,7 @@ GRANT INSERT ON public.refunds TO authenticated;
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 
 -- Verification queries (commented out - uncomment to test)
--- SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'payouts';
--- SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'refunds';
--- SELECT * FROM get_refund_eligibility(NOW() + INTERVAL '10 days');
--- SELECT * FROM get_pending_payouts_summary();
+SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'payouts';
+SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'refunds';
+SELECT * FROM get_refund_eligibility(NOW() + INTERVAL '10 days');
+SELECT * FROM get_pending_payouts_summary();
