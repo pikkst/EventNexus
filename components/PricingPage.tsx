@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, Zap, Sparkles, ShieldCheck, Globe, BarChart3, Star, Rocket, Loader2, Briefcase } from 'lucide-react';
 import { User } from '../types';
+import { createSubscriptionCheckout, checkCheckoutSuccess, clearCheckoutStatus } from '../services/stripeService';
 
 const PLANS = [
   {
@@ -77,18 +78,49 @@ interface PricingPageProps {
 
 const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade }) => {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Check if returning from successful checkout
+  useEffect(() => {
+    if (checkCheckoutSuccess()) {
+      setShowSuccess(true);
+      clearCheckoutStatus();
+      setTimeout(() => setShowSuccess(false), 5000);
+    }
+  }, []);
 
   const handleTierSwitch = async (tier: 'free' | 'pro' | 'premium' | 'enterprise') => {
+    // Free tier can be selected directly without payment
+    if (tier === 'free') {
+      setLoadingTier(tier);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        onUpgrade(tier);
+      } finally {
+        setLoadingTier(null);
+      }
+      return;
+    }
+
     setLoadingTier(tier);
     
     try {
-      // TODO: Implement real subscription upgrade via payment service
-      // For now, simulate the upgrade process
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      onUpgrade(tier);
+      // Create Stripe checkout session
+      const checkoutUrl = await createSubscriptionCheckout(
+        user.id,
+        tier,
+        user.email
+      );
+
+      if (checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = checkoutUrl;
+      } else {
+        throw new Error('Failed to create checkout session');
+      }
     } catch (error) {
       console.error('Subscription upgrade failed:', error);
-    } finally {
+      alert('Failed to start checkout. Please try again or contact support.');
       setLoadingTier(null);
     }
   };
@@ -96,6 +128,16 @@ const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade }) => {
   return (
     <div className="min-h-screen bg-slate-950 pb-24 relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px] -z-10" />
+
+      {/* Success Message */}
+      {showSuccess && (
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top duration-300">
+          <div className="bg-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-emerald-400">
+            <Check className="w-5 h-5" />
+            <span className="font-bold">Subscription upgraded successfully!</span>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 pt-20">
         <div className="text-center space-y-4 mb-16">
