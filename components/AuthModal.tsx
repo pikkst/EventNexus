@@ -25,76 +25,114 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
     setIsLoading(true);
     setError('');
     
+    // Add timeout protection
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+      setError('Connection timeout. Please check your internet connection and try again.');
+    }, 15000); // 15 second timeout
+    
     try {
+      console.log('Starting authentication...', mode);
+      
       if (mode === 'login') {
+        console.log('Attempting login for:', email);
         const { user: authUser, error: authError } = await signInUser(email, password);
         
+        console.log('Login response:', { user: authUser?.id, error: authError });
+        
         if (authError) {
-          setError(authError.message || 'Login failed');
+          clearTimeout(timeoutId);
+          setError(authError.message || 'Login failed. Please check your credentials.');
           setIsLoading(false);
           return;
         }
         
-        if (authUser) {
-          const userData = await getUser(authUser.id);
-          if (userData) {
-            onLogin(userData);
-            onClose();
-            setEmail('');
-            setPassword('');
-          } else {
-            setError('User profile not found');
-          }
+        if (!authUser) {
+          clearTimeout(timeoutId);
+          setError('No user returned from authentication.');
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log('Fetching user profile...');
+        const userData = await getUser(authUser.id);
+        console.log('User profile:', userData);
+        
+        if (userData) {
+          clearTimeout(timeoutId);
+          onLogin(userData);
+          onClose();
+          setEmail('');
+          setPassword('');
+        } else {
+          clearTimeout(timeoutId);
+          setError('User profile not found. Please contact support.');
         }
       } else {
         // Registration flow
+        console.log('Attempting registration for:', email);
         const { user: authUser, error: authError } = await signUpUser(email, password);
         
+        console.log('Registration response:', { user: authUser?.id, error: authError });
+        
         if (authError) {
+          clearTimeout(timeoutId);
           setError(authError.message || 'Registration failed');
           setIsLoading(false);
           return;
         }
         
-        if (authUser) {
-          // Check if email confirmation is required
-          if (!authUser.email_confirmed_at) {
-            setError('Registration successful! Please check your email to confirm your account before logging in.');
-            setIsLoading(false);
-            // Switch to login mode after showing message
-            setTimeout(() => {
-              setMode('login');
-              setError('');
-            }, 5000);
-            return;
-          }
+        if (!authUser) {
+          clearTimeout(timeoutId);
+          setError('Registration failed. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Check if email confirmation is required
+        if (!authUser.email_confirmed_at) {
+          clearTimeout(timeoutId);
+          setError('Registration successful! Please check your email to confirm your account before logging in.');
+          setIsLoading(false);
+          // Switch to login mode after showing message
+          setTimeout(() => {
+            setMode('login');
+            setError('');
+          }, 5000);
+          return;
+        }
 
-          // If email is already confirmed (shouldn't happen in production)
-          // Wait a moment for the database trigger to create the user profile
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Fetch the auto-created user profile
-          const userData = await getUser(authUser.id);
-          
-          if (userData) {
-            // Update the name if provided
-            if (fullName && fullName !== email.split('@')[0]) {
-              await updateUser(authUser.id, { name: fullName });
-              userData.name = fullName;
-            }
-            
-            onLogin(userData);
-            onClose();
-            setEmail('');
-            setPassword('');
-            setFullName('');
-          } else {
-            setError('Failed to load user profile. Please try logging in.');
+        // If email is already confirmed (shouldn't happen in production)
+        // Wait a moment for the database trigger to create the user profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Fetch the auto-created user profile
+        console.log('Fetching new user profile...');
+        const userData = await getUser(authUser.id);
+        console.log('New user profile:', userData);
+        
+        if (userData) {
+          // Update the name if provided
+          if (fullName && fullName !== email.split('@')[0]) {
+            await updateUser(authUser.id, { name: fullName });
+            userData.name = fullName;
           }
+          
+          clearTimeout(timeoutId);
+          onLogin(userData);
+          onClose();
+          setEmail('');
+          setPassword('');
+          setFullName('');
+        } else {
+          clearTimeout(timeoutId);
+          setError('Failed to load user profile. Please try logging in.');
         }
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      clearTimeout(timeoutId);
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
       console.error('Auth error:', err);
     } finally {
       setIsLoading(false);
