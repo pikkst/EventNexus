@@ -193,7 +193,21 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     };
 
     loadData();
-  }, []);
+
+    // Auto-refresh infrastructure stats every 10 seconds
+    const infraInterval = setInterval(async () => {
+      if (activeTab === 'infrastructure') {
+        try {
+          const infra = await getInfrastructureStats();
+          setInfrastructureStats(infra);
+        } catch (error) {
+          console.error('Error refreshing infrastructure stats:', error);
+        }
+      }
+    }, 10000);
+
+    return () => clearInterval(infraInterval);
+  }, [activeTab]);
 
   const requestMasterAuth = (operationName: string) => {
     setPendingOperation(operationName);
@@ -207,6 +221,18 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       setTimeout(() => setIsMasterLocked(true), 600000);
     }
     setPendingOperation('');
+  };
+
+  const handleRefreshInfra = async () => {
+    setIsRefreshing(true);
+    try {
+      const infra = await getInfrastructureStats();
+      setInfrastructureStats(infra);
+    } catch (error) {
+      console.error('Error refreshing infrastructure stats:', error);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
   };
 
   const handleAiCampaignGenerate = async () => {
@@ -897,6 +923,22 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
 
         {activeTab === 'infrastructure' && (
            <div className="space-y-8 animate-in fade-in duration-500">
+              {/* Header with refresh button */}
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h3 className="text-2xl font-black tracking-tighter">System Health</h3>
+                  <p className="text-slate-500 text-sm font-medium">Real-time infrastructure monitoring & diagnostics</p>
+                </div>
+                <button
+                  onClick={handleRefreshInfra}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all"
+                >
+                  <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                  {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
+
               {isLoadingInfra ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[...Array(4)].map((_, i) => (
@@ -910,10 +952,10 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
               ) : infrastructureStats ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                     <StatCard label="Cluster Uptime" value={`${infrastructureStats.clusterUptime.toFixed(3)}%`} change="0.00%" trend="neutral" icon={<Cpu />} color="emerald" />
-                     <StatCard label="API Latency" value={`${infrastructureStats.apiLatency}ms`} change="-2ms" trend="up" icon={<Activity />} color="blue" />
-                     <StatCard label="DB Connections" value={infrastructureStats.dbConnections.toLocaleString()} change="+12%" trend="neutral" icon={<Database />} color="violet" />
-                     <StatCard label="Storage Burn" value={`${infrastructureStats.storageBurn} TB`} change="+0.4%" trend="down" icon={<Layers />} color="orange" />
+                     <StatCard label="Cluster Uptime" value={`${infrastructureStats.clusterUptime.toFixed(2)}%`} change={`${(infrastructureStats.clusterUptime - 99.95).toFixed(2)}%`} trend={infrastructureStats.clusterUptime > 99.95 ? 'up' : 'neutral'} icon={<Cpu />} color="emerald" />
+                     <StatCard label="API Latency" value={`${infrastructureStats.apiLatency}ms`} change={infrastructureStats.apiLatency < 15 ? '-optimal' : '+slow'} trend={infrastructureStats.apiLatency < 15 ? 'up' : 'down'} icon={<Activity />} color="blue" />
+                     <StatCard label="DB Connections" value={infrastructureStats.dbConnections.toLocaleString()} change={`${infrastructureStats.dbConnections} active`} trend="neutral" icon={<Database />} color="violet" />
+                     <StatCard label="Storage Burn" value={`${infrastructureStats.storageBurn} GB`} change={infrastructureStats.storageBurn < 1 ? 'optimal' : 'growing'} trend={infrastructureStats.storageBurn < 1 ? 'up' : 'down'} icon={<Layers />} color="orange" />
                   </div>
                   
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
