@@ -335,14 +335,19 @@ export const validateTicket = async (ticketId: string) => {
 export const getPlatformStats = async () => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    if (!session?.access_token) {
       throw new Error('Not authenticated');
     }
 
-    // Supabase client automatically includes auth header
-    const { data, error } = await supabase.functions.invoke('platform-stats');
+    // Use body to pass data and let Supabase handle auth
+    const { data, error } = await supabase.functions.invoke('platform-stats', {
+      body: {},
+    });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Platform stats error:', error);
+      throw error;
+    }
     return data;
   } catch (error) {
     console.error('Error fetching platform stats:', error);
@@ -366,14 +371,19 @@ export const getPlatformStats = async () => {
 export const getInfrastructureStats = async () => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    if (!session?.access_token) {
       throw new Error('Not authenticated');
     }
 
-    // Supabase client automatically includes auth header
-    const { data, error } = await supabase.functions.invoke('infrastructure-stats');
+    // Use body to pass data and let Supabase handle auth
+    const { data, error } = await supabase.functions.invoke('infrastructure-stats', {
+      body: {},
+    });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Infrastructure stats error:', error);
+      throw error;
+    }
     return data;
   } catch (error) {
     console.error('Error fetching infrastructure stats:', error);
