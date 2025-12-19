@@ -1,10 +1,11 @@
 -- ============================================
--- Financial Ledger Function
+-- Update Financial Ledger to Include Paid Subscriptions
 -- ============================================
--- Creates a function to get real financial transaction data
--- from tickets, subscriptions, and platform fees
+-- Run this in Supabase SQL Editor
+-- This adds subscription revenue for users who actually paid
 
--- Create financial transactions view for admin
+DROP FUNCTION IF EXISTS get_financial_ledger();
+
 CREATE OR REPLACE FUNCTION get_financial_ledger()
 RETURNS TABLE (
     transaction_source TEXT,
@@ -85,8 +86,7 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission to authenticated users (admin only via RLS)
 GRANT EXECUTE ON FUNCTION get_financial_ledger() TO authenticated;
 
--- Create RLS policy for admin-only access (will be enforced at application level)
-COMMENT ON FUNCTION get_financial_ledger() IS 'Admin-only function to retrieve financial ledger data';
+-- Test the function
+SELECT * FROM get_financial_ledger();
