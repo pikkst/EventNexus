@@ -421,6 +421,14 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-slate-950 text-slate-50 overflow-hidden">
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[90] lg:hidden" 
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+      
       {/* Sidebar Navigation */}
       <aside className={`fixed inset-y-0 left-0 z-[100] w-72 bg-slate-900 border-r border-slate-800 transition-transform lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-8 border-b border-slate-800/50 flex items-center gap-3">
@@ -432,7 +440,14 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         </div>
         <nav className="p-4 space-y-1 mt-4">
           {navItems.map((item) => (
-            <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-orange-600 text-white font-bold shadow-xl shadow-orange-600/10' : 'text-slate-400 hover:bg-slate-800'}`}>
+            <button 
+              key={item.id} 
+              onClick={() => {
+                setActiveTab(item.id);
+                setIsSidebarOpen(false); // Close sidebar on mobile after selection
+              }} 
+              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-orange-600 text-white font-bold shadow-xl shadow-orange-600/10' : 'text-slate-400 hover:bg-slate-800'}`}
+            >
               {React.cloneElement(item.icon as React.ReactElement, { size: 18 })}
               <span className="text-sm">{item.label}</span>
             </button>
@@ -451,50 +466,63 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-8 space-y-10 scrollbar-hide">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <h2 className="text-4xl font-black tracking-tighter uppercase">{activeTab.replace('_', ' ')}</h2>
-            <p className="text-slate-500 font-bold">Protocol Status: <span className="text-emerald-500">{infrastructureStats?.protocolStatus || 'Loading...'}</span></p>
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-10 scrollbar-hide">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            {/* Mobile Menu Button */}
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden w-10 h-10 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center hover:bg-slate-800 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <Menu size={20} />
+            </button>
+            
+            <div className="flex-1">
+              <h2 className="text-2xl md:text-4xl font-black tracking-tighter uppercase">{activeTab.replace('_', ' ')}</h2>
+              <p className="text-xs md:text-sm text-slate-500 font-bold">Protocol Status: <span className="text-emerald-500">{infrastructureStats?.protocolStatus || 'Loading...'}</span></p>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-2 md:gap-4 w-full md:w-auto">
              {/* Maintenance Mode Toggle (Admin Idea) */}
-             <div className="bg-slate-900 border border-slate-800 px-6 py-3 rounded-2xl flex items-center gap-4 shadow-2xl">
+             <div className="bg-slate-900 border border-slate-800 px-3 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-4 shadow-2xl flex-1 md:flex-none">
                 <div className="text-right">
                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Maintenance</p>
-                   <p className={`text-sm font-black ${(infrastructureStats?.maintenanceMode || isMaintenanceMode) ? 'text-orange-500' : 'text-emerald-500'}`}>
+                   <p className={`text-xs md:text-sm font-black ${(infrastructureStats?.maintenanceMode || isMaintenanceMode) ? 'text-orange-500' : 'text-emerald-500'}`}>
                      {(infrastructureStats?.maintenanceMode || isMaintenanceMode) ? 'ACTIVE' : 'OFF'}
                    </p>
                 </div>
                 <button 
                   disabled={isMasterLocked}
                   onClick={() => setIsMaintenanceMode(!isMaintenanceMode)}
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isMasterLocked ? 'opacity-20 cursor-not-allowed' : ''} ${(infrastructureStats?.maintenanceMode || isMaintenanceMode) ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-500'}`}
+                  className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center transition-all ${isMasterLocked ? 'opacity-20 cursor-not-allowed' : ''} ${(infrastructureStats?.maintenanceMode || isMaintenanceMode) ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-500'}`}
                 >
-                  <Power size={18} />
+                  <Power size={16} className="md:hidden" />
+                  <Power size={18} className="hidden md:block" />
                 </button>
              </div>
 
-             <div className="bg-slate-900 border border-slate-800 px-6 py-3 rounded-2xl flex items-center gap-4 shadow-2xl relative">
+             <div className="bg-slate-900 border border-slate-800 px-3 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-4 shadow-2xl relative flex-1 md:flex-none">
                 <div className="text-right">
                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Master Security</p>
-                   <p className={`text-sm font-black ${isMasterLocked ? 'text-yellow-500' : 'text-red-500'}`}>
+                   <p className={`text-xs md:text-sm font-black ${isMasterLocked ? 'text-yellow-500' : 'text-red-500'}`}>
                      {infrastructureStats?.securityStatus || 'UNKNOWN'}
                    </p>
                 </div>
                 {!isMasterLocked && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />}
                 <div className="text-right">
                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Master Security</p>
-                   <p className={`text-sm font-black ${isMasterLocked ? 'text-white' : 'text-orange-500'}`}>
+                   <p className={`text-xs md:text-sm font-black ${isMasterLocked ? 'text-white' : 'text-orange-500'}`}>
                      {isMasterLocked ? 'PROTECTED' : 'ELEVATED'}
                    </p>
                 </div>
                 <button 
                   onClick={() => isMasterLocked ? requestMasterAuth('Unlock Master Controls') : setIsMasterLocked(true)}
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isMasterLocked ? 'bg-slate-800 text-slate-500 hover:bg-slate-700' : 'bg-red-500 text-white shadow-xl shadow-red-600/20 hover:bg-red-600'}`}
+                  className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center transition-all ${isMasterLocked ? 'bg-slate-800 text-slate-500 hover:bg-slate-700' : 'bg-red-500 text-white shadow-xl shadow-red-600/20 hover:bg-red-600'}`}
                   title={isMasterLocked ? 'Unlock Master Controls' : 'Lock Master Controls'}
                 >
-                  {isMasterLocked ? <Lock size={20}/> : <Unlock size={20}/>}
+                  {isMasterLocked ? <Lock size={16} className="md:hidden"/> : <Unlock size={16} className="md:hidden"/>}
+                  {isMasterLocked ? <Lock size={20} className="hidden md:block"/> : <Unlock size={20} className="hidden md:block"/>}
                 </button>
              </div>
           </div>
@@ -521,10 +549,10 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                   <StatCard label="Credit Pool" value={platformStats.creditPool} change="+5%" trend="neutral" icon={<Gift />} color="violet" />
                 </div>
                 
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                  <div className="xl:col-span-2 bg-slate-900 border border-slate-800 rounded-[48px] p-10 shadow-2xl space-y-8">
-                     <h3 className="text-xl font-black tracking-tight">Revenue Stream Velocity</h3>
-                     <div className="h-[350px]">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-8">
+                  <div className="xl:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl md:rounded-[48px] p-4 md:p-10 shadow-2xl space-y-4 md:space-y-8">
+                     <h3 className="text-lg md:text-xl font-black tracking-tight">Revenue Stream Velocity</h3>
+                     <div className="h-[250px] md:h-[350px]">
                        <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={platformStats.revenueByTier}>
                             <defs>
@@ -539,12 +567,12 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                        </ResponsiveContainer>
                      </div>
                   </div>
-                  <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 shadow-2xl flex flex-col justify-center items-center text-center space-y-6">
-                     <div className="w-24 h-24 rounded-full border-8 border-indigo-500/20 border-t-indigo-500 flex items-center justify-center">
-                        <span className="text-2xl font-black">{platformStats.retentionRate}%</span>
+                  <div className="bg-slate-900 border border-slate-800 rounded-3xl md:rounded-[48px] p-6 md:p-10 shadow-2xl flex flex-col justify-center items-center text-center space-y-4 md:space-y-6">
+                     <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-8 border-indigo-500/20 border-t-indigo-500 flex items-center justify-center">
+                        <span className="text-xl md:text-2xl font-black">{platformStats.retentionRate}%</span>
                      </div>
-                     <h4 className="text-xl font-black">Retention Rate</h4>
-                     <p className="text-sm text-slate-500 font-medium">User loyalty based on platform activity and engagement metrics.</p>
+                     <h4 className="text-lg md:text-xl font-black">Retention Rate</h4>
+                     <p className="text-xs md:text-sm text-slate-500 font-medium">User loyalty based on platform activity and engagement metrics.</p>
                   </div>
                 </div>
               </>
@@ -557,11 +585,11 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         )}
 
         {activeTab === 'users' && (
-          <div className="space-y-8 animate-in fade-in duration-500">
-             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
+             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-8">
                 {/* User List Sidebar */}
-                <div className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-[48px] overflow-hidden shadow-2xl flex flex-col">
-                   <div className="p-8 border-b border-slate-800 flex flex-col md:flex-row gap-4 justify-between items-center bg-slate-900/50 backdrop-blur-md">
+                <div className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-3xl md:rounded-[48px] overflow-hidden shadow-2xl flex flex-col">
+                   <div className="p-4 md:p-8 border-b border-slate-800 flex flex-col md:flex-row gap-4 justify-between items-center bg-slate-900/50 backdrop-blur-md">
                       <div className="relative flex-1 w-full max-w-md">
                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                          <input 
@@ -569,48 +597,48 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                            placeholder="Search by name, email or ID..." 
                            value={userSearch}
                            onChange={(e) => setUserSearch(e.target.value)}
-                           className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 py-3 text-sm focus:border-indigo-500 outline-none"
+                           className="w-full bg-slate-950 border border-slate-800 rounded-xl md:rounded-2xl pl-12 pr-4 py-2.5 md:py-3 text-xs md:text-sm focus:border-indigo-500 outline-none"
                          />
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 w-full md:w-auto">
                          <select 
                            value={userRoleFilter} 
                            onChange={(e) => setUserRoleFilter(e.target.value)}
-                           className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-400 outline-none"
+                           className="flex-1 md:flex-none bg-slate-950 border border-slate-800 rounded-lg md:rounded-xl px-3 md:px-4 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-400 outline-none"
                          >
                             <option value="all">All Roles</option>
                             <option value="organizer">Organizers</option>
                             <option value="attendee">Attendees</option>
                             <option value="agency">Agencies</option>
                          </select>
-                         <button className="p-3 bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-all"><Filter size={16}/></button>
+                         <button className="p-2.5 md:p-3 bg-slate-800 rounded-lg md:rounded-xl text-slate-400 hover:text-white transition-all"><Filter size={16}/></button>
                       </div>
                    </div>
 
                    <div className="flex-1 overflow-x-auto">
-                      <table className="w-full text-left">
+                      <table className="w-full text-left min-w-[600px]">
                          <thead>
                             <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800">
-                               <th className="px-8 py-4">Identity</th>
-                               <th className="px-4 py-4">Clearance</th>
-                               <th className="px-4 py-4">Ledger</th>
-                               <th className="px-8 py-4 text-right">Actions</th>
+                               <th className="px-4 md:px-8 py-3 md:py-4">Identity</th>
+                               <th className="px-2 md:px-4 py-3 md:py-4">Clearance</th>
+                               <th className="px-2 md:px-4 py-3 md:py-4">Ledger</th>
+                               <th className="px-4 md:px-8 py-3 md:py-4 text-right">Actions</th>
                             </tr>
                          </thead>
                          <tbody className="divide-y divide-slate-800/50">
                             {filteredUsers.map(u => (
                                <tr key={u.id} className="group hover:bg-slate-800/30 transition-all">
-                                  <td className="px-8 py-5">
-                                     <div className="flex items-center gap-3">
-                                        <img src={u.avatar} className="w-10 h-10 rounded-xl border border-slate-800" alt="" />
-                                        <div>
-                                           <p className="font-bold text-white text-sm">{u.name}</p>
-                                           <p className="text-[10px] text-slate-500 font-medium">{u.email}</p>
+                                  <td className="px-4 md:px-8 py-4 md:py-5">
+                                     <div className="flex items-center gap-2 md:gap-3">
+                                        <img src={u.avatar} className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl border border-slate-800" alt="" />
+                                        <div className="min-w-0">
+                                           <p className="font-bold text-white text-xs md:text-sm truncate">{u.name}</p>
+                                           <p className="text-[10px] text-slate-500 font-medium truncate">{u.email}</p>
                                         </div>
                                      </div>
                                   </td>
-                                  <td className="px-4 py-5">
-                                     <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase border ${
+                                  <td className="px-2 md:px-4 py-4 md:py-5">
+                                     <span className={`text-[9px] md:text-[10px] font-black px-2 md:px-3 py-1 rounded-full uppercase border whitespace-nowrap ${
                                        (u.subscription_tier || u.subscription) === 'enterprise' ? 'bg-orange-600/10 border-orange-500/20 text-orange-500' :
                                        (u.subscription_tier || u.subscription) === 'premium' ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' :
                                        'bg-slate-800 border-slate-700 text-slate-500'
@@ -618,17 +646,17 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                                         {u.subscription_tier || u.subscription}
                                      </span>
                                   </td>
-                                  <td className="px-4 py-5">
-                                     <div className="flex items-center gap-2">
-                                        <Gift size={12} className="text-slate-500" />
-                                        <span className="font-mono text-sm text-slate-300">{u.credits}</span>
+                                  <td className="px-2 md:px-4 py-4 md:py-5">
+                                     <div className="flex items-center gap-1 md:gap-2">
+                                        <Gift size={12} className="text-slate-500 flex-shrink-0" />
+                                        <span className="font-mono text-xs md:text-sm text-slate-300">{u.credits}</span>
                                      </div>
                                   </td>
-                                  <td className="px-8 py-5 text-right">
-                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => setSelectedUser(u)} className="p-2 bg-slate-800 hover:bg-indigo-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Message User"><MessageSquare size={14}/></button>
-                                        <button onClick={() => handleSuspendUser(u.id)} className="p-2 bg-slate-800 hover:bg-yellow-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Suspend User"><AlertTriangle size={14}/></button>
-                                        <button onClick={() => handleBanUser(u.id)} className="p-2 bg-slate-800 hover:bg-red-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Ban User"><Ban size={14}/></button>
+                                  <td className="px-4 md:px-8 py-4 md:py-5 text-right">
+                                     <div className="flex justify-end gap-1 md:gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onClick={() => setSelectedUser(u)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-indigo-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Message User"><MessageSquare size={14}/></button>
+                                        <button onClick={() => handleSuspendUser(u.id)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-yellow-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Suspend User"><AlertTriangle size={14}/></button>
+                                        <button onClick={() => handleBanUser(u.id)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-red-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Ban User"><Ban size={14}/></button>
                                      </div>
                                   </td>
                                </tr>
@@ -639,24 +667,24 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 </div>
 
                 {/* Broadcast Hub */}
-                <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-8 shadow-2xl flex flex-col gap-6">
-                   <h3 className="text-xl font-black tracking-tight flex items-center gap-3"><BellRing className="text-indigo-500" size={20} /> Broadcast</h3>
-                   <div className="space-y-4">
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl md:rounded-[48px] p-6 md:p-8 shadow-2xl flex flex-col gap-4 md:gap-6">
+                   <h3 className="text-lg md:text-xl font-black tracking-tight flex items-center gap-3"><BellRing className="text-indigo-500" size={20} /> Broadcast</h3>
+                   <div className="space-y-3 md:space-y-4">
                       <div className="flex bg-slate-950 rounded-xl p-1">
                          {(['all', 'organizers', 'attendees'] as const).map(t => (
-                            <button key={t} onClick={() => setBroadcastTarget(t)} className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${broadcastTarget === t ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>{t}</button>
+                            <button key={t} onClick={() => setBroadcastTarget(t)} className={`flex-1 py-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${broadcastTarget === t ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>{t}</button>
                          ))}
                       </div>
                       <textarea 
                         placeholder="Global message content..." 
                         value={broadcastMsg}
                         onChange={(e) => setBroadcastMsg(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-white outline-none focus:border-indigo-500 min-h-[150px] resize-none"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl md:rounded-2xl p-3 md:p-4 text-xs text-white outline-none focus:border-indigo-500 min-h-[120px] md:min-h-[150px] resize-none"
                       />
                       <button 
                         onClick={handleBroadcastNotification}
                         disabled={!broadcastMsg.trim()}
-                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
+                        className="w-full py-3 md:py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl md:rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 md:gap-3 transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
                       >
                          <Send size={14} /> Send Global Push
                       </button>
@@ -1327,38 +1355,38 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
 };
 
 const SettingsCard = ({ icon, title, locked, fields, onFieldChange }: any) => (
-  <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-2xl relative overflow-hidden group">
-    <div className="flex justify-between items-center mb-8">
-       <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-white transition-colors">
+  <div className="bg-slate-900 border border-slate-800 rounded-3xl md:rounded-[40px] p-4 md:p-8 shadow-2xl relative overflow-hidden group">
+    <div className="flex justify-between items-center mb-6 md:mb-8">
+       <div className="flex items-center gap-3 md:gap-4 min-w-0">
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-800 rounded-xl md:rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-white transition-colors flex-shrink-0">
              {icon}
           </div>
-          <h3 className="text-lg font-black tracking-tight">{title}</h3>
+          <h3 className="text-base md:text-lg font-black tracking-tight truncate">{title}</h3>
        </div>
-       <div className={`flex items-center gap-2 text-[8px] font-black uppercase tracking-widest ${locked ? 'text-slate-500' : 'text-emerald-500'}`}>
-          <Wifi size={12} /> {locked ? 'Standby' : 'Ready'}
+       <div className={`flex items-center gap-2 text-[8px] font-black uppercase tracking-widest flex-shrink-0 ${locked ? 'text-slate-500' : 'text-emerald-500'}`}>
+          <Wifi size={10} className="md:w-3 md:h-3" /> <span className="hidden sm:inline">{locked ? 'Standby' : 'Ready'}</span>
        </div>
     </div>
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
        {fields.map((field: any, i: number) => (
           <div key={i} className="space-y-2">
              <div className="flex justify-between px-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{field.label}</label>
-                {locked && <Lock size={10} className="text-slate-700" />}
+                <label className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">{field.label}</label>
+                {locked && <Lock size={8} className="md:w-2.5 md:h-2.5 text-slate-700" />}
              </div>
              <input 
                type={field.type || 'text'} 
                disabled={locked}
                value={locked ? '••••••••••••••••' : field.value}
                onChange={(e) => !locked && onFieldChange && onFieldChange(field.key, e.target.value)}
-               className={`w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3.5 text-xs font-mono tracking-wider outline-none transition-all ${locked ? 'text-slate-700 cursor-not-allowed' : 'text-indigo-400 focus:border-indigo-500'}`}
+               className={`w-full bg-slate-950 border border-slate-800 rounded-xl md:rounded-2xl px-3 md:px-5 py-2.5 md:py-3.5 text-[10px] md:text-xs font-mono tracking-wider outline-none transition-all ${locked ? 'text-slate-700 cursor-not-allowed' : 'text-indigo-400 focus:border-indigo-500'}`}
                placeholder={locked ? '' : `Enter ${field.label.toLowerCase()}`}
              />
           </div>
        ))}
     </div>
-    <div className="mt-8 flex gap-3">
-       <button disabled={locked} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${locked ? 'bg-slate-800 text-slate-600 opacity-50' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
+    <div className="mt-6 md:mt-8 flex gap-2 md:gap-3">
+       <button disabled={locked} className={`flex-1 py-2.5 md:py-3 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${locked ? 'bg-slate-800 text-slate-600 opacity-50' : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
           Test API Handshake
        </button>
     </div>
@@ -1373,17 +1401,17 @@ const StatCard = ({ label, value, change, trend, icon, color }: any) => {
     violet: 'bg-violet-600/10 text-violet-400',
   };
   return (
-    <div className="bg-slate-900 border border-slate-800 p-8 rounded-[32px] hover:border-slate-700 transition-all shadow-xl group">
-      <div className="flex justify-between items-start mb-6">
-        <div className={`p-4 rounded-2xl group-hover:scale-110 transition-transform ${colors[color]}`}>
-          {React.cloneElement(icon, { size: 24 })}
+    <div className="bg-slate-900 border border-slate-800 p-4 md:p-8 rounded-2xl md:rounded-[32px] hover:border-slate-700 transition-all shadow-xl group">
+      <div className="flex justify-between items-start mb-4 md:mb-6">
+        <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl group-hover:scale-110 transition-transform ${colors[color]}`}>
+          {React.cloneElement(icon, { size: 20, className: 'md:w-6 md:h-6' })}
         </div>
-        <div className={`flex items-center gap-1 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter ${trend === 'up' ? 'bg-emerald-500/10 text-emerald-500' : trend === 'down' ? 'bg-red-500/10 text-red-500' : 'bg-slate-800 text-slate-500'}`}>
-          {change} {trend === 'up' ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+        <div className={`flex items-center gap-1 text-[9px] md:text-[10px] font-black px-2 md:px-3 py-1 rounded-full uppercase tracking-tighter ${trend === 'up' ? 'bg-emerald-500/10 text-emerald-500' : trend === 'down' ? 'bg-red-500/10 text-red-500' : 'bg-slate-800 text-slate-500'}`}>
+          {change} {trend === 'up' ? <ArrowUpRight size={10} className="md:w-3 md:h-3" /> : <ArrowDownRight size={10} className="md:w-3 md:h-3" />}
         </div>
       </div>
-      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">{label}</p>
-      <h3 className="text-3xl font-black tracking-tighter text-white">{value}</h3>
+      <p className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">{label}</p>
+      <h3 className="text-2xl md:text-3xl font-black tracking-tighter text-white">{value}</h3>
     </div>
   );
 };
