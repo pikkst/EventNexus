@@ -101,7 +101,7 @@ export const getUser = async (id: string): Promise<User | null> => {
           name: authUser.email?.split('@')[0] || 'User',
           email: authUser.email || '',
           role: 'attendee',
-          subscription: 'free',
+          subscription_tier: 'free',
           credits: 0,
           avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.id}`,
           notification_prefs: {
