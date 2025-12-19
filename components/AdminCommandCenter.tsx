@@ -20,6 +20,7 @@ import {
 } from 'recharts';
 import { User, Notification } from '../types';
 import { generatePlatformGrowthCampaign, generateAdImage } from '../services/geminiService';
+import { supabase } from '../services/supabase';
 import { 
   getEvents, 
   getAllUsers, 
@@ -93,6 +94,11 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   // Financial State
   const [financialLedger, setFinancialLedger] = useState<FinancialTransaction[]>([]);
   const [isLoadingFinancials, setIsLoadingFinancials] = useState(true);
+
+  // Diagnostic Scan State
+  const [isDiagnosticRunning, setIsDiagnosticRunning] = useState(false);
+  const [diagnosticResults, setDiagnosticResults] = useState<any>(null);
+  const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
 
   if (user.role !== 'admin') return <div className="p-20 text-center font-black bg-slate-950 min-h-screen text-red-500">UNAUTHORIZED_ACCESS_DENIED</div>;
 
@@ -242,6 +248,28 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       console.error('Error refreshing infrastructure stats:', error);
     } finally {
       setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
+
+  const runDiagnosticScan = async () => {
+    setIsDiagnosticRunning(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('diagnostic-scan', {
+        body: {},
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+
+      if (error) throw error;
+      setDiagnosticResults(data);
+      setShowDiagnosticModal(true);
+    } catch (error) {
+      console.error('Diagnostic scan error:', error);
+      alert('Failed to run diagnostic scan. Check console for details.');
+    } finally {
+      setIsDiagnosticRunning(false);
     }
   };
 
@@ -1029,8 +1057,16 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                           <h4 className="text-xl font-black text-white">System Integrity</h4>
                           <p className="text-sm text-slate-500 font-medium">{infrastructureStats.systemIntegrity}</p>
                        </div>
-                       <button className="w-full py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all">
-                          Run Diagnostic Scan
+                       <button 
+                         onClick={runDiagnosticScan}
+                         disabled={isDiagnosticRunning}
+                         className="w-full py-4 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2"
+                       >
+                          {isDiagnosticRunning ? (
+                            <><Loader2 size={14} className="animate-spin" /> Scanning...</>
+                          ) : (
+                            'Run Diagnostic Scan'
+                          )}
                        </button>
                     </div>
                   </div>
@@ -1142,6 +1178,11 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
            </div>
         )}
       </main>
+
+      {/* Diagnostic Results Modal */}
+      {showDiagnosticModal && diagnosticResults && (
+        <DiagnosticModal results={diagnosticResults} onClose={() => setShowDiagnosticModal(false)} />
+      )}
 
       {/* Security Verification Modal */}
       {showSecurityModal && (
@@ -1442,6 +1483,100 @@ const FinancialRow = ({ name, cat, amt, status }: any) => (
        </span>
     </td>
   </tr>
+);
+
+// Diagnostic Results Modal Component
+const DiagnosticModal: React.FC<{
+  results: any;
+  onClose: () => void;
+}> = ({ results, onClose }) => (
+  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={onClose}>
+    <div className="bg-slate-900 border border-slate-800 rounded-[40px] max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="p-8 border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <h3 className="text-2xl font-black tracking-tight">System Diagnostic Report</h3>
+          <p className="text-xs text-slate-500 font-medium mt-1">Completed in {results.scanDuration}</p>
+        </div>
+        <button onClick={onClose} className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-center transition-all">
+          <X size={18} />
+        </button>
+      </div>
+      
+      <div className="p-8 overflow-y-auto max-h-[calc(90vh-200px)] scrollbar-hide">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4">
+            <div className={`text-3xl font-black mb-1 ${results.overallStatus === 'healthy' ? 'text-emerald-500' : results.overallStatus === 'warning' ? 'text-yellow-500' : 'text-red-500'}`}>
+              {results.overallStatus === 'healthy' ? '✓' : results.overallStatus === 'warning' ? '⚠' : '✕'}
+            </div>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Overall</p>
+            <p className="text-xs font-bold capitalize">{results.overallStatus}</p>
+          </div>
+          <div className="bg-slate-950 border border-emerald-900/20 rounded-2xl p-4">
+            <div className="text-3xl font-black text-emerald-500 mb-1">{results.summary.healthy}</div>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Healthy</p>
+          </div>
+          <div className="bg-slate-950 border border-yellow-900/20 rounded-2xl p-4">
+            <div className="text-3xl font-black text-yellow-500 mb-1">{results.summary.warnings}</div>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Warnings</p>
+          </div>
+          <div className="bg-slate-950 border border-red-900/20 rounded-2xl p-4">
+            <div className="text-3xl font-black text-red-500 mb-1">{results.summary.critical}</div>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Critical</p>
+          </div>
+        </div>
+
+        {/* Detailed Results */}
+        <div className="space-y-3">
+          {results.diagnostics.map((diag: any, idx: number) => (
+            <div key={idx} className={`bg-slate-950 border rounded-2xl p-5 ${
+              diag.status === 'healthy' ? 'border-emerald-900/20' :
+              diag.status === 'warning' ? 'border-yellow-900/20' :
+              'border-red-900/20'
+            }`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3 flex-1">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black ${
+                    diag.status === 'healthy' ? 'bg-emerald-500/10 text-emerald-500' :
+                    diag.status === 'warning' ? 'bg-yellow-500/10 text-yellow-500' :
+                    'bg-red-500/10 text-red-500'
+                  }`}>
+                    {diag.status === 'healthy' ? '✓' : diag.status === 'warning' ? '⚠' : '✕'}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-black text-sm">{diag.category}</h4>
+                    <p className="text-xs text-slate-400 mt-1">{diag.message}</p>
+                    {diag.details && (
+                      <div className="mt-2 p-3 bg-slate-900 rounded-xl">
+                        <pre className="text-[10px] text-slate-500 font-mono overflow-x-auto scrollbar-hide">
+                          {JSON.stringify(diag.details, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <span className="text-[8px] text-slate-600 font-mono whitespace-nowrap">
+                  {new Date(diag.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-6 border-t border-slate-800 flex justify-between items-center">
+        <p className="text-xs text-slate-500 font-mono">
+          Timestamp: {new Date(results.timestamp).toLocaleString()}
+        </p>
+        <button 
+          onClick={onClose}
+          className="px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-2xl text-xs font-black uppercase tracking-widest text-white transition-all"
+        >
+          Close Report
+        </button>
+      </div>
+    </div>
+  </div>
 );
 
 export default AdminCommandCenter;
