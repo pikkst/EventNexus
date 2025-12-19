@@ -370,9 +370,12 @@ export const getPlatformStats = async () => {
       throw new Error('Not authenticated');
     }
 
-    // Use body to pass data and let Supabase handle auth
+    // Pass authorization header explicitly to Edge Function
     const { data, error } = await supabase.functions.invoke('platform-stats', {
       body: {},
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
     });
 
     if (error) {
@@ -406,9 +409,12 @@ export const getInfrastructureStats = async () => {
       throw new Error('Not authenticated');
     }
 
-    // Use body to pass data and let Supabase handle auth
+    // Pass authorization header explicitly to Edge Function
     const { data, error } = await supabase.functions.invoke('infrastructure-stats', {
       body: {},
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
     });
 
     if (error) {
