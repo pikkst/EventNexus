@@ -66,15 +66,29 @@ serve(async (req: Request) => {
         
         // Handle subscription
         if (metadata.type === 'subscription' && metadata.user_id && metadata.tier) {
+          // Get subscription amount from session
+          const amount = session.amount_total / 100; // Convert from cents to euros
+          
+          // Update user subscription status
           await supabase
             .from('users')
             .update({
               subscription_tier: metadata.tier,
-              subscription_status: 'active'
+              subscription_status: 'active',
+              stripe_customer_id: session.customer,
+              stripe_subscription_id: session.subscription
             })
             .eq('id', metadata.user_id);
           
-          console.log('Subscription activated for user:', metadata.user_id);
+          console.log(`Subscription activated: ${metadata.tier} for user ${metadata.user_id}, amount: €${amount}`);
+          
+          // Send notification to user
+          await supabase.from('notifications').insert({
+            user_id: metadata.user_id,
+            type: 'subscription',
+            message: `✓ Welcome to ${metadata.tier.toUpperCase()} tier! Your subscription is now active.`,
+            read: false,
+          });
         }
         break;
       }
@@ -169,27 +183,113 @@ serve(async (req: Request) => {
         break;
       }
 
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object;
+        console.log('Invoice payment succeeded:', invoice.id);
+        
+        // Handle subscription invoice payments
+        if (invoice.subscription) {
+          const { data: user } = await supabase
+            .from('users')
+            .select('id, subscription_tier')
+            .eq('stripe_subscription_id', invoice.subscription)
+            .single();
+
+          if (user) {
+            const amount = invoice.amount_paid / 100; // Convert cents to euros
+            console.log(`Subscription payment received: €${amount} from user ${user.id} (${user.subscription_tier})`);
+            
+            // Send notification for recurring payments (not first payment)
+            if (invoice.billing_reason === 'subscription_cycle') {
+              await supabase.from('notifications').insert({
+                user_id: user.id,
+                type: 'subscription',
+                message: `✓ Subscription renewed successfully. Thank you for being a ${user.subscription_tier.toUpperCase()} member!`,
+                read: false,
+              });
+            }
+          }
+        }
+        break;
+      }
+
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object;
         const customerId = subscription.customer;
         
-        // Update user subscription status
-        const { data: user } = await supabase
+        // Log full subscription object for debugging
+        console.log(`[DEBUG] Subscription ${event.type}:`, JSON.stringify({
+          id: subscription.id,
+          status: subscription.status,
+          metadata: subscription.metadata,
+          items: subscription.items?.data?.map((item: any) => ({
+            price_id: item.price?.id,
+            price_metadata: item.price?.metadata
+          }))
+        }));
+        
+        // Get current user to check if tier is already set
+        const { data: user, error: userError } = await supabase
           .from('users')
-          .select('id')
+          .select('id, email, subscription_tier, stripe_subscription_id')
           .eq('stripe_customer_id', customerId)
           .single();
 
-        if (user) {
-          await supabase
-            .from('users')
-            .update({
-              subscription_tier: subscription.items.data[0]?.price?.metadata?.tier || 'free',
-              subscription_status: subscription.status,
-              subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString()
-            })
-            .eq('id', user.id);
+        if (userError) {
+          console.error(`[ERROR] Failed to find user with customer_id ${customerId}:`, userError);
+          break;
+        }
+
+        if (!user) {
+          console.error(`[ERROR] No user found for customer_id: ${customerId}`);
+          break;
+        }
+        
+        // Extract tier from subscription metadata or price metadata
+        let tier = null;
+        if (subscription.metadata?.tier) {
+          tier = subscription.metadata.tier;
+          console.log(`[DEBUG] Found tier in subscription.metadata: ${tier}`);
+        } else if (subscription.items?.data?.[0]?.price?.metadata?.tier) {
+          tier = subscription.items.data[0].price.metadata.tier;
+          console.log(`[DEBUG] Found tier in price.metadata: ${tier}`);
+        }
+        
+        // IMPORTANT: If this is a NEW subscription (created event) and tier is not in metadata,
+        // check if checkout.session.completed already set the tier.
+        // Don't overwrite with 'free'!
+        if (!tier && event.type === 'customer.subscription.created' && user.subscription_tier !== 'free') {
+          console.log(`[INFO] Subscription created but tier already set to ${user.subscription_tier} by checkout. Keeping existing tier.`);
+          tier = user.subscription_tier;
+        } else if (!tier) {
+          console.warn(`[WARN] No tier found in subscription metadata for ${subscription.id}`);
+          tier = 'free';
+        }
+        
+        console.log(`[INFO] Updating user ${user.id} (${user.email}): tier=${tier}, status=${subscription.status}`);
+        
+        // Update user subscription status
+        const updateData: any = {
+          subscription_status: subscription.status,
+          subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString(),
+          stripe_subscription_id: subscription.id
+        };
+        
+        // Only update tier if we have a valid one
+        if (tier && tier !== 'free') {
+          updateData.subscription_tier = tier;
+        }
+        
+        const { error: updateError } = await supabase
+          .from('users')
+          .update(updateData)
+          .eq('id', user.id);
+        
+        if (updateError) {
+          console.error(`[ERROR] Failed to update user ${user.id}:`, updateError);
+        } else {
+          console.log(`[SUCCESS] Updated user ${user.id}: tier=${tier}, status=${subscription.status}`);
         }
         break;
       }
