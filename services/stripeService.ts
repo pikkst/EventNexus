@@ -58,13 +58,18 @@ export const createSubscriptionCheckout = async (
 
     if (error) {
       console.error('Error creating checkout session:', error);
-      return null;
+      throw new Error(error.message || 'Failed to create checkout session');
     }
 
-    return data?.url || null;
+    if (!data?.url) {
+      console.error('No checkout URL returned:', data);
+      throw new Error(data?.error || 'No checkout URL received from payment system');
+    }
+
+    return data.url;
   } catch (error) {
     console.error('Stripe checkout error:', error);
-    return null;
+    throw error;
   }
 };
 

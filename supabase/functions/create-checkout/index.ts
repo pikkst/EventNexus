@@ -41,7 +41,30 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Validate Stripe secret key
+    if (!STRIPE_SECRET_KEY) {
+      console.error('STRIPE_SECRET_KEY not configured');
+      return new Response(
+        JSON.stringify({ error: 'Payment system not configured. Please contact support.' }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
+    }
+
     const { userId, tier, priceId, customerEmail, eventId, ticketCount, pricePerTicket, eventName, successUrl, cancelUrl } = await req.json();
+
+    // Validate required parameters
+    if (!userId) {
+      throw new Error('Missing required parameter: userId');
+    }
+    if (!successUrl || !cancelUrl) {
+      throw new Error('Missing required parameters: successUrl or cancelUrl');
+    }
 
     // Get or create Stripe customer
     let customerId: string;
@@ -79,6 +102,8 @@ serve(async (req: Request) => {
     // Check if this is a subscription or ticket purchase
     if (tier && priceId) {
       // Subscription checkout
+      console.log(`Creating subscription checkout for user ${userId}, tier: ${tier}`);
+      
       session = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ['card'],
@@ -190,8 +215,11 @@ serve(async (req: Request) => {
 
       await supabase.from('tickets').insert(tickets);
     } else {
-      throw new Error('Invalid checkout request: missing required parameters');
+      console.error('Invalid checkout parameters:', { tier, priceId, eventId, ticketCount, pricePerTicket });
+      throw new Error('Invalid checkout request: must provide either (tier + priceId) for subscription or (eventId + ticketCount + pricePerTicket) for tickets');
     }
+
+    console.log(`Checkout session created successfully: ${session.id}`);
 
     return new Response(
       JSON.stringify({ url: session.url, sessionId: session.id }),
@@ -204,10 +232,29 @@ serve(async (req: Request) => {
     );
   } catch (error) {
     console.error('Checkout creation error:', error);
+    
+    // Provide more specific error messages
+    let errorMessage = error.message || 'Unknown error occurred';
+    let statusCode = 400;
+    
+    // Check for specific error types
+    if (error.message?.includes('Stripe')) {
+      errorMessage = 'Payment system error. Please try again or contact support.';
+      statusCode = 500;
+    } else if (error.message?.includes('not found')) {
+      statusCode = 404;
+    } else if (error.message?.includes('Missing required parameter')) {
+      errorMessage = error.message;
+      statusCode = 400;
+    }
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      }),
       {
-        status: 400,
+        status: statusCode,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
