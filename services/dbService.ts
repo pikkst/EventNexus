@@ -321,7 +321,21 @@ export const signOutUser = async () => {
 };
 
 export const getCurrentUser = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
+  // First check if there's an existing session
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session) {
+    return null;
+  }
+  
+  // If session exists, get the user
+  const { data: { user }, error } = await supabase.auth.getUser();
+  
+  if (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
+  
   return user;
 };
 
