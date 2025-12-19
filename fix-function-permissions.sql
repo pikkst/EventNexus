@@ -13,10 +13,8 @@ GRANT EXECUTE ON FUNCTION get_platform_statistics() TO service_role;
 -- Verify grants
 SELECT 
     routine_name,
-    routine_type,
-    string_agg(privilege_type, ', ') as privileges,
+    privilege_type,
     grantee
 FROM information_schema.routine_privileges
 WHERE routine_name IN ('get_infrastructure_statistics', 'get_platform_statistics')
-GROUP BY routine_name, routine_type, grantee
 ORDER BY routine_name, grantee;
