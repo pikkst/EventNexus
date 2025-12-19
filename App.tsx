@@ -397,7 +397,7 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
                 {showProfileMenu && (
                   <div className="absolute top-full mt-4 right-0 w-64 bg-slate-900 border border-slate-800 rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                     <div className="p-6 border-b border-slate-800 bg-slate-950/50">
-                      <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">{user.subscription} plan</p>
+                      <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">{user.subscription_tier} plan</p>
                       <h4 className="font-black text-white truncate">{user.name}</h4>
                     </div>
                     <div className="p-2">
