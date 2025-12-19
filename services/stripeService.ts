@@ -44,6 +44,9 @@ export const createSubscriptionCheckout = async (
       enterprise: 'price_enterprise_monthly'
     };
 
+    // Get the base URL including the /EventNexus/ path for GitHub Pages
+    const baseUrl = window.location.origin + window.location.pathname.split('#')[0];
+    
     // Call Supabase Edge Function to create checkout session
     const { data, error } = await supabase.functions.invoke('create-checkout', {
       body: {
@@ -51,8 +54,8 @@ export const createSubscriptionCheckout = async (
         tier,
         priceId: priceIds[tier],
         customerEmail: userEmail,
-        successUrl: `${window.location.origin}/#/dashboard?checkout=success`,
-        cancelUrl: `${window.location.origin}/#/pricing?checkout=cancelled`
+        successUrl: `${baseUrl}#/dashboard?checkout=success`,
+        cancelUrl: `${baseUrl}#/pricing?checkout=cancelled`
       }
     });
 
@@ -90,6 +93,9 @@ export const createTicketCheckout = async (
       return null;
     }
 
+    // Get the base URL including the /EventNexus/ path for GitHub Pages
+    const baseUrl = window.location.origin + window.location.pathname.split('#')[0];
+
     // Call Supabase Edge Function to create checkout session
     const { data, error } = await supabase.functions.invoke('create-checkout', {
       body: {
@@ -98,8 +104,8 @@ export const createTicketCheckout = async (
         ticketCount,
         pricePerTicket,
         eventName,
-        successUrl: `${window.location.origin}/#/events/${eventId}?purchase=success`,
-        cancelUrl: `${window.location.origin}/#/events/${eventId}?purchase=cancelled`
+        successUrl: `${baseUrl}#/events/${eventId}?purchase=success`,
+        cancelUrl: `${baseUrl}#/events/${eventId}?purchase=cancelled`
       }
     });
 
