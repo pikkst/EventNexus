@@ -42,7 +42,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
   const navigate = useNavigate();
 
   // Subscription Gate
-  if (user.subscription === 'free') {
+  if (user.subscription_tier === 'free') {
     return (
       <div className="max-w-3xl mx-auto px-4 py-20 animate-in fade-in duration-700">
         <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-12 text-center space-y-8 shadow-2xl relative overflow-hidden">

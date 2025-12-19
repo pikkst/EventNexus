@@ -181,16 +181,16 @@ const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade }) => {
 
                 <button 
                   onClick={() => handleTierSwitch(plan.tier)}
-                  disabled={user.subscription === plan.tier || !!loadingTier}
+                  disabled={user.subscription_tier === plan.tier || !!loadingTier}
                   className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-                    user.subscription === plan.tier 
+                    user.subscription_tier === plan.tier 
                     ? 'bg-slate-800 text-slate-500 cursor-default border border-slate-700' 
                     : plan.highlight 
                       ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-600/20' 
                       : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
                   }`}
                 >
-                  {loadingTier === plan.tier ? <Loader2 className="w-4 h-4 animate-spin" /> : (user.subscription === plan.tier ? 'Current Plan' : plan.cta)}
+                  {loadingTier === plan.tier ? <Loader2 className="w-4 h-4 animate-spin" /> : (user.subscription_tier === plan.tier ? 'Current Plan' : plan.cta)}
                 </button>
               </div>
             </div>
