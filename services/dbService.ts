@@ -85,6 +85,8 @@ export const getUser = async (id: string): Promise<User | null> => {
     .eq('id', id)
     .single();
   
+  console.log('Database response:', { data, error, hasData: !!data, hasError: !!error });
+  
   if (error) {
     console.error('Error fetching user profile:', error);
     console.error('Error details:', { code: error.code, message: error.message, details: error.details });
@@ -126,7 +128,12 @@ export const getUser = async (id: string): Promise<User | null> => {
     return null;
   }
   
-  console.log('User profile found:', data?.email, 'Role:', data?.role);
+  if (!data) {
+    console.warn('No error but data is null/undefined');
+    return null;
+  }
+  
+  console.log('User profile found:', data.email, 'Role:', data.role);
   return data;
 };
 
