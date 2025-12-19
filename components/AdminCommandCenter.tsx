@@ -48,6 +48,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   // Master Auth State
   const [isMasterLocked, setIsMasterLocked] = useState(true);
   const [showMasterAuthModal, setShowMasterAuthModal] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [pendingOperation, setPendingOperation] = useState<string>('');
   const [globalTicketFee, setGlobalTicketFee] = useState(2.5);
   const [creditValue, setCreditValue] = useState(0.50);
