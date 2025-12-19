@@ -77,7 +77,11 @@ export const deleteEvent = async (id: string): Promise<boolean> => {
 
 // Users
 export const getUser = async (id: string): Promise<User | null> => {
-  console.log('Fetching user profile for ID:', id);
+  console.log('🔍 [getUser] Starting fetch for user ID:', id);
+  console.log('🔍 [getUser] Supabase client status:', supabase ? 'initialized' : 'NOT INITIALIZED');
+  
+  const queryStart = Date.now();
+  console.log('🔍 [getUser] Executing database query...');
   
   const { data, error } = await supabase
     .from('users')
@@ -85,11 +89,20 @@ export const getUser = async (id: string): Promise<User | null> => {
     .eq('id', id)
     .single();
   
-  console.log('Database response:', { data, error, hasData: !!data, hasError: !!error });
+  const queryDuration = Date.now() - queryStart;
+  console.log(`🔍 [getUser] Query completed in ${queryDuration}ms`);
+  console.log('🔍 [getUser] Database response:', { 
+    hasData: !!data, 
+    hasError: !!error,
+    errorCode: error?.code,
+    errorMessage: error?.message,
+    dataKeys: data ? Object.keys(data) : null,
+    email: data?.email
+  });
   
   if (error) {
-    console.error('Error fetching user profile:', error);
-    console.error('Error details:', { code: error.code, message: error.message, details: error.details });
+    console.error('❌ [getUser] Error fetching user profile:', error);
+    console.error('❌ [getUser] Error details:', { code: error.code, message: error.message, details: error.details });
     
     // If user profile doesn't exist (PGRST116), try to get auth user info and create profile
     if (error.code === 'PGRST116') {

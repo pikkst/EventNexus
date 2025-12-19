@@ -54,11 +54,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
           return;
         }
         
-        console.log('Fetching user profile...');
+        console.log('📧 Fetching user profile...');
+        const profileStart = Date.now();
         const userData = await getUser(authUser.id);
-        console.log('User profile:', userData);
+        const profileDuration = Date.now() - profileStart;
+        console.log(`📧 Profile fetch completed in ${profileDuration}ms`);
+        console.log('📧 User profile result:', userData ? `✅ ${userData.email}` : '❌ null');
         
         if (userData) {
+          console.log('✅ Login successful, setting user state');
           clearTimeout(timeoutId);
           onLogin(userData);
           onClose();
