@@ -54,11 +54,11 @@ BEGIN
     ),
     subscription_revenue AS (
         SELECT 
-            'Subscription Revenue (' || subscription_tier || ')' AS source,
+            'Subscription Revenue (' || u.subscription_tier || ')' AS source,
             'Revenue' AS type,
             CASE 
                 WHEN COUNT(*) * 
-                    CASE subscription_tier
+                    CASE u.subscription_tier
                         WHEN 'pro' THEN 29
                         WHEN 'premium' THEN 99
                         WHEN 'enterprise' THEN 299
@@ -66,7 +66,7 @@ BEGIN
                     END >= 1000 
                 THEN '+€' || ROUND(
                     COUNT(*) * 
-                    CASE subscription_tier
+                    CASE u.subscription_tier
                         WHEN 'pro' THEN 29
                         WHEN 'premium' THEN 99
                         WHEN 'enterprise' THEN 299
@@ -75,7 +75,7 @@ BEGIN
                 ) || 'k'
                 ELSE '+€' || ROUND(
                     COUNT(*) * 
-                    CASE subscription_tier
+                    CASE u.subscription_tier
                         WHEN 'pro' THEN 29
                         WHEN 'premium' THEN 99
                         WHEN 'enterprise' THEN 299
@@ -85,17 +85,17 @@ BEGIN
             END AS vol,
             'Complete' AS stat,
             (COUNT(*) * 
-                CASE subscription_tier
+                CASE u.subscription_tier
                     WHEN 'pro' THEN 2900
                     WHEN 'premium' THEN 9900
                     WHEN 'enterprise' THEN 29900
                     ELSE 0
                 END
             )::BIGINT AS amt_cents,
-            MAX(created_at) AS created
-        FROM public.users
-        WHERE subscription_tier != 'free'
-        GROUP BY subscription_tier
+            MAX(u.created_at) AS created
+        FROM public.users u
+        WHERE u.subscription_tier != 'free'
+        GROUP BY u.subscription_tier
         HAVING COUNT(*) > 0
     )
     SELECT * FROM ticket_sales
