@@ -57,6 +57,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
         }
         
         if (authUser) {
+          // Check if email confirmation is required
+          if (!authUser.email_confirmed_at) {
+            setError('Registration successful! Please check your email to confirm your account before logging in.');
+            setIsLoading(false);
+            // Switch to login mode after showing message
+            setTimeout(() => {
+              setMode('login');
+              setError('');
+            }, 5000);
+            return;
+          }
+
+          // If email is already confirmed (shouldn't happen in production)
           // Wait a moment for the database trigger to create the user profile
           await new Promise(resolve => setTimeout(resolve, 1000));
           
@@ -154,7 +167,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm text-center">
+              <div className={`border rounded-xl p-3 text-sm text-center ${
+                error.includes('successful') || error.includes('check your email')
+                  ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                  : 'bg-red-500/10 border-red-500/20 text-red-400'
+              }`}>
                 {error}
               </div>
             )}

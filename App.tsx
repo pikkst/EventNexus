@@ -47,6 +47,7 @@ import NotificationSettings from './components/NotificationSettings';
 import AuthModal from './components/AuthModal';
 import { User, Notification, EventNexusEvent } from './types';
 import { CATEGORIES } from './constants';
+import { supabase } from './services/supabase';
 import { 
   getEvents, 
   getUser, 
@@ -108,6 +109,25 @@ const App: React.FC = () => {
     };
     
     loadInitialData();
+
+    // Listen for auth state changes (e.g., after email confirmation)
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const userData = await getUser(session.user.id);
+        if (userData) {
+          setUser(userData);
+          const userNotifications = await getNotifications(userData.id);
+          setNotifications(userNotifications);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setNotifications([]);
+      }
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
