@@ -228,15 +228,16 @@ serve(async (req) => {
     try {
       const { data, error } = await serviceClient
         .rpc('get_nearby_events', {
-          lat: 59.4370,
-          lng: 24.7536,
+          user_lat: 59.4370,
+          user_lon: 24.7536,
           radius_km: 10
         })
       
       diagnostics.push({
         category: 'Geospatial (PostGIS)',
         status: error ? 'warning' : 'healthy',
-        message: error ? 'PostGIS functions degraded' : 'PostGIS operational',
+        message: error ? `PostGIS error: ${error.message}` : 'PostGIS operational',
+        details: error ? { error: error.message } : { nearbyEventsFound: data?.length || 0 },
         timestamp: new Date().toISOString()
       })
     } catch (e) {
@@ -244,6 +245,7 @@ serve(async (req) => {
         category: 'Geospatial (PostGIS)',
         status: 'warning',
         message: 'PostGIS check failed',
+        details: { error: e.message },
         timestamp: new Date().toISOString()
       })
     }
