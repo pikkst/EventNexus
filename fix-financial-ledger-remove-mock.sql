@@ -1,10 +1,12 @@
 -- ============================================
--- Financial Ledger Function
+-- Remove Mock Subscription Data from Financial Ledger
 -- ============================================
--- Creates a function to get real financial transaction data
--- from tickets, subscriptions, and platform fees
+-- Run this in Supabase SQL Editor to update the get_financial_ledger() function
+-- This removes calculated subscription revenue and only shows real ticket transactions
 
--- Create financial transactions view for admin
+-- Drop and recreate the function without subscription_revenue CTE
+DROP FUNCTION IF EXISTS get_financial_ledger();
+
 CREATE OR REPLACE FUNCTION get_financial_ledger()
 RETURNS TABLE (
     transaction_source TEXT,
@@ -63,5 +65,5 @@ $$;
 -- Grant execute permission to authenticated users (admin only via RLS)
 GRANT EXECUTE ON FUNCTION get_financial_ledger() TO authenticated;
 
--- Create RLS policy for admin-only access (will be enforced at application level)
-COMMENT ON FUNCTION get_financial_ledger() IS 'Admin-only function to retrieve financial ledger data';
+-- Verify the function
+SELECT * FROM get_financial_ledger();
