@@ -15,9 +15,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // Price IDs mapping - configure these in your Stripe Dashboard
 const PRICE_IDS = {
-  pro: Deno.env.get('STRIPE_PRICE_PRO') || 'price_pro_monthly',
-  premium: Deno.env.get('STRIPE_PRICE_PREMIUM') || 'price_premium_monthly',
-  enterprise: Deno.env.get('STRIPE_PRICE_ENTERPRISE') || 'price_enterprise_monthly',
+  pro: Deno.env.get('STRIPE_PRICE_PRO') || '',
+  premium: Deno.env.get('STRIPE_PRICE_PREMIUM') || '',
+  enterprise: Deno.env.get('STRIPE_PRICE_ENTERPRISE') || '',
 };
 
 // Commission rates by subscription tier (for Stripe Connect payouts)
@@ -104,13 +104,19 @@ serve(async (req: Request) => {
       // Subscription checkout
       console.log(`Creating subscription checkout for user ${userId}, tier: ${tier}`);
       
+      const stripePriceId = PRICE_IDS[tier as keyof typeof PRICE_IDS] || priceId;
+      
+      if (!stripePriceId) {
+        throw new Error(`Subscription price not configured for tier: ${tier}. Please contact support or see STRIPE_PRODUCTS_SETUP.md`);
+      }
+      
       session = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ['card'],
         mode: 'subscription',
         line_items: [
           {
-            price: PRICE_IDS[tier as keyof typeof PRICE_IDS] || priceId,
+            price: stripePriceId,
             quantity: 1,
           },
         ],
