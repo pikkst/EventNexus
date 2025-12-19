@@ -216,19 +216,17 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
             </div>
           </div>
 
-          {!isPro && (
-            <div className="bg-indigo-600 rounded-[40px] p-8 text-white relative overflow-hidden group shadow-2xl shadow-indigo-600/30">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl group-hover:scale-125 transition-transform duration-700" />
-              <h3 className="font-black mb-2 text-2xl tracking-tighter">Nexus Pro</h3>
-              <p className="text-sm text-indigo-100 mb-6 leading-relaxed font-medium">Create your own events and discover more. Only $19.99/mo.</p>
-              <button
-                onClick={() => navigate('/pricing')}
-                className="w-full bg-white text-indigo-600 font-black py-4 rounded-2xl text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl active:scale-95"
-              >
-                Upgrade Plan
-              </button>
-            </div>
-          )}
+          <div className="bg-indigo-600 rounded-[40px] p-8 text-white relative overflow-hidden group shadow-2xl shadow-indigo-600/30">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl group-hover:scale-125 transition-transform duration-700" />
+            <h3 className="font-black mb-2 text-2xl tracking-tighter">Nexus Pro</h3>
+            <p className="text-sm text-indigo-100 mb-6 leading-relaxed font-medium">Create your own events and discover more. Only $19.99/mo.</p>
+            <button
+              onClick={() => navigate('/pricing')}
+              className="w-full bg-white text-indigo-600 font-black py-4 rounded-2xl text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl active:scale-95"
+            >
+              Upgrade Plan
+            </button>
+          </div>
         </div>
       </div>
 
