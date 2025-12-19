@@ -81,7 +81,7 @@ Your `.env.local` file must contain:
 ```env
 VITE_SUPABASE_URL=https://anlivujgkjmajkcgbaxw.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFubGl2dWpna2ptYWprY2diYXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5OTY0OTQsImV4cCI6MjA4MTU3MjQ5NH0.5SzkZg_PMqgdMClS1ftg4ZT_Ddyq1zOi-ZOLe1yuRgY
-GEMINI_API_KEY=***REMOVED***
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### 4. Run the Application
