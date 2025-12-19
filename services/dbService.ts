@@ -83,71 +83,93 @@ export const getUser = async (id: string): Promise<User | null> => {
   const queryStart = Date.now();
   console.log('🔍 [getUser] Executing database query...');
   
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', id)
-    .single();
-  
-  const queryDuration = Date.now() - queryStart;
-  console.log(`🔍 [getUser] Query completed in ${queryDuration}ms`);
-  console.log('🔍 [getUser] Database response:', { 
-    hasData: !!data, 
-    hasError: !!error,
-    errorCode: error?.code,
-    errorMessage: error?.message,
-    dataKeys: data ? Object.keys(data) : null,
-    email: data?.email
-  });
-  
-  if (error) {
-    console.error('❌ [getUser] Error fetching user profile:', error);
-    console.error('❌ [getUser] Error details:', { code: error.code, message: error.message, details: error.details });
+  try {
+    // Create a timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Query timeout after 10s')), 10000);
+    });
     
-    // If user profile doesn't exist (PGRST116), try to get auth user info and create profile
-    if (error.code === 'PGRST116') {
-      console.log('User profile not found, attempting to create...');
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      
-      if (authUser) {
-        console.log('Creating user profile from auth data:', authUser.email);
-        const newUser: User = {
-          id: authUser.id,
-          name: authUser.email?.split('@')[0] || 'User',
-          email: authUser.email || '',
-          role: 'attendee',
-          subscription_tier: 'free',
-          credits: 0,
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.id}`,
-          notification_prefs: {
-            interestedCategories: [],
-            alertRadius: 10,
-            proximityAlerts: true,
-            eventUpdates: true,
-            ticketReminders: true
-          }
-        };
+    // Race between query and timeout
+    const queryPromise = supabase
+      .from('users')
+      .select('*')
+      .eq('id', id);
+    
+    const response = await Promise.race([queryPromise, timeoutPromise]);
+    const queryDuration = Date.now() - queryStart;
+    console.log(`🔍 [getUser] Query completed in ${queryDuration}ms`);
+    
+    const { data, error } = response as any;
+    console.log('🔍 [getUser] Response structure:', { 
+      hasData: !!data,
+      dataType: Array.isArray(data) ? 'array' : typeof data,
+      dataLength: Array.isArray(data) ? data.length : 'N/A',
+      hasError: !!error,
+      errorCode: error?.code,
+      errorMessage: error?.message
+    });
+    
+    if (error) {
+      console.error('❌ [getUser] Error fetching user profile:', error);
+      console.error('❌ [getUser] Error details:', { code: error.code, message: error.message, details: error.details });
+    
+      // If user profile doesn't exist (PGRST116), try to get auth user info and create profile
+      if (error.code === 'PGRST116') {
+        console.log('User profile not found, attempting to create...');
+        const { data: { user: authUser } } = await supabase.auth.getUser();
         
-        const createdUser = await createUser(newUser);
-        if (createdUser) {
-          console.log('User profile created successfully:', createdUser.email);
-          return createdUser;
-        } else {
-          console.error('Failed to create user profile');
+        if (authUser) {
+          console.log('Creating user profile from auth data:', authUser.email);
+          const newUser: User = {
+            id: authUser.id,
+            name: authUser.email?.split('@')[0] || 'User',
+            email: authUser.email || '',
+            role: 'attendee',
+            subscription_tier: 'free',
+            credits: 0,
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.id}`,
+            notification_prefs: {
+              interestedCategories: [],
+              alertRadius: 10,
+              proximityAlerts: true,
+              eventUpdates: true,
+              ticketReminders: true
+            }
+          };
+          
+          const createdUser = await createUser(newUser);
+          if (createdUser) {
+            console.log('User profile created successfully:', createdUser.email);
+            return createdUser;
+          } else {
+            console.error('Failed to create user profile');
+          }
         }
       }
+      
+      return null;
     }
     
+    // Handle response - could be array or single object
+    if (!data) {
+      console.log('⚠️ [getUser] No data returned from query');
+      return null;
+    }
+    
+    const user = Array.isArray(data) ? data[0] : data;
+    if (!user) {
+      console.log('⚠️ [getUser] Empty result set');
+      return null;
+    }
+    
+    console.log('✅ [getUser] User fetched successfully:', { email: user.email, role: user.role });
+    return user;
+  } catch (err) {
+    const duration = Date.now() - queryStart;
+    console.error(`❌ [getUser] Exception after ${duration}ms:`, err);
+    console.error('❌ [getUser] Error type:', err instanceof Error ? err.message : typeof err);
     return null;
   }
-  
-  if (!data) {
-    console.warn('No error but data is null/undefined');
-    return null;
-  }
-  
-  console.log('User profile found:', data.email, 'Role:', data.role);
-  return data;
 };
 
 export const createUser = async (user: User): Promise<User | null> => {
