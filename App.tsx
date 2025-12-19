@@ -88,15 +88,19 @@ const App: React.FC = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const currentUser = await getCurrentUser();
-        if (currentUser) {
-          const userData = await getUser(currentUser.id);
-          setUser(userData);
-          
+        // Check for existing session on mount
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          console.log('Session found, loading user data...');
+          const userData = await getUser(session.user.id);
           if (userData) {
+            setUser(userData);
             const userNotifications = await getNotifications(userData.id);
             setNotifications(userNotifications);
           }
+        } else {
+          console.log('No active session found');
         }
         
         const eventsData = await getEvents();
