@@ -699,3 +699,26 @@ export const getSystemConfig = async (): Promise<Record<string, any>> => {
     return {};
   }
 };
+
+// Financial Ledger
+export interface FinancialTransaction {
+  transaction_source: string;
+  transaction_type: string;
+  volume: string;
+  status: string;
+  amount_cents: number;
+  created_at: string;
+}
+
+export const getFinancialLedger = async (): Promise<FinancialTransaction[]> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_financial_ledger');
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching financial ledger:', error);
+    return [];
+  }
+};

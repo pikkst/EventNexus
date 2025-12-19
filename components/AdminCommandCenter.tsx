@@ -36,7 +36,9 @@ import {
   updateUserSubscription,
   getSystemConfig,
   updateSystemConfig,
-  Campaign
+  Campaign,
+  getFinancialLedger,
+  FinancialTransaction
 } from '../services/dbService';
 import MasterAuthModal from './MasterAuthModal';
 
@@ -87,6 +89,10 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [infrastructureStats, setInfrastructureStats] = useState<any>(null);
   const [isLoadingInfra, setIsLoadingInfra] = useState(true);
+  
+  // Financial State
+  const [financialLedger, setFinancialLedger] = useState<FinancialTransaction[]>([]);
+  const [isLoadingFinancials, setIsLoadingFinancials] = useState(true);
 
   if (user.role !== 'admin') return <div className="p-20 text-center font-black bg-slate-950 min-h-screen text-red-500">UNAUTHORIZED_ACCESS_DENIED</div>;
 
@@ -105,18 +111,21 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       setIsLoadingStats(true);
       setIsLoadingInfra(true);
       setIsLoadingCampaigns(true);
+      setIsLoadingFinancials(true);
       try {
-        const [users, stats, infra, campaignsData, config] = await Promise.all([
+        const [users, stats, infra, campaignsData, config, ledger] = await Promise.all([
           getAllUsers(),
           getPlatformStats(),
           getInfrastructureStats(),
           getCampaigns(),
-          getSystemConfig()
+          getSystemConfig(),
+          getFinancialLedger()
         ]);
         setPlatformUsers(users);
         setPlatformStats(stats);
         setInfrastructureStats(infra);
         setCampaigns(campaignsData);
+        setFinancialLedger(ledger);
         
         // Load system config
         if (config.global_ticket_fee) setGlobalTicketFee(parseFloat(config.global_ticket_fee));
@@ -189,6 +198,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         setIsLoadingStats(false);
         setIsLoadingInfra(false);
         setIsLoadingCampaigns(false);
+        setIsLoadingFinancials(false);
       }
     };
 
@@ -1011,23 +1021,39 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                  <div className="lg:col-span-2 space-y-8">
                     <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-8 shadow-2xl">
                        <h3 className="text-2xl font-black tracking-tight flex items-center gap-3"><DollarSign className="text-emerald-500" /> Platform Ledger</h3>
-                       <div className="overflow-x-auto">
-                          <table className="w-full text-left">
-                             <thead>
-                                <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800">
-                                   <th className="pb-4">Transaction Source</th>
-                                   <th className="pb-4 text-center">Type</th>
-                                   <th className="pb-4 text-center">Volume</th>
-                                   <th className="pb-4 text-right">Status</th>
-                                </tr>
-                             </thead>
-                             <tbody className="divide-y divide-slate-800/50">
-                                <FinancialRow name="Enterprise Subscription Batch" cat="Revenue" amt="+€156k" status="Complete" />
-                                <FinancialRow name="Marketplace Service Fees" cat="Commission" amt="+€28k" status="Complete" />
-                                <FinancialRow name="Campaign Burn: ALPHA30" cat="Growth" amt="-€1.2k" status="Escrow" />
-                             </tbody>
-                          </table>
-                       </div>
+                       {isLoadingFinancials ? (
+                         <div className="flex items-center justify-center py-12">
+                           <Loader2 className="w-8 h-8 animate-spin text-slate-600" />
+                         </div>
+                       ) : financialLedger.length === 0 ? (
+                         <div className="text-center py-12">
+                           <p className="text-slate-500">No financial transactions yet</p>
+                         </div>
+                       ) : (
+                         <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                               <thead>
+                                  <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800">
+                                     <th className="pb-4">Transaction Source</th>
+                                     <th className="pb-4 text-center">Type</th>
+                                     <th className="pb-4 text-center">Volume</th>
+                                     <th className="pb-4 text-right">Status</th>
+                                  </tr>
+                               </thead>
+                               <tbody className="divide-y divide-slate-800/50">
+                                  {financialLedger.map((transaction, idx) => (
+                                    <FinancialRow 
+                                      key={idx}
+                                      name={transaction.transaction_source} 
+                                      cat={transaction.transaction_type} 
+                                      amt={transaction.volume} 
+                                      status={transaction.status} 
+                                    />
+                                  ))}
+                               </tbody>
+                            </table>
+                         </div>
+                       )}
                     </div>
 
                     <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-10 shadow-2xl relative">
