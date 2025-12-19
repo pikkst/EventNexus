@@ -131,10 +131,26 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
           <div className="mb-4 space-y-1">
             <h1 className="text-4xl font-black tracking-tighter">{user.name}</h1>
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
-              <p className="text-slate-400 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+              <div className={`px-4 py-2 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 border ${
+                user.subscription_tier === 'enterprise' 
+                  ? 'bg-orange-600/10 border-orange-500/30 text-orange-400' 
+                  : user.subscription_tier === 'premium'
+                  ? 'bg-emerald-600/10 border-emerald-500/30 text-emerald-400'
+                  : user.subscription_tier === 'pro'
+                  ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400'
+                  : 'bg-slate-800/50 border-slate-700 text-slate-400'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${
+                  user.subscription_tier === 'enterprise' 
+                    ? 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]' 
+                    : user.subscription_tier === 'premium'
+                    ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+                    : user.subscription_tier === 'pro'
+                    ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]'
+                    : 'bg-slate-500'
+                }`} />
                 Nexus {user.subscription_tier || user.subscription} • {user.role}
-              </p>
+              </div>
               {user.location && (
                 <p className="text-slate-500 text-sm font-bold flex items-center gap-2">
                   <MapPin className="w-4 h-4" /> {user.location}
