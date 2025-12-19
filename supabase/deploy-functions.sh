@@ -39,7 +39,11 @@ echo "3️⃣ Deploying infrastructure-stats..."
 npx supabase functions deploy infrastructure-stats --project-ref $PROJECT_REF
 
 echo ""
-echo "4️⃣ Deploying validate-ticket..."
+echo "4️⃣ Deploying diagnostic-scan..."
+npx supabase functions deploy diagnostic-scan --project-ref $PROJECT_REF
+
+echo ""
+echo "5️⃣ Deploying validate-ticket..."
 npx supabase functions deploy validate-ticket --project-ref $PROJECT_REF
 
 echo ""
@@ -49,6 +53,7 @@ echo "🔗 Function URLs:"
 echo "   proximity-radar: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/proximity-radar"
 echo "   platform-stats: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/platform-stats"
 echo "   infrastructure-stats: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/infrastructure-stats"
+echo "   diagnostic-scan: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/diagnostic-scan"
 echo "   validate-ticket: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/validate-ticket"
 echo ""
 echo "📚 Next steps:"
