@@ -78,10 +78,18 @@ export const deleteEvent = async (id: string): Promise<boolean> => {
 // Users
 export const getUser = async (id: string): Promise<User | null> => {
   try {
-    const { data, error } = await supabase
+    // Add timeout protection to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Query timeout')), 10000);
+    });
+    
+    const queryPromise = supabase
       .from('users')
       .select('*')
       .eq('id', id);
+    
+    const response = await Promise.race([queryPromise, timeoutPromise]);
+    const { data, error } = response as any;
     
     if (error) {
       console.error('Error fetching user:', error.message);
