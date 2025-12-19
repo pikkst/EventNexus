@@ -339,11 +339,8 @@ export const getPlatformStats = async () => {
       throw new Error('Not authenticated');
     }
 
-    const { data, error } = await supabase.functions.invoke('platform-stats', {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
+    // Supabase client automatically includes auth header
+    const { data, error } = await supabase.functions.invoke('platform-stats');
 
     if (error) throw error;
     return data;
@@ -373,11 +370,8 @@ export const getInfrastructureStats = async () => {
       throw new Error('Not authenticated');
     }
 
-    const { data, error } = await supabase.functions.invoke('infrastructure-stats', {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
+    // Supabase client automatically includes auth header
+    const { data, error } = await supabase.functions.invoke('infrastructure-stats');
 
     if (error) throw error;
     return data;
