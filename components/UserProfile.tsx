@@ -100,7 +100,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
     setIsEditModalOpen(false);
   };
 
-  const isPro = user.subscription !== 'free';
+  const isPro = (user.subscription_tier || user.subscription) !== 'free';
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -133,7 +133,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
               <p className="text-slate-400 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                Nexus {user.subscription} • {user.role}
+                Nexus {user.subscription_tier || user.subscription} • {user.role}
               </p>
               {user.location && (
                 <p className="text-slate-500 text-sm font-bold flex items-center gap-2">
