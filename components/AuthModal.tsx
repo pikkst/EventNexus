@@ -107,13 +107,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
         }
 
         // If email is already confirmed (shouldn't happen in production)
-        // Wait a moment for the database trigger to create the user profile
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Fetch the auto-created user profile
-        console.log('Fetching new user profile...');
         const userData = await getUser(authUser.id);
-        console.log('New user profile:', userData);
         
         if (userData) {
           // Update the name if provided

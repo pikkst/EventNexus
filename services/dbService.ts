@@ -77,49 +77,19 @@ export const deleteEvent = async (id: string): Promise<boolean> => {
 
 // Users
 export const getUser = async (id: string): Promise<User | null> => {
-  console.log('🔍 [getUser] Starting fetch for user ID:', id);
-  console.log('🔍 [getUser] Supabase client status:', supabase ? 'initialized' : 'NOT INITIALIZED');
-  
-  const queryStart = Date.now();
-  console.log('🔍 [getUser] Executing database query...');
-  
   try {
-    // Create a timeout promise
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Query timeout after 10s')), 10000);
-    });
-    
-    // Race between query and timeout
-    const queryPromise = supabase
+    const { data, error } = await supabase
       .from('users')
       .select('*')
       .eq('id', id);
     
-    const response = await Promise.race([queryPromise, timeoutPromise]);
-    const queryDuration = Date.now() - queryStart;
-    console.log(`🔍 [getUser] Query completed in ${queryDuration}ms`);
-    
-    const { data, error } = response as any;
-    console.log('🔍 [getUser] Response structure:', { 
-      hasData: !!data,
-      dataType: Array.isArray(data) ? 'array' : typeof data,
-      dataLength: Array.isArray(data) ? data.length : 'N/A',
-      hasError: !!error,
-      errorCode: error?.code,
-      errorMessage: error?.message
-    });
-    
     if (error) {
-      console.error('❌ [getUser] Error fetching user profile:', error);
-      console.error('❌ [getUser] Error details:', { code: error.code, message: error.message, details: error.details });
+      console.error('Error fetching user:', error.message);
     
-      // If user profile doesn't exist (PGRST116), try to get auth user info and create profile
       if (error.code === 'PGRST116') {
-        console.log('User profile not found, attempting to create...');
         const { data: { user: authUser } } = await supabase.auth.getUser();
         
         if (authUser) {
-          console.log('Creating user profile from auth data:', authUser.email);
           const newUser: User = {
             id: authUser.id,
             name: authUser.email?.split('@')[0] || 'User',
@@ -139,10 +109,7 @@ export const getUser = async (id: string): Promise<User | null> => {
           
           const createdUser = await createUser(newUser);
           if (createdUser) {
-            console.log('User profile created successfully:', createdUser.email);
             return createdUser;
-          } else {
-            console.error('Failed to create user profile');
           }
         }
       }
@@ -150,24 +117,12 @@ export const getUser = async (id: string): Promise<User | null> => {
       return null;
     }
     
-    // Handle response - could be array or single object
-    if (!data) {
-      console.log('⚠️ [getUser] No data returned from query');
-      return null;
-    }
+    if (!data) return null;
     
     const user = Array.isArray(data) ? data[0] : data;
-    if (!user) {
-      console.log('⚠️ [getUser] Empty result set');
-      return null;
-    }
-    
-    console.log('✅ [getUser] User fetched successfully:', { email: user.email, role: user.role });
-    return user;
+    return user || null;
   } catch (err) {
-    const duration = Date.now() - queryStart;
-    console.error(`❌ [getUser] Exception after ${duration}ms:`, err);
-    console.error('❌ [getUser] Error type:', err instanceof Error ? err.message : typeof err);
+    console.error('Error in getUser:', err);
     return null;
   }
 };
