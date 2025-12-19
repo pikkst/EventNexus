@@ -1,0 +1,187 @@
+// Ticket Validation Edge Function
+// Validates ticket QR codes and updates ticket status
+
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+interface ValidationRequest {
+  ticketId?: string
+  qrCode?: string
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    )
+
+    // Verify user is authenticated
+    const { data: { user } } = await supabaseClient.auth.getUser()
+    if (!user) {
+      throw new Error('Unauthorized')
+    }
+
+    const { ticketId, qrCode }: ValidationRequest = await req.json()
+
+    if (!ticketId && !qrCode) {
+      throw new Error('Either ticketId or qrCode must be provided')
+    }
+
+    // Find ticket by ID or QR code
+    let query = supabaseClient
+      .from('tickets')
+      .select(`
+        *,
+        event:events(*),
+        user:users(id, name, email)
+      `)
+
+    if (ticketId) {
+      query = query.eq('id', ticketId)
+    } else {
+      query = query.eq('qr_code', qrCode)
+    }
+
+    const { data: ticket, error: ticketError } = await query.single()
+
+    if (ticketError || !ticket) {
+      return new Response(
+        JSON.stringify({ 
+          valid: false, 
+          error: 'Ticket not found',
+          message: 'Invalid ticket ID or QR code'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      )
+    }
+
+    // Check if ticket is valid
+    if (ticket.status === 'used') {
+      return new Response(
+        JSON.stringify({ 
+          valid: false, 
+          error: 'Ticket already used',
+          message: `This ticket was already scanned on ${new Date(ticket.used_at).toLocaleString()}`,
+          ticket
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    if (ticket.status === 'cancelled') {
+      return new Response(
+        JSON.stringify({ 
+          valid: false, 
+          error: 'Ticket cancelled',
+          message: 'This ticket has been cancelled',
+          ticket
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    if (ticket.status === 'expired') {
+      return new Response(
+        JSON.stringify({ 
+          valid: false, 
+          error: 'Ticket expired',
+          message: 'This ticket has expired',
+          ticket
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    // Verify user has permission to scan (event organizer or admin)
+    const { data: userProfile } = await supabaseClient
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const isOrganizer = ticket.event.organizer_id === user.id
+    const isAdmin = userProfile?.role === 'admin'
+
+    if (!isOrganizer && !isAdmin) {
+      return new Response(
+        JSON.stringify({ 
+          valid: false, 
+          error: 'Unauthorized',
+          message: 'You do not have permission to scan tickets for this event'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      )
+    }
+
+    // Mark ticket as used
+    const { data: updatedTicket, error: updateError } = await supabaseClient
+      .from('tickets')
+      .update({ 
+        status: 'used',
+        used_at: new Date().toISOString(),
+        metadata: {
+          ...ticket.metadata,
+          scanned_by: user.id,
+          scanned_at: new Date().toISOString()
+        }
+      })
+      .eq('id', ticket.id)
+      .select(`
+        *,
+        event:events(*),
+        user:users(id, name, email)
+      `)
+      .single()
+
+    if (updateError) {
+      throw updateError
+    }
+
+    // Create notification for ticket owner
+    await supabaseClient
+      .from('notifications')
+      .insert([{
+        user_id: ticket.user_id,
+        title: 'Ticket Scanned',
+        message: `Your ticket for "${ticket.event.name}" has been successfully scanned. Enjoy the event!`,
+        type: 'ticket_purchase',
+        event_id: ticket.event_id,
+        sender_name: 'EventNexus',
+        isRead: false
+      }])
+
+    return new Response(
+      JSON.stringify({ 
+        valid: true,
+        message: 'Ticket validated successfully',
+        ticket: updatedTicket
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    )
+
+  } catch (error) {
+    console.error('Error in validate-ticket:', error)
+    return new Response(
+      JSON.stringify({ 
+        valid: false,
+        error: error.message 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+    )
+  }
+})
