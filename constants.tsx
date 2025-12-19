@@ -13,6 +13,7 @@ export const SUBSCRIPTION_TIERS = {
     customBranding: false, 
     support: 'community',
     price: 0,
+    commissionRate: 0.05, // 5% platform fee
     description: 'Perfect for trying out EventNexus'
   },
   pro: { 
@@ -21,6 +22,7 @@ export const SUBSCRIPTION_TIERS = {
     customBranding: true, 
     support: 'email',
     price: 29,
+    commissionRate: 0.03, // 3% platform fee
     description: 'For professional event organizers'
   },
   premium: { 
@@ -29,6 +31,7 @@ export const SUBSCRIPTION_TIERS = {
     customBranding: true, 
     support: 'priority',
     price: 99,
+    commissionRate: 0.025, // 2.5% platform fee
     description: 'For agencies and large organizers'
   },
   enterprise: { 
@@ -37,6 +40,7 @@ export const SUBSCRIPTION_TIERS = {
     customBranding: true, 
     support: 'dedicated',
     price: 299,
+    commissionRate: 0.015, // 1.5% platform fee
     description: 'Custom solutions for enterprises'
   }
 };
@@ -49,5 +53,13 @@ export const PLATFORM_CONFIG = {
   maxEventCapacity: 100000,
   ticketQRCodePrefix: 'EVNX-',
   platformFeePercentage: 2.5,
-  supportEmail: 'huntersest@gmail.com'
+  supportEmail: 'huntersest@gmail.com',
+  // Refund policy (days before event)
+  refundPolicy: {
+    fullRefund: 7,    // 100% refund if 7+ days before event
+    partialRefund: 3, // 50% refund if 3-7 days before event
+    noRefund: 0,      // No refund within 3 days of event
+  },
+  // Payout timing (days after event)
+  payoutDelay: 2, // Payout 2 days after event completion
 };

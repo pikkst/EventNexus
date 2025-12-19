@@ -13,12 +13,14 @@ import {
   Cpu, Database, Key, ShieldCheck, Headphones, Smartphone, Paintbrush,
   Link2, Settings2, Bot, Layers, Terminal, Activity, Github, Play,
   ChevronRight, Box, User as UserIcon, Palette, Image as ImageIcon,
-  Chrome, CheckCircle, Smartphone as TikTok, X, Globe2, Volume2, Lightbulb
+  Chrome, CheckCircle, Smartphone as TikTok, X, Globe2, Volume2, Lightbulb, Clock
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, EventNexusEvent, Notification, AgencyService } from '../types';
 import { getEvents } from '../services/dbService';
 import { generateAdCampaign, generateAdImage } from '../services/geminiService';
+import { supabase } from '../services/supabase';
+import PayoutsHistory from './PayoutsHistory';
 
 // Generate dynamic sales data based on user's events
 const generateSalesData = (events: EventNexusEvent[]) => {
@@ -41,7 +43,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [salesData, setSalesData] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'marketing' | 'infra' | 'branding' | 'integrations'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'payouts' | 'marketing' | 'infra' | 'branding' | 'integrations'>('overview');
   const [isGeneratingAd, setIsGeneratingAd] = useState(false);
   const [genStage, setGenStage] = useState('');
   const [adCampaign, setAdCampaign] = useState<any[]>([]);
@@ -169,8 +171,76 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
         </div>
       </div>
 
+      {/* Stripe Connect Onboarding Banner */}
+      {!user.stripe_connect_onboarding_complete && events.some(e => e.price > 0) && (
+        <div className="bg-gradient-to-r from-yellow-900/40 to-orange-900/40 border-2 border-yellow-600/50 rounded-3xl p-6 backdrop-blur-sm">
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <DollarSign className="w-10 h-10 text-yellow-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-white mb-2">Connect Your Bank Account</h3>
+              <p className="text-gray-300 mb-4">
+                To receive payouts from ticket sales, complete your Stripe Connect setup. It only takes 5 minutes!
+              </p>
+              <div className="flex flex-wrap gap-3 mb-4">
+                <div className="flex items-center text-sm text-gray-200">
+                  <CheckCircle className="w-4 h-4 text-green-400 mr-2" />
+                  Secure & encrypted
+                </div>
+                <div className="flex items-center text-sm text-gray-200">
+                  <CheckCircle className="w-4 h-4 text-green-400 mr-2" />
+                  Automated payouts 2 days after events
+                </div>
+                <div className="flex items-center text-sm text-gray-200">
+                  <CheckCircle className="w-4 h-4 text-green-400 mr-2" />
+                  Track all earnings
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const { data, error } = await supabase.functions.invoke('create-connect-account', {
+                      body: { userId: user.id, email: user.email }
+                    });
+                    if (error) throw error;
+                    if (data?.url) {
+                      window.location.href = data.url;
+                    }
+                  } catch (error) {
+                    console.error('Failed to create Connect account:', error);
+                    alert('Failed to start setup. Please try again.');
+                  }
+                }}
+                className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold rounded-xl transition-all active:scale-95 shadow-lg"
+              >
+                Connect Bank Account (5 min)
+              </button>
+            </div>
+            <button className="text-gray-400 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {user.stripe_connect_onboarding_complete && !user.stripe_connect_charges_enabled && (
+        <div className="bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border-2 border-blue-600/50 rounded-3xl p-6 backdrop-blur-sm">
+          <div className="flex items-start space-x-4">
+            <Clock className="w-10 h-10 text-blue-400 flex-shrink-0" />
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">Payment Setup In Progress</h3>
+              <p className="text-gray-300">
+                Your Stripe account is being reviewed. This usually takes 1-2 business days. You'll be notified when you can start receiving payments.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={`flex gap-4 overflow-x-auto pb-2 border-b border-slate-800 scrollbar-hide ${isGated ? 'opacity-20 pointer-events-none' : ''}`}>
          <TabBtn label="Insights" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<BarChart3 />} />
+         <TabBtn label="Payouts" active={activeTab === 'payouts'} onClick={() => setActiveTab('payouts')} icon={<DollarSign />} />
          <TabBtn label="Marketing Studio" active={activeTab === 'marketing'} onClick={() => setActiveTab('marketing')} icon={<Megaphone />} />
          {isEnterprise && <TabBtn label="Service Hub" active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} icon={<Link2 />} />}
          {isEnterprise && <TabBtn label="White-Labeling" active={activeTab === 'branding'} onClick={() => setActiveTab('branding')} icon={<Palette />} />}
@@ -210,6 +280,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                 </ResponsiveContainer>
              </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'payouts' && (
+        <div className="animate-in fade-in duration-500">
+          <PayoutsHistory userId={user.id} />
         </div>
       )}
 
