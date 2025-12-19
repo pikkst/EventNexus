@@ -21,7 +21,8 @@ Create these 3 products with recurring prices:
   - Price: €19.99
   - Billing period: Monthly
   - Currency: EUR
-- After creating, **copy the Price ID** (starts with `price_...`)
+- ⚠️ **IMPORTANT:** Copy the **PRICE ID** (starts with `price_...`), NOT the Product ID (prod_...)
+  - Click on the product → Click on the price amount → Copy the API ID from the right sidebar
 
 #### Product 2: Premium
 - **Name:** EventNexus Premium
@@ -31,7 +32,8 @@ Create these 3 products with recurring prices:
   - Price: €49.99
   - Billing period: Monthly
   - Currency: EUR
-- After creating, **copy the Price ID** (starts with `price_...`)
+- ⚠️ **IMPORTANT:** Copy the **PRICE ID** (starts with `price_...`), NOT the Product ID (prod_...)
+  - Click on the product → Click on the price amount → Copy the API ID from the right sidebar
 
 #### Product 3: Enterprise
 - **Name:** EventNexus Enterprise
@@ -41,7 +43,8 @@ Create these 3 products with recurring prices:
   - Price: €149.99
   - Billing period: Monthly
   - Currency: EUR
-- After creating, **copy the Price ID** (starts with `price_...`)
+- ⚠️ **IMPORTANT:** Copy the **PRICE ID** (starts with `price_...`), NOT the Product ID (prod_...)
+  - Click on the product → Click on the price amount → Copy the API ID from the right sidebar
 
 ### Step 3: Configure Price IDs
 
@@ -51,13 +54,13 @@ Once you have all 3 Price IDs, run these commands:
 cd /workspaces/EventNexus
 
 # Set Pro price ID
-npx supabase secrets set STRIPE_PRICE_PRO="price_YOUR_PRO_PRICE_ID" --project-ref anlivujgkjmajkcgbaxw
+npx supabase secrets set STRIPE_PRICE_PRO="price_1Sg328J9WsSrj5gMhitFUhiC" --project-ref anlivujgkjmajkcgbaxw
 
 # Set Premium price ID
-npx supabase secrets set STRIPE_PRICE_PREMIUM="price_YOUR_PREMIUM_PRICE_ID" --project-ref anlivujgkjmajkcgbaxw
+npx supabase secrets set STRIPE_PRICE_PREMIUM="price_1Sg37QJ9WsSrj5gMkhkHUFf2" --project-ref anlivujgkjmajkcgbaxw
 
 # Set Enterprise price ID
-npx supabase secrets set STRIPE_PRICE_ENTERPRISE="price_YOUR_ENTERPRISE_PRICE_ID" --project-ref anlivujgkjmajkcgbaxw
+npx supabase secrets set STRIPE_PRICE_ENTERPRISE="price_1Sg3AoJ9WsSrj5gMUue2YjTZ" --project-ref anlivujgkjmajkcgbaxw
 ```
 
 ### Step 4: Redeploy Edge Function
