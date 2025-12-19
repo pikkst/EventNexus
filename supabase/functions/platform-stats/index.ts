@@ -17,23 +17,41 @@ serve(async (req) => {
   }
 
   try {
+    // Get user ID from authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'No authorization header' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
     // Use service role key - database function has SECURITY DEFINER and RLS
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
+        global: {
+          headers: { Authorization: authHeader }
         }
       }
     )
 
-    // Database function handles security with SECURITY DEFINER
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    // Check if user is admin
     const { data: userProfile, error: profileError } = await supabaseClient
       .from('users')
       .select('role')
-      .eq('id', 'f2ecf6c6-14c1-4dbd-894b-14ee6493d807')
+      .eq('id', user.id)
       .single()
 
     if (profileError) {
@@ -51,8 +69,14 @@ serve(async (req) => {
       )
     }
 
+    // Now use service role for the actual query
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
     // Get platform statistics using database function (SECURITY DEFINER handles permissions)
-    const { data: stats, error } = await supabaseClient
+    const { data: stats, error } = await serviceClient
       .rpc('get_platform_statistics')
 
     if (error) {
