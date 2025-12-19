@@ -78,7 +78,8 @@ serve(async (req: Request) => {
         // Handle subscription
         if (metadata.type === 'subscription' && metadata.user_id && metadata.tier) {
           // Get subscription amount from session
-          const amount = session.amount_total / 100; // Convert from cents to euros
+          const amount_cents = session.amount_total; // Already in cents
+          const amount = amount_cents / 100; // Convert to euros for logging
           
           // Update user subscription status
           await supabase
@@ -90,6 +91,21 @@ serve(async (req: Request) => {
               stripe_subscription_id: session.subscription
             })
             .eq('id', metadata.user_id);
+          
+          // Record subscription payment in financial ledger
+          await supabase.from('subscription_payments').insert({
+            user_id: metadata.user_id,
+            subscription_tier: metadata.tier,
+            amount_cents: amount_cents,
+            currency: session.currency,
+            stripe_invoice_id: session.invoice || null,
+            stripe_payment_intent_id: session.payment_intent || null,
+            status: 'succeeded',
+            billing_reason: 'subscription_create',
+            period_start: new Date(session.created * 1000).toISOString(),
+            period_end: session.subscription ? new Date((session.created + 2592000) * 1000).toISOString() : null, // +30 days estimate
+            metadata: { session_id: session.id }
+          });
           
           console.log(`Subscription activated: ${metadata.tier} for user ${metadata.user_id}, amount: €${amount}`);
           
@@ -207,8 +223,24 @@ serve(async (req: Request) => {
             .single();
 
           if (user) {
-            const amount = invoice.amount_paid / 100; // Convert cents to euros
+            const amount_cents = invoice.amount_paid; // Already in cents
+            const amount = amount_cents / 100; // Convert cents to euros
             console.log(`Subscription payment received: €${amount} from user ${user.id} (${user.subscription_tier})`);
+            
+            // Record recurring payment in financial ledger
+            await supabase.from('subscription_payments').insert({
+              user_id: user.id,
+              subscription_tier: user.subscription_tier,
+              amount_cents: amount_cents,
+              currency: invoice.currency,
+              stripe_invoice_id: invoice.id,
+              stripe_payment_intent_id: invoice.payment_intent || null,
+              status: 'succeeded',
+              billing_reason: invoice.billing_reason || 'subscription_cycle',
+              period_start: new Date(invoice.period_start * 1000).toISOString(),
+              period_end: new Date(invoice.period_end * 1000).toISOString(),
+              metadata: { invoice_number: invoice.number }
+            });
             
             // Send notification for recurring payments (not first payment)
             if (invoice.billing_reason === 'subscription_cycle') {
