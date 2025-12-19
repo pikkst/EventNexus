@@ -1403,8 +1403,8 @@ const FinancialRow = ({ name, cat, amt, status }: any) => (
         {cat}
       </span>
     </td>
-    <td className={`py-6 text-center font-black ${amt.startsWith('+') ? 'text-emerald-500' : 'text-red-500'}`}>
-      {amt}
+    <td className={`py-6 text-center font-black ${amt && amt.startsWith('+') ? 'text-emerald-500' : 'text-red-500'}`}>
+      {amt || '€0'}
     </td>
     <td className="py-6 text-right px-8">
        <span className={`text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-tighter ${
