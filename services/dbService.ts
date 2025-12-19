@@ -77,6 +77,8 @@ export const deleteEvent = async (id: string): Promise<boolean> => {
 
 // Users
 export const getUser = async (id: string): Promise<User | null> => {
+  console.log('Fetching user profile for ID:', id);
+  
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -84,14 +86,53 @@ export const getUser = async (id: string): Promise<User | null> => {
     .single();
   
   if (error) {
-    console.error('Error fetching user:', error);
+    console.error('Error fetching user profile:', error);
+    console.error('Error details:', { code: error.code, message: error.message, details: error.details });
+    
+    // If user profile doesn't exist (PGRST116), try to get auth user info and create profile
+    if (error.code === 'PGRST116') {
+      console.log('User profile not found, attempting to create...');
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      if (authUser) {
+        console.log('Creating user profile from auth data:', authUser.email);
+        const newUser: User = {
+          id: authUser.id,
+          name: authUser.email?.split('@')[0] || 'User',
+          email: authUser.email || '',
+          role: 'attendee',
+          subscription: 'free',
+          credits: 0,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.id}`,
+          notification_prefs: {
+            interestedCategories: [],
+            alertRadius: 10,
+            proximityAlerts: true,
+            eventUpdates: true,
+            ticketReminders: true
+          }
+        };
+        
+        const createdUser = await createUser(newUser);
+        if (createdUser) {
+          console.log('User profile created successfully:', createdUser.email);
+          return createdUser;
+        } else {
+          console.error('Failed to create user profile');
+        }
+      }
+    }
+    
     return null;
   }
   
+  console.log('User profile found:', data?.email, 'Role:', data?.role);
   return data;
 };
 
 export const createUser = async (user: User): Promise<User | null> => {
+  console.log('Creating user profile:', user.email);
+  
   const { data, error } = await supabase
     .from('users')
     .insert([user])
@@ -99,10 +140,12 @@ export const createUser = async (user: User): Promise<User | null> => {
     .single();
   
   if (error) {
-    console.error('Error creating user:', error);
+    console.error('Error creating user profile:', error);
+    console.error('Error details:', { code: error.code, message: error.message, details: error.details, hint: error.hint });
     return null;
   }
   
+  console.log('User profile created:', data?.email);
   return data;
 };
 
