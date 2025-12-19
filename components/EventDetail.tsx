@@ -19,6 +19,7 @@ import {
   Star
 } from 'lucide-react';
 import { getEvents } from '../services/dbService';
+import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus } from '../services/stripeService';
 import { User, EventNexusEvent } from '../types';
 
 interface EventDetailProps {
@@ -80,19 +81,58 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow }) => {
   const totalRevenue = currentAttendees * event.price;
   const isFollowing = user.followedOrganizers.includes(event.organizerId);
 
+  // Check for successful purchase on mount
+  useEffect(() => {
+    if (checkCheckoutSuccess()) {
+      setShowSuccess(true);
+      clearCheckoutStatus();
+      // Refresh event data to get updated attendee count
+      loadEvent();
+    }
+  }, []);
+
   const handlePurchase = async () => {
-    if (remaining < ticketCount) return;
+    if (remaining < ticketCount || event.price === 0) {
+      // Free event - handle directly
+      if (event.price === 0) {
+        setIsPurchasing(true);
+        try {
+          // Create free tickets directly in database
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          setShowSuccess(true);
+          setCurrentAttendees(prev => prev + ticketCount);
+        } catch (error) {
+          console.error('Free ticket registration failed:', error);
+          alert('Failed to register for event. Please try again.');
+        } finally {
+          setIsPurchasing(false);
+        }
+        return;
+      }
+      return;
+    }
+    
     setIsPurchasing(true);
     
     try {
-      // TODO: Implement real ticket purchasing via dbService
-      // For now, simulate the purchase
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      setCurrentAttendees(prev => prev + ticketCount);
-      setShowSuccess(true);
+      // Create Stripe checkout session for paid tickets
+      const checkoutUrl = await createTicketCheckout(
+        user.id,
+        event.id,
+        ticketCount,
+        event.price,
+        event.name
+      );
+
+      if (checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = checkoutUrl;
+      } else {
+        throw new Error('Failed to create checkout session');
+      }
     } catch (error) {
       console.error('Purchase failed:', error);
-    } finally {
+      alert('Failed to start checkout. Please try again or contact support.');
       setIsPurchasing(false);
     }
   };
