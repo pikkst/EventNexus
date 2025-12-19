@@ -6,7 +6,11 @@
 -- ============================================
 
 CREATE OR REPLACE FUNCTION get_infrastructure_statistics()
-RETURNS JSON AS $$
+RETURNS JSON 
+LANGUAGE plpgsql 
+STABLE 
+SECURITY DEFINER
+AS $function$
 DECLARE
     v_stats JSON;
     v_db_size NUMERIC;
@@ -66,7 +70,7 @@ BEGIN
     
     RETURN v_stats;
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$function$;
 
--- Test the function (optional)
+-- Test the function (optional - you can run this to verify it works)
 SELECT get_infrastructure_statistics();
