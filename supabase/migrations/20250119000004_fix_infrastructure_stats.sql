@@ -3,7 +3,11 @@
 -- Adds better real-time metrics
 
 CREATE OR REPLACE FUNCTION get_infrastructure_statistics()
-RETURNS JSON AS $$
+RETURNS JSON 
+LANGUAGE plpgsql 
+STABLE 
+SECURITY DEFINER
+AS $function$
 DECLARE
     v_stats JSON;
     v_db_size NUMERIC;
@@ -63,6 +67,6 @@ BEGIN
     
     RETURN v_stats;
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$function$;
 
 COMMENT ON FUNCTION get_infrastructure_statistics IS 'Returns real-time infrastructure monitoring data for admin dashboard';
