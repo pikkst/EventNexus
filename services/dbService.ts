@@ -242,51 +242,46 @@ export const getUserTickets = async (userId: string) => {
 };
 
 export const validateTicket = async (ticketId: string) => {
-  const { data, error } = await supabase
-    .from('tickets')
-    .select('*')
-    .eq('id', ticketId)
-    .eq('status', 'valid')
-    .single();
-  
-  if (error) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
+    const { data, error } = await supabase.functions.invoke('validate-ticket', {
+      body: { ticketId },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
     console.error('Error validating ticket:', error);
     return null;
   }
-  
-  return data;
 };
 
-// Platform statistics for admin
+// Platform statistics for admin using Edge Function
 export const getPlatformStats = async () => {
   try {
-    const { data: events } = await supabase.from('events').select('*');
-    const { data: users } = await supabase.from('users').select('*');
-    const { data: tickets } = await supabase.from('tickets').select('*');
-    
-    const totalRevenue = events?.reduce((acc, event) => acc + (event.attendees_count * event.price), 0) || 0;
-    const totalTickets = tickets?.length || 0;
-    const totalUsers = users?.length || 0;
-    
-    return {
-      totalEvents: events?.length || 0,
-      totalUsers,
-      totalTickets,
-      totalRevenue,
-      monthlyGPV: `€${Math.round(totalRevenue / 1000)}k`,
-      platformConversion: totalTickets > 0 ? ((totalTickets / totalUsers) * 100).toFixed(1) : '0.0',
-      creditPool: `${Math.round(totalUsers * 1.2 / 1000)}M`,
-      retentionRate: Math.min(95, Math.max(60, 74 + Math.round((totalUsers - 10) / 10))),
-      globalFee: 2.5,
-      revenueByTier: [
-        { name: 'Free', value: Math.round(totalRevenue * 0.1), color: '#94a3b8', count: Math.round(totalUsers * 0.6) },
-        { name: 'Pro', value: Math.round(totalRevenue * 0.3), color: '#6366f1', count: Math.round(totalUsers * 0.25) },
-        { name: 'Premium', value: Math.round(totalRevenue * 0.4), color: '#10b981', count: Math.round(totalUsers * 0.12) },
-        { name: 'Enterprise', value: Math.round(totalRevenue * 0.2), color: '#f97316', count: Math.round(totalUsers * 0.03) },
-      ]
-    };
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
+    const { data, error } = await supabase.functions.invoke('platform-stats', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error('Error fetching platform stats:', error);
+    // Return minimal fallback data
     return {
       totalEvents: 0,
       totalUsers: 0,
@@ -302,50 +297,22 @@ export const getPlatformStats = async () => {
   }
 };
 
-// Infrastructure monitoring
+// Infrastructure monitoring using Edge Function
 export const getInfrastructureStats = async () => {
   try {
-    const startTime = Date.now();
-    
-    // Test database connection latency
-    const { data: healthCheck } = await supabase
-      .from('users')
-      .select('count')
-      .limit(1);
-    
-    const dbLatency = Date.now() - startTime;
-    
-    // Get current timestamp for uptime calculation
-    const now = new Date();
-    const daysSinceEpoch = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
-    
-    // Calculate simulated metrics based on real data patterns
-    const { data: events } = await supabase.from('events').select('*');
-    const { data: users } = await supabase.from('users').select('*');
-    const { data: tickets } = await supabase.from('tickets').select('*');
-    
-    const totalData = (events?.length || 0) + (users?.length || 0) + (tickets?.length || 0);
-    const connectionCount = Math.max(100, totalData * 10 + Math.floor(Math.random() * 500));
-    const storageUsage = Math.max(1.0, totalData * 0.1 + Math.random() * 0.5);
-    
-    return {
-      clusterUptime: Math.max(99.95, 99.998 - (Math.random() * 0.01)),
-      apiLatency: Math.max(8, dbLatency + Math.floor(Math.random() * 10)),
-      dbConnections: connectionCount,
-      storageBurn: storageUsage.toFixed(1),
-      protocolStatus: 'Live & Encrypted',
-      maintenanceMode: false,
-      securityStatus: 'PROTECTED',
-      systemLogs: [
-        `[SYNC] Cluster #${Math.floor(Math.random() * 1000)}: Environment variables reloaded.`,
-        `[NET] Incoming API request from 192.168.1.${Math.floor(Math.random() * 255)} (Webhook).`,
-        `[AUTH] Admin session elevated to Master Clearance.`,
-        `[INFO] Database connection pool optimized. Active: ${connectionCount}`,
-        `[SYS] Storage usage: ${storageUsage.toFixed(1)} TB across ${events?.length || 0} events.`
-      ],
-      systemIntegrity: 'No critical anomalies detected in the last 24 hours.',
-      lastUpdated: new Date().toISOString()
-    };
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
+    const { data, error } = await supabase.functions.invoke('infrastructure-stats', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error('Error fetching infrastructure stats:', error);
     return {
@@ -359,6 +326,35 @@ export const getInfrastructureStats = async () => {
       systemLogs: ['[ERROR] Unable to fetch system metrics.'],
       systemIntegrity: 'System monitoring unavailable.',
       lastUpdated: new Date().toISOString()
+    };
+  }
+};
+
+// Proximity radar using Edge Function
+export const checkProximityRadar = async (userId: string, latitude: number, longitude: number) => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
+    const { data, error } = await supabase.functions.invoke('proximity-radar', {
+      body: { userId, latitude, longitude },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error checking proximity radar:', error);
+    return {
+      success: false,
+      nearbyEvents: [],
+      newNotifications: [],
+      totalNearby: 0,
+      notificationsSent: 0
     };
   }
 };
