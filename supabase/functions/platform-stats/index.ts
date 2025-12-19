@@ -7,6 +7,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 }
 
 serve(async (req) => {
@@ -15,8 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    // Client for auth verification
-    const authClient = createClient(
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
@@ -26,37 +27,54 @@ serve(async (req) => {
       }
     )
 
-    // Verify user is admin
-    const { data: { user }, error: authError } = await authClient.auth.getUser()
-    if (authError || !user) {
+    // Verify user is authenticated and admin
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    if (authError) {
       console.error('Auth error:', authError)
-      throw new Error('Unauthorized')
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', details: authError.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+    
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', details: 'No user found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
     }
 
-    const { data: userProfile, error: profileError } = await authClient
+    const { data: userProfile, error: profileError } = await supabaseClient
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    if (profileError || userProfile?.role !== 'admin') {
-      console.error('Profile error or not admin:', profileError, userProfile)
-      throw new Error('Admin access required')
+    if (profileError) {
+      console.error('Profile error:', profileError)
+      return new Response(
+        JSON.stringify({ error: 'Profile not found', details: profileError.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      )
     }
 
-    // Use service role for RPC call
-    const serviceClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    if (userProfile?.role !== 'admin') {
+      return new Response(
+        JSON.stringify({ error: 'Admin access required', details: `User role: ${userProfile?.role}` }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      )
+    }
 
-    // Get platform statistics using database function
-    const { data: stats, error } = await serviceClient
+    // Get platform statistics using database function (SECURITY DEFINER handles permissions)
+    const { data: stats, error } = await supabaseClient
       .rpc('get_platform_statistics')
 
     if (error) {
       console.error('RPC error:', error)
-      throw error
+      return new Response(
+        JSON.stringify({ error: 'Database error', details: error.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
     }
 
     return new Response(
