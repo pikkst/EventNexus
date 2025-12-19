@@ -15,7 +15,8 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
+    // Client for auth verification
+    const authClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
@@ -26,26 +27,35 @@ serve(async (req) => {
     )
 
     // Verify user is admin
-    const { data: { user } } = await supabaseClient.auth.getUser()
-    if (!user) {
+    const { data: { user }, error: authError } = await authClient.auth.getUser()
+    if (authError || !user) {
+      console.error('Auth error:', authError)
       throw new Error('Unauthorized')
     }
 
-    const { data: userProfile } = await supabaseClient
+    const { data: userProfile, error: profileError } = await authClient
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    if (userProfile?.role !== 'admin') {
+    if (profileError || userProfile?.role !== 'admin') {
+      console.error('Profile error or not admin:', profileError, userProfile)
       throw new Error('Admin access required')
     }
 
+    // Use service role for RPC call
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
     // Get platform statistics using database function
-    const { data: stats, error } = await supabaseClient
+    const { data: stats, error } = await serviceClient
       .rpc('get_platform_statistics')
 
     if (error) {
+      console.error('RPC error:', error)
       throw error
     }
 
