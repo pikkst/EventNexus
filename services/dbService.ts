@@ -183,9 +183,17 @@ export const deleteNotification = async (id: string): Promise<boolean> => {
 
 // Authentication helpers
 export const signUpUser = async (email: string, password: string) => {
+  // Get the current origin for email confirmation redirect
+  const redirectUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}${window.location.pathname}#/profile`
+    : undefined;
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      emailRedirectTo: redirectUrl,
+    }
   });
   
   if (error) {
@@ -205,6 +213,18 @@ export const signInUser = async (email: string, password: string) => {
   if (error) {
     console.error('Error signing in:', error);
     return { user: null, error };
+  }
+
+  // Check if email is confirmed
+  if (data.user && !data.user.email_confirmed_at) {
+    return { 
+      user: null, 
+      error: { 
+        message: 'Please confirm your email address before logging in. Check your inbox for the confirmation link.',
+        name: 'EmailNotConfirmed',
+        status: 400
+      } as any
+    };
   }
   
   return { user: data.user, error: null };
@@ -356,5 +376,274 @@ export const checkProximityRadar = async (userId: string, latitude: number, long
       totalNearby: 0,
       notificationsSent: 0
     };
+  }
+};
+
+// ============================================
+// Admin-specific Functions
+// ============================================
+
+// User Management
+export const suspendUser = async (userId: string, reason: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ 
+        status: 'suspended',
+        suspended_at: new Date().toISOString(),
+        suspension_reason: reason
+      })
+      .eq('id', userId);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error suspending user:', error);
+    return false;
+  }
+};
+
+export const unsuspendUser = async (userId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ 
+        status: 'active',
+        suspended_at: null,
+        suspension_reason: null
+      })
+      .eq('id', userId);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error unsuspending user:', error);
+    return false;
+  }
+};
+
+export const banUser = async (userId: string, reason: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ 
+        status: 'banned',
+        banned_at: new Date().toISOString(),
+        ban_reason: reason
+      })
+      .eq('id', userId);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error banning user:', error);
+    return false;
+  }
+};
+
+export const updateUserCredits = async (userId: string, credits: number): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ credits })
+      .eq('id', userId);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error updating user credits:', error);
+    return false;
+  }
+};
+
+export const updateUserSubscription = async (userId: string, tier: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ subscription_tier: tier })
+      .eq('id', userId);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error updating user subscription:', error);
+    return false;
+  }
+};
+
+// Broadcast Notifications
+export const broadcastNotification = async (
+  title: string,
+  message: string,
+  targetRole?: 'all' | 'organizers' | 'attendees'
+): Promise<number> => {
+  try {
+    // Get target users based on role filter
+    let query = supabase.from('users').select('id');
+    
+    if (targetRole === 'organizers') {
+      query = query.eq('role', 'organizer');
+    } else if (targetRole === 'attendees') {
+      query = query.eq('role', 'attendee');
+    }
+    
+    const { data: users, error: userError } = await query;
+    if (userError) throw userError;
+    
+    if (!users || users.length === 0) return 0;
+    
+    // Create notifications for all target users
+    const notifications = users.map(user => ({
+      user_id: user.id,
+      title,
+      message,
+      type: 'system',
+      isRead: false,
+      timestamp: new Date().toISOString()
+    }));
+    
+    const { error } = await supabase
+      .from('notifications')
+      .insert(notifications);
+    
+    if (error) throw error;
+    return users.length;
+  } catch (error) {
+    console.error('Error broadcasting notification:', error);
+    return 0;
+  }
+};
+
+// Campaign Management
+export interface Campaign {
+  id?: string;
+  title: string;
+  copy: string;
+  status: 'Active' | 'Draft' | 'Paused' | 'Completed';
+  placement: 'landing_page' | 'dashboard' | 'both';
+  target: 'attendees' | 'organizers' | 'all';
+  cta: string;
+  imageUrl?: string;
+  trackingCode: string;
+  incentive?: {
+    type: 'credits' | 'discount' | 'free_ticket';
+    value: number;
+    limit: number;
+    redeemed: number;
+  };
+  metrics?: {
+    views: number;
+    clicks: number;
+    guestSignups: number;
+    proConversions: number;
+    revenueValue: number;
+  };
+  tracking?: {
+    sources: {
+      facebook: number;
+      x: number;
+      instagram: number;
+      direct: number;
+    };
+  };
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const getCampaigns = async (): Promise<Campaign[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('campaigns')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching campaigns:', error);
+    return [];
+  }
+};
+
+export const createCampaign = async (campaign: Campaign): Promise<Campaign | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('campaigns')
+      .insert([campaign])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating campaign:', error);
+    return null;
+  }
+};
+
+export const updateCampaign = async (id: string, updates: Partial<Campaign>): Promise<Campaign | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('campaigns')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating campaign:', error);
+    return null;
+  }
+};
+
+export const deleteCampaign = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('campaigns')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error deleting campaign:', error);
+    return false;
+  }
+};
+
+// System Configuration
+export const updateSystemConfig = async (key: string, value: any): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('system_config')
+      .upsert({ key, value, updated_at: new Date().toISOString() });
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error updating system config:', error);
+    return false;
+  }
+};
+
+export const getSystemConfig = async (): Promise<Record<string, any>> => {
+  try {
+    const { data, error } = await supabase
+      .from('system_config')
+      .select('key, value');
+    
+    if (error) throw error;
+    
+    const config: Record<string, any> = {};
+    data?.forEach(item => {
+      config[item.key] = item.value;
+    });
+    
+    return config;
+  } catch (error) {
+    console.error('Error fetching system config:', error);
+    return {};
   }
 };

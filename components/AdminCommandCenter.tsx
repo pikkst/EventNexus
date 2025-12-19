@@ -18,28 +18,26 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, 
   CartesianGrid, Tooltip, BarChart, Bar, LineChart, Line, Cell, Pie, PieChart as RePieChart
 } from 'recharts';
-import { User, PlatformCampaign, Notification } from '../types';
+import { User, Notification } from '../types';
 import { generatePlatformGrowthCampaign, generateAdImage } from '../services/geminiService';
-import { getEvents, getAllUsers, getPlatformStats, getInfrastructureStats } from '../services/dbService';
-
-// Real data will be loaded from Supabase
-
-const INITIAL_CAMPAIGNS: PlatformCampaign[] = [
-  { 
-    id: 'pc1', 
-    title: 'Nexus Alpha Launch', 
-    copy: 'Be the first to join the map-first revolution. Limited time rewards.',
-    status: 'Active', 
-    placement: 'landing_page',
-    target: 'attendees',
-    incentive: { type: 'credits', value: 30, limit: 100, redeemed: 84 },
-    metrics: { views: 850000, clicks: 12000, guestSignups: 4200, proConversions: 0, revenueValue: 12400 },
-    tracking: { sources: { facebook: 4500, x: 3200, instagram: 2800, direct: 1500 } },
-    imageUrl: 'https://picsum.photos/seed/alpha/800/400',
-    cta: 'Explore Map',
-    trackingCode: 'ALPHA30'
-  }
-];
+import { 
+  getEvents, 
+  getAllUsers, 
+  getPlatformStats, 
+  getInfrastructureStats,
+  getCampaigns,
+  createCampaign,
+  updateCampaign,
+  deleteCampaign,
+  broadcastNotification,
+  suspendUser,
+  banUser,
+  updateUserCredits,
+  updateUserSubscription,
+  getSystemConfig,
+  updateSystemConfig,
+  Campaign
+} from '../services/dbService';
 
 const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [activeTab, setActiveTab] = useState('analytics');
@@ -69,12 +67,13 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [userRoleFilter, setUserRoleFilter] = useState('all');
 
   // Campaign State
-  const [campaigns, setCampaigns] = useState<PlatformCampaign[]>(INITIAL_CAMPAIGNS);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [newCampaignTheme, setNewCampaignTheme] = useState('');
   const [targetAudience, setTargetAudience] = useState<'creators' | 'attendees'>('attendees');
-  const [editingCampaign, setEditingCampaign] = useState<Partial<PlatformCampaign> | null>(null);
+  const [editingCampaign, setEditingCampaign] = useState<Partial<Campaign> | null>(null);
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
 
   // User Actions State
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -97,27 +96,37 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     });
   }, [platformUsers, userSearch, userRoleFilter]);
 
-  // Load users, stats and infrastructure data on component mount
+  // Load all data on component mount
   useEffect(() => {
     const loadData = async () => {
       setIsLoadingUsers(true);
       setIsLoadingStats(true);
       setIsLoadingInfra(true);
+      setIsLoadingCampaigns(true);
       try {
-        const [users, stats, infra] = await Promise.all([
+        const [users, stats, infra, campaignsData, config] = await Promise.all([
           getAllUsers(),
           getPlatformStats(),
-          getInfrastructureStats()
+          getInfrastructureStats(),
+          getCampaigns(),
+          getSystemConfig()
         ]);
         setPlatformUsers(users);
         setPlatformStats(stats);
         setInfrastructureStats(infra);
+        setCampaigns(campaignsData);
+        
+        // Load system config
+        if (config.global_ticket_fee) setGlobalTicketFee(parseFloat(config.global_ticket_fee));
+        if (config.credit_value) setCreditValue(parseFloat(config.credit_value));
+        if (config.maintenance_mode) setIsMaintenanceMode(config.maintenance_mode === 'true');
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
         setIsLoadingUsers(false);
         setIsLoadingStats(false);
         setIsLoadingInfra(false);
+        setIsLoadingCampaigns(false);
       }
     };
 
@@ -145,7 +154,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
           title: data.title,
           copy: data.copy,
           cta: data.cta,
-          imageUrl: imageUrl || 'https://picsum.photos/seed/ai/800/400',
+          imageUrl: imageUrl || undefined,
           status: 'Draft',
           placement: 'both',
           target: targetAudience === 'creators' ? 'organizers' : 'attendees',
@@ -163,23 +172,83 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     } catch (err) { console.error(err); } finally { setIsAiGenerating(false); }
   };
 
-  const deleteCampaign = (id: string) => {
-    setCampaigns(prev => prev.filter(c => c.id !== id));
+  const handleDeleteCampaign = async (id: string) => {
+    const success = await deleteCampaign(id);
+    if (success) {
+      setCampaigns(prev => prev.filter(c => c.id !== id));
+    }
   };
 
-  const saveCampaign = () => {
+  const handleSaveCampaign = async () => {
     if (!editingCampaign || !editingCampaign.title) return;
+    
     if (editingCampaign.id) {
-      setCampaigns(prev => prev.map(c => c.id === editingCampaign.id ? (editingCampaign as PlatformCampaign) : c));
+      const updated = await updateCampaign(editingCampaign.id, editingCampaign);
+      if (updated) {
+        setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
+      }
     } else {
-      const newCampaign: PlatformCampaign = {
-        ...editingCampaign,
-        id: `pc-${Math.random().toString(36).substr(2, 9)}`,
-      } as PlatformCampaign;
-      setCampaigns(prev => [...prev, newCampaign]);
+      const created = await createCampaign(editingCampaign as Campaign);
+      if (created) {
+        setCampaigns(prev => [...prev, created]);
+      }
     }
     setIsCampaignModalOpen(false);
     setEditingCampaign(null);
+  };
+
+  const handleBroadcastNotification = async () => {
+    if (!broadcastMsg.trim()) return;
+    
+    const count = await broadcastNotification(
+      'Platform Announcement',
+      broadcastMsg,
+      broadcastTarget
+    );
+    
+    if (count > 0) {
+      alert(`Successfully sent notification to ${count} users`);
+      setBroadcastMsg('');
+    } else {
+      alert('Failed to send notifications');
+    }
+  };
+
+  const handleSuspendUser = async (userId: string) => {
+    const reason = prompt('Reason for suspension:');
+    if (!reason) return;
+    
+    const success = await suspendUser(userId, reason);
+    if (success) {
+      setPlatformUsers(prev => 
+        prev.map(u => u.id === userId ? { ...u, status: 'suspended' } : u)
+      );
+      alert('User suspended successfully');
+    }
+  };
+
+  const handleBanUser = async (userId: string) => {
+    const reason = prompt('Reason for ban:');
+    if (!reason) return;
+    
+    if (!confirm('Are you sure you want to ban this user? This action is severe.')) return;
+    
+    const success = await banUser(userId, reason);
+    if (success) {
+      setPlatformUsers(prev => 
+        prev.map(u => u.id === userId ? { ...u, status: 'banned' } : u)
+      );
+      alert('User banned successfully');
+    }
+  };
+
+  const handleSaveSystemConfig = async () => {
+    await Promise.all([
+      updateSystemConfig('global_ticket_fee', globalTicketFee.toString()),
+      updateSystemConfig('credit_value', creditValue.toString()),
+      updateSystemConfig('maintenance_mode', isMaintenanceMode.toString())
+    ]);
+    alert('System configuration updated successfully');
   };
 
   const navItems = [
@@ -397,9 +466,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                                   </td>
                                   <td className="px-8 py-5 text-right">
                                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => setSelectedUser(u)} className="p-2 bg-slate-800 hover:bg-indigo-600 text-slate-500 hover:text-white rounded-lg transition-all"><MessageSquare size={14}/></button>
-                                        <button className="p-2 bg-slate-800 hover:bg-yellow-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Warning"><AlertTriangle size={14}/></button>
-                                        <button className="p-2 bg-slate-800 hover:bg-red-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Ban User"><Ban size={14}/></button>
+                                        <button onClick={() => setSelectedUser(u)} className="p-2 bg-slate-800 hover:bg-indigo-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Message User"><MessageSquare size={14}/></button>
+                                        <button onClick={() => handleSuspendUser(u.id)} className="p-2 bg-slate-800 hover:bg-yellow-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Suspend User"><AlertTriangle size={14}/></button>
+                                        <button onClick={() => handleBanUser(u.id)} className="p-2 bg-slate-800 hover:bg-red-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Ban User"><Ban size={14}/></button>
                                      </div>
                                   </td>
                                </tr>
@@ -424,13 +493,132 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                         onChange={(e) => setBroadcastMsg(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-white outline-none focus:border-indigo-500 min-h-[150px] resize-none"
                       />
-                      <button className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-indigo-600/20">
+                      <button 
+                        onClick={handleBroadcastNotification}
+                        disabled={!broadcastMsg.trim()}
+                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
+                      >
                          <Send size={14} /> Send Global Push
                       </button>
                    </div>
                 </div>
              </div>
           </div>
+        )}
+
+        {activeTab === 'marketing' && (
+           <div className="space-y-8 animate-in fade-in duration-500">
+              <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+                 <div>
+                    <h3 className="text-2xl font-black tracking-tighter">Campaign Engine</h3>
+                    <p className="text-slate-500 text-sm font-medium">Manage platform growth campaigns with AI-powered generation.</p>
+                 </div>
+                 <button 
+                   onClick={() => { setEditingCampaign(null); setIsCampaignModalOpen(true); }}
+                   className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center gap-2 transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
+                 >
+                    <Plus size={14} /> New Campaign
+                 </button>
+              </div>
+
+              {isLoadingCampaigns ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 animate-pulse">
+                      <div className="h-40 bg-slate-800 rounded-xl mb-4"></div>
+                      <div className="h-6 bg-slate-800 rounded mb-2"></div>
+                      <div className="h-4 bg-slate-800 rounded w-3/4"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : campaigns.length === 0 ? (
+                <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-16 text-center">
+                  <Megaphone size={48} className="mx-auto mb-6 text-slate-600" />
+                  <h4 className="text-xl font-black text-white mb-2">No Active Campaigns</h4>
+                  <p className="text-slate-500 mb-8">Create your first growth campaign to engage users and drive platform adoption.</p>
+                  <button 
+                    onClick={() => { setEditingCampaign(null); setIsCampaignModalOpen(true); }}
+                    className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all"
+                  >
+                    Create Campaign
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {campaigns.map(campaign => (
+                    <div key={campaign.id} className="bg-slate-900 border border-slate-800 rounded-[40px] overflow-hidden hover:border-slate-700 transition-all shadow-2xl group">
+                      {campaign.imageUrl && (
+                        <div className="h-48 overflow-hidden bg-slate-950">
+                          <img src={campaign.imageUrl} alt={campaign.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        </div>
+                      )}
+                      <div className="p-6 space-y-4">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="text-lg font-black text-white mb-1">{campaign.title}</h4>
+                            <p className="text-xs text-slate-500 line-clamp-2">{campaign.copy}</p>
+                          </div>
+                          <span className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase ${
+                            campaign.status === 'Active' ? 'bg-emerald-500/10 text-emerald-500' :
+                            campaign.status === 'Paused' ? 'bg-yellow-500/10 text-yellow-500' :
+                            campaign.status === 'Draft' ? 'bg-slate-700 text-slate-400' :
+                            'bg-blue-500/10 text-blue-500'
+                          }`}>
+                            {campaign.status}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-center">
+                          <div className="bg-slate-950 rounded-xl p-3">
+                            <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Views</p>
+                            <p className="text-lg font-black text-white">{campaign.metrics?.views.toLocaleString() || 0}</p>
+                          </div>
+                          <div className="bg-slate-950 rounded-xl p-3">
+                            <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Clicks</p>
+                            <p className="text-lg font-black text-indigo-400">{campaign.metrics?.clicks.toLocaleString() || 0}</p>
+                          </div>
+                          <div className="bg-slate-950 rounded-xl p-3">
+                            <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Signups</p>
+                            <p className="text-lg font-black text-emerald-400">{campaign.metrics?.guestSignups || 0}</p>
+                          </div>
+                          <div className="bg-slate-950 rounded-xl p-3">
+                            <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Revenue</p>
+                            <p className="text-lg font-black text-orange-400">€{((campaign.metrics?.revenueValue || 0) / 1000).toFixed(1)}k</p>
+                          </div>
+                        </div>
+
+                        {campaign.incentive && (
+                          <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Gift size={14} className="text-violet-400" />
+                                <span className="text-[10px] font-black text-violet-400 uppercase">{campaign.incentive.type}</span>
+                              </div>
+                              <span className="text-xs font-bold text-white">{campaign.incentive.value} × {campaign.incentive.redeemed}/{campaign.incentive.limit}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 pt-2">
+                          <button 
+                            onClick={() => { setEditingCampaign(campaign); setIsCampaignModalOpen(true); }}
+                            className="flex-1 py-2.5 bg-slate-800 hover:bg-indigo-600 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:text-white transition-all"
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteCampaign(campaign.id!)}
+                            className="flex-1 py-2.5 bg-slate-800 hover:bg-red-600 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:text-white transition-all"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+           </div>
         )}
 
         {activeTab === 'settings' && (
@@ -519,9 +707,10 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                  </div>
                  <button 
                    disabled={isMasterLocked}
-                   className={`px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${isMasterLocked ? 'bg-slate-800 text-slate-600 opacity-50 cursor-not-allowed' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/20 active:scale-95'}`}
+                   onClick={handleSaveSystemConfig}
+                   className={`px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${isMasterLocked ? 'bg-slate-800 text-slate-600 opacity-50 cursor-not-allowed' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/20 active:scale-95 hover:bg-emerald-700'}`}
                  >
-                    Propagate All Changes
+                    Save Configuration
                  </button>
               </div>
            </div>
@@ -708,7 +897,176 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
          </div>
       )}
 
-      {/* Campaign Modal (omitted for brevity, keep existing logic) */}
+      {/* Campaign Creation/Edit Modal */}
+      {isCampaignModalOpen && (
+         <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 overflow-y-auto">
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setIsCampaignModalOpen(false)} />
+            <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-[48px] p-10 shadow-2xl space-y-8 my-8">
+               <div className="flex justify-between items-start">
+                  <div>
+                     <h2 className="text-3xl font-black text-white tracking-tight">{editingCampaign?.id ? 'Edit Campaign' : 'New Campaign'}</h2>
+                     <p className="text-slate-500 text-sm font-medium">Create engaging growth campaigns with AI assistance</p>
+                  </div>
+                  <button onClick={() => setIsCampaignModalOpen(false)} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all">
+                     <X size={20} className="text-slate-400" />
+                  </button>
+               </div>
+
+               {/* AI Generator Section */}
+               <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-[32px] p-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                     <Sparkles className="text-indigo-400" size={20} />
+                     <h3 className="text-lg font-black text-white">AI Campaign Generator</h3>
+                  </div>
+                  <div className="flex gap-4">
+                     <input 
+                       type="text"
+                       placeholder="Campaign theme (e.g., 'Summer Festival Boost', 'Creator Onboarding')..."
+                       value={newCampaignTheme}
+                       onChange={(e) => setNewCampaignTheme(e.target.value)}
+                       className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all"
+                     />
+                     <select 
+                       value={targetAudience}
+                       onChange={(e) => setTargetAudience(e.target.value as 'creators' | 'attendees')}
+                       className="bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-sm text-white outline-none"
+                     >
+                        <option value="attendees">Attendees</option>
+                        <option value="creators">Creators</option>
+                     </select>
+                     <button 
+                       onClick={handleAiCampaignGenerate}
+                       disabled={isAiGenerating || !newCampaignTheme.trim()}
+                       className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all flex items-center gap-2"
+                     >
+                        {isAiGenerating ? (
+                           <><Loader2 size={14} className="animate-spin" /> Generating...</>
+                        ) : (
+                           <><Sparkles size={14} /> Generate</>
+                        )}
+                     </button>
+                  </div>
+               </div>
+
+               {/* Campaign Form */}
+               {editingCampaign && (
+                  <div className="space-y-6">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Campaign Title</label>
+                           <input 
+                             type="text"
+                             value={editingCampaign.title || ''}
+                             onChange={(e) => setEditingCampaign({ ...editingCampaign, title: e.target.value })}
+                             className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3.5 text-sm text-white outline-none focus:border-indigo-500 transition-all"
+                             placeholder="Campaign title..."
+                           />
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tracking Code</label>
+                           <input 
+                             type="text"
+                             value={editingCampaign.trackingCode || ''}
+                             onChange={(e) => setEditingCampaign({ ...editingCampaign, trackingCode: e.target.value })}
+                             className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3.5 text-sm font-mono text-indigo-400 outline-none focus:border-indigo-500 transition-all"
+                             placeholder="TRACK-CODE"
+                           />
+                        </div>
+                     </div>
+
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Campaign Copy</label>
+                        <textarea 
+                          value={editingCampaign.copy || ''}
+                          onChange={(e) => setEditingCampaign({ ...editingCampaign, copy: e.target.value })}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all min-h-[100px] resize-none"
+                          placeholder="Campaign message..."
+                        />
+                     </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</label>
+                           <select 
+                             value={editingCampaign.status || 'Draft'}
+                             onChange={(e) => setEditingCampaign({ ...editingCampaign, status: e.target.value as any })}
+                             className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3.5 text-sm text-white outline-none"
+                           >
+                              <option value="Draft">Draft</option>
+                              <option value="Active">Active</option>
+                              <option value="Paused">Paused</option>
+                              <option value="Completed">Completed</option>
+                           </select>
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Placement</label>
+                           <select 
+                             value={editingCampaign.placement || 'both'}
+                             onChange={(e) => setEditingCampaign({ ...editingCampaign, placement: e.target.value as any })}
+                             className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3.5 text-sm text-white outline-none"
+                           >
+                              <option value="landing_page">Landing Page</option>
+                              <option value="dashboard">Dashboard</option>
+                              <option value="both">Both</option>
+                           </select>
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Target</label>
+                           <select 
+                             value={editingCampaign.target || 'attendees'}
+                             onChange={(e) => setEditingCampaign({ ...editingCampaign, target: e.target.value as any })}
+                             className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3.5 text-sm text-white outline-none"
+                           >
+                              <option value="attendees">Attendees</option>
+                              <option value="organizers">Organizers</option>
+                              <option value="all">All Users</option>
+                           </select>
+                        </div>
+                     </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Call to Action</label>
+                           <input 
+                             type="text"
+                             value={editingCampaign.cta || ''}
+                             onChange={(e) => setEditingCampaign({ ...editingCampaign, cta: e.target.value })}
+                             className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3.5 text-sm text-white outline-none focus:border-indigo-500 transition-all"
+                             placeholder="Learn More"
+                           />
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Image URL</label>
+                           <input 
+                             type="text"
+                             value={editingCampaign.imageUrl || ''}
+                             onChange={(e) => setEditingCampaign({ ...editingCampaign, imageUrl: e.target.value })}
+                             className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3.5 text-sm text-indigo-400 font-mono outline-none focus:border-indigo-500 transition-all"
+                             placeholder="https://..."
+                           />
+                        </div>
+                     </div>
+
+                     <div className="flex gap-4 pt-4">
+                        <button 
+                          onClick={() => setIsCampaignModalOpen(false)}
+                          className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 transition-all"
+                        >
+                           Cancel
+                        </button>
+                        <button 
+                          onClick={handleSaveCampaign}
+                          disabled={!editingCampaign.title || !editingCampaign.trackingCode}
+                          className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all shadow-xl shadow-indigo-600/20"
+                        >
+                           {editingCampaign.id ? 'Update Campaign' : 'Create Campaign'}
+                        </button>
+                     </div>
+                  </div>
+               )}
+            </div>
+         </div>
+      )}
     </div>
   );
 };

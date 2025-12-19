@@ -1,8 +1,8 @@
 -- ============================================
--- EventNexus Complete Database Schema
+-- EventNexus SAFE Migration Script
 -- ============================================
--- This migration creates all tables, indexes, RLS policies,
--- triggers, and functions for the EventNexus platform.
+-- This script safely handles existing tables and adds missing components
+-- Run the diagnostic script (00000000000000_check_database_state.sql) first!
 -- ============================================
 
 -- Enable necessary extensions
@@ -10,133 +10,119 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "postgis";
 
 -- ============================================
--- DROP EXISTING POLICIES (if re-running)
+-- STEP 1: Drop existing policies (safe to re-run)
 -- ============================================
 
--- Drop existing RLS policies to avoid conflicts
-DROP POLICY IF EXISTS "Users can view their own profile" ON public.users;
-DROP POLICY IF EXISTS "Users can update their own profile" ON public.users;
-DROP POLICY IF EXISTS "Admins can view all users" ON public.users;
-DROP POLICY IF EXISTS "Admins can update all users" ON public.users;
-DROP POLICY IF EXISTS "Anyone can view active events" ON public.events;
-DROP POLICY IF EXISTS "Organizers can create events" ON public.events;
-DROP POLICY IF EXISTS "Organizers can update their own events" ON public.events;
-DROP POLICY IF EXISTS "Organizers can delete their own events" ON public.events;
-DROP POLICY IF EXISTS "Admins can manage all events" ON public.events;
-DROP POLICY IF EXISTS "Users can view their own notifications" ON public.notifications;
-DROP POLICY IF EXISTS "Users can update their own notifications" ON public.notifications;
-DROP POLICY IF EXISTS "Users can delete their own notifications" ON public.notifications;
-DROP POLICY IF EXISTS "System can create notifications" ON public.notifications;
-DROP POLICY IF EXISTS "Users can view their own tickets" ON public.tickets;
-DROP POLICY IF EXISTS "Event organizers can view tickets for their events" ON public.tickets;
-DROP POLICY IF EXISTS "Users can purchase tickets" ON public.tickets;
-DROP POLICY IF EXISTS "Admins can manage all tickets" ON public.tickets;
-DROP POLICY IF EXISTS "Organizers can view analytics for their events" ON public.event_analytics;
-DROP POLICY IF EXISTS "Admins can view all analytics" ON public.event_analytics;
-DROP POLICY IF EXISTS "Admins can view platform metrics" ON public.platform_metrics;
-DROP POLICY IF EXISTS "Users can view their own sessions" ON public.user_sessions;
-DROP POLICY IF EXISTS "Admins can view all sessions" ON public.user_sessions;
+DO $$ 
+BEGIN
+    -- Drop all existing policies
+    DROP POLICY IF EXISTS "Users can view their own profile" ON public.users;
+    DROP POLICY IF EXISTS "Users can update their own profile" ON public.users;
+    DROP POLICY IF EXISTS "Admins can view all users" ON public.users;
+    DROP POLICY IF EXISTS "Admins can update all users" ON public.users;
+    DROP POLICY IF EXISTS "Anyone can view active events" ON public.events;
+    DROP POLICY IF EXISTS "Organizers can create events" ON public.events;
+    DROP POLICY IF EXISTS "Organizers can update their own events" ON public.events;
+    DROP POLICY IF EXISTS "Organizers can delete their own events" ON public.events;
+    DROP POLICY IF EXISTS "Admins can manage all events" ON public.events;
+    DROP POLICY IF EXISTS "Users can view their own notifications" ON public.notifications;
+    DROP POLICY IF EXISTS "Users can update their own notifications" ON public.notifications;
+    DROP POLICY IF EXISTS "Users can delete their own notifications" ON public.notifications;
+    DROP POLICY IF EXISTS "System can create notifications" ON public.notifications;
+    DROP POLICY IF EXISTS "Users can view their own tickets" ON public.tickets;
+    DROP POLICY IF EXISTS "Event organizers can view tickets for their events" ON public.tickets;
+    DROP POLICY IF EXISTS "Users can purchase tickets" ON public.tickets;
+    DROP POLICY IF EXISTS "Admins can manage all tickets" ON public.tickets;
+    DROP POLICY IF EXISTS "Organizers can view analytics for their events" ON public.event_analytics;
+    DROP POLICY IF EXISTS "Admins can view all analytics" ON public.event_analytics;
+    DROP POLICY IF EXISTS "Admins can view platform metrics" ON public.platform_metrics;
+    DROP POLICY IF EXISTS "Users can view their own sessions" ON public.user_sessions;
+    DROP POLICY IF EXISTS "Admins can view all sessions" ON public.user_sessions;
+
+    -- Drop existing triggers
+    DROP TRIGGER IF EXISTS update_users_updated_at ON public.users;
+    DROP TRIGGER IF EXISTS update_events_updated_at ON public.events;
+    DROP TRIGGER IF EXISTS update_event_location_point_trigger ON public.events;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Some policies or triggers did not exist, continuing...';
+END $$;
 
 -- ============================================
--- TABLES
+-- STEP 2: Create or Update USERS table
 -- ============================================
 
--- Users table
 CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    avatar TEXT,
-    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'organizer', 'agency')),
-    subscription_tier TEXT NOT NULL DEFAULT 'free' CHECK (subscription_tier IN ('free', 'pro', 'premium', 'enterprise')),
-    notification_prefs JSONB DEFAULT '{
-        "proximityAlerts": true,
-        "eventUpdates": true,
-        "interestedCategories": [],
-        "alertRadius": 10
-    }'::jsonb,
-    agency_profile JSONB DEFAULT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    last_login TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    name TEXT NOT NULL
 );
 
--- Add ALL missing columns to existing users table
+-- Add missing columns to users table
 DO $$ 
 BEGIN
-    -- Add avatar if it doesn't exist
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'users' 
-                   AND column_name = 'avatar') THEN
+                   WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'avatar') THEN
         ALTER TABLE public.users ADD COLUMN avatar TEXT;
     END IF;
 
-    -- Add role if it doesn't exist
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'users' 
-                   AND column_name = 'role') THEN
-        ALTER TABLE public.users ADD COLUMN role TEXT NOT NULL DEFAULT 'user' 
-            CHECK (role IN ('user', 'admin', 'organizer', 'agency'));
+                   WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'role') THEN
+        ALTER TABLE public.users ADD COLUMN role TEXT NOT NULL DEFAULT 'user';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'subscription_tier') THEN
+        ALTER TABLE public.users ADD COLUMN subscription_tier TEXT NOT NULL DEFAULT 'free';
     END IF;
 
-    -- Add subscription_tier if it doesn't exist
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'users' 
-                   AND column_name = 'subscription_tier') THEN
-        ALTER TABLE public.users ADD COLUMN subscription_tier TEXT NOT NULL DEFAULT 'free' 
-            CHECK (subscription_tier IN ('free', 'pro', 'premium', 'enterprise'));
+                   WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'notification_prefs') THEN
+        ALTER TABLE public.users ADD COLUMN notification_prefs JSONB DEFAULT '{"proximityAlerts": true, "eventUpdates": true, "interestedCategories": [], "alertRadius": 10}'::jsonb;
     END IF;
 
-    -- Add notification_prefs if it doesn't exist
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'users' 
-                   AND column_name = 'notification_prefs') THEN
-        ALTER TABLE public.users ADD COLUMN notification_prefs JSONB DEFAULT '{
-            "proximityAlerts": true,
-            "eventUpdates": true,
-            "interestedCategories": [],
-            "alertRadius": 10
-        }'::jsonb;
-    END IF;
-
-    -- Add agency_profile if it doesn't exist
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'users' 
-                   AND column_name = 'agency_profile') THEN
+                   WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'agency_profile') THEN
         ALTER TABLE public.users ADD COLUMN agency_profile JSONB DEFAULT NULL;
     END IF;
 
-    -- Add created_at if it doesn't exist
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'users' 
-                   AND column_name = 'created_at') THEN
+                   WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'created_at') THEN
         ALTER TABLE public.users ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
     END IF;
 
-    -- Add updated_at if it doesn't exist
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'users' 
-                   AND column_name = 'updated_at') THEN
+                   WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'updated_at') THEN
         ALTER TABLE public.users ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
     END IF;
 
-    -- Add last_login if it doesn't exist
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'users' 
-                   AND column_name = 'last_login') THEN
+                   WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'last_login') THEN
         ALTER TABLE public.users ADD COLUMN last_login TIMESTAMP WITH TIME ZONE DEFAULT NOW();
     END IF;
 END $$;
 
--- Events table with geospatial support
+-- Add constraints to users table if they don't exist
+DO $$
+BEGIN
+    -- Add role constraint
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_role_check') THEN
+        ALTER TABLE public.users ADD CONSTRAINT users_role_check 
+            CHECK (role IN ('user', 'admin', 'organizer', 'agency'));
+    END IF;
+    
+    -- Add subscription_tier constraint
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_subscription_tier_check') THEN
+        ALTER TABLE public.users ADD CONSTRAINT users_subscription_tier_check 
+            CHECK (subscription_tier IN ('free', 'pro', 'premium', 'enterprise'));
+    END IF;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Some constraints already exist, continuing...';
+END $$;
+
+-- ============================================
+-- STEP 3: Create or Update EVENTS table
+-- ============================================
+
 CREATE TABLE IF NOT EXISTS public.events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
@@ -144,137 +130,146 @@ CREATE TABLE IF NOT EXISTS public.events (
     category TEXT NOT NULL,
     date TIMESTAMP WITH TIME ZONE NOT NULL,
     location JSONB NOT NULL,
-    location_point GEOGRAPHY(POINT, 4326),
     price NUMERIC(10, 2) NOT NULL DEFAULT 0,
     organizer_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    image TEXT,
-    attendees_count INTEGER DEFAULT 0,
-    max_capacity INTEGER,
-    tags TEXT[] DEFAULT '{}',
-    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'completed', 'draft')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    image TEXT
 );
 
--- Add missing columns to events table if they don't exist
+-- Add missing columns to events table
 DO $$ 
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'events' 
-                   AND column_name = 'location_point') THEN
+                   WHERE table_schema = 'public' AND table_name = 'events' AND column_name = 'location_point') THEN
         ALTER TABLE public.events ADD COLUMN location_point GEOGRAPHY(POINT, 4326);
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'events' 
-                   AND column_name = 'attendees_count') THEN
+                   WHERE table_schema = 'public' AND table_name = 'events' AND column_name = 'attendees_count') THEN
         ALTER TABLE public.events ADD COLUMN attendees_count INTEGER DEFAULT 0;
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'events' 
-                   AND column_name = 'max_capacity') THEN
+                   WHERE table_schema = 'public' AND table_name = 'events' AND column_name = 'max_capacity') THEN
         ALTER TABLE public.events ADD COLUMN max_capacity INTEGER;
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'events' 
-                   AND column_name = 'tags') THEN
+                   WHERE table_schema = 'public' AND table_name = 'events' AND column_name = 'tags') THEN
         ALTER TABLE public.events ADD COLUMN tags TEXT[] DEFAULT '{}';
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'events' 
-                   AND column_name = 'status') THEN
-        ALTER TABLE public.events ADD COLUMN status TEXT DEFAULT 'active' 
-            CHECK (status IN ('active', 'cancelled', 'completed', 'draft'));
+                   WHERE table_schema = 'public' AND table_name = 'events' AND column_name = 'status') THEN
+        ALTER TABLE public.events ADD COLUMN status TEXT DEFAULT 'active';
     END IF;
     
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'events' 
-                   AND column_name = 'created_at') THEN
+                   WHERE table_schema = 'public' AND table_name = 'events' AND column_name = 'created_at') THEN
         ALTER TABLE public.events ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
     END IF;
     
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'events' 
-                   AND column_name = 'updated_at') THEN
+                   WHERE table_schema = 'public' AND table_name = 'events' AND column_name = 'updated_at') THEN
         ALTER TABLE public.events ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
     END IF;
 END $$;
 
--- Notifications table
+-- Add constraints to events table
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'events_status_check') THEN
+        ALTER TABLE public.events ADD CONSTRAINT events_status_check 
+            CHECK (status IN ('active', 'cancelled', 'completed', 'draft'));
+    END IF;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Status constraint already exists, continuing...';
+END $$;
+
+-- ============================================
+-- STEP 4: Create or Update NOTIFICATIONS table
+-- ============================================
+
 CREATE TABLE IF NOT EXISTS public.notifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     message TEXT NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('proximity_radar', 'event_update', 'ticket_purchase', 'system', 'admin')),
+    type TEXT NOT NULL,
     event_id UUID REFERENCES public.events(id) ON DELETE CASCADE,
     sender_name TEXT,
     "isRead" BOOLEAN DEFAULT FALSE,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    metadata JSONB DEFAULT '{}'::jsonb
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Add missing columns to notifications table if they don't exist
+-- Add missing columns to notifications
 DO $$ 
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'notifications' 
-                   AND column_name = 'metadata') THEN
+                   WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'metadata') THEN
         ALTER TABLE public.notifications ADD COLUMN metadata JSONB DEFAULT '{}'::jsonb;
     END IF;
 END $$;
 
--- Tickets table
+-- Add constraints
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'notifications_type_check') THEN
+        ALTER TABLE public.notifications ADD CONSTRAINT notifications_type_check 
+            CHECK (type IN ('proximity_radar', 'event_update', 'ticket_purchase', 'system', 'admin'));
+    END IF;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Notification constraint already exists, continuing...';
+END $$;
+
+-- ============================================
+-- STEP 5: Create or Update TICKETS table
+-- ============================================
+
 CREATE TABLE IF NOT EXISTS public.tickets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    ticket_type TEXT NOT NULL DEFAULT 'standard',
     price NUMERIC(10, 2) NOT NULL,
-    status TEXT NOT NULL DEFAULT 'valid' CHECK (status IN ('valid', 'used', 'cancelled', 'expired')),
+    status TEXT NOT NULL DEFAULT 'valid',
     qr_code TEXT NOT NULL UNIQUE,
-    purchase_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    used_at TIMESTAMP WITH TIME ZONE,
-    metadata JSONB DEFAULT '{}'::jsonb
+    purchase_date TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Add missing columns to tickets table if they don't exist
+-- Add missing columns to tickets
 DO $$ 
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'tickets' 
-                   AND column_name = 'ticket_type') THEN
+                   WHERE table_schema = 'public' AND table_name = 'tickets' AND column_name = 'ticket_type') THEN
         ALTER TABLE public.tickets ADD COLUMN ticket_type TEXT NOT NULL DEFAULT 'standard';
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'tickets' 
-                   AND column_name = 'used_at') THEN
+                   WHERE table_schema = 'public' AND table_name = 'tickets' AND column_name = 'used_at') THEN
         ALTER TABLE public.tickets ADD COLUMN used_at TIMESTAMP WITH TIME ZONE;
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_schema = 'public' 
-                   AND table_name = 'tickets' 
-                   AND column_name = 'metadata') THEN
+                   WHERE table_schema = 'public' AND table_name = 'tickets' AND column_name = 'metadata') THEN
         ALTER TABLE public.tickets ADD COLUMN metadata JSONB DEFAULT '{}'::jsonb;
     END IF;
 END $$;
 
--- Event Analytics table for tracking
+-- Add constraints
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'tickets_status_check') THEN
+        ALTER TABLE public.tickets ADD CONSTRAINT tickets_status_check 
+            CHECK (status IN ('valid', 'used', 'cancelled', 'expired'));
+    END IF;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Ticket constraint already exists, continuing...';
+END $$;
+
+-- ============================================
+-- STEP 6: Create supporting tables
+-- ============================================
+
+-- Event Analytics
 CREATE TABLE IF NOT EXISTS public.event_analytics (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
@@ -287,7 +282,7 @@ CREATE TABLE IF NOT EXISTS public.event_analytics (
     UNIQUE(event_id, date)
 );
 
--- Platform metrics for admin monitoring
+-- Platform Metrics
 CREATE TABLE IF NOT EXISTS public.platform_metrics (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     metric_date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -301,7 +296,7 @@ CREATE TABLE IF NOT EXISTS public.platform_metrics (
     UNIQUE(metric_date)
 );
 
--- User sessions for tracking
+-- User Sessions
 CREATE TABLE IF NOT EXISTS public.user_sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -313,46 +308,39 @@ CREATE TABLE IF NOT EXISTS public.user_sessions (
 );
 
 -- ============================================
--- INDEXES
+-- STEP 7: Create indexes
 -- ============================================
 
--- User indexes
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON public.users(role);
 CREATE INDEX IF NOT EXISTS idx_users_subscription ON public.users(subscription_tier);
 
--- Event indexes
 CREATE INDEX IF NOT EXISTS idx_events_date ON public.events(date);
 CREATE INDEX IF NOT EXISTS idx_events_category ON public.events(category);
 CREATE INDEX IF NOT EXISTS idx_events_organizer ON public.events(organizer_id);
 CREATE INDEX IF NOT EXISTS idx_events_status ON public.events(status);
 CREATE INDEX IF NOT EXISTS idx_events_location_point ON public.events USING GIST(location_point);
 
--- Notification indexes
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON public.notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_type ON public.notifications(type);
 CREATE INDEX IF NOT EXISTS idx_notifications_timestamp ON public.notifications(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_unread ON public.notifications(user_id, "isRead") WHERE "isRead" = FALSE;
 
--- Ticket indexes
 CREATE INDEX IF NOT EXISTS idx_tickets_event ON public.tickets(event_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_user ON public.tickets(user_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_status ON public.tickets(status);
 CREATE INDEX IF NOT EXISTS idx_tickets_qr ON public.tickets(qr_code);
 
--- Analytics indexes
 CREATE INDEX IF NOT EXISTS idx_analytics_event_date ON public.event_analytics(event_id, date DESC);
 CREATE INDEX IF NOT EXISTS idx_platform_metrics_date ON public.platform_metrics(metric_date DESC);
 
--- Session indexes
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON public.user_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_active ON public.user_sessions(ended_at) WHERE ended_at IS NULL;
 
 -- ============================================
--- FUNCTIONS
+-- STEP 8: Create functions
 -- ============================================
 
--- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -361,7 +349,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to update location_point from location JSONB
 CREATE OR REPLACE FUNCTION update_event_location_point()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -378,7 +365,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to calculate distance between points (in km)
 CREATE OR REPLACE FUNCTION calculate_distance(
     lat1 DOUBLE PRECISION,
     lon1 DOUBLE PRECISION,
@@ -392,12 +378,11 @@ BEGIN
     distance := ST_Distance(
         ST_SetSRID(ST_MakePoint(lon1, lat1), 4326)::geography,
         ST_SetSRID(ST_MakePoint(lon2, lat2), 4326)::geography
-    ) / 1000.0; -- Convert meters to kilometers
+    ) / 1000.0;
     RETURN distance;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
--- Function to get nearby events
 CREATE OR REPLACE FUNCTION get_nearby_events(
     user_lat DOUBLE PRECISION,
     user_lon DOUBLE PRECISION,
@@ -430,7 +415,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
--- Function to update event analytics
 CREATE OR REPLACE FUNCTION update_event_analytics(
     p_event_id UUID,
     p_views INTEGER DEFAULT 0,
@@ -454,7 +438,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to update platform metrics
 CREATE OR REPLACE FUNCTION update_platform_metrics()
 RETURNS VOID AS $$
 DECLARE
@@ -469,18 +452,10 @@ BEGIN
     SELECT COALESCE(SUM(price), 0) INTO v_total_revenue FROM public.tickets WHERE status IN ('valid', 'used');
     
     INSERT INTO public.platform_metrics (
-        metric_date,
-        total_events,
-        total_users,
-        total_tickets,
-        total_revenue
+        metric_date, total_events, total_users, total_tickets, total_revenue
     )
     VALUES (
-        CURRENT_DATE,
-        v_total_events,
-        v_total_users,
-        v_total_tickets,
-        v_total_revenue
+        CURRENT_DATE, v_total_events, v_total_users, v_total_tickets, v_total_revenue
     )
     ON CONFLICT (metric_date)
     DO UPDATE SET
@@ -492,31 +467,23 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================
--- TRIGGERS
+-- STEP 9: Create triggers
 -- ============================================
 
--- Drop existing triggers to avoid conflicts
-DROP TRIGGER IF EXISTS update_users_updated_at ON public.users;
-DROP TRIGGER IF EXISTS update_events_updated_at ON public.events;
-DROP TRIGGER IF EXISTS update_event_location_point_trigger ON public.events;
-
--- Updated_at triggers
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON public.events
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Location point trigger
 CREATE TRIGGER update_event_location_point_trigger
     BEFORE INSERT OR UPDATE ON public.events
     FOR EACH ROW EXECUTE FUNCTION update_event_location_point();
 
 -- ============================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- STEP 10: Enable RLS and create policies
 -- ============================================
 
--- Enable RLS on all tables
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
@@ -536,21 +503,11 @@ CREATE POLICY "Users can update their own profile"
 
 CREATE POLICY "Admins can view all users"
     ON public.users FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.users
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+    USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 CREATE POLICY "Admins can update all users"
     ON public.users FOR UPDATE
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.users
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+    USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 -- Events policies
 CREATE POLICY "Anyone can view active events"
@@ -559,14 +516,7 @@ CREATE POLICY "Anyone can view active events"
 
 CREATE POLICY "Organizers can create events"
     ON public.events FOR INSERT
-    WITH CHECK (
-        auth.uid() = organizer_id AND
-        EXISTS (
-            SELECT 1 FROM public.users
-            WHERE id = auth.uid() 
-            AND role IN ('organizer', 'agency', 'admin')
-        )
-    );
+    WITH CHECK (auth.uid() = organizer_id AND EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('organizer', 'agency', 'admin')));
 
 CREATE POLICY "Organizers can update their own events"
     ON public.events FOR UPDATE
@@ -578,12 +528,7 @@ CREATE POLICY "Organizers can delete their own events"
 
 CREATE POLICY "Admins can manage all events"
     ON public.events FOR ALL
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.users
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+    USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 -- Notifications policies
 CREATE POLICY "Users can view their own notifications"
@@ -609,13 +554,7 @@ CREATE POLICY "Users can view their own tickets"
 
 CREATE POLICY "Event organizers can view tickets for their events"
     ON public.tickets FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.events
-            WHERE id = tickets.event_id
-            AND organizer_id = auth.uid()
-        )
-    );
+    USING (EXISTS (SELECT 1 FROM public.events WHERE id = tickets.event_id AND organizer_id = auth.uid()));
 
 CREATE POLICY "Users can purchase tickets"
     ON public.tickets FOR INSERT
@@ -623,42 +562,21 @@ CREATE POLICY "Users can purchase tickets"
 
 CREATE POLICY "Admins can manage all tickets"
     ON public.tickets FOR ALL
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.users
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+    USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 -- Analytics policies
 CREATE POLICY "Organizers can view analytics for their events"
     ON public.event_analytics FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.events
-            WHERE id = event_analytics.event_id
-            AND organizer_id = auth.uid()
-        )
-    );
+    USING (EXISTS (SELECT 1 FROM public.events WHERE id = event_analytics.event_id AND organizer_id = auth.uid()));
 
 CREATE POLICY "Admins can view all analytics"
     ON public.event_analytics FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.users
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+    USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
--- Platform metrics policies (admin only)
+-- Platform metrics policies
 CREATE POLICY "Admins can view platform metrics"
     ON public.platform_metrics FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.users
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+    USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 -- User sessions policies
 CREATE POLICY "Users can view their own sessions"
@@ -667,43 +585,28 @@ CREATE POLICY "Users can view their own sessions"
 
 CREATE POLICY "Admins can view all sessions"
     ON public.user_sessions FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.users
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+    USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 -- ============================================
--- GRANTS
+-- STEP 11: Grants
 -- ============================================
 
--- Grant usage on schema
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
-
--- Grant access to tables
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
-
--- Grant execute on functions
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated, anon;
 
 -- ============================================
--- INITIAL DATA SEEDING (optional)
+-- STEP 12: Initial data
 -- ============================================
 
--- Create default admin user (update with your email)
--- This will be done separately via confirm-admin-user.sql
-
--- Initial platform metrics
 INSERT INTO public.platform_metrics (metric_date, total_events, total_users, total_tickets, total_revenue)
 VALUES (CURRENT_DATE, 0, 0, 0, 0)
 ON CONFLICT (metric_date) DO NOTHING;
 
-COMMENT ON TABLE public.users IS 'User accounts with role-based access';
-COMMENT ON TABLE public.events IS 'Events with geospatial location support';
-COMMENT ON TABLE public.notifications IS 'User notifications including proximity alerts';
-COMMENT ON TABLE public.tickets IS 'Event tickets with QR codes';
-COMMENT ON TABLE public.event_analytics IS 'Daily analytics per event';
-COMMENT ON TABLE public.platform_metrics IS 'Platform-wide metrics for admin monitoring';
-COMMENT ON TABLE public.user_sessions IS 'User session tracking';
+-- Success message
+DO $$ 
+BEGIN
+    RAISE NOTICE '✅ Migration completed successfully!';
+    RAISE NOTICE 'All tables, indexes, functions, triggers, and RLS policies are now in place.';
+END $$;
