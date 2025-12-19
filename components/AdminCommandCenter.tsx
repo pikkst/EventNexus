@@ -451,11 +451,11 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                                   </td>
                                   <td className="px-4 py-5">
                                      <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase border ${
-                                       u.subscription === 'enterprise' ? 'bg-orange-600/10 border-orange-500/20 text-orange-500' :
-                                       u.subscription === 'premium' ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' :
+                                       (u.subscription_tier || u.subscription) === 'enterprise' ? 'bg-orange-600/10 border-orange-500/20 text-orange-500' :
+                                       (u.subscription_tier || u.subscription) === 'premium' ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' :
                                        'bg-slate-800 border-slate-700 text-slate-500'
                                      }`}>
-                                        {u.subscription}
+                                        {u.subscription_tier || u.subscription}
                                      </span>
                                   </td>
                                   <td className="px-4 py-5">

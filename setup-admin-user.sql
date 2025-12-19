@@ -13,7 +13,7 @@ WHERE email = 'huntersest@gmail.com'
 AND email_confirmed_at IS NULL;
 
 -- Check if user profile exists in public.users
-SELECT id, email, role, subscription 
+SELECT id, email, role, subscription_tier 
 FROM public.users 
 WHERE email = 'huntersest@gmail.com';
 
@@ -23,7 +23,7 @@ INSERT INTO public.users (
     name, 
     email, 
     role, 
-    subscription, 
+    subscription_tier, 
     credits, 
     avatar,
     notification_prefs
@@ -51,7 +51,7 @@ ON CONFLICT (id) DO NOTHING;
 UPDATE public.users 
 SET 
     role = 'admin',
-    subscription = 'enterprise',
+    subscription_tier = 'enterprise',
     credits = 1000
 WHERE email = 'huntersest@gmail.com';
 
@@ -60,7 +60,7 @@ SELECT
     u.id,
     u.email,
     u.role,
-    u.subscription,
+    u.subscription_tier,
     u.credits,
     au.email_confirmed_at
 FROM public.users u

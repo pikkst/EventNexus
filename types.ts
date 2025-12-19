@@ -96,13 +96,20 @@ export interface User {
   bio?: string;
   location?: string;
   role: 'attendee' | 'organizer' | 'agency' | 'admin';
-  subscription: 'free' | 'pro' | 'premium' | 'enterprise';
+  subscription_tier: 'free' | 'pro' | 'premium' | 'enterprise';
+  // Keep old name for backwards compatibility
+  subscription?: 'free' | 'pro' | 'premium' | 'enterprise';
   avatar: string;
   credits: number; 
   agencySlug?: string;
   followedOrganizers: string[];
   branding?: UserBranding;
   notification_prefs: NotificationPreferences;
+  status?: 'active' | 'suspended' | 'banned';
+  suspended_at?: string;
+  suspension_reason?: string;
+  banned_at?: string;
+  ban_reason?: string;
 }
 
 export interface Ticket {
