@@ -20,19 +20,24 @@ serve(async (req) => {
     // Get authorization header from request
     const authHeader = req.headers.get('Authorization')
     
-    // Create client with the user's auth token
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization header missing' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    // Extract JWT from Bearer token
+    const jwt = authHeader.replace('Bearer ', '')
+    
+    // Create client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: authHeader ? { Authorization: authHeader } : {}
-        }
-      }
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    // Get authenticated user using the JWT directly
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(jwt)
     
     if (authError || !user) {
       console.error('Auth error:', authError)
