@@ -86,29 +86,50 @@ const App: React.FC = () => {
 
   // Load user and initial data
   useEffect(() => {
+    let mounted = true;
+    
     const loadInitialData = async () => {
       try {
         // Check for existing session on mount
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (session?.user) {
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          // Clear any invalid session data
+          await supabase.auth.signOut();
+          return;
+        }
+        
+        if (session?.user && mounted) {
           console.log('Session found, loading user data...');
-          const userData = await getUser(session.user.id);
-          if (userData) {
-            setUser(userData);
-            const userNotifications = await getNotifications(userData.id);
-            setNotifications(userNotifications);
+          try {
+            const userData = await getUser(session.user.id);
+            if (userData && mounted) {
+              setUser(userData);
+              const userNotifications = await getNotifications(userData.id);
+              if (mounted) {
+                setNotifications(userNotifications);
+              }
+            }
+          } catch (userError) {
+            console.error('Error loading user data:', userError);
+            // If user data fails to load, sign out
+            await supabase.auth.signOut();
           }
         } else {
           console.log('No active session found');
         }
         
         const eventsData = await getEvents();
-        setEvents(eventsData);
+        if (mounted) {
+          setEvents(eventsData);
+        }
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
     
@@ -116,20 +137,32 @@ const App: React.FC = () => {
 
     // Listen for auth state changes (e.g., after email confirmation)
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
+      console.log('Auth event:', event);
+      
+      if (event === 'SIGNED_IN' && session?.user && mounted) {
         const userData = await getUser(session.user.id);
-        if (userData) {
+        if (userData && mounted) {
           setUser(userData);
           const userNotifications = await getNotifications(userData.id);
-          setNotifications(userNotifications);
+          if (mounted) {
+            setNotifications(userNotifications);
+          }
         }
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === 'TOKEN_REFRESHED' && session?.user && mounted) {
+        console.log('Token refreshed successfully');
+      } else if (event === 'SIGNED_OUT' && mounted) {
         setUser(null);
         setNotifications([]);
+      } else if (event === 'USER_UPDATED' && session?.user && mounted) {
+        const userData = await getUser(session.user.id);
+        if (userData && mounted) {
+          setUser(userData);
+        }
       }
     });
 
     return () => {
+      mounted = false;
       authListener?.subscription.unsubscribe();
     };
   }, []);
