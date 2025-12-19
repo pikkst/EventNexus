@@ -5,21 +5,31 @@
 -- This enables event organizers to receive ticket revenue automatically
 
 -- Step 1: Add Stripe Connect fields to users table
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS
-  stripe_connect_account_id TEXT UNIQUE,
-  stripe_connect_onboarding_complete BOOLEAN DEFAULT FALSE,
-  stripe_connect_details_submitted BOOLEAN DEFAULT FALSE,
-  stripe_connect_charges_enabled BOOLEAN DEFAULT FALSE,
-  stripe_connect_payouts_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS stripe_connect_account_id TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS stripe_connect_onboarding_complete BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS stripe_connect_details_submitted BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS stripe_connect_charges_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS stripe_connect_payouts_enabled BOOLEAN DEFAULT FALSE;
+
+-- Add UNIQUE constraint if it doesn't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'users_stripe_connect_account_id_key' 
+    AND conrelid = 'public.users'::regclass
+  ) THEN
+    ALTER TABLE public.users ADD CONSTRAINT users_stripe_connect_account_id_key UNIQUE (stripe_connect_account_id);
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_users_stripe_connect_account 
   ON public.users(stripe_connect_account_id) WHERE stripe_connect_account_id IS NOT NULL;
 
 -- Step 2: Add payout tracking fields to events table
-ALTER TABLE public.events ADD COLUMN IF NOT EXISTS
-  payout_scheduled_date TIMESTAMP WITH TIME ZONE,
-  payout_processed BOOLEAN DEFAULT FALSE,
-  payout_hold_reason TEXT;
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS payout_scheduled_date TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS payout_processed BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS payout_hold_reason TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_events_payout_pending 
   ON public.events(date, payout_processed) WHERE payout_processed = FALSE;
@@ -114,10 +124,9 @@ CREATE INDEX idx_refunds_status ON public.refunds(status);
 CREATE INDEX idx_refunds_date ON public.refunds(created_at DESC);
 
 -- Step 5: Add refund tracking to tickets table
-ALTER TABLE public.tickets ADD COLUMN IF NOT EXISTS
-  refund_requested BOOLEAN DEFAULT FALSE,
-  refund_processed BOOLEAN DEFAULT FALSE,
-  refunded_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.tickets ADD COLUMN IF NOT EXISTS refund_requested BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.tickets ADD COLUMN IF NOT EXISTS refund_processed BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.tickets ADD COLUMN IF NOT EXISTS refunded_at TIMESTAMP WITH TIME ZONE;
 
 -- Step 6: Create RLS policies for payouts
 ALTER TABLE public.payouts ENABLE ROW LEVEL SECURITY;
