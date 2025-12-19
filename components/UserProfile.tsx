@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Ticket as TicketIcon, 
@@ -23,11 +23,12 @@ import {
   Camera,
   Globe,
   Check,
-  // Added X and Zap imports to fix "Cannot find name" errors
   X,
-  Zap
+  Zap,
+  Upload
 } from 'lucide-react';
 import { User } from '../types';
+import { getUserTickets, uploadAvatar } from '../services/dbService';
 
 interface UserProfileProps {
   user: User;
@@ -37,7 +38,10 @@ interface UserProfileProps {
 
 const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser }) => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [userTickets, setUserTickets] = useState<any[]>([]);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [tempUser, setTempUser] = useState<Partial<User>>({
     name: user.name,
     bio: user.bio,
@@ -46,9 +50,49 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
     branding: user.branding
   });
 
+  useEffect(() => {
+    const loadTickets = async () => {
+      const tickets = await getUserTickets(user.id);
+      setUserTickets(tickets || []);
+    };
+    loadTickets();
+  }, [user.id]);
+
   const handleLogout = () => {
     onLogout();
     navigate('/');
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const avatarUrl = await uploadAvatar(user.id, file);
+      if (avatarUrl) {
+        setTempUser({ ...tempUser, avatar: avatarUrl });
+      } else {
+        alert('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      alert('Failed to upload image');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   const handleSaveProfile = () => {
@@ -131,12 +175,23 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
               </h3>
             </div>
             <div className="divide-y divide-slate-800">
-              <TicketItem 
-                name="Midnight Techno RAVE" 
-                date="Fri, 15 Nov • 23:00" 
-                location="78 Industrial Way, NYC"
-                qrValue="TKT-A928-01"
-              />
+              {userTickets.length > 0 ? (
+                userTickets.map((ticket) => (
+                  <TicketItem
+                    key={ticket.id}
+                    name={ticket.event_name || 'Event'}
+                    date={new Date(ticket.created_at).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    location={ticket.event_location || 'Location TBA'}
+                    qrValue={ticket.id}
+                  />
+                ))
+              ) : (
+                <div className="p-12 text-center text-slate-500">
+                  <TicketIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p className="font-bold">No tickets yet</p>
+                  <p className="text-sm mt-2">Purchase tickets to events and they'll appear here</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -161,12 +216,19 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
             </div>
           </div>
 
-          <div className="bg-indigo-600 rounded-[40px] p-8 text-white relative overflow-hidden group shadow-2xl shadow-indigo-600/30">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl group-hover:scale-125 transition-transform duration-700" />
-            <h3 className="font-black mb-2 text-2xl tracking-tighter">Nexus Pro</h3>
-            <p className="text-sm text-indigo-100 mb-6 leading-relaxed font-medium">Create your own events and discover more. Only $19.99/mo.</p>
-            <button className="w-full bg-white text-indigo-600 font-black py-4 rounded-2xl text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl active:scale-95">Upgrade Plan</button>
-          </div>
+          {!isPro && (
+            <div className="bg-indigo-600 rounded-[40px] p-8 text-white relative overflow-hidden group shadow-2xl shadow-indigo-600/30">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl group-hover:scale-125 transition-transform duration-700" />
+              <h3 className="font-black mb-2 text-2xl tracking-tighter">Nexus Pro</h3>
+              <p className="text-sm text-indigo-100 mb-6 leading-relaxed font-medium">Create your own events and discover more. Only $19.99/mo.</p>
+              <button
+                onClick={() => navigate('/pricing')}
+                className="w-full bg-white text-indigo-600 font-black py-4 rounded-2xl text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl active:scale-95"
+              >
+                Upgrade Plan
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -185,11 +247,27 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
               <div className="space-y-8">
                 {/* Avatar & Basic Info */}
                 <div className="flex flex-col sm:flex-row gap-8 items-center">
-                   <div className="relative group cursor-pointer" onClick={() => setTempUser({...tempUser, avatar: `https://picsum.photos/seed/${Math.random()}/200` })}>
+                   <div className="relative group">
                       <img src={tempUser.avatar} className="w-24 h-24 rounded-[32px] border-2 border-slate-800 shadow-xl" alt="" />
-                      <div className="absolute inset-0 bg-black/40 rounded-[32px] opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                         <Camera className="w-6 h-6 text-white" />
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploadingAvatar}
+                        className="absolute inset-0 bg-black/40 rounded-[32px] opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        {isUploadingAvatar ? (
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+                        ) : (
+                          <Upload className="w-6 h-6 text-white" />
+                        )}
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                      />
                    </div>
                    <div className="flex-1 space-y-4 w-full">
                       <div className="space-y-2">

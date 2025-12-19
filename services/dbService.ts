@@ -154,6 +154,37 @@ export const createUser = async (user: User): Promise<User | null> => {
   return data;
 };
 
+export const uploadAvatar = async (userId: string, file: File): Promise<string | null> => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}-${Date.now()}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+
+    // Upload file to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('Error uploading avatar:', uploadError);
+      return null;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error in uploadAvatar:', error);
+    return null;
+  }
+};
+
 export const updateUser = async (id: string, updates: Partial<User>): Promise<User | null> => {
   const { data, error } = await supabase
     .from('users')
