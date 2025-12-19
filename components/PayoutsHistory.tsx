@@ -1,0 +1,272 @@
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/services/supabase';
+import { DollarSign, Calendar, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react';
+
+interface Payout {
+  id: string;
+  event_id: string;
+  gross_amount: number;
+  platform_fee: number;
+  net_amount: number;
+  ticket_count: number;
+  status: 'pending' | 'processing' | 'paid' | 'failed' | 'cancelled';
+  event_date: string;
+  processed_at: string | null;
+  error_message: string | null;
+  created_at: string;
+  event: {
+    name: string;
+    date: string;
+  };
+}
+
+interface PayoutsHistoryProps {
+  userId: string;
+}
+
+export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId }) => {
+  const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalEarned: 0,
+    pendingAmount: 0,
+    successfulPayouts: 0,
+  });
+
+  useEffect(() => {
+    fetchPayouts();
+  }, [userId]);
+
+  const fetchPayouts = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('payouts')
+        .select(`
+          *,
+          event:events(name, date)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        setPayouts(data as Payout[]);
+        
+        // Calculate stats
+        const totalEarned = data
+          .filter(p => p.status === 'paid')
+          .reduce((sum, p) => sum + p.net_amount, 0);
+        
+        const pendingAmount = data
+          .filter(p => p.status === 'pending' || p.status === 'processing')
+          .reduce((sum, p) => sum + p.net_amount, 0);
+        
+        const successfulPayouts = data.filter(p => p.status === 'paid').length;
+        
+        setStats({ totalEarned, pendingAmount, successfulPayouts });
+      }
+    } catch (error) {
+      console.error('Error fetching payouts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (cents: number) => {
+    return `€${(cents / 100).toFixed(2)}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'failed':
+        return <XCircle className="w-5 h-5 text-red-600" />;
+      case 'pending':
+      case 'processing':
+        return <Clock className="w-5 h-5 text-yellow-600" />;
+      default:
+        return <Clock className="w-5 h-5 text-gray-400" />;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusClasses = {
+      paid: 'bg-green-100 text-green-800',
+      failed: 'bg-red-100 text-red-800',
+      pending: 'bg-yellow-100 text-yellow-800',
+      processing: 'bg-blue-100 text-blue-800',
+      cancelled: 'bg-gray-100 text-gray-800',
+    };
+
+    return (
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusClasses[status as keyof typeof statusClasses] || statusClasses.cancelled}`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 border border-green-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-green-600">Total Earned</p>
+              <p className="text-2xl font-bold text-green-900 mt-1">
+                {formatCurrency(stats.totalEarned)}
+              </p>
+            </div>
+            <DollarSign className="w-10 h-10 text-green-600 opacity-50" />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-6 border border-yellow-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-yellow-600">Pending Payouts</p>
+              <p className="text-2xl font-bold text-yellow-900 mt-1">
+                {formatCurrency(stats.pendingAmount)}
+              </p>
+            </div>
+            <Clock className="w-10 h-10 text-yellow-600 opacity-50" />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg p-6 border border-indigo-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-indigo-600">Successful Payouts</p>
+              <p className="text-2xl font-bold text-indigo-900 mt-1">
+                {stats.successfulPayouts}
+              </p>
+            </div>
+            <TrendingUp className="w-10 h-10 text-indigo-600 opacity-50" />
+          </div>
+        </div>
+      </div>
+
+      {/* Payouts List */}
+      <div className="bg-white rounded-lg shadow-md border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Payout History</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Track your event earnings and payout status
+          </p>
+        </div>
+
+        {payouts.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <DollarSign className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No payouts yet</h3>
+            <p className="text-gray-600">
+              Payouts will appear here after your events complete and ticket sales are processed.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {payouts.map((payout) => (
+              <div key={payout.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-start space-x-4 flex-1">
+                    <div className="mt-1">{getStatusIcon(payout.status)}</div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900 truncate">
+                        {payout.event?.name || 'Unknown Event'}
+                      </h3>
+                      
+                      <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="w-4 h-4" />
+                          <span>Event: {formatDate(payout.event_date)}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">{payout.ticket_count}</span> tickets sold
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
+                        <div>
+                          <span className="font-medium">Gross:</span> {formatCurrency(payout.gross_amount)}
+                        </div>
+                        <div>
+                          <span className="font-medium">Platform Fee:</span> -{formatCurrency(payout.platform_fee)}
+                        </div>
+                        <div className="text-green-600 font-semibold">
+                          <span className="font-medium">Net:</span> {formatCurrency(payout.net_amount)}
+                        </div>
+                      </div>
+
+                      {payout.error_message && (
+                        <div className="mt-2 text-xs text-red-600 bg-red-50 px-3 py-1 rounded">
+                          {payout.error_message}
+                        </div>
+                      )}
+
+                      {payout.processed_at && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          Processed: {formatDate(payout.processed_at)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end space-y-2 ml-4">
+                    {getStatusBadge(payout.status)}
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {formatCurrency(payout.net_amount)}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {payout.status === 'paid' ? 'Paid' : 'Expected'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Info Box */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-medium text-blue-900">Payout Schedule</h4>
+            <p className="text-sm text-blue-700 mt-1">
+              Payouts are processed automatically 2 days after your event completes. This allows time for refund requests and ensures secure transactions.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PayoutsHistory;

@@ -20,6 +20,14 @@ const PRICE_IDS = {
   enterprise: Deno.env.get('STRIPE_PRICE_ENTERPRISE') || 'price_enterprise_monthly',
 };
 
+// Commission rates by subscription tier (for Stripe Connect payouts)
+const COMMISSION_RATES: Record<string, number> = {
+  free: 0.05,      // 5%
+  pro: 0.03,       // 3%
+  premium: 0.025,  // 2.5%
+  enterprise: 0.015, // 1.5%
+};
+
 serve(async (req: Request) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -96,9 +104,47 @@ serve(async (req: Request) => {
         },
       });
     } else if (eventId && ticketCount && pricePerTicket) {
-      // Ticket purchase checkout
-      const totalAmount = Math.round(ticketCount * pricePerTicket * 100); // Convert to cents
+      // Ticket purchase checkout - need to get organizer's Connect account
+      
+      // Get event with organizer details
+      const { data: event, error: eventError } = await supabase
+        .from('events')
+        .select(`
+          id,
+          name,
+          organizer_id,
+          organizer:users!events_organizer_id_fkey(
+            id,
+            subscription_tier,
+            stripe_connect_account_id,
+            stripe_connect_charges_enabled
+          )
+        `)
+        .eq('id', eventId)
+        .single();
 
+      if (eventError || !event) {
+        throw new Error('Event not found');
+      }
+
+      // Check if organizer has completed Stripe Connect onboarding
+      if (!event.organizer.stripe_connect_account_id) {
+        throw new Error('Event organizer has not set up payment receiving. Please contact the organizer.');
+      }
+
+      if (!event.organizer.stripe_connect_charges_enabled) {
+        throw new Error('Event organizer payment account is not fully activated yet.');
+      }
+
+      // Calculate amounts for Stripe Connect transfer
+      const totalAmount = Math.round(ticketCount * pricePerTicket * 100); // in cents
+      const platformFeeRate = COMMISSION_RATES[event.organizer.subscription_tier] || COMMISSION_RATES.free;
+      const platformFeeCents = Math.round(totalAmount * platformFeeRate);
+      const netAmountCents = totalAmount - platformFeeCents;
+
+      console.log(`Ticket checkout: Total €${(totalAmount / 100).toFixed(2)}, Fee €${(platformFeeCents / 100).toFixed(2)}, Net €${(netAmountCents / 100).toFixed(2)}`);
+
+      // Create checkout session for ticket purchase
       session = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ['card'],
@@ -122,6 +168,12 @@ serve(async (req: Request) => {
           user_id: userId,
           event_id: eventId,
           ticket_count: ticketCount.toString(),
+          organizer_id: event.organizer_id,
+          organizer_connect_account: event.organizer.stripe_connect_account_id,
+          organizer_tier: event.organizer.subscription_tier,
+          platform_fee_cents: platformFeeCents.toString(),
+          gross_amount_cents: totalAmount.toString(),
+          net_amount_cents: netAmountCents.toString(),
           type: 'ticket',
         },
       });

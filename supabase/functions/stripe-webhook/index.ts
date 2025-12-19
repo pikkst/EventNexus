@@ -49,6 +49,19 @@ serve(async (req: Request) => {
             .eq('payment_status', 'pending');
           
           console.log('Tickets updated for session:', session.id);
+          
+          // NOTE: DO NOT transfer money immediately to organizer
+          // Money is held until 2 days after event date for refund protection
+          // Automated payout happens via process-scheduled-payouts Edge Function
+          console.log('Payment held for post-event payout (organizer:', metadata.organizer_id, ')');
+          
+          // Send notification to customer
+          await supabase.from('notifications').insert({
+            user_id: metadata.user_id,
+            type: 'ticket',
+            message: `✓ Payment confirmed! Your tickets for the event are ready.`,
+            read: false,
+          });
         }
         
         // Handle subscription
@@ -63,6 +76,96 @@ serve(async (req: Request) => {
           
           console.log('Subscription activated for user:', metadata.user_id);
         }
+        break;
+      }
+
+      case 'account.updated': {
+        // Handle Stripe Connect account updates (onboarding completion)
+        const account = event.data.object;
+        console.log('Connect account updated:', account.id);
+        
+        // Find user with this Connect account
+        const { data: user } = await supabase
+          .from('users')
+          .select('id')
+          .eq('stripe_connect_account_id', account.id)
+          .single();
+
+        if (user) {
+          // Update Connect account status
+          await supabase
+            .from('users')
+            .update({
+              stripe_connect_onboarding_complete: account.details_submitted || false,
+              stripe_connect_details_submitted: account.details_submitted || false,
+              stripe_connect_charges_enabled: account.charges_enabled || false,
+              stripe_connect_payouts_enabled: account.payouts_enabled || false,
+            })
+            .eq('id', user.id);
+          
+          console.log('Updated Connect status for user:', user.id);
+          
+          // If onboarding complete, send notification
+          if (account.details_submitted && account.charges_enabled) {
+            await supabase.from('notifications').insert({
+              user_id: user.id,
+              type: 'payout',
+              message: '✓ Payment setup complete! You can now receive payouts from ticket sales.',
+              read: false,
+            });
+          }
+        }
+        break;
+      }
+
+      case 'transfer.created': {
+        const transfer = event.data.object;
+        console.log('Transfer created:', transfer.id, '→', transfer.destination);
+        break;
+      }
+
+      case 'transfer.paid': {
+        const transfer = event.data.object;
+        console.log('Transfer paid:', transfer.id);
+        
+        // Update payout record if exists
+        await supabase
+          .from('payouts')
+          .update({ status: 'paid' })
+          .eq('stripe_transfer_id', transfer.id);
+        
+        break;
+      }
+
+      case 'transfer.failed': {
+        const transfer = event.data.object;
+        console.error('Transfer failed:', transfer.id, transfer.failure_message);
+        
+        // Update payout record
+        await supabase
+          .from('payouts')
+          .update({
+            status: 'failed',
+            error_message: transfer.failure_message || 'Transfer failed',
+          })
+          .eq('stripe_transfer_id', transfer.id);
+        
+        // Get payout details to notify organizer
+        const { data: payout } = await supabase
+          .from('payouts')
+          .select('user_id, event:events(name)')
+          .eq('stripe_transfer_id', transfer.id)
+          .single();
+
+        if (payout) {
+          await supabase.from('notifications').insert({
+            user_id: payout.user_id,
+            type: 'system',
+            message: `⚠️ Payout failed for "${payout.event?.name}". Please update your bank account details.`,
+            read: false,
+          });
+        }
+        
         break;
       }
 
