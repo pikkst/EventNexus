@@ -17,22 +17,16 @@ serve(async (req) => {
   }
 
   try {
-    // Get user ID from authorization header
+    // Get authorization header from request
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      )
-    }
-
-    // Use service role key - database function has SECURITY DEFINER and RLS
+    
+    // Create client with the user's auth token
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: authHeader }
+          headers: authHeader ? { Authorization: authHeader } : {}
         }
       }
     )
@@ -41,8 +35,9 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     
     if (authError || !user) {
+      console.error('Auth error:', authError)
       return new Response(
-        JSON.stringify({ error: 'Authentication failed' }),
+        JSON.stringify({ error: 'Authentication required' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       )
     }
@@ -64,7 +59,7 @@ serve(async (req) => {
 
     if (userProfile?.role !== 'admin') {
       return new Response(
-        JSON.stringify({ error: 'Admin access required', details: `User role: ${userProfile?.role}` }),
+        JSON.stringify({ error: 'Admin access required', role: userProfile?.role }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
       )
     }
