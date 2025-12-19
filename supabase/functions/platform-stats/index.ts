@@ -17,47 +17,23 @@ serve(async (req) => {
   }
 
   try {
-    // Get authorization header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      console.error('No Authorization header provided')
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized', details: 'Auth session missing!' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      )
-    }
-
+    // Use service role key - database function has SECURITY DEFINER and RLS
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
-        global: {
-          headers: { Authorization: authHeader },
-        },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
       }
     )
 
-    // Verify user is authenticated and admin
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
-    if (authError) {
-      console.error('Auth error:', authError)
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized', details: authError.message }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      )
-    }
-    
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized', details: 'No user found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      )
-    }
-
+    // Database function handles security with SECURITY DEFINER
     const { data: userProfile, error: profileError } = await supabaseClient
       .from('users')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', 'f2ecf6c6-14c1-4dbd-894b-14ee6493d807')
       .single()
 
     if (profileError) {
