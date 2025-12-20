@@ -27,13 +27,14 @@ const SUPABASE_URL = 'https://anlivujgkjmajkcgbaxw.supabase.co';
 // Stores alerts and monitoring data
 
 /**
- * Get all monitoring alerts
+ * Get all monitoring alerts (excludes deleted alerts)
  */
 export async function getMonitoringAlerts(): Promise<BrandMonitoringAlert[]> {
   try {
     const { data, error } = await supabase
       .from('brand_monitoring_alerts')
       .select('*')
+      .neq('status', 'deleted')
       .order('timestamp', { ascending: false });
 
     if (error) throw error;
@@ -132,13 +133,13 @@ export async function updateAlertStatus(
 }
 
 /**
- * Delete an alert
+ * Delete an alert (soft delete - marks as 'deleted' to prevent re-detection)
  */
 export async function deleteAlert(alertId: string): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('brand_monitoring_alerts')
-      .delete()
+      .update({ status: 'deleted', action_taken: 'Deleted by admin' })
       .eq('id', alertId);
 
     if (error) throw error;

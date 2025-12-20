@@ -91,18 +91,18 @@ serve(async (req) => {
 
     // Store alerts in database with deduplication
     if (alerts.length > 0) {
-      // Fetch existing alerts to check for duplicates
+      // Fetch existing alerts to check for duplicates (including deleted/resolved to prevent re-detection)
       const { data: existingAlerts } = await supabase
         .from('brand_monitoring_alerts')
-        .select('url, title, status')
-        .in('status', ['open', 'investigating']); // Only check non-resolved alerts
+        .select('url, title, status');
 
       // Create lookup for existing alerts (URL + title combination)
+      // Skip insertion for ANY existing alert (open, investigating, resolved, OR deleted)
       const existingSet = new Set(
         (existingAlerts || []).map(a => `${a.url}||${a.title}`)
       );
 
-      // Filter out duplicates - only insert NEW alerts that aren't already open/investigating
+      // Filter out duplicates - only insert NEW alerts that don't exist in any state
       const newAlerts = alerts.filter(alert => {
         const key = `${alert.url}||${alert.title}`;
         return !existingSet.has(key);

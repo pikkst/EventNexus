@@ -19,6 +19,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const [aiReport, setAiReport] = useState<any>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
   const [showAllAlerts, setShowAllAlerts] = useState(false);
+  const [selectedAlerts, setSelectedAlerts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadMonitoringData();
@@ -123,6 +124,48 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
     const success = await brandMonitoringService.deleteAlert(alertId);
     if (success) {
       await loadMonitoringData();
+    }
+  };
+
+  const toggleSelectAlert = (alertId: string) => {
+    const newSelected = new Set(selectedAlerts);
+    if (newSelected.has(alertId)) {
+      newSelected.delete(alertId);
+    } else {
+      newSelected.add(alertId);
+    }
+    setSelectedAlerts(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedAlerts.size === alerts.length) {
+      setSelectedAlerts(new Set());
+    } else {
+      setSelectedAlerts(new Set(alerts.map(a => a.id)));
+    }
+  };
+
+  const handleBulkAction = async (action: 'investigate' | 'resolve' | 'delete') => {
+    const alertIds = Array.from(selectedAlerts);
+    if (alertIds.length === 0) return;
+
+    setLoading(true);
+    try {
+      for (const alertId of alertIds) {
+        if (action === 'investigate') {
+          await brandMonitoringService.updateAlertStatus(alertId, 'investigating', 'Bulk investigation');
+        } else if (action === 'resolve') {
+          await brandMonitoringService.updateAlertStatus(alertId, 'resolved', 'Bulk resolved');
+        } else if (action === 'delete') {
+          await brandMonitoringService.deleteAlert(alertId);
+        }
+      }
+      setSelectedAlerts(new Set());
+      await loadMonitoringData();
+    } catch (error) {
+      console.error('Bulk action failed:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -298,14 +341,46 @@ Legal Framework References:
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white">Recent Alerts</h3>
-          {alerts.length > 5 && (
-            <button
-              onClick={() => setShowAllAlerts(!showAllAlerts)}
-              className="px-4 py-2 text-sm bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 rounded-lg transition-colors"
-            >
-              {showAllAlerts ? `Show Less` : `Show All (${alerts.length})`}
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {alerts.length > 0 && (
+              <>
+                {selectedAlerts.size > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-400">{selectedAlerts.size} selected</span>
+                    <button
+                      onClick={() => handleBulkAction('investigate')}
+                      disabled={loading}
+                      className="px-3 py-1.5 text-xs bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/30 rounded transition-colors disabled:opacity-50"
+                    >
+                      Investigate All
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction('resolve')}
+                      disabled={loading}
+                      className="px-3 py-1.5 text-xs bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30 rounded transition-colors disabled:opacity-50"
+                    >
+                      Resolve All
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction('delete')}
+                      disabled={loading}
+                      className="px-3 py-1.5 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded transition-colors disabled:opacity-50"
+                    >
+                      Delete All
+                    </button>
+                  </div>
+                )}
+                {alerts.length > 5 && (
+                  <button
+                    onClick={() => setShowAllAlerts(!showAllAlerts)}
+                    className="px-4 py-2 text-sm bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 rounded-lg transition-colors"
+                  >
+                    {showAllAlerts ? `Show Less` : `Show All (${alerts.length})`}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
         {alerts.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
@@ -313,10 +388,29 @@ Legal Framework References:
             <p>No alerts detected yet. Run a scan to start monitoring.</p>
           </div>
         ) : (
-          <div className="space-y-3 max-h-[600px] overflow-y-auto">
-            {(showAllAlerts ? alerts : alerts.slice(0, 5)).map(alert => (
+          <>
+            {/* Select All Checkbox */}
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-700">
+              <input
+                type="checkbox"
+                checked={selectedAlerts.size === alerts.length && alerts.length > 0}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-purple-500 focus:ring-purple-500 focus:ring-offset-gray-900"
+              />
+              <label className="text-sm text-gray-400 cursor-pointer" onClick={toggleSelectAll}>
+                Select All ({alerts.length} alerts)
+              </label>
+            </div>
+            <div className="space-y-3 max-h-[600px] overflow-y-auto">
+              {(showAllAlerts ? alerts : alerts.slice(0, 5)).map(alert => (
               <div key={alert.id} className={`border rounded-lg p-4 ${getSeverityColor(alert.severity)}`}>
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start gap-3 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedAlerts.has(alert.id)}
+                    onChange={() => toggleSelectAlert(alert.id)}
+                    className="mt-1 w-4 h-4 rounded border-gray-600 bg-gray-700 text-purple-500 focus:ring-purple-500 focus:ring-offset-gray-900 cursor-pointer"
+                  />
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`text-sm font-medium ${getStatusColor(alert.status)}`}>
@@ -330,7 +424,7 @@ Legal Framework References:
                     <p className="text-sm text-gray-300">{alert.description}</p>
                   </div>
                   {alert.url && (
-                    <a href={alert.url} target="_blank" rel="noopener noreferrer" className="ml-4">
+                    <a href={alert.url} target="_blank" rel="noopener noreferrer" className="ml-2">
                       <ExternalLink className="w-5 h-5 text-gray-400 hover:text-white transition-colors" />
                     </a>
                   )}
@@ -367,8 +461,11 @@ Legal Framework References:
               </div>
             ))}
           </div>
+          </>
         )}
       </div>
+
+      {/* API Configuration Notice - shown only when no alerts */}
     </div>
   );
 
