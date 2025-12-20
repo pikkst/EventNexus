@@ -16,10 +16,9 @@ SELECT
 FROM public.users
 WHERE email = '3dcutandengrave@gmail.com';
 
--- Step 2: Update the email on old profile to prevent conflict
-UPDATE public.users
-SET email = '3dcutandengrave+old@gmail.com',
-    status = 'inactive'
+-- Step 2: Delete old profile (it has wrong ID anyway)
+-- The old profile will be backed up above if you need the data
+DELETE FROM public.users
 WHERE email = '3dcutandengrave@gmail.com'
 AND id != '35d306a3-badc-4472-96e9-c3d105c28a4b';
 
@@ -84,12 +83,10 @@ FROM auth.users au
 JOIN public.users u ON u.id = au.id
 WHERE au.email = '3dcutandengrave@gmail.com';
 
--- Step 5: Show old profile (now inactive)
+-- Step 5: Confirm old profile was deleted
 SELECT 
-    'Old profile (archived)' as info,
-    id,
-    email,
-    status,
-    created_at
+    'Old profile deleted' as info,
+    COUNT(*) as deleted_count
 FROM public.users
-WHERE email = '3dcutandengrave+old@gmail.com';
+WHERE email LIKE '3dcutandengrave%'
+AND id != '35d306a3-badc-4472-96e9-c3d105c28a4b';
