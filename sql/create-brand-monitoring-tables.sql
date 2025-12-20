@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS brand_monitoring_alerts (
   description TEXT NOT NULL,
   url TEXT,
   timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'investigating', 'resolved', 'dismissed')),
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'investigating', 'resolved', 'dismissed', 'deleted')),
   action_taken TEXT,
   detected_by TEXT,
   metadata JSONB DEFAULT '{}',
@@ -103,7 +103,7 @@ COMMENT ON TABLE monitoring_stats IS 'Stores aggregate statistics for monitoring
 
 COMMENT ON COLUMN brand_monitoring_alerts.type IS 'Type of monitoring: code, domain, brand, search, social, competitor';
 COMMENT ON COLUMN brand_monitoring_alerts.severity IS 'Alert severity: critical, warning, info';
-COMMENT ON COLUMN brand_monitoring_alerts.status IS 'Alert status: open, investigating, resolved, dismissed';
+COMMENT ON COLUMN brand_monitoring_alerts.status IS 'Alert status: open, investigating, resolved, dismissed, deleted';
 COMMENT ON COLUMN brand_monitoring_alerts.metadata IS 'Additional alert data in JSON format';
 
 -- Create view for monitoring dashboard
