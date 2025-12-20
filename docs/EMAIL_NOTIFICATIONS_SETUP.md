@@ -12,7 +12,7 @@ This guide explains how to configure email notifications for critical brand moni
 
 ### 1. Create Resend Account
 1. Go to https://resend.com/signup
-2. Sign up with email: `jour email`
+2. Sign up with email: `your-email@example.com`
 3. Verify email address
 
 ### 2. Add Domain
@@ -28,8 +28,9 @@ This guide explains how to configure email notifications for critical brand moni
    ```
    Type: TXT
    Host: resend._domainkey.mail    ← Use ONLY this (not full domain!)
-   Value: p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDfRgqJv0yu4uaBTW8BnSpHIDGn5hmUWsAeNid+12+HjRtCiGvaEL7KegaAg7bWjC9oPV9INfywAx01RbRv+DC4+s9iiMAFn8T8WYR8ZvNX+p7cOnlreLa7aiJ5l0PIj7mSKqjaKX83fYrL3elQ5oa33iA+DQFiHBPKjqfv4o0R3wIDAQAB
+   Value: p=YOUR_DKIM_PUBLIC_KEY_FROM_RESEND_DASHBOARD
    ```
+   **Note:** Copy the full DKIM public key from your Resend Dashboard (starts with `p=MIGfMA0GCS...`)
    Result will be: `resend._domainkey.mail.eventnexus.eu.` ✅
    
    **MX Record (Email Sending):**
@@ -140,7 +141,7 @@ npx supabase functions deploy brand-monitoring --no-verify-jwt
 
 ### Critical Alert Email
 - **From:** `alerts@mail.eventnexus.eu`
-- **To:** `huntersest@gmail.com`
+- **To:** `admin@example.com`
 - **Subject:** `🚨 CRITICAL: Brand Protection Alert - [Alert Title]`
 - **Content:** HTML email with:
   - Alert severity badge
@@ -153,7 +154,7 @@ npx supabase functions deploy brand-monitoring --no-verify-jwt
 
 ### Weekly Summary Email
 - **From:** `alerts@mail.eventnexus.eu`
-- **To:** `huntersest@gmail.com`
+- **To:** `admin@example.com`
 - **Subject:** `📊 Weekly Brand Monitoring Summary`
 - **Content:** HTML email with:
   - Total alerts this week
@@ -169,7 +170,7 @@ npx supabase functions deploy brand-monitoring --no-verify-jwt
 1. Go to Admin → Brand Protection
 2. Click **Run Full Scan**
 3. Wait for scan to complete
-4. Check email inbox (huntersest@gmail.com)
+4. Check email inbox (your configured admin email)
 5. Verify email received within 30 seconds
 
 ### 2. Manual Test via Edge Function
@@ -250,7 +251,7 @@ Look for:
 - `Resend API error: ...` (API issues)
 
 **Check 4: Spam Folder**
-- Check huntersest@gmail.com spam folder
+- Check your admin email spam folder
 - Mark as "Not Spam" if found
 - Add `alerts@mail.eventnexus.eu` to contacts
 
@@ -490,7 +491,7 @@ Email send error: {status: 400, message: "Domain not verified"}
 - ✅ Scoped to sending only (no account access)
 
 ### Email Content
-- ✅ Only admin email (huntersest@gmail.com) receives alerts
+- ✅ Only admin email receives alerts
 - ✅ No PII in emails (only alert metadata)
 - ✅ URLs included for transparency
 - ✅ Legal framework references included
@@ -533,4 +534,4 @@ After email setup is complete:
 - **Resend Support:** support@resend.com
 - **Resend Docs:** https://resend.com/docs
 - **Resend Status:** https://status.resend.com
-- **EventNexus Maintainer:** huntersest@gmail.com
+- **EventNexus Maintainer:** See project README
