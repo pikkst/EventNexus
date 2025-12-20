@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Search, Globe, AlertTriangle, CheckCircle, XCircle, Eye, TrendingUp, Activity, Code, ExternalLink, RefreshCw } from 'lucide-react';
 import type { BrandMonitoringAlert, MonitoringStats } from '@/types';
+import * as brandMonitoringService from '@/services/brandMonitoringService';
 
 interface BrandProtectionMonitorProps {
   user: any;
@@ -20,62 +21,29 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const loadMonitoringData = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API calls to monitoring services
-      // This would integrate with GitHub API, WHOIS services, brand monitoring APIs, etc.
-      
-      // Mock data for demonstration
-      const mockStats: MonitoringStats = {
-        codeScans: 145,
-        domainChecks: 89,
-        brandMentions: 234,
-        searchResults: 1523,
-        socialMentions: 456,
-        competitorAlerts: 12,
-        criticalAlerts: 3,
-        warningAlerts: 8,
-        infoAlerts: 15,
+      // Load real data from Supabase database
+      const [alertsData, statsData] = await Promise.all([
+        brandMonitoringService.getMonitoringAlerts(),
+        brandMonitoringService.getMonitoringStats(),
+      ]);
+
+      // If no stats exist yet, initialize with zeros
+      const initialStats: MonitoringStats = {
+        codeScans: 0,
+        domainChecks: 0,
+        brandMentions: 0,
+        searchResults: 0,
+        socialMentions: 0,
+        competitorAlerts: 0,
+        criticalAlerts: 0,
+        warningAlerts: 0,
+        infoAlerts: 0,
         lastScanTime: new Date(),
       };
 
-      const mockAlerts: BrandMonitoringAlert[] = [
-        {
-          id: '1',
-          type: 'code',
-          severity: 'critical',
-          title: 'Code similarity detected on GitHub',
-          description: 'Repository "fake-eventnexus" contains code similar to EventNexus platform',
-          url: 'https://github.com/fake-user/fake-eventnexus',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-          status: 'open',
-          actionTaken: null,
-        },
-        {
-          id: '2',
-          type: 'domain',
-          severity: 'warning',
-          title: 'Suspicious domain registered',
-          description: 'Domain "eventnexuss.com" registered by unknown party',
-          url: 'https://eventnexuss.com',
-          timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-          status: 'investigating',
-          actionTaken: 'WHOIS lookup initiated',
-        },
-        {
-          id: '3',
-          type: 'brand',
-          severity: 'info',
-          title: 'Brand mention in blog post',
-          description: 'Positive review of EventNexus platform on tech blog',
-          url: 'https://techblog.example.com/eventnexus-review',
-          timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000),
-          status: 'resolved',
-          actionTaken: 'Monitored - no action needed',
-        },
-      ];
-
-      setStats(mockStats);
-      setAlerts(mockAlerts);
-      setLastScan(new Date());
+      setAlerts(alertsData);
+      setStats(statsData || initialStats);
+      setLastScan(statsData?.lastScanTime || new Date());
     } catch (error) {
       console.error('Error loading monitoring data:', error);
     } finally {
@@ -86,9 +54,40 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const runScan = async (scanType: string) => {
     setLoading(true);
     try {
-      // TODO: Implement actual scan based on type
       console.log(`Running ${scanType} scan...`);
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+      
+      let newAlerts: BrandMonitoringAlert[] = [];
+      
+      switch (scanType) {
+        case 'code':
+          newAlerts = await brandMonitoringService.scanGitHubCodeSimilarity();
+          break;
+        case 'domain':
+          newAlerts = await brandMonitoringService.checkDomainTyposquatting();
+          break;
+        case 'brand':
+          newAlerts = await brandMonitoringService.monitorBrandMentions();
+          break;
+        case 'search':
+          newAlerts = await brandMonitoringService.monitorSearchEngines();
+          break;
+        case 'social':
+          newAlerts = await brandMonitoringService.monitorSocialMedia();
+          break;
+        case 'competitors':
+          newAlerts = await brandMonitoringService.analyzeCompetitors();
+          break;
+        case 'comprehensive':
+          const result = await brandMonitoringService.runComprehensiveScan();
+          setAlerts(result.alerts);
+          setStats(result.stats);
+          setLastScan(result.stats.lastScanTime);
+          return;
+        default:
+          console.warn(`Unknown scan type: ${scanType}`);
+      }
+      
+      // Reload all data after scan
       await loadMonitoringData();
     } catch (error) {
       console.error(`Error running ${scanType} scan:`, error);
@@ -175,39 +174,70 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
         </div>
       </div>
 
+      {/* API Configuration Notice */}
+      {alerts.length === 0 && (
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <AlertTriangle className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-2">API Integration Required</h3>
+              <p className="text-sm text-gray-300 mb-4">
+                This monitoring dashboard requires API integrations with third-party services. Configure the following in Supabase Edge Function Secrets:
+              </p>
+              <ul className="text-sm text-gray-400 space-y-2 ml-4">
+                <li>• <code className="text-blue-400">GITHUB_TOKEN</code> - GitHub API access for code monitoring</li>
+                <li>• <code className="text-blue-400">WHOIS_API_KEY</code> - WHOIS service for domain monitoring</li>
+                <li>• <code className="text-blue-400">GOOGLE_SEARCH_KEY</code> - Google Custom Search API</li>
+                <li>• <code className="text-blue-400">TWITTER_BEARER_TOKEN</code> - Twitter API for social monitoring</li>
+              </ul>
+              <p className="text-xs text-gray-500 mt-4">
+                Configure via: <code className="text-blue-400">supabase secrets set SECRET_NAME=value</code>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Recent Alerts */}
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Recent Alerts</h3>
-        <div className="space-y-3">
-          {alerts.slice(0, 5).map(alert => (
-            <div key={alert.id} className={`border rounded-lg p-4 ${getSeverityColor(alert.severity)}`}>
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-sm font-medium ${getStatusColor(alert.status)}`}>
-                      {alert.status.toUpperCase()}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(alert.timestamp).toLocaleString()}
-                    </span>
+        {alerts.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            <Shield className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>No alerts detected yet. Run a scan to start monitoring.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {alerts.slice(0, 5).map(alert => (
+              <div key={alert.id} className={`border rounded-lg p-4 ${getSeverityColor(alert.severity)}`}>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-sm font-medium ${getStatusColor(alert.status)}`}>
+                        {alert.status.toUpperCase()}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(alert.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                    <h4 className="font-semibold text-white mb-1">{alert.title}</h4>
+                    <p className="text-sm text-gray-300">{alert.description}</p>
                   </div>
-                  <h4 className="font-semibold text-white mb-1">{alert.title}</h4>
-                  <p className="text-sm text-gray-300">{alert.description}</p>
+                  {alert.url && (
+                    <a href={alert.url} target="_blank" rel="noopener noreferrer" className="ml-4">
+                      <ExternalLink className="w-5 h-5 text-gray-400 hover:text-white transition-colors" />
+                    </a>
+                  )}
                 </div>
-                {alert.url && (
-                  <a href={alert.url} target="_blank" rel="noopener noreferrer" className="ml-4">
-                    <ExternalLink className="w-5 h-5 text-gray-400 hover:text-white transition-colors" />
-                  </a>
+                {alert.actionTaken && (
+                  <div className="mt-2 text-xs text-gray-400 italic">
+                    Action: {alert.actionTaken}
+                  </div>
                 )}
               </div>
-              {alert.actionTaken && (
-                <div className="mt-2 text-xs text-gray-400 italic">
-                  Action: {alert.actionTaken}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
