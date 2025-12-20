@@ -29,10 +29,11 @@ import {
   CreditCard,
   Pause,
   XOctagon,
-  RefreshCw
+  RefreshCw,
+  Image as ImageIcon
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
-import { getUserTickets, uploadAvatar, getOrganizerEvents } from '../services/dbService';
+import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents } from '../services/dbService';
 
 interface UserProfileProps {
   user: User;
@@ -49,6 +50,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
   const [userTickets, setUserTickets] = useState<any[]>([]);
   const [organizedEvents, setOrganizedEvents] = useState<EventNexusEvent[]>([]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [tempUser, setTempUser] = useState<Partial<User>>({
     name: user.name,
     bio: user.bio,
@@ -85,15 +87,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be less than 5MB');
+    // Increased limit to 10MB but we'll compress larger images
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image must be less than 10MB');
       return;
     }
 
     setIsUploadingAvatar(true);
     try {
-      const avatarUrl = await uploadAvatar(user.id, file);
+      // Compress and resize image if needed
+      const processedFile = await compressAndResizeImage(file);
+      
+      const avatarUrl = await uploadAvatar(user.id, processedFile);
       if (avatarUrl) {
         setTempUser({ ...tempUser, avatar: avatarUrl });
       } else {
@@ -105,6 +110,221 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
     } finally {
       setIsUploadingAvatar(false);
     }
+  };
+
+  // Helper function to compress and resize images
+  const compressAndResizeImage = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Target size for avatars (reasonable for profile pics)
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          const MAX_FILE_SIZE = 500 * 1024; // Target 500KB max
+          
+          let width = img.width;
+          let height = img.height;
+          
+          // Calculate new dimensions maintaining aspect ratio
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = height * (MAX_WIDTH / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = width * (MAX_HEIGHT / height);
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          // Create canvas and draw resized image
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+          
+          // Draw image with smoothing
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Try different quality levels to get under target size
+          const tryCompress = (quality: number) => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error('Failed to compress image'));
+                  return;
+                }
+                
+                // If still too large and quality can be reduced, try again
+                if (blob.size > MAX_FILE_SIZE && quality > 0.5) {
+                  tryCompress(quality - 0.1);
+                  return;
+                }
+                
+                // Create new file from blob
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                
+                console.log(`Image compressed: ${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`);
+                resolve(compressedFile);
+              },
+              'image/jpeg',
+              quality
+            );
+          };
+          
+          // Start with 0.9 quality
+          tryCompress(0.9);
+        };
+        
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+      
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Increased limit to 10MB but we'll compress larger images
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image must be less than 10MB');
+      return;
+    }
+
+    setIsUploadingBanner(true);
+    try {
+      // Compress and resize banner (wider dimensions for banner)
+      const processedFile = await compressAndResizeBanner(file);
+      
+      const bannerUrl = await uploadBanner(user.id, processedFile);
+      if (bannerUrl) {
+        setTempUser({
+          ...tempUser,
+          branding: {
+            ...tempUser.branding!,
+            bannerUrl,
+            primaryColor: tempUser.branding?.primaryColor || '#6366f1',
+            accentColor: tempUser.branding?.accentColor || '#818cf8'
+          }
+        });
+      } else {
+        alert('Failed to upload banner image');
+      }
+    } catch (error) {
+      console.error('Error uploading banner:', error);
+      alert('Failed to upload banner image');
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  };
+
+  // Helper function to compress and resize banner images (wider aspect ratio)
+  const compressAndResizeBanner = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Target size for banners (wider format)
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 400;
+          const MAX_FILE_SIZE = 800 * 1024; // Target 800KB max for banners
+          
+          let width = img.width;
+          let height = img.height;
+          
+          // Calculate new dimensions maintaining aspect ratio
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = height * (MAX_WIDTH / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = width * (MAX_HEIGHT / height);
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          // Create canvas and draw resized image
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+          
+          // Draw image with smoothing
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Try different quality levels to get under target size
+          const tryCompress = (quality: number) => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error('Failed to compress banner'));
+                  return;
+                }
+                
+                // If still too large and quality can be reduced, try again
+                if (blob.size > MAX_FILE_SIZE && quality > 0.5) {
+                  tryCompress(quality - 0.1);
+                  return;
+                }
+                
+                // Create new file from blob
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                
+                console.log(`Banner compressed: ${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`);
+                resolve(compressedFile);
+              },
+              'image/jpeg',
+              quality
+            );
+          };
+          
+          // Start with 0.9 quality
+          tryCompress(0.9);
+        };
+        
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+      
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleSaveProfile = () => {
@@ -621,14 +841,32 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Banner Image URL</label>
-                        <input 
-                          type="text" 
-                          value={tempUser.branding?.bannerUrl}
-                          onChange={(e) => setTempUser({...tempUser, branding: { ...tempUser.branding!, bannerUrl: e.target.value, primaryColor: tempUser.branding?.primaryColor || '#6366f1', accentColor: tempUser.branding?.accentColor || '#818cf8' }})}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3 text-white outline-none focus:border-indigo-500 text-xs"
-                          placeholder="https://..."
-                        />
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Banner Image</label>
+                        <div className="flex items-center gap-4">
+                          {tempUser.branding?.bannerUrl && (
+                            <img 
+                              src={tempUser.branding.bannerUrl} 
+                              alt="Banner preview" 
+                              className="w-32 h-10 object-cover rounded-lg border border-slate-700"
+                            />
+                          )}
+                          <label className="flex-1 cursor-pointer">
+                            <div className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl hover:border-indigo-500 transition-all">
+                              <ImageIcon className="w-4 h-4" />
+                              <span className="text-sm font-medium">
+                                {isUploadingBanner ? 'Uploading...' : tempUser.branding?.bannerUrl ? 'Change Banner' : 'Upload Banner'}
+                              </span>
+                            </div>
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              onChange={handleBannerUpload}
+                              disabled={isUploadingBanner}
+                            />
+                          </label>
+                        </div>
+                        <p className="text-xs text-slate-500 ml-1">Recommended: 1200×400px, max 10MB (auto-compressed)</p>
                       </div>
                     </div>
 
