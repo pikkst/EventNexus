@@ -30,10 +30,13 @@ import {
   Pause,
   XOctagon,
   RefreshCw,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ExternalLink,
+  DollarSign
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
-import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents } from '../services/dbService';
+import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount } from '../services/dbService';
+import { supabase } from '../services/supabase';
 
 interface UserProfileProps {
   user: User;
@@ -51,6 +54,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
   const [organizedEvents, setOrganizedEvents] = useState<EventNexusEvent[]>([]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [connectStatus, setConnectStatus] = useState<{
+    hasAccount: boolean;
+    onboardingComplete: boolean;
+    chargesEnabled: boolean;
+    payoutsEnabled: boolean;
+  } | null>(null);
+  const [isConnectLoading, setIsConnectLoading] = useState(false);
   const [tempUser, setTempUser] = useState<Partial<User>>({
     name: user.name,
     bio: user.bio,
@@ -65,6 +75,55 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
       setUserTickets(tickets || []);
     };
     const loadOrganizedEvents = async () => {
+      const events = await getOrganizerEvents(user.id);
+      setOrganizedEvents(events || []);
+    };
+    const loadConnectStatus = async () => {
+      const status = await checkConnectStatus(user.id);
+      if (status) {
+        setConnectStatus(status);
+      }
+    };
+    loadTickets();
+    loadOrganizedEvents();
+    if (user.subscription_tier !== 'free') {
+      loadConnectStatus();
+    }
+  }, [user.id, user.subscription_tier]);
+
+  const handleOpenStripeDashboard = async () => {
+    setIsConnectLoading(true);
+    try {
+      if (!connectStatus?.hasAccount) {
+        // Need to start onboarding first
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData.user?.email) {
+          alert('Unable to retrieve email. Please try again.');
+          return;
+        }
+
+        const result = await createConnectAccount(user.id, userData.user.email);
+        if (result?.url) {
+          window.location.href = result.url;
+        } else {
+          alert('Failed to create Connect account. Please try again.');
+        }
+      } else {
+        // Open dashboard
+        const url = await getConnectDashboardLink(user.id);
+        if (url) {
+          window.open(url, '_blank');
+        } else {
+          alert('Unable to access dashboard. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Error with Stripe Connect:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsConnectLoading(false);
+    }
+  };
       const events = await getOrganizerEvents(user.id);
       setOrganizedEvents(events || []);
     };
@@ -596,6 +655,26 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                       <span className="font-bold text-sm text-white group-hover:text-red-400 transition-colors">Manage Subscription</span>
                     </div>
                     <ChevronRight size={16} className="text-slate-600 group-hover:translate-x-1 group-hover:text-red-400 transition-all" />
+                  </button>
+
+                  {/* Stripe Connect Payout Dashboard */}
+                  <button
+                    onClick={handleOpenStripeDashboard}
+                    disabled={isConnectLoading}
+                    className="w-full flex items-center justify-between p-4 rounded-2xl bg-emerald-600/10 border border-emerald-500/30 hover:bg-emerald-600/20 transition-all group disabled:opacity-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="w-5 h-5 text-emerald-400" />
+                      <div className="text-left">
+                        <span className="font-bold text-sm text-white block">
+                          {connectStatus?.onboardingComplete ? 'Manage Payouts' : 'Set Up Payouts'}
+                        </span>
+                        {connectStatus?.onboardingComplete && (
+                          <span className="text-[10px] text-emerald-400 font-medium">Bank account & payout settings</span>
+                        )}
+                      </div>
+                    </div>
+                    <ExternalLink size={16} className="text-emerald-600 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
               </div>
