@@ -31,6 +31,12 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const [showWhitelistModal, setShowWhitelistModal] = useState(false);
   const [whitelistAlert, setWhitelistAlert] = useState<BrandMonitoringAlert | null>(null);
   const [whitelistReason, setWhitelistReason] = useState('');
+  
+  // Notes modal
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [notesAlert, setNotesAlert] = useState<BrandMonitoringAlert | null>(null);
+  const [alertNotes, setAlertNotes] = useState<any[]>([]);
+  const [newNote, setNewNote] = useState('');
 
   useEffect(() => {
     loadMonitoringData();
@@ -175,6 +181,40 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
       await loadMonitoringData();
     } catch (error) {
       console.error('Bulk action failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenNotesModal = async (alert: BrandMonitoringAlert) => {
+    setNotesAlert(alert);
+    setShowNotesModal(true);
+    setNewNote('');
+    
+    // Load existing notes
+    try {
+      const notes = await brandMonitoringService.getAlertNotes(alert.id);
+      setAlertNotes(notes);
+    } catch (error) {
+      console.error('Error loading notes:', error);
+      setAlertNotes([]);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!notesAlert || !newNote.trim()) return;
+    
+    setLoading(true);
+    try {
+      const success = await brandMonitoringService.addAlertNote(notesAlert.id, newNote);
+      
+      if (success) {
+        const notes = await brandMonitoringService.getAlertNotes(notesAlert.id);
+        setAlertNotes(notes);
+        setNewNote('');
+      }
+    } catch (error) {
+      console.error('Error adding note:', error);
     } finally {
       setLoading(false);
     }
@@ -614,6 +654,13 @@ Legal Framework References:
                     className="px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded transition-colors"
                   >
                     Delete
+                  </button>
+                  <button
+                    onClick={() => handleOpenNotesModal(alert)}
+                    className="px-3 py-1 text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 rounded transition-colors flex items-center gap-1"
+                  >
+                    <MessageSquare className="w-3 h-3" />
+                    Notes
                   </button>
                   <button
                     onClick={() => {
@@ -1209,6 +1256,99 @@ Legal Framework References:
                     <><RefreshCw className="w-4 h-4 animate-spin" /> Processing...</>
                   ) : (
                     <><Ban className="w-4 h-4" /> Add to Whitelist</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notes Modal */}
+      {showNotesModal && notesAlert && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <MessageSquare className="w-6 h-6 text-blue-400" />
+                  <h3 className="text-xl font-bold text-white">Alert Notes</h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowNotesModal(false);
+                    setNotesAlert(null);
+                    setAlertNotes([]);
+                    setNewNote('');
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="mt-4 p-3 bg-gray-800/50 border border-gray-700 rounded">
+                <p className="text-sm font-medium text-white">{notesAlert.title}</p>
+                {notesAlert.url && (
+                  <p className="text-xs text-gray-400 mt-1 break-all">{notesAlert.url}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-3">
+              {alertNotes.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No notes yet. Add the first one below.</p>
+                </div>
+              ) : (
+                alertNotes.map((note) => (
+                  <div key={note.id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="text-xs text-gray-400">
+                        {new Date(note.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-white whitespace-pre-wrap">{note.note}</p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-700">
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Add Note
+                </label>
+                <textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Document findings, actions taken, investigation notes..."
+                  className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowNotesModal(false);
+                    setNotesAlert(null);
+                    setAlertNotes([]);
+                    setNewNote('');
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handleAddNote}
+                  disabled={!newNote.trim() || loading}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <><RefreshCw className="w-4 h-4 animate-spin" /> Adding...</>
+                  ) : (
+                    <><MessageSquare className="w-4 h-4" /> Add Note</>
                   )}
                 </button>
               </div>
