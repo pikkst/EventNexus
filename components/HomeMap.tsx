@@ -96,11 +96,12 @@ const HomeMap: React.FC = () => {
     className: 'custom-marker',
     html: `
       <div class="flex flex-col items-center gap-1">
-        <div class="p-2.5 rounded-2xl bg-indigo-600 border-2 border-white text-white shadow-2xl relative">
+        <div class="p-2.5 rounded-2xl ${isFeatured ? 'bg-gradient-to-br from-yellow-400 to-orange-500 animate-pulse' : 'bg-indigo-600'} border-2 border-white text-white shadow-2xl relative">
+          ${isFeatured ? '<div class="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>' : ''}
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
         </div>
-        <div class="bg-white text-indigo-600 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full shadow-lg border border-indigo-100">
-          $${price}
+        <div class="${isFeatured ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white' : 'bg-white text-indigo-600'} text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full shadow-lg border ${isFeatured ? 'border-yellow-200' : 'border-indigo-100'}">
+          ${isFeatured ? '⭐ ' : ''}$${price}
         </div>
       </div>
     `,
@@ -134,7 +135,7 @@ const HomeMap: React.FC = () => {
             <Marker 
               key={event.id} 
               position={[event.location.lat, event.location.lng]} 
-              icon={eventIcon(event.price, event.id === 'e1')}
+              icon={eventIcon(event.price, event.isFeatured || false)}
               eventHandlers={{ click: () => { setSelectedEvent(event); setIsFollowingUser(false); } }}
             />
           ))}

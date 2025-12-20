@@ -43,7 +43,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [salesData, setSalesData] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'payouts' | 'marketing' | 'infra' | 'branding' | 'integrations'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'payouts' | 'marketing' | 'infra' | 'branding' | 'integrations' | 'affiliate'>('overview');
   const [isGeneratingAd, setIsGeneratingAd] = useState(false);
   const [genStage, setGenStage] = useState('');
   const [adCampaign, setAdCampaign] = useState<any[]>([]);
@@ -208,6 +208,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
           <h1 className="text-5xl font-black tracking-tighter text-white flex items-center gap-4">
              {isEnterprise ? <Rocket className="w-10 h-10" style={{ color: primaryColor }} /> : <LayoutDashboard className="w-10 h-10 text-indigo-500" />}
              {isEnterprise ? 'Nexus Global Agency' : 'Organizer Studio'}
+             {user.subscription_tier === 'premium' && <span className="text-xs font-black uppercase tracking-widest bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-full">Premium</span>}
           </h1>
           <p className="text-slate-400 font-medium text-lg">Managing <strong className="text-white">{events.length}</strong> active nodes across the global backbone.</p>
         </div>
@@ -289,6 +290,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
          <TabBtn label="Insights" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<BarChart3 />} />
          <TabBtn label="Payouts" active={activeTab === 'payouts'} onClick={() => setActiveTab('payouts')} icon={<DollarSign />} />
          <TabBtn label="Marketing Studio" active={activeTab === 'marketing'} onClick={() => setActiveTab('marketing')} icon={<Megaphone />} />
+         {(user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && <TabBtn label="Affiliate Tools" active={activeTab === 'affiliate'} onClick={() => setActiveTab('affiliate')} icon={<Users />} />}
          {isEnterprise && <TabBtn label="Service Hub" active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} icon={<Link2 />} />}
          {isEnterprise && <TabBtn label="White-Labeling" active={activeTab === 'branding'} onClick={() => setActiveTab('branding')} icon={<Palette />} />}
       </div>
@@ -327,6 +329,90 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                 </ResponsiveContainer>
              </div>
           </div>
+
+          {/* Advanced Analytics for Premium+ */}
+          {(user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && (
+            <div className="bg-gradient-to-br from-orange-900/20 to-yellow-900/20 border border-orange-800/50 rounded-[48px] p-10 space-y-8">
+               <div className="flex justify-between items-center">
+                  <div>
+                     <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                        <Sparkles className="text-yellow-400" /> Advanced Attendee Analytics
+                     </h3>
+                     <p className="text-slate-400 font-medium text-sm mt-2">Premium-only deep insights and behavioral patterns</p>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400 bg-yellow-500/10 px-4 py-2 rounded-full">Premium Feature</span>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Avg. Ticket Value</p>
+                     <h4 className="text-3xl font-black text-white">$42.50</h4>
+                     <p className="text-xs text-emerald-400 font-bold">+8.2% vs last month</p>
+                  </div>
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Repeat Rate</p>
+                     <h4 className="text-3xl font-black text-white">34%</h4>
+                     <p className="text-xs text-emerald-400 font-bold">+12% vs industry</p>
+                  </div>
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Conversion Rate</p>
+                     <h4 className="text-3xl font-black text-white">67%</h4>
+                     <p className="text-xs text-emerald-400 font-bold">Top 10% performer</p>
+                  </div>
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Share Rate</p>
+                     <h4 className="text-3xl font-black text-white">22%</h4>
+                     <p className="text-xs text-indigo-400 font-bold">High virality</p>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-4">
+                     <h4 className="font-black text-white">Top Demographics</h4>
+                     <div className="space-y-3">
+                        {[
+                           { age: '25-34', percent: 42, color: 'bg-indigo-500' },
+                           { age: '35-44', percent: 28, color: 'bg-violet-500' },
+                           { age: '18-24', percent: 20, color: 'bg-blue-500' },
+                           { age: '45+', percent: 10, color: 'bg-slate-500' }
+                        ].map((demo, i) => (
+                           <div key={i} className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                 <span className="text-slate-400 font-medium">{demo.age} years</span>
+                                 <span className="text-white font-black">{demo.percent}%</span>
+                              </div>
+                              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                                 <div className={`h-full ${demo.color}`} style={{ width: `${demo.percent}%` }} />
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-4">
+                     <h4 className="font-black text-white">Traffic Sources</h4>
+                     <div className="space-y-3">
+                        {[
+                           { source: 'Organic Search', percent: 38, color: 'bg-emerald-500' },
+                           { source: 'Social Media', percent: 32, color: 'bg-indigo-500' },
+                           { source: 'Direct', percent: 18, color: 'bg-violet-500' },
+                           { source: 'Referrals', percent: 12, color: 'bg-yellow-500' }
+                        ].map((traffic, i) => (
+                           <div key={i} className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                 <span className="text-slate-400 font-medium">{traffic.source}</span>
+                                 <span className="text-white font-black">{traffic.percent}%</span>
+                              </div>
+                              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                                 <div className={`h-full ${traffic.color}`} style={{ width: `${traffic.percent}%` }} />
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+               </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -545,6 +631,130 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                        </div>
                     </div>
                  </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {activeTab === 'affiliate' && (
+        <div className="space-y-8 animate-in fade-in duration-500">
+           <div className="bg-gradient-to-br from-orange-900/20 to-yellow-900/20 border border-orange-800/50 rounded-[48px] p-12 text-center space-y-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-[32px] flex items-center justify-center mx-auto shadow-2xl">
+                 <Users className="w-10 h-10 text-white" />
+              </div>
+              <div className="space-y-3">
+                 <h2 className="text-4xl font-black tracking-tighter text-white">Affiliate Marketing Tools</h2>
+                 <p className="text-slate-400 max-w-2xl mx-auto font-medium text-lg leading-relaxed">
+                    Grow your network and earn commissions by referring new organizers to EventNexus. Track performance in real-time.
+                 </p>
+              </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-4">
+                 <div className="flex justify-between items-start">
+                    <div className="p-4 bg-emerald-500/10 rounded-2xl">
+                       <DollarSign className="w-8 h-8 text-emerald-400" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full">+24%</span>
+                 </div>
+                 <div>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Total Earnings</p>
+                    <h3 className="text-4xl font-black text-white mt-2">$2,847</h3>
+                    <p className="text-slate-500 text-xs font-medium mt-1">From 23 referrals</p>
+                 </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-4">
+                 <div className="flex justify-between items-start">
+                    <div className="p-4 bg-indigo-500/10 rounded-2xl">
+                       <Users className="w-8 h-8 text-indigo-400" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full">Active</span>
+                 </div>
+                 <div>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Active Referrals</p>
+                    <h3 className="text-4xl font-black text-white mt-2">23</h3>
+                    <p className="text-slate-500 text-xs font-medium mt-1">18 Pro, 5 Premium</p>
+                 </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-4">
+                 <div className="flex justify-between items-start">
+                    <div className="p-4 bg-violet-500/10 rounded-2xl">
+                       <TrendingUp className="w-8 h-8 text-violet-400" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-400 bg-violet-500/10 px-3 py-1 rounded-full">30D</span>
+                 </div>
+                 <div>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Conversion Rate</p>
+                    <h3 className="text-4xl font-black text-white mt-2">38%</h3>
+                    <p className="text-slate-500 text-xs font-medium mt-1">Above average</p>
+                 </div>
+              </div>
+           </div>
+
+           <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 space-y-8">
+              <div className="flex justify-between items-center">
+                 <h3 className="text-2xl font-black text-white">Your Affiliate Link</h3>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-4 py-2 rounded-full">Premium Feature</span>
+              </div>
+              <div className="flex gap-4 items-center">
+                 <div className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 font-mono text-sm text-slate-400">
+                    https://eventnexus.app/ref/{user.id}
+                 </div>
+                 <button className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all shadow-xl active:scale-95">
+                    Copy Link
+                 </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+                 <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center">
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Commission Rate</p>
+                    <p className="text-3xl font-black text-white">15%</p>
+                    <p className="text-slate-500 text-xs font-medium mt-1">Recurring monthly</p>
+                 </div>
+                 <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center">
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Cookie Duration</p>
+                    <p className="text-3xl font-black text-white">90 Days</p>
+                    <p className="text-slate-500 text-xs font-medium mt-1">Attribution window</p>
+                 </div>
+                 <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center">
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Payout Cycle</p>
+                    <p className="text-3xl font-black text-white">Monthly</p>
+                    <p className="text-slate-500 text-xs font-medium mt-1">Via Stripe Connect</p>
+                 </div>
+              </div>
+           </div>
+
+           <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 space-y-6">
+              <h3 className="text-2xl font-black text-white">Referral Activity</h3>
+              <div className="space-y-4">
+                 {[
+                    { name: 'Sarah Chen', plan: 'Pro', amount: '$19.99', date: '2 days ago', status: 'Active' },
+                    { name: 'Mike Rodriguez', plan: 'Premium', amount: '$49.99', date: '5 days ago', status: 'Active' },
+                    { name: 'Emma Wilson', plan: 'Pro', amount: '$19.99', date: '1 week ago', status: 'Active' }
+                 ].map((ref, i) => (
+                    <div key={i} className="flex items-center justify-between p-6 bg-slate-950 border border-slate-800 rounded-2xl">
+                       <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-lg">
+                             {ref.name.charAt(0)}
+                          </div>
+                          <div>
+                             <p className="font-black text-white">{ref.name}</p>
+                             <p className="text-sm text-slate-500 font-medium">{ref.plan} Plan • {ref.date}</p>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-4">
+                          <div className="text-right">
+                             <p className="font-black text-emerald-400">{ref.amount}</p>
+                             <p className="text-xs text-slate-500 font-medium">+15% commission</p>
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full">
+                             {ref.status}
+                          </span>
+                       </div>
+                    </div>
+                 ))}
               </div>
            </div>
         </div>
