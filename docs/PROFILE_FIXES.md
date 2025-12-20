@@ -1,8 +1,10 @@
-# Profile Page Fixes - Parandused Kasutaja Profiilil
+# Profile Page Fixes
 
-## Changes Made / Tehtud Muudatused
+Historical documentation of profile page improvements and bug fixes.
 
-### 1. Profile Picture Upload / Profiilipildi Üleslaadimine ✅
+## Changes Made
+
+### 1. Profile Picture Upload ✅
 - **Added**: Real file upload functionality for profile pictures
 - **Implementation**: 
   - New `uploadAvatar()` function in `services/dbService.ts`
@@ -11,7 +13,7 @@
   - Files stored in Supabase Storage bucket `avatars`
 - **User Experience**: Click on avatar in edit modal to upload new image
 
-### 2. Real Tickets Data / Tegelikud Piletid ✅
+### 2. Real Tickets Data ✅
 - **Removed**: Mock ticket data ("Midnight Techno RAVE")
 - **Added**: Real ticket loading from database via `getUserTickets()`
 - **Implementation**:
@@ -20,13 +22,13 @@
   - Displays ticket details: event name, date, location
 - **User Experience**: Only real purchased tickets are shown
 
-### 3. Upgrade Plan Button / Plaani Uuendamise Nupp ✅
+### 3. Upgrade Plan Button ✅
 - **Fixed**: "Upgrade Plan" button now navigates to pricing page
 - **Implementation**: Added `onClick={() => navigate('/pricing')}` handler
 - **Conditional Display**: Only shows for free tier users
 - **User Experience**: Clicking button takes user to `/pricing` route
 
-### 4. Storage Setup / Andmesalvestuse Seadistamine ✅
+### 4. Storage Setup ✅
 - **Created**: SQL migration `setup-avatar-storage.sql`
 - **Bucket**: `avatars` with 5MB file size limit
 - **Policies**:
@@ -34,7 +36,7 @@
   - Public read access for all avatars
   - Enforced user ownership via RLS
 
-## Files Modified / Muudetud Failid
+## Files Modified
 
 1. **services/dbService.ts**
    - Added `uploadAvatar()` function for file uploads
@@ -54,7 +56,7 @@
 4. **setup-avatar-storage.sql**
    - Quick setup script for Supabase SQL Editor
 
-## Setup Instructions / Paigaldamise Juhised
+## Setup Instructions
 
 ### For Supabase Storage:
 1. Open Supabase SQL Editor
@@ -70,7 +72,7 @@
 5. Verify "Upgrade Plan" navigates to pricing
 6. Check that tickets section shows real data or empty state
 
-## Technical Details / Tehnilised Detailid
+## Technical Details
 
 ### Avatar Upload Flow:
 1. User clicks avatar in edit modal
@@ -95,14 +97,14 @@
 - File size limit enforced by storage bucket (5MB)
 - Public read access for displaying avatars
 
-## No Mock Data / Mockimisandmeid Pole
+## No Mock Data
 
 All data is now loaded from Supabase:
 - ✅ Tickets from `tickets` table
 - ✅ Avatars from Storage `avatars` bucket
 - ✅ User profile from `users` table
 
-## Next Steps / Järgmised Sammud
+## Next Steps
 
 1. Run storage setup SQL in Supabase
 2. Test avatar upload with real user
@@ -110,8 +112,14 @@ All data is now loaded from Supabase:
 4. Test upgrade button flow to pricing page
 5. Confirm empty ticket state displays correctly
 
+## Related Documentation
+
+For comprehensive profile feature documentation, see:
+- [PROFILE_FEATURES.md](PROFILE_FEATURES.md) - Complete profile system guide
+
 ---
 
 **Status**: ✅ All fixes implemented  
 **Testing**: Required in development environment  
-**Database**: Migration ready for Supabase
+**Database**: Migration ready for Supabase  
+**Language**: English Only

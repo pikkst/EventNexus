@@ -1,8 +1,16 @@
 {
   "name": "eventnexus",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Intelligent Event Discovery Platform with AI-powered features, geospatial search, and integrated payments",
+  "author": "EventNexus Platform Owner <huntersest@gmail.com>",
+  "license": "PROPRIETARY",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pikkst/EventNexus.git"
+  },
+  "homepage": "https://eventnexus.eu",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
