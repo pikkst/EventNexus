@@ -62,7 +62,8 @@ const PLANS = [
       'White-label branded dashboard',
       'Dedicated success manager',
       'Massive scale API access',
-      'Custom branded entry apps',
+      'Custom branded landing page',
+      'Personalized public platform URL',
       'Lowest platform fees (1.5%)'
     ],
     cta: 'Launch Agency',

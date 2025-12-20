@@ -44,7 +44,14 @@ export const SUBSCRIPTION_TIERS = {
     support: 'dedicated',
     price: 149.99,
     commissionRate: 0.015, // 1.5% platform fee
-    description: 'Custom solutions for enterprises'
+    description: 'Custom solutions for enterprises',
+    featuredPlacement: true,
+    affiliateTools: true,
+    advancedAnalytics: true,
+    whiteLabelDashboard: true, // White-labeled interface
+    customLandingPage: true, // Personalized public web platform
+    apiAccess: true, // Full API access
+    dedicatedManager: true // Personal success manager
   }
 };
 

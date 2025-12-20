@@ -642,6 +642,50 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                          placeholder="One line to define your brand"
                        />
                     </div>
+
+                    {/* Enterprise: Custom Landing Page Configuration */}
+                    {user.subscription_tier === 'enterprise' && (
+                      <div className="p-8 bg-gradient-to-br from-purple-600/10 to-pink-600/10 border border-purple-500/30 rounded-3xl space-y-6 mt-6">
+                        <div className="flex items-center gap-3">
+                          <Globe className="w-5 h-5 text-purple-400" />
+                          <h3 className="font-black text-sm uppercase tracking-widest text-purple-300">Enterprise Landing Page</h3>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Custom URL Path</label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-500 text-sm">eventnexus.com/</span>
+                            <input 
+                              type="text" 
+                              value={user.agencySlug || ''}
+                              disabled
+                              className="flex-1 bg-slate-900/50 border border-purple-500/30 rounded-xl px-4 py-2 text-white text-sm outline-none"
+                              placeholder="your-brand"
+                            />
+                          </div>
+                          <p className="text-[10px] text-slate-500 ml-1">Your personalized public platform URL</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Custom Domain (Optional)</label>
+                          <input 
+                            type="text" 
+                            value={tempUser.branding?.customDomain || ''}
+                            onChange={(e) => setTempUser({...tempUser, branding: { ...tempUser.branding!, customDomain: e.target.value, primaryColor: tempUser.branding?.primaryColor || '#6366f1', accentColor: tempUser.branding?.accentColor || '#818cf8' }})}
+                            className="w-full bg-slate-900/50 border border-purple-500/30 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-purple-400"
+                            placeholder="events.yourbrand.com"
+                          />
+                          <p className="text-[10px] text-slate-500 ml-1">Point your own domain to your landing page</p>
+                        </div>
+
+                        <div className="flex items-center gap-3 p-4 bg-purple-500/10 rounded-2xl">
+                          <CheckCircle2 className="w-5 h-5 text-purple-400 shrink-0" />
+                          <div className="text-[11px] text-slate-300">
+                            <span className="font-bold text-purple-300">White-label activated:</span> Your branded landing page showcases all your events with custom design
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="p-8 bg-slate-800/20 border border-slate-800 rounded-[40px] text-center space-y-4">
