@@ -157,12 +157,7 @@ export const generateAdImage = async (
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
-        parts: [{ text: `Professional marketing flier for EventNexus: ${prompt}. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements integrated, 8k.` }]
-      },
-      config: {
-        imageConfig: {
-          aspectRatio: aspectRatio
-        }
+        parts: [{ text: `Professional marketing flier for EventNexus: ${prompt}. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements integrated, 8k. Aspect ratio: ${aspectRatio}` }]
       }
     });
 
@@ -364,4 +359,99 @@ export const createNexusChat = () => {
       systemInstruction: 'You are NexusAI, a world-class event concierge and organizer assistant for EventNexus. You help attendees find the best vibes and help organizers create high-impact experiences.'
     }
   });
+};
+
+/**
+ * Generate comprehensive brand protection report with legal analysis
+ * ADMIN FEATURE - NO CREDIT COST
+ * Analyzes alerts and provides legal recommendations based on LEGAL_PROTECTION.md
+ */
+export const generateBrandProtectionReport = async (
+  alerts: any[],
+  stats: any
+) => {
+  try {
+    const ai = getAI();
+    
+    // Legal context from LEGAL_PROTECTION.md
+    const legalContext = `
+EventNexus Legal Protection Framework:
+- Full copyright protection under Berne Convention & WIPO
+- Trade Secret Protection: EU Trade Secrets Directive 2016/943
+- Trademark Protection: "EventNexus" brand name and logo
+- Domain Protection: eventnexus.eu under ICANN UDRP & EURid
+- Prohibited: Code copying, derivative works, domain typosquatting, platform cloning
+- Enforcement: Civil damages up to €500,000 per violation, criminal penalties available
+- Domain Typosquatting: Actionable under ICANN UDRP and Anti-Cybersquatting laws
+`;
+
+    // Group alerts by type and severity
+    const alertsByType = {
+      code: alerts.filter(a => a.type === 'code'),
+      domain: alerts.filter(a => a.type === 'domain'),
+      brand: alerts.filter(a => a.type === 'brand'),
+      search: alerts.filter(a => a.type === 'search'),
+      social: alerts.filter(a => a.type === 'social'),
+      competitor: alerts.filter(a => a.type === 'competitor')
+    };
+
+    const criticalAlerts = alerts.filter(a => a.severity === 'critical');
+    const warningAlerts = alerts.filter(a => a.severity === 'warning');
+
+    const prompt = `You are a legal and cybersecurity analyst for EventNexus platform.
+
+LEGAL FRAMEWORK:
+${legalContext}
+
+MONITORING STATISTICS:
+- Total Alerts: ${alerts.length}
+- Critical: ${criticalAlerts.length}
+- Warnings: ${warningAlerts.length}
+- Code Mentions: ${alertsByType.code.length}
+- Domain Issues: ${alertsByType.domain.length}
+- Brand Mentions: ${alertsByType.brand.length}
+
+CRITICAL ALERTS:
+${criticalAlerts.map(a => `- ${a.title}: ${a.description}`).join('\n') || 'None'}
+
+WARNING ALERTS:
+${warningAlerts.slice(0, 10).map(a => `- ${a.title}: ${a.description}`).join('\n') || 'None'}
+
+TOP CODE MENTIONS:
+${alertsByType.code.slice(0, 5).map(a => `- ${a.title}: ${a.url}`).join('\n') || 'None'}
+
+Generate a comprehensive executive report with:
+
+1. EXECUTIVE SUMMARY (2-3 sentences)
+2. THREAT ASSESSMENT (Low/Medium/High/Critical)
+3. KEY FINDINGS (3-5 bullet points)
+4. LEGAL ANALYSIS (which protections apply, potential violations)
+5. RECOMMENDED ACTIONS (prioritized list, cite specific legal frameworks)
+6. MONITORING RECOMMENDATIONS (what to watch closely)
+
+Use professional but clear language. Be specific about legal frameworks. Prioritize actions by urgency.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt
+    });
+
+    const reportText = response.text || 'Report generation failed';
+    
+    return {
+      success: true,
+      report: reportText,
+      timestamp: new Date().toISOString(),
+      alertsAnalyzed: alerts.length,
+      criticalCount: criticalAlerts.length,
+      warningCount: warningAlerts.length
+    };
+  } catch (error) {
+    console.error("Brand protection report generation failed:", error);
+    return {
+      success: false,
+      report: 'Failed to generate report. Please try again.',
+      error: error.message
+    };
+  }
 };
