@@ -77,44 +77,135 @@ const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => 
 
 const App: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [user, setUser] = useState<User | null>(() => {
+    // Try to restore user from cache immediately
+    try {
+      const cached = localStorage.getItem('eventnexus-user-cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // Check if cache is less than 5 minutes old
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 5 * 60 * 1000) {
+          console.log('⚡ Using cached user data');
+          return parsed.user;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load user cache:', e);
+    }
+    return null;
+  });
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    // Try to restore notifications from cache
+    try {
+      const cached = sessionStorage.getItem('eventnexus-notifications-cache');
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (e) {
+      console.warn('Failed to load notifications cache:', e);
+    }
+    return [];
+  });
   const [notifiedEventIds, setNotifiedEventIds] = useState<Set<string>>(new Set());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [events, setEvents] = useState<EventNexusEvent[]>([]);
+  const [events, setEvents] = useState<EventNexusEvent[]>(() => {
+    // Try to restore events from cache
+    try {
+      const cached = sessionStorage.getItem('eventnexus-events-cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // Check if cache is less than 2 minutes old
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 2 * 60 * 1000) {
+          console.log('⚡ Using cached events data');
+          return parsed.events;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load events cache:', e);
+    }
+    return [];
+  });
   const [isLoading, setIsLoading] = useState(true);
+
+  // Helper to cache user data
+  const cacheUserData = (userData: User | null) => {
+    try {
+      if (userData) {
+        localStorage.setItem('eventnexus-user-cache', JSON.stringify({
+          user: userData,
+          timestamp: Date.now()
+        }));
+      } else {
+        localStorage.removeItem('eventnexus-user-cache');
+      }
+    } catch (e) {
+      console.warn('Failed to cache user data:', e);
+    }
+  };
+
+  // Helper to cache notifications
+  const cacheNotifications = (notifs: Notification[]) => {
+    try {
+      sessionStorage.setItem('eventnexus-notifications-cache', JSON.stringify(notifs));
+    } catch (e) {
+      console.warn('Failed to cache notifications:', e);
+    }
+  };
+
+  // Helper to cache events
+  const cacheEvents = (eventsData: EventNexusEvent[]) => {
+    try {
+      sessionStorage.setItem('eventnexus-events-cache', JSON.stringify({
+        events: eventsData,
+        timestamp: Date.now()
+      }));
+    } catch (e) {
+      console.warn('Failed to cache events:', e);
+    }
+  };
 
   // Load user and initial data
   useEffect(() => {
     let mounted = true;
+    let sessionRestored = false;
     
     const loadInitialData = async () => {
       try {
-        // Check for existing session FIRST (synchronous from localStorage)
+        // Check for existing session FIRST
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (session?.user && mounted) {
+        if (session?.user && mounted && !user) {
           console.log('🔄 Restoring session on mount...');
+          sessionRestored = true;
           try {
             const userData = await getUser(session.user.id);
             if (userData && mounted) {
               setUser(userData);
+              cacheUserData(userData);
+              
               const userNotifications = await getNotifications(userData.id);
               if (mounted) {
                 setNotifications(userNotifications);
+                cacheNotifications(userNotifications);
               }
               console.log('✅ Session restored:', userData.email);
             }
           } catch (userError) {
             console.error('Error loading user data:', userError);
-            await supabase.auth.signOut();
+            // Don't sign out on first error, may be temporary
+            if (!user) {
+              await supabase.auth.signOut();
+            }
           }
         }
         
-        // Load events (public data)
-        const eventsData = await getEvents();
-        if (mounted) {
-          setEvents(eventsData);
+        // Load events (public data) - in background if we have cache
+        if (events.length === 0 || !sessionStorage.getItem('eventnexus-events-cache')) {
+          const eventsData = await getEvents();
+          if (mounted) {
+            setEvents(eventsData);
+            cacheEvents(eventsData);
+          }
         }
       } catch (error) {
         console.error('Error loading initial data:', error);
@@ -131,15 +222,19 @@ const App: React.FC = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth event:', event);
       
-      if (event === 'SIGNED_IN' && session?.user && mounted) {
+      // Skip SIGNED_IN if we already restored the session
+      if (event === 'SIGNED_IN' && !sessionRestored && session?.user && mounted) {
         console.log('User signed in, loading data...');
         try {
           const userData = await getUser(session.user.id);
           if (userData && mounted) {
             setUser(userData);
+            cacheUserData(userData);
+            
             const userNotifications = await getNotifications(userData.id);
             if (mounted) {
               setNotifications(userNotifications);
+              cacheNotifications(userNotifications);
             }
           }
         } catch (userError) {
@@ -151,11 +246,14 @@ const App: React.FC = () => {
         console.log('User signed out');
         setUser(null);
         setNotifications([]);
+        cacheUserData(null);
+        sessionStorage.removeItem('eventnexus-notifications-cache');
       } else if (event === 'USER_UPDATED' && session?.user && mounted) {
         console.log('User updated, reloading data...');
         const userData = await getUser(session.user.id);
         if (userData && mounted) {
           setUser(userData);
+          cacheUserData(userData);
         }
       }
     });
