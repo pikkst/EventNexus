@@ -69,15 +69,13 @@ export const getAllUsers = async (): Promise<User[]> => {
 };
 
 export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<EventNexusEvent | null> => {
-  // Combine date and time into a proper timestamp
-  const dateTimeString = `${event.date}T${event.time}:00`;
-  
   // Transform to database schema
   const dbEvent: any = {
     name: event.name,
     description: event.description,
     category: event.category,
-    date: dateTimeString,
+    date: event.date, // Database expects separate date field (DATE type)
+    time: event.time, // Database expects separate time field (TIME type)
     location: event.location,
     price: event.price,
     visibility: event.visibility,
