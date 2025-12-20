@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Search, Globe, AlertTriangle, CheckCircle, XCircle, Eye, TrendingUp, Activity, Code, ExternalLink, RefreshCw, FileText, Download, X } from 'lucide-react';
+import { Shield, Search, Globe, AlertTriangle, CheckCircle, XCircle, Eye, TrendingUp, Activity, Code, ExternalLink, RefreshCw, FileText, Download, X, Filter, SortAsc, MessageSquare, Ban } from 'lucide-react';
 import type { BrandMonitoringAlert, MonitoringStats } from '@/types';
 import * as brandMonitoringService from '@/services/brandMonitoringService';
 import { generateBrandProtectionReport } from '@/services/geminiService';
@@ -20,6 +20,12 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const [generatingReport, setGeneratingReport] = useState(false);
   const [showAllAlerts, setShowAllAlerts] = useState(false);
   const [selectedAlerts, setSelectedAlerts] = useState<Set<string>>(new Set());
+  
+  // Filter, Sort, Search states
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterSeverity, setFilterSeverity] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'severity' | 'type'>('newest');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadMonitoringData();
@@ -218,6 +224,47 @@ Legal Framework References:
     }
   };
 
+  const getFilteredAndSortedAlerts = () => {
+    let filtered = alerts;
+
+    // Filter by type
+    if (filterType !== 'all') {
+      filtered = filtered.filter(a => a.type === filterType);
+    }
+
+    // Filter by severity
+    if (filterSeverity !== 'all') {
+      filtered = filtered.filter(a => a.severity === filterSeverity);
+    }
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(a => 
+        a.title.toLowerCase().includes(query) ||
+        a.description.toLowerCase().includes(query) ||
+        (a.url && a.url.toLowerCase().includes(query))
+      );
+    }
+
+    // Sort
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'severity':
+          const severityOrder = { critical: 0, warning: 1, info: 2 };
+          return (severityOrder[a.severity as keyof typeof severityOrder] || 3) - 
+                 (severityOrder[b.severity as keyof typeof severityOrder] || 3);
+        case 'type':
+          return a.type.localeCompare(b.type);
+        case 'newest':
+        default:
+          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      }
+    });
+
+    return sorted;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open': return 'text-red-500';
@@ -339,8 +386,74 @@ Legal Framework References:
 
       {/* Recent Alerts */}
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+        {/* Filter, Search, Sort Bar */}
+        {alerts.length > 0 && (
+          <div className="mb-4 space-y-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Search */}
+              <div className="flex-1 min-w-[200px]">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search alerts..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              {/* Type Filter */}
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+              >
+                <option value="all">All Types</option>
+                <option value="code">Code</option>
+                <option value="domain">Domain</option>
+                <option value="brand">Brand</option>
+                <option value="search">Search</option>
+                <option value="social">Social</option>
+                <option value="competitor">Competitor</option>
+              </select>
+
+              {/* Severity Filter */}
+              <select
+                value={filterSeverity}
+                onChange={(e) => setFilterSeverity(e.target.value)}
+                className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+              >
+                <option value="all">All Severity</option>
+                <option value="critical">Critical</option>
+                <option value="warning">Warning</option>
+                <option value="info">Info</option>
+              </select>
+
+              {/* Sort */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+              >
+                <option value="newest">Newest First</option>
+                <option value="severity">By Severity</option>
+                <option value="type">By Type</option>
+              </select>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Recent Alerts</h3>
+          <h3 className="text-lg font-semibold text-white">
+            Recent Alerts
+            {(filterType !== 'all' || filterSeverity !== 'all' || searchQuery) && (
+              <span className="ml-2 text-sm text-gray-400">
+                ({getFilteredAndSortedAlerts().length} filtered)
+              </span>
+            )}
+          </h3>
           <div className="flex items-center gap-3">
             {alerts.length > 0 && (
               <>
@@ -387,22 +500,37 @@ Legal Framework References:
             <Shield className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>No alerts detected yet. Run a scan to start monitoring.</p>
           </div>
+        ) : getFilteredAndSortedAlerts().length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            <Filter className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>No alerts match your filters.</p>
+            <button
+              onClick={() => {
+                setFilterType('all');
+                setFilterSeverity('all');
+                setSearchQuery('');
+              }}
+              className="mt-3 text-sm text-purple-400 hover:text-purple-300"
+            >
+              Clear Filters
+            </button>
+          </div>
         ) : (
           <>
             {/* Select All Checkbox */}
             <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-700">
               <input
                 type="checkbox"
-                checked={selectedAlerts.size === alerts.length && alerts.length > 0}
+                checked={selectedAlerts.size === getFilteredAndSortedAlerts().length && getFilteredAndSortedAlerts().length > 0}
                 onChange={toggleSelectAll}
                 className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-purple-500 focus:ring-purple-500 focus:ring-offset-gray-900"
               />
               <label className="text-sm text-gray-400 cursor-pointer" onClick={toggleSelectAll}>
-                Select All ({alerts.length} alerts)
+                Select All ({getFilteredAndSortedAlerts().length} alerts)
               </label>
             </div>
             <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {(showAllAlerts ? alerts : alerts.slice(0, 5)).map(alert => (
+              {(showAllAlerts ? getFilteredAndSortedAlerts() : getFilteredAndSortedAlerts().slice(0, 5)).map(alert => (
               <div key={alert.id} className={`border rounded-lg p-4 ${getSeverityColor(alert.severity)}`}>
                 <div className="flex items-start gap-3 mb-2">
                   <input
