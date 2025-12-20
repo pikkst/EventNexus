@@ -1157,3 +1157,85 @@ export const deleteInboxMessage = async (messageId: string): Promise<void> => {
     throw error;
   }
 };
+
+// ============================================
+// Stripe Connect Functions
+// ============================================
+
+/**
+ * Create or retrieve Stripe Connect account and get onboarding link
+ */
+export const createConnectAccount = async (userId: string, email: string): Promise<{ url: string; accountId: string } | null> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('create-connect-account', {
+      body: { userId, email, businessType: 'individual', country: 'EE' }
+    });
+
+    if (error) {
+      console.error('Error creating Connect account:', error);
+      return null;
+    }
+
+    return {
+      url: data.url,
+      accountId: data.accountId
+    };
+  } catch (error) {
+    console.error('Error invoking create-connect-account:', error);
+    return null;
+  }
+};
+
+/**
+ * Get Stripe Express Dashboard login link for organizer
+ */
+export const getConnectDashboardLink = async (userId: string): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('get-connect-dashboard-link', {
+      body: { userId }
+    });
+
+    if (error) {
+      console.error('Error getting dashboard link:', error);
+      return null;
+    }
+
+    return data.url;
+  } catch (error) {
+    console.error('Error invoking get-connect-dashboard-link:', error);
+    return null;
+  }
+};
+
+/**
+ * Check if user has completed Stripe Connect onboarding
+ */
+export const checkConnectStatus = async (userId: string): Promise<{
+  hasAccount: boolean;
+  onboardingComplete: boolean;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+} | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('stripe_connect_account_id, stripe_connect_onboarding_complete, stripe_connect_charges_enabled, stripe_connect_payouts_enabled')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error checking Connect status:', error);
+      return null;
+    }
+
+    return {
+      hasAccount: !!data.stripe_connect_account_id,
+      onboardingComplete: data.stripe_connect_onboarding_complete || false,
+      chargesEnabled: data.stripe_connect_charges_enabled || false,
+      payoutsEnabled: data.stripe_connect_payouts_enabled || false,
+    };
+  } catch (error) {
+    console.error('Error in checkConnectStatus:', error);
+    return null;
+  }
+};

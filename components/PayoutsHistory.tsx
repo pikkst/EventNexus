@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/services/supabase';
-import { DollarSign, Calendar, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react';
+import { DollarSign, Calendar, CheckCircle, XCircle, Clock, TrendingUp, ExternalLink, AlertCircle } from 'lucide-react';
+import { createConnectAccount, checkConnectStatus, getConnectDashboardLink } from '@/services/dbService';
 
 interface Payout {
   id: string;
@@ -27,6 +28,13 @@ interface PayoutsHistoryProps {
 export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId }) => {
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connectStatus, setConnectStatus] = useState<{
+    hasAccount: boolean;
+    onboardingComplete: boolean;
+    chargesEnabled: boolean;
+    payoutsEnabled: boolean;
+  } | null>(null);
+  const [isConnectLoading, setIsConnectLoading] = useState(false);
   const [stats, setStats] = useState({
     totalEarned: 0,
     pendingAmount: 0,
@@ -35,7 +43,56 @@ export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId }) => {
 
   useEffect(() => {
     fetchPayouts();
+    fetchConnectStatus();
   }, [userId]);
+
+  const fetchConnectStatus = async () => {
+    const status = await checkConnectStatus(userId);
+    if (status) {
+      setConnectStatus(status);
+    }
+  };
+
+  const handleStartOnboarding = async () => {
+    setIsConnectLoading(true);
+    try {
+      // Get user email
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user?.email) {
+        alert('Unable to retrieve email. Please try again.');
+        return;
+      }
+
+      const result = await createConnectAccount(userId, userData.user.email);
+      if (result?.url) {
+        window.location.href = result.url;
+      } else {
+        alert('Failed to create Connect account. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error starting onboarding:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsConnectLoading(false);
+    }
+  };
+
+  const handleOpenDashboard = async () => {
+    setIsConnectLoading(true);
+    try {
+      const url = await getConnectDashboardLink(userId);
+      if (url) {
+        window.open(url, '_blank');
+      } else {
+        alert('Unable to access dashboard. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error opening dashboard:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsConnectLoading(false);
+    }
+  };
 
   const fetchPayouts = async () => {
     setLoading(true);
@@ -126,6 +183,57 @@ export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId }) => {
 
   return (
     <div className="space-y-6">
+      {/* Stripe Connect Onboarding Banner */}
+      {connectStatus && !connectStatus.onboardingComplete && (
+        <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-[32px] p-8 text-white shadow-2xl shadow-indigo-600/30">
+          <div className="flex items-start justify-between gap-6">
+            <div className="space-y-3 flex-1">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-6 h-6" />
+                <h3 className="text-2xl font-black tracking-tight">Set Up Payouts</h3>
+              </div>
+              <p className="text-indigo-100 font-medium leading-relaxed">
+                Complete your Stripe Connect onboarding to receive payouts from ticket sales. This takes about 5 minutes.
+              </p>
+              <ul className="text-sm text-indigo-100 space-y-1 list-disc list-inside">
+                <li>Verify your identity (required by financial regulations)</li>
+                <li>Add your bank account for payouts</li>
+                <li>Start receiving earnings automatically</li>
+              </ul>
+            </div>
+            <button
+              onClick={handleStartOnboarding}
+              disabled={isConnectLoading}
+              className="px-8 py-4 bg-white text-indigo-600 rounded-2xl font-black text-sm hover:bg-indigo-50 transition-all shadow-xl hover:shadow-2xl active:scale-95 disabled:opacity-50 whitespace-nowrap"
+            >
+              {isConnectLoading ? 'Loading...' : 'Start Setup'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Stripe Dashboard Link */}
+      {connectStatus?.onboardingComplete && (
+        <div className="bg-slate-900 border border-slate-800 rounded-[32px] p-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h3 className="text-lg font-black text-white">Payout & Banking Settings</h3>
+              <p className="text-sm text-slate-400 font-medium">
+                Manage your bank account, payout schedule, and tax forms via Stripe Dashboard
+              </p>
+            </div>
+            <button
+              onClick={handleOpenDashboard}
+              disabled={isConnectLoading}
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 disabled:opacity-50"
+            >
+              <ExternalLink className="w-4 h-4" />
+              {isConnectLoading ? 'Loading...' : 'Open Stripe Dashboard'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 border border-green-200">
