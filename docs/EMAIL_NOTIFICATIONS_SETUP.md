@@ -20,50 +20,61 @@ This guide explains how to configure email notifications for critical brand moni
 2. Enter: `mail.eventnexus.eu` (subdomain recommended by Resend)
 3. Resend will show you the exact DNS records needed. Add them to your DNS provider:
 
+   **⚠️ IMPORTANT FOR ESTONIAN DNS PROVIDERS (Zone.eu, etc):**
+   Your DNS manager automatically adds `.eventnexus.eu.` to the end of Host names.
+   Use ONLY the subdomain part (without eventnexus.eu):
+
    **DKIM Record (Domain Verification):**
    ```
    Type: TXT
-   Host: resend._domainkey.mail.eventnexus.eu
+   Host: resend._domainkey.mail    ← Use ONLY this (not full domain!)
    Value: p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDfRgqJv0yu4uaBTW8BnSpHIDGn5hmUWsAeNid+12+HjRtCiGvaEL7KegaAg7bWjC9oPV9INfywAx01RbRv+DC4+s9iiMAFn8T8WYR8ZvNX+p7cOnlreLa7aiJ5l0PIj7mSKqjaKX83fYrL3elQ5oa33iA+DQFiHBPKjqfv4o0R3wIDAQAB
-   TTL: Auto
    ```
+   Result will be: `resend._domainkey.mail.eventnexus.eu.` ✅
    
    **MX Record (Email Sending):**
    ```
    Type: MX
-   Host: send.mail.eventnexus.eu
+   Host: send.mail    ← Use ONLY this
    Value: feedback-smtp.eu-west-1.amazonses.com
    Priority: 10
-   TTL: Auto
    ```
+   Result will be: `send.mail.eventnexus.eu.` ✅
 
    **SPF Record (Email Authentication):**
    ```
    Type: TXT
-   Host: send.mail.eventnexus.eu
+   Host: send.mail    ← Use ONLY this
    Value: v=spf1 include:amazonses.com ~all
-   TTL: Auto
    ```
+   Result will be: `send.mail.eventnexus.eu.` ✅
 
    **MX Record (Email Receiving - Optional):**
    ```
    Type: MX
-   Host: mail.eventnexus.eu
+   Host: mail    ← Use ONLY this
    Value: inbound-smtp.eu-west-1.amazonaws.com
    Priority: 10
-   TTL: Auto
    ```
+   Result will be: `mail.eventnexus.eu.` ✅
 
    **DMARC Record (Optional but Recommended):**
    ```
    Type: TXT
-   Host: _dmarc.eventnexus.eu
-   Value: v=DMARC1; p=none;
-   TTL: Auto
+   Host: _dmarc    ← Use ONLY this (main domain level)
+   Value: v=DMARC1; p=none
    ```
+   **Note:** Remove semicolon at end if DNS manager shows error
+   Result will be: `_dmarc.eventnexus.eu.` ✅
 
 4. Wait for verification (5-15 minutes)
 5. Check Resend Dashboard → Domains → Status should show **Verified** ✅
+
+**Common Mistakes to Avoid:**
+- ❌ Don't use full domain: `resend._domainkey.mail.eventnexus.eu` → causes double domain
+- ✅ Use only subdomain: `resend._domainkey.mail`
+- ❌ Don't add trailing dot in Host field
+- ✅ DNS manager adds it automatically
 
 ### 3. Generate API Key
 1. Go to **API Keys** → **Create API Key**
