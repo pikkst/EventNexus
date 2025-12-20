@@ -96,6 +96,20 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
     }
   };
 
+  const handleUpdateAlertStatus = async (alertId: string, status: BrandMonitoringAlert['status'], actionTaken?: string) => {
+    const success = await brandMonitoringService.updateAlertStatus(alertId, status, actionTaken);
+    if (success) {
+      await loadMonitoringData();
+    }
+  };
+
+  const handleDeleteAlert = async (alertId: string) => {
+    const success = await brandMonitoringService.deleteAlert(alertId);
+    if (success) {
+      await loadMonitoringData();
+    }
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical': return 'text-red-500 bg-red-500/10 border-red-500/20';
@@ -250,6 +264,30 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
                     Action: {alert.actionTaken}
                   </div>
                 )}
+                <div className="mt-3 flex items-center gap-2">
+                  {alert.status === 'open' && (
+                    <button
+                      onClick={() => handleUpdateAlertStatus(alert.id, 'investigating', 'Under investigation')}
+                      className="px-3 py-1 text-xs bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/30 rounded transition-colors"
+                    >
+                      Investigate
+                    </button>
+                  )}
+                  {alert.status !== 'resolved' && (
+                    <button
+                      onClick={() => handleUpdateAlertStatus(alert.id, 'resolved', 'Reviewed and resolved')}
+                      className="px-3 py-1 text-xs bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30 rounded transition-colors"
+                    >
+                      Resolve
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeleteAlert(alert.id)}
+                    className="px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -432,47 +470,33 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
             className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-600 text-white rounded-lg transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Update Results
+            {loading ? 'Scanning...' : 'Scan Now'}
           </button>
         </div>
 
         <div className="space-y-4">
           <div className="border border-gray-700 rounded-lg p-4">
-            <h4 className="font-semibold text-white mb-2">Google Search Monitoring</h4>
-            <p className="text-sm text-gray-400 mb-3">Tracks EventNexus mentions and rankings in Google search results</p>
+            <h4 className="font-semibold text-white mb-2">Google Search Results</h4>
+            <p className="text-sm text-gray-400 mb-3">Tracks EventNexus mentions in Google search results</p>
             <div className="grid grid-cols-2 gap-4 text-sm mt-3">
               <div>
-                <span className="text-gray-400">Total results:</span>
-                <span className="text-white ml-2">1,523</span>
+                <span className="text-gray-400">Search alerts found:</span>
+                <span className="text-white ml-2">{alerts.filter(a => a.type === 'search').length}</span>
               </div>
               <div>
-                <span className="text-gray-400">Rank for "event platform":</span>
-                <span className="text-green-500 ml-2">#12</span>
+                <span className="text-gray-400">Last scan:</span>
+                <span className="text-white ml-2">{lastScan?.toLocaleTimeString() || 'Never'}</span>
               </div>
             </div>
           </div>
 
           <div className="border border-gray-700 rounded-lg p-4">
-            <h4 className="font-semibold text-white mb-2">SEO Attack Detection</h4>
-            <p className="text-sm text-gray-400 mb-3">Monitors for negative SEO campaigns targeting EventNexus</p>
+            <h4 className="font-semibold text-white mb-2">Monitoring Status</h4>
+            <p className="text-sm text-gray-400 mb-3">Google Custom Search API integration status</p>
             <div className="flex items-center gap-4 text-sm">
-              <span className="text-green-500">✓ No attacks detected</span>
-            </div>
-          </div>
-
-          <div className="border border-gray-700 rounded-lg p-4">
-            <h4 className="font-semibold text-white mb-2">Reputation Monitoring</h4>
-            <p className="text-sm text-gray-400 mb-3">Tracks sentiment and mentions across review sites and forums</p>
-            <div className="grid grid-cols-3 gap-4 text-sm mt-3">
-              <div>
-                <span className="text-green-500">Positive: 87%</span>
-              </div>
-              <div>
-                <span className="text-gray-400">Neutral: 10%</span>
-              </div>
-              <div>
-                <span className="text-red-500">Negative: 3%</span>
-              </div>
+              <span className={stats && stats.searchResults > 0 ? 'text-green-500' : 'text-gray-400'}>
+                {stats && stats.searchResults > 0 ? '✓ Active monitoring' : '○ Run scan to activate'}
+              </span>
             </div>
           </div>
         </div>
