@@ -90,7 +90,7 @@ const Footer: React.FC = () => {
                <Globe className="w-3.5 h-3.5" /> English (US)
              </div>
              <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold">
-               <Mail className="w-3.5 h-3.5" /> support@eventnexus.com
+               <Mail className="w-3.5 h-3.5" /> support@mail.eventnexus.eu
              </div>
           </div>
         </div>
