@@ -116,6 +116,22 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
 
   const renderOverview = () => (
     <div className="space-y-6">
+      {/* Comprehensive Scan Button */}
+      <div className="flex items-center justify-between bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-xl p-6">
+        <div>
+          <h3 className="text-xl font-semibold text-white mb-2">Comprehensive Security Scan</h3>
+          <p className="text-sm text-gray-400">Run all monitoring checks (Code, Domain, Search, Brand)</p>
+        </div>
+        <button
+          onClick={() => runScan('comprehensive')}
+          disabled={loading}
+          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-lg transition-all font-semibold"
+        >
+          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          {loading ? 'Scanning...' : 'Run Full Scan'}
+        </button>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-6">
