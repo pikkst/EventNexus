@@ -1,5 +1,12 @@
 // Admin user creation script for Supabase
 // This creates an admin user through Supabase Auth, then adds profile data
+// 
+// NOTE: This script creates SEED DATA for development/testing purposes only.
+// The "Rivera Productions" agency profile is sample data to demonstrate
+// the agency profile functionality. In production, real organizers will
+// create their own profiles through the application.
+//
+// Usage: node scripts/populate-db.js
 
 import { createClient } from '@supabase/supabase-js';
 

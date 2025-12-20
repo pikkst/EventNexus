@@ -297,6 +297,26 @@ export const updateUser = async (id: string, updates: Partial<User>): Promise<Us
   return data;
 };
 
+export const getUserBySlug = async (slug: string): Promise<User | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('agency_slug', slug)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching user by slug:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Error in getUserBySlug:', err);
+    return null;
+  }
+};
+
 // Notifications
 export const getNotifications = async (userId: string): Promise<Notification[]> => {
   const { data, error } = await supabase
