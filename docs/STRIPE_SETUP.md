@@ -34,7 +34,7 @@ Go to: https://supabase.com/dashboard/project/anlivujgkjmajkcgbaxw/settings/func
 STRIPE_SECRET_KEY=sk_live_... (or sk_test_... for testing)
 
 # Webhook secret (from Stripe Dashboard → Webhooks)
-STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
+STRIPE_WEBHOOK_SECRET=<your_webhook_signing_secret>
 
 # Optional: Price IDs for subscriptions (if different from defaults)
 STRIPE_PRICE_PRO=price_xxx
