@@ -86,6 +86,7 @@ const App: React.FC = () => {
         // Check if cache is less than 5 minutes old
         if (parsed.timestamp && Date.now() - parsed.timestamp < 5 * 60 * 1000) {
           console.log('⚡ Using cached user data');
+          // Mark that we already have user data from cache
           return parsed.user;
         }
       }
@@ -165,7 +166,21 @@ const App: React.FC = () => {
   };
 
   // Load user and initial data
-  const [sessionRestored, setSessionRestored] = useState(false);
+  const [sessionRestored, setSessionRestored] = useState(() => {
+    // If user is cached, session is already "restored"
+    try {
+      const cached = localStorage.getItem('eventnexus-user-cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 5 * 60 * 1000) {
+          return true; // Cache is valid, no need to restore
+        }
+      }
+    } catch (e) {
+      // Ignore cache errors
+    }
+    return false;
+  });
   const sessionRestoreAttempted = useRef(false);
   
   useEffect(() => {
@@ -175,6 +190,13 @@ const App: React.FC = () => {
       // Prevent multiple restoration attempts
       if (sessionRestoreAttempted.current) return;
       sessionRestoreAttempted.current = true;
+      
+      // If session already restored from cache, skip
+      if (sessionRestored) {
+        console.log('✅ Using cached session, skipping restoration');
+        setIsLoading(false);
+        return;
+      }
       
       try {
         // Check for existing session FIRST
