@@ -107,6 +107,43 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
     return null;
   }
   
+  // Notify followers of the organizer
+  try {
+    // Get all users who follow this organizer
+    const { data: followers, error: followersError } = await supabase
+      .from('users')
+      .select('id, display_name')
+      .contains('followed_organizers', [event.organizerId]);
+    
+    if (!followersError && followers && followers.length > 0) {
+      // Get organizer info for notification
+      const { data: organizer } = await supabase
+        .from('users')
+        .select('display_name')
+        .eq('id', event.organizerId)
+        .single();
+      
+      // Create notifications for all followers
+      const notifications = followers.map(follower => ({
+        user_id: follower.id,
+        title: 'New Event from Organizer You Follow',
+        message: `${organizer?.display_name || 'An organizer'} just created "${event.name}". Check it out!`,
+        type: 'new_event_from_followed',
+        sender_name: organizer?.display_name || 'EventNexus',
+        event_id: data.id,
+        is_read: false,
+        created_at: new Date().toISOString()
+      }));
+      
+      await supabase
+        .from('notifications')
+        .insert(notifications);
+    }
+  } catch (notifError) {
+    console.error('Error sending follower notifications:', notifError);
+    // Don't fail event creation if notifications fail
+  }
+  
   return transformEventFromDB(data);
 };
 
