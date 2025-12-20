@@ -168,14 +168,8 @@ async function scanGitHubCode() {
   return alerts;
 }
 
-// Domain Scanning
+// Domain Scanning - uses free public WHOIS APIs
 async function scanDomains() {
-  const WHOIS_API_KEY = Deno.env.get('WHOIS_API_KEY');
-  if (!WHOIS_API_KEY) {
-    console.log('WHOIS API key not configured');
-    return [];
-  }
-
   const alerts: any[] = [];
   const variants = [
     'eventnexuss.eu',
@@ -186,28 +180,88 @@ async function scanDomains() {
     'eventsnexus.eu'
   ];
 
+  // Try with API key first (if available)
+  const WHOIS_API_KEY = Deno.env.get('WHOIS_API_KEY');
+
   try {
     for (const domain of variants) {
-      const response = await fetch(
-        `https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${WHOIS_API_KEY}&domainName=${domain}&outputFormat=JSON`
-      );
+      try {
+        let domainInfo = null;
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data.WhoisRecord) {
+        // Method 1: Try WhoisXML API if key available
+        if (WHOIS_API_KEY) {
+          const response = await fetch(
+            `https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${WHOIS_API_KEY}&domainName=${domain}&outputFormat=JSON`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            if (data.WhoisRecord) {
+              domainInfo = {
+                registered: true,
+                registrant: data.WhoisRecord.registrant?.name || 'Unknown',
+                registrar: data.WhoisRecord.registrarName
+              };
+            }
+          }
+        }
+
+        // Method 2: Free RDAP lookup (no API key needed)
+        if (!domainInfo) {
+          const rdapResponse = await fetch(
+            `https://rdap.verisign.com/com/v1/domain/${domain}`
+          );
+          if (rdapResponse.ok) {
+            const rdapData = await rdapResponse.json();
+            if (rdapData.status && !rdapData.status.includes('inactive')) {
+              domainInfo = {
+                registered: true,
+                registrant: rdapData.entities?.[0]?.vcardArray?.[1]?.[1]?.[3] || 'Unknown',
+                registrar: rdapData.entities?.[0]?.handle || 'Unknown'
+              };
+            }
+          }
+        }
+
+        // Method 3: Simple DNS check (always free)
+        if (!domainInfo) {
+          try {
+            const dnsCheck = await fetch(`https://${domain}`, { 
+              method: 'HEAD',
+              signal: AbortSignal.timeout(5000) 
+            });
+            if (dnsCheck.ok || dnsCheck.status < 500) {
+              domainInfo = {
+                registered: true,
+                registrant: 'Unknown (DNS active)',
+                registrar: 'Unknown'
+              };
+            }
+          } catch (dnsError) {
+            // Domain likely not registered
+            console.log(`Domain ${domain} appears unregistered`);
+          }
+        }
+
+        // Create alert if domain is registered
+        if (domainInfo?.registered) {
           alerts.push({
             type: 'domain',
             severity: 'warning',
             title: `Suspicious domain registered: ${domain}`,
-            description: `Domain ${domain} is registered. Registrant: ${data.WhoisRecord.registrant?.name || 'Unknown'}`,
+            description: `Domain ${domain} is registered. Registrant: ${domainInfo.registrant}`,
             url: `https://${domain}`,
             timestamp: new Date().toISOString(),
             status: 'open',
-            detected_by: 'whois_scan',
-            metadata: { domain, registrar: data.WhoisRecord.registrarName }
+            detected_by: 'domain_scan',
+            metadata: { 
+              domain, 
+              registrar: domainInfo.registrar,
+              method: WHOIS_API_KEY ? 'whois_api' : 'free_rdap_dns'
+            }
           });
         }
+      } catch (domainError) {
+        console.error(`Error checking domain ${domain}:`, domainError);
       }
     }
   } catch (error) {
