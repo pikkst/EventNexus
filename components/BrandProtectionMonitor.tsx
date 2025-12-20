@@ -10,8 +10,9 @@ interface BrandProtectionMonitorProps {
 }
 
 export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'code' | 'domain' | 'brand' | 'search' | 'social' | 'competitors'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'code' | 'domain' | 'brand' | 'search' | 'social' | 'competitors' | 'history'>('overview');
   const [alerts, setAlerts] = useState<BrandMonitoringAlert[]>([]);
+  const [historicalAlerts, setHistoricalAlerts] = useState<BrandMonitoringAlert[]>([]);
   const [stats, setStats] = useState<MonitoringStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastScan, setLastScan] = useState<Date | null>(null);
@@ -46,7 +47,10 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
     loadMonitoringData();
     loadDomainInfo();
     loadTrendData();
-  }, []);
+    if (activeTab === 'history') {
+      loadHistoricalData();
+    }
+  }, [activeTab]);
 
   const loadMonitoringData = async () => {
     setLoading(true);
@@ -104,6 +108,19 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
     } catch (error) {
       console.error('Error loading trend data:', error);
       setTrendData([]);
+    }
+  };
+
+  const loadHistoricalData = async () => {
+    setLoading(true);
+    try {
+      const historical = await brandMonitoringService.getHistoricalAlerts(['resolved', 'deleted']);
+      setHistoricalAlerts(historical);
+    } catch (error) {
+      console.error('Error loading historical data:', error);
+      setHistoricalAlerts([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1182,6 +1199,96 @@ Legal Framework References:
     </div>
   );
 
+  const renderHistory = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Alert History</h2>
+          <p className="text-gray-400 mt-1">Resolved and deleted alerts archive</p>
+        </div>
+        <button
+          onClick={loadHistoricalData}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
+      {historicalAlerts.length === 0 ? (
+        <div className="text-center py-12 bg-gray-800/50 border border-gray-700 rounded-xl">
+          <Clock className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <p className="text-gray-400 text-lg">No historical alerts yet</p>
+          <p className="text-gray-500 text-sm mt-2">Resolved and deleted alerts will appear here</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-gray-400 text-sm">
+            Showing {historicalAlerts.length} archived alert{historicalAlerts.length !== 1 ? 's' : ''}
+          </p>
+          {historicalAlerts.map((alert) => (
+            <div
+              key={alert.id}
+              className={`border rounded-lg p-4 ${
+                alert.status === 'resolved' 
+                  ? 'bg-green-500/10 border-green-500/30' 
+                  : 'bg-gray-700/50 border-gray-600'
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  {alert.severity === 'critical' && <XCircle className="w-5 h-5 text-red-500" />}
+                  {alert.severity === 'warning' && <AlertTriangle className="w-5 h-5 text-yellow-500" />}
+                  {alert.severity === 'info' && <Eye className="w-5 h-5 text-blue-500" />}
+                  <span className="font-semibold text-white">{alert.title}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 text-xs rounded ${
+                    alert.status === 'resolved' 
+                      ? 'bg-green-500/20 text-green-400' 
+                      : 'bg-gray-600/50 text-gray-400'
+                  }`}>
+                    {alert.status === 'resolved' ? 'Resolved' : 'Deleted'}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(alert.timestamp).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-300 mb-2">{alert.description}</p>
+
+              {alert.url && (
+                <a
+                  href={alert.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 break-all"
+                >
+                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                  {alert.url}
+                </a>
+              )}
+
+              {alert.actionTaken && (
+                <div className="mt-2 text-xs text-gray-400 italic bg-gray-800/50 rounded p-2">
+                  Action: {alert.actionTaken}
+                </div>
+              )}
+
+              {alert.updated_at && (
+                <div className="mt-2 text-xs text-gray-500">
+                  Updated: {new Date(alert.updated_at).toLocaleString()}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Activity },
     { id: 'code', label: 'Code Protection', icon: Code },
@@ -1190,6 +1297,7 @@ Legal Framework References:
     { id: 'search', label: 'Search Monitoring', icon: Search },
     { id: 'social', label: 'Social Media', icon: Eye },
     { id: 'competitors', label: 'Competitors', icon: TrendingUp },
+    { id: 'history', label: 'History', icon: Clock },
   ];
 
   return (
@@ -1248,6 +1356,7 @@ Legal Framework References:
             {activeTab === 'search' && renderSearchMonitoring()}
             {activeTab === 'social' && renderSocialMonitoring()}
             {activeTab === 'competitors' && renderCompetitorAnalysis()}
+            {activeTab === 'history' && renderHistory()}
           </>
         )}
 
