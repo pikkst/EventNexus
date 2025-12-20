@@ -23,11 +23,12 @@ import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus } from 
 import { User, EventNexusEvent } from '../types';
 
 interface EventDetailProps {
-  user: User;
+  user: User | null;
   onToggleFollow?: (orgId: string) => void;
+  onOpenAuth?: () => void;
 }
 
-const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow }) => {
+const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenAuth }) => {
   const { id } = useParams();
   const [event, setEvent] = useState<EventNexusEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,7 +80,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow }) => {
 
   const remaining = event.maxAttendees - currentAttendees;
   const totalRevenue = currentAttendees * event.price;
-  const isFollowing = user.followedOrganizers.includes(event.organizerId);
+  const isFollowing = user?.followedOrganizers.includes(event.organizerId) ?? false;
 
   // Check for successful purchase on mount
   useEffect(() => {
@@ -92,6 +93,12 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow }) => {
   }, []);
 
   const handlePurchase = async () => {
+    // Require authentication before purchase
+    if (!user) {
+      onOpenAuth?.();
+      return;
+    }
+
     if (remaining < ticketCount || event.price === 0) {
       // Free event - handle directly
       if (event.price === 0) {
@@ -263,7 +270,13 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow }) => {
                 <h4 className="font-bold truncate text-slate-100">Nexus Elite Promotions</h4>
               </div>
               <button 
-                onClick={() => onToggleFollow && onToggleFollow(event.organizerId)}
+                onClick={() => {
+                  if (!user) {
+                    onOpenAuth?.();
+                    return;
+                  }
+                  onToggleFollow?.(event.organizerId);
+                }}
                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
                   isFollowing ? 'bg-slate-800 text-slate-400' : 'bg-indigo-600 text-white'
                 }`}
