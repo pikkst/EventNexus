@@ -65,7 +65,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     gemini: { key: process.env.API_KEY || 'NEXUS_AI_INTERNAL', model: 'gemini-3-pro-preview' },
     github: { appId: '920831', secret: 'ghs_820v...', repo: 'eventnexus/backbone' },
     mapbox: { token: 'pk.ey...v920', styleId: 'dark-v11' },
-    email: { provider: 'SendGrid', key: 'SG.920831...', from: 'no-reply@eventnexus.com' }
+    email: { provider: 'Resend', key: 'RESEND_API_KEY', from: 'noreply@mail.eventnexus.eu' }
   });
 
   // Search & Filter State

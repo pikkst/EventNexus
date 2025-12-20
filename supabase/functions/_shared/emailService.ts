@@ -3,7 +3,7 @@
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const FROM_EMAIL = 'alerts@mail.eventnexus.eu';
-const TO_EMAIL = 'admin@example.com'; // Configure in production
+const TO_EMAIL = 'admin@mail.eventnexus.eu'; // Configure with actual admin email
 
 interface Alert {
   id?: string;

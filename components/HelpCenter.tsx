@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, ChevronDown, ChevronUp, BookOpen, MessageSquare, ShieldCheck, Zap, Users, CreditCard } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, BookOpen, MessageSquare, ShieldCheck, Zap, Users, CreditCard, Mail } from 'lucide-react';
 import ChatBot from './ChatBot';
 
 const HelpCenter: React.FC = () => {
@@ -99,9 +99,12 @@ const HelpCenter: React.FC = () => {
           >
             <MessageSquare className="w-4 h-4" /> Live AI Chat
           </button>
-          <button className="bg-indigo-700 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-            <BookOpen className="w-4 h-4" /> Documentation
-          </button>
+          <a 
+            href="mailto:support@mail.eventnexus.eu"
+            className="bg-indigo-700 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-800 transition-all"
+          >
+            <Mail className="w-4 h-4" /> Email Support
+          </a>
         </div>
       </div>
 

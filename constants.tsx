@@ -63,7 +63,7 @@ export const PLATFORM_CONFIG = {
   maxEventCapacity: 100000,
   ticketQRCodePrefix: 'EVNX-',
   platformFeePercentage: 2.5,
-  supportEmail: 'huntersest@gmail.com',
+  supportEmail: 'support@mail.eventnexus.eu',
   // Refund policy (days before event)
   refundPolicy: {
     fullRefund: 7,    // 100% refund if 7+ days before event
@@ -72,4 +72,13 @@ export const PLATFORM_CONFIG = {
   },
   // Payout timing (days after event)
   payoutDelay: 2, // Payout 2 days after event completion
+};
+
+// Platform email addresses (all use mail.eventnexus.eu subdomain)
+export const PLATFORM_EMAILS = {
+  support: 'support@mail.eventnexus.eu',      // User support and help
+  info: 'info@mail.eventnexus.eu',            // General inquiries
+  noreply: 'noreply@mail.eventnexus.eu',      // Automated notifications
+  admin: 'admin@mail.eventnexus.eu',          // Admin notifications
+  alerts: 'alerts@mail.eventnexus.eu',        // Brand monitoring alerts
 };
