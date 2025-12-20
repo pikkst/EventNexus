@@ -1,5 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
+import { supabase } from './supabase';
 
 const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -42,7 +43,7 @@ export const generatePlatformGrowthCampaign = async (theme: string, target: 'cre
   }
 };
 
-export const generateAdImage = async (prompt: string, aspectRatio: "1:1" | "9:16" | "16:9" = "1:1") => {
+export const generateAdImage = async (prompt: string, aspectRatio: "1:1" | "9:16" | "16:9" = "1:1", saveToStorage = true) => {
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
@@ -59,7 +60,56 @@ export const generateAdImage = async (prompt: string, aspectRatio: "1:1" | "9:16
 
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
-        return `data:image/png;base64,${part.inlineData.data}`;
+        const base64Data = part.inlineData.data;
+        const inlineDataUrl = `data:image/png;base64,${base64Data}`;
+        
+        // If saveToStorage is true, upload to Supabase and return public URL
+        if (saveToStorage) {
+          try {
+            // Convert base64 to blob
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'image/png' });
+            
+            // Generate unique filename
+            const filename = `ai-generated/${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
+            
+            // Upload to Supabase Storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('event-images')
+              .upload(filename, blob, {
+                contentType: 'image/png',
+                cacheControl: '3600',
+                upsert: false
+              });
+            
+            if (uploadError) {
+              console.error('Failed to upload to Supabase Storage:', uploadError);
+              // Fallback to inline data URL
+              return inlineDataUrl;
+            }
+            
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('event-images')
+              .getPublicUrl(filename);
+            
+            console.log('AI image uploaded successfully:', publicUrl);
+            return publicUrl;
+            
+          } catch (storageError) {
+            console.error('Storage error:', storageError);
+            // Fallback to inline data URL
+            return inlineDataUrl;
+          }
+        }
+        
+        // Return inline data URL if storage disabled
+        return inlineDataUrl;
       }
     }
     return null;
