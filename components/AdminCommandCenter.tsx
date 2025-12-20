@@ -22,6 +22,7 @@ import { User, Notification } from '../types';
 import { generatePlatformGrowthCampaign, generateAdImage } from '../services/geminiService';
 import { supabase } from '../services/supabase';
 import BrandProtectionMonitor from './BrandProtectionMonitor';
+import AdminInbox from './AdminInbox';
 import { 
   getEvents, 
   getAllUsers, 
@@ -442,6 +443,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const navItems = [
     { id: 'analytics', label: 'Global Insights', icon: <PieChart /> },
     { id: 'users', label: 'User Governance', icon: <Users /> },
+    { id: 'inbox', label: 'Email Inbox', icon: <Mail /> },
     { id: 'marketing', label: 'Campaign Engine', icon: <Rocket /> },
     { id: 'brand-protection', label: 'Brand Protection', icon: <Shield /> },
     { id: 'financials', label: 'Nexus Economy', icon: <DollarSign /> },
@@ -842,6 +844,12 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         {activeTab === 'brand-protection' && (
           <div className="animate-in fade-in duration-500">
             <BrandProtectionMonitor user={user} />
+          </div>
+        )}
+
+        {activeTab === 'inbox' && (
+          <div className="animate-in fade-in duration-500">
+            <AdminInbox />
           </div>
         )}
 

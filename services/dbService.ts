@@ -1031,3 +1031,130 @@ export const getFinancialLedger = async (): Promise<FinancialTransaction[]> => {
     return [];
   }
 };
+
+// Admin Inbox
+export interface InboxMessage {
+  id: string;
+  from_email: string;
+  from_name: string | null;
+  to_email: string;
+  subject: string;
+  body_text: string | null;
+  body_html: string | null;
+  attachments: any[];
+  status: 'unread' | 'read' | 'replied' | 'archived' | 'spam';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  replied_at: string | null;
+  created_at: string;
+}
+
+export const getInboxMessages = async (status?: string): Promise<InboxMessage[]> => {
+  try {
+    let query = supabase
+      .from('admin_inbox')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching inbox messages:', error);
+    return [];
+  }
+};
+
+export const getInboxStats = async (): Promise<any> => {
+  try {
+    const { data, error } = await supabase.rpc('get_inbox_stats');
+    
+    if (error) throw error;
+    return data || { total: 0, unread: 0, replied: 0, high_priority: 0 };
+  } catch (error) {
+    console.error('Error fetching inbox stats:', error);
+    return { total: 0, unread: 0, replied: 0, high_priority: 0 };
+  }
+};
+
+export const markInboxAsRead = async (messageId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('admin_inbox')
+      .update({ status: 'read' })
+      .eq('id', messageId);
+    
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error marking message as read:', error);
+    throw error;
+  }
+};
+
+export const replyToInboxMessage = async (messageId: string, replyBody: string): Promise<void> => {
+  try {
+    // Get the message details
+    const { data: message, error: fetchError } = await supabase
+      .from('admin_inbox')
+      .select('*')
+      .eq('id', messageId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    
+    // Send reply via Edge Function
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/send-email-reply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+      },
+      body: JSON.stringify({
+        to: message.from_email,
+        subject: `Re: ${message.subject}`,
+        body: replyBody,
+        inReplyTo: message.message_id
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to send email reply');
+    }
+    
+    // Update message status
+    const { error: updateError } = await supabase
+      .from('admin_inbox')
+      .update({ 
+        status: 'replied',
+        replied_by: user?.id,
+        replied_at: new Date().toISOString(),
+        reply_body: replyBody
+      })
+      .eq('id', messageId);
+    
+    if (updateError) throw updateError;
+  } catch (error) {
+    console.error('Error replying to message:', error);
+    throw error;
+  }
+};
+
+export const deleteInboxMessage = async (messageId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('admin_inbox')
+      .delete()
+      .eq('id', messageId);
+    
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    throw error;
+  }
+};
