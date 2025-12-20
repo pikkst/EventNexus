@@ -262,8 +262,9 @@ const App: React.FC = () => {
         return;
       }
       
-      // Only handle SIGNED_IN if it's a new login (not initial restore)
-      if (event === 'SIGNED_IN' && session?.user && mounted && sessionRestored) {
+      // Only handle SIGNED_IN if it's a truly new login (not from cache or initial restore)
+      // Skip if we already have user data (from cache or previous load)
+      if (event === 'SIGNED_IN' && session?.user && mounted && !user) {
         console.log('User signed in (new login), loading data...');
         try {
           const userData = await getUser(session.user.id);
