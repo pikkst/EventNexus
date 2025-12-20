@@ -91,6 +91,15 @@ serve(async (req) => {
 
     // Store alerts in database with deduplication
     if (alerts.length > 0) {
+      // Fetch whitelist to filter out false positives
+      const { data: whitelist } = await supabase
+        .from('brand_monitoring_whitelist')
+        .select('url, title');
+
+      const whitelistSet = new Set(
+        (whitelist || []).map(w => `${w.url}||${w.title}`)
+      );
+
       // Fetch existing alerts to check for duplicates (including deleted/resolved to prevent re-detection)
       const { data: existingAlerts } = await supabase
         .from('brand_monitoring_alerts')
@@ -102,9 +111,13 @@ serve(async (req) => {
         (existingAlerts || []).map(a => `${a.url}||${a.title}`)
       );
 
-      // Filter out duplicates - only insert NEW alerts that don't exist in any state
+      // Filter out duplicates AND whitelisted items - only insert NEW, non-whitelisted alerts
       const newAlerts = alerts.filter(alert => {
         const key = `${alert.url}||${alert.title}`;
+        if (whitelistSet.has(key)) {
+          console.log(`Skipping whitelisted alert: ${alert.title}`);
+          return false;
+        }
         return !existingSet.has(key);
       });
 
@@ -116,10 +129,10 @@ serve(async (req) => {
         if (error) {
           console.error('Error storing alerts:', error);
         } else {
-          console.log(`Stored ${newAlerts.length} new alerts (filtered ${alerts.length - newAlerts.length} duplicates)`);
+          console.log(`Stored ${newAlerts.length} new alerts (filtered ${alerts.length - newAlerts.length} duplicates/whitelisted)`);
         }
       } else {
-        console.log('All alerts are duplicates - skipped insertion');
+        console.log('All alerts are duplicates or whitelisted - skipped insertion');
       }
     }
 
