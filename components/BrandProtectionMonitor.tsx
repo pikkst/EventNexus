@@ -26,6 +26,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   // Filter, Sort, Search states
   const [filterType, setFilterType] = useState<string>('all');
   const [filterSeverity, setFilterSeverity] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'severity' | 'type'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -350,6 +351,11 @@ Legal Framework References:
       filtered = filtered.filter(a => a.severity === filterSeverity);
     }
 
+    // Filter by status
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(a => a.status === filterStatus);
+    }
+
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -648,6 +654,19 @@ Legal Framework References:
                 <option value="info">Info</option>
               </select>
 
+              {/* Status Filter */}
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+              >
+                <option value="all">All Status</option>
+                <option value="open">Open</option>
+                <option value="investigating">Investigating</option>
+                <option value="resolved">Resolved</option>
+                <option value="dismissed">Dismissed</option>
+              </select>
+
               {/* Sort */}
               <select
                 value={sortBy}
@@ -665,7 +684,7 @@ Legal Framework References:
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white">
             Recent Alerts
-            {(filterType !== 'all' || filterSeverity !== 'all' || searchQuery) && (
+            {(filterType !== 'all' || filterSeverity !== 'all' || filterStatus !== 'all' || searchQuery) && (
               <span className="ml-2 text-sm text-gray-400">
                 ({getFilteredAndSortedAlerts().length} filtered)
               </span>
@@ -725,6 +744,7 @@ Legal Framework References:
               onClick={() => {
                 setFilterType('all');
                 setFilterSeverity('all');
+                setFilterStatus('all');
                 setSearchQuery('');
               }}
               className="mt-3 text-sm text-purple-400 hover:text-purple-300"
