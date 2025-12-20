@@ -21,6 +21,7 @@ import { getEvents } from '../services/dbService';
 import { generateAdCampaign, generateAdImage } from '../services/geminiService';
 import { supabase } from '../services/supabase';
 import PayoutsHistory from './PayoutsHistory';
+import EnterpriseSuccessManager from './EnterpriseSuccessManager';
 
 // Generate dynamic sales data based on user's events
 const generateSalesData = (events: EventNexusEvent[]) => {
@@ -47,6 +48,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [isGeneratingAd, setIsGeneratingAd] = useState(false);
   const [genStage, setGenStage] = useState('');
   const [adCampaign, setAdCampaign] = useState<any[]>([]);
+  const [isSuccessManagerOpen, setIsSuccessManagerOpen] = useState(false);
   
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [broadcastingTo, setBroadcastingTo] = useState<string | null>(null);
@@ -213,6 +215,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
           <p className="text-slate-400 font-medium text-lg">Managing <strong className="text-white">{events.length}</strong> active nodes across the global backbone.</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
+          {/* Enterprise Success Manager Button */}
+          {isEnterprise && (
+            <button 
+              onClick={() => setIsSuccessManagerOpen(true)} 
+              className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 active:scale-95 relative overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+              <Sparkles className="w-4 h-4 relative z-10" /> 
+              <span className="relative z-10">Success Manager</span>
+              <span className="text-[8px] bg-emerald-500 px-2 py-0.5 rounded-full relative z-10">24/7</span>
+            </button>
+          )}
           <button onClick={() => navigate('/scanner')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95">
             <Scan className="w-4 h-4" /> Entry Control
           </button>
@@ -775,6 +789,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
               <button className="px-10 py-5 bg-slate-800 hover:bg-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all">Setup Webhooks</button>
            </div>
         </div>
+      )}
+
+      {/* Enterprise Success Manager Chat */}
+      {isEnterprise && (
+        <EnterpriseSuccessManager 
+          user={user}
+          isOpen={isSuccessManagerOpen}
+          onClose={() => setIsSuccessManagerOpen(false)}
+        />
       )}
     </div>
   );
