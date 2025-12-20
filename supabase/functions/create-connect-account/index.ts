@@ -140,7 +140,6 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Unknown error',
-        details: error,
       }),
       {
         status: 500,
