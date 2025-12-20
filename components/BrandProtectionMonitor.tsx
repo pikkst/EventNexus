@@ -26,6 +26,11 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const [filterSeverity, setFilterSeverity] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'severity' | 'type'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Whitelist modal
+  const [showWhitelistModal, setShowWhitelistModal] = useState(false);
+  const [whitelistAlert, setWhitelistAlert] = useState<BrandMonitoringAlert | null>(null);
+  const [whitelistReason, setWhitelistReason] = useState('');
 
   useEffect(() => {
     loadMonitoringData();
@@ -170,6 +175,31 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
       await loadMonitoringData();
     } catch (error) {
       console.error('Bulk action failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWhitelistAlert = async () => {
+    if (!whitelistAlert || !whitelistReason) return;
+    
+    setLoading(true);
+    try {
+      const success = await brandMonitoringService.addToWhitelist(
+        whitelistAlert.url || '',
+        whitelistAlert.title,
+        whitelistReason
+      );
+      
+      if (success) {
+        await brandMonitoringService.deleteAlert(whitelistAlert.id);
+        await loadMonitoringData();
+        setShowWhitelistModal(false);
+        setWhitelistAlert(null);
+        setWhitelistReason('');
+      }
+    } catch (error) {
+      console.error('Whitelist error:', error);
     } finally {
       setLoading(false);
     }
@@ -584,6 +614,16 @@ Legal Framework References:
                     className="px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded transition-colors"
                   >
                     Delete
+                  </button>
+                  <button
+                    onClick={() => {
+                      setWhitelistAlert(alert);
+                      setShowWhitelistModal(true);
+                    }}
+                    className="px-3 py-1 text-xs bg-gray-500/20 hover:bg-gray-500/30 text-gray-300 border border-gray-500/30 rounded transition-colors flex items-center gap-1"
+                  >
+                    <Ban className="w-3 h-3" />
+                    Whitelist
                   </button>
                 </div>
               </div>
@@ -1114,6 +1154,63 @@ Legal Framework References:
                   <p>• <strong>SECURITY.md</strong> - Security Policy & Disclosure</p>
                   <p className="mt-2 text-gray-500">Framework includes: Copyright (Berne Convention), Trade Secrets (EU 2016/943), Trademark Protection, Domain Rights (ICANN UDRP)</p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Whitelist Modal */}
+      {showWhitelistModal && whitelistAlert && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-700 rounded-xl shadow-2xl max-w-lg w-full">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Ban className="w-6 h-6 text-gray-400" />
+                <h3 className="text-xl font-bold text-white">Whitelist Alert</h3>
+              </div>
+              
+              <div className="mb-4 p-3 bg-gray-800/50 border border-gray-700 rounded">
+                <p className="text-sm font-medium text-white">{whitelistAlert.title}</p>
+                {whitelistAlert.url && (
+                  <p className="text-xs text-gray-400 mt-1 break-all">{whitelistAlert.url}</p>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Reason for Whitelisting <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={whitelistReason}
+                  onChange={(e) => setWhitelistReason(e.target.value)}
+                  placeholder="e.g., Not related to our platform, False positive, Scientific software..."
+                  className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowWhitelistModal(false);
+                    setWhitelistAlert(null);
+                    setWhitelistReason('');
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleWhitelistAlert}
+                  disabled={!whitelistReason.trim() || loading}
+                  className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <><RefreshCw className="w-4 h-4 animate-spin" /> Processing...</>
+                  ) : (
+                    <><Ban className="w-4 h-4" /> Add to Whitelist</>
+                  )}
+                </button>
               </div>
             </div>
           </div>
