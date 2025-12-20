@@ -27,8 +27,6 @@ export const generateSocialMediaPosts = async (
   campaignCopy: string,
   targetAudience: 'creators' | 'attendees'
 ) => {
-  // Admin tool - no credit deduction
-
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
@@ -159,12 +157,12 @@ export const generateAdImage = async (
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
-        parts: [{ text: `Professional marketing flier for EventNexus: ${prompt}. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements integrated, 8k.` }],
+        parts: [{ text: `Professional marketing flier for EventNexus: ${prompt}. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements integrated, 8k.` }]
       },
       config: {
-        imageConfig: { (Free tier only)
-        if (userId && userTier === 'free') {
-          await deductUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_IMAGE
+        imageConfig: {
+          aspectRatio: aspectRatio
+        }
       }
     });
 
@@ -173,9 +171,9 @@ export const generateAdImage = async (
         const base64Data = part.inlineData.data;
         const inlineDataUrl = `data:image/png;base64,${base64Data}`;
         
-        // Deduct credits after successful generation
-        if (userId) {
-          await deductUserCredits(userId, AI_CREDIT_COSTS.AD_IMAGE_GENERATION);
+        // Deduct credits after successful generation (Free tier only)
+        if (userId && userTier === 'free') {
+          await deductUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_IMAGE);
         }
 
         // If saveToStorage is true, upload to Supabase and return public URL
@@ -204,7 +202,6 @@ export const generateAdImage = async (
             
             if (uploadError) {
               console.error('Failed to upload to Supabase Storage:', uploadError);
-              // Fallback to inline data URL
               return inlineDataUrl;
             }
             
@@ -218,12 +215,10 @@ export const generateAdImage = async (
             
           } catch (storageError) {
             console.error('Storage error:', storageError);
-            // Fallback to inline data URL
             return inlineDataUrl;
           }
         }
         
-        // Return inline data URL if storage disabled
         return inlineDataUrl;
       }
     }
@@ -250,6 +245,10 @@ export const generateMarketingTagline = async (name: string, category: string, u
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Generate a short, punchy marketing tagline (max 60 chars) for this event: "${name}" in the ${category} category.`
+    });
+
     const result = response.text?.trim() || '';
 
     // Deduct credits after successful generation (Free tier only)
@@ -257,14 +256,13 @@ export const generateMarketingTagline = async (name: string, category: string, u
       await deductUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_TAGLINE);
     }
 
-    return result
-      await deductUserCredits(userId, AI_CREDIT_COSTS.TAGLINE_GENERATION);
-    }
-
-    return response.text?.trim() || '';
+    return result || "Experience the extraordinary.";
   } catch (error) {
+    console.error("Tagline generation failed:", error);
     return "Experience the extraordinary.";
   }
+};
+
 /**
  * Translate event description
  * Free tier: costs credits | Paid tiers: included
@@ -274,15 +272,17 @@ export const translateDescription = async (text: string, targetLanguage: string,
   if (userId && userTier === 'free') {
     const hasCredits = await checkUserCredits(userId, AI_CREDIT_COSTS.TRANSLATION);
     if (!hasCredits) {
-      throw new Error(`Insufficient credits. Need ${AI_CREDIT_COSTS.TRANSLATION} credits (${AI_CREDIT_COSTS.TRANSLATION * 0.5}€ value)`);IT_COSTS.TRANSLATION);
-    if (!hasCredits) {
-      return text; // Return original if insufficient credits
+      throw new Error(`Insufficient credits. Need ${AI_CREDIT_COSTS.TRANSLATION} credits (${AI_CREDIT_COSTS.TRANSLATION * 0.5}€ value)`);
     }
   }
 
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Translate the following text to ${targetLanguage}: "${text}"`
+    });
+
     const result = response.text?.trim() || text;
 
     // Deduct credits after successful generation (Free tier only)
@@ -290,14 +290,13 @@ export const translateDescription = async (text: string, targetLanguage: string,
       await deductUserCredits(userId, AI_CREDIT_COSTS.TRANSLATION);
     }
 
-    return resul
-      await deductUserCredits(userId, AI_CREDIT_COSTS.TRANSLATION);
-    }
-
-    return response.text?.trim() || text;
+    return result;
   } catch (error) {
+    console.error("Translation failed:", error);
     return text;
   }
+};
+
 /**
  * Generate multi-platform ad campaign
  * Free tier: costs credits | Paid tiers: included
@@ -307,9 +306,7 @@ export const generateAdCampaign = async (name: string, description: string, obje
   if (userId && userTier === 'free') {
     const hasCredits = await checkUserCredits(userId, AI_CREDIT_COSTS.AD_CAMPAIGN);
     if (!hasCredits) {
-      throw new Error(`Insufficient credits. Need ${AI_CREDIT_COSTS.AD_CAMPAIGN} credits (${AI_CREDIT_COSTS.AD_CAMPAIGN * 0.5}€ value)`D_CAMPAIGN_GENERATION);
-    if (!hasCredits) {
-      throw new Error('Insufficient credits for ad campaign generation');
+      throw new Error(`Insufficient credits. Need ${AI_CREDIT_COSTS.AD_CAMPAIGN} credits (${AI_CREDIT_COSTS.AD_CAMPAIGN * 0.5}€ value)`);
     }
   }
 
@@ -343,17 +340,18 @@ export const generateAdCampaign = async (name: string, description: string, obje
           }
         }
       }
-    }); (Free tier only)
-    if (userId && userTier === 'free' && result.length > 0) {
-      await deductUserCredits(userId, AI_CREDIT_COSTS.AD_CAMPAIG
+    });
 
-    // Deduct credits after successful generation
-    if (userId) {
-      await deductUserCredits(userId, AI_CREDIT_COSTS.AD_CAMPAIGN_GENERATION);
+    const result = JSON.parse(response.text || '[]');
+
+    // Deduct credits after successful generation (Free tier only)
+    if (userId && userTier === 'free' && result.length > 0) {
+      await deductUserCredits(userId, AI_CREDIT_COSTS.AD_CAMPAIGN);
     }
 
     return result;
   } catch (error) {
+    console.error("Ad campaign generation failed:", error);
     return [];
   }
 };
@@ -363,7 +361,7 @@ export const createNexusChat = () => {
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: {
-      systemInstruction: 'You are NexusAI, a world-class event concierge and organizer assistant for EventNexus. You help attendees find the best vibes and help organizers create high-impact experiences.',
-    },
+      systemInstruction: 'You are NexusAI, a world-class event concierge and organizer assistant for EventNexus. You help attendees find the best vibes and help organizers create high-impact experiences.'
+    }
   });
 };
