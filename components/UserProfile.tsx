@@ -31,8 +31,8 @@ import {
   XOctagon,
   RefreshCw
 } from 'lucide-react';
-import { User } from '../types';
-import { getUserTickets, uploadAvatar } from '../services/dbService';
+import { User, EventNexusEvent } from '../types';
+import { getUserTickets, uploadAvatar, getOrganizerEvents } from '../services/dbService';
 
 interface UserProfileProps {
   user: User;
@@ -47,6 +47,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [userTickets, setUserTickets] = useState<any[]>([]);
+  const [organizedEvents, setOrganizedEvents] = useState<EventNexusEvent[]>([]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [tempUser, setTempUser] = useState<Partial<User>>({
     name: user.name,
@@ -61,7 +62,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
       const tickets = await getUserTickets(user.id);
       setUserTickets(tickets || []);
     };
+    const loadOrganizedEvents = async () => {
+      const events = await getOrganizerEvents(user.id);
+      setOrganizedEvents(events || []);
+    };
     loadTickets();
+    loadOrganizedEvents();
   }, [user.id]);
 
   const handleLogout = () => {
@@ -185,6 +191,70 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                {user.bio || "No biography provided yet. Tell the Nexus network about yourself!"}
              </p>
           </div>
+
+          {/* Organized Events Section - Only show for paid users */}
+          {isPro && (
+            <div className="bg-slate-900 border border-slate-800 rounded-[40px] overflow-hidden shadow-2xl">
+              <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md">
+                <h3 className="font-black text-xl tracking-tight flex items-center gap-3">
+                  <div className="p-2 bg-indigo-600/20 rounded-xl">
+                    <Calendar className="w-5 h-5 text-indigo-400" />
+                  </div>
+                  My Organized Events
+                </h3>
+                <span className="text-xs font-bold text-slate-500">{organizedEvents.length} events</span>
+              </div>
+              <div className="divide-y divide-slate-800">
+                {organizedEvents.length > 0 ? (
+                  organizedEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      onClick={() => navigate(`/event/${event.id}`)}
+                      className="p-6 hover:bg-slate-800/30 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">
+                              {event.category}
+                            </span>
+                            <span className="text-xs text-slate-600">•</span>
+                            <span className="text-xs text-slate-500 font-medium">
+                              {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-lg mb-1 group-hover:text-indigo-400 transition-colors">{event.name}</h4>
+                          <div className="flex items-center gap-4 text-sm text-slate-500">
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              {event.location?.city || 'Location TBA'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <TicketIcon className="w-4 h-4" />
+                              {event.attendeesCount || 0}/{event.maxAttendees || 0}
+                            </span>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-12 text-center text-slate-500">
+                    <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-bold">No events organized yet</p>
+                    <p className="text-sm mt-2">Create your first event to get started</p>
+                    <button
+                      onClick={() => navigate('/create-event')}
+                      className="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold text-sm transition-all"
+                    >
+                      Create Event
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Tickets Section */}
           <div className="bg-slate-900 border border-slate-800 rounded-[40px] overflow-hidden shadow-2xl">

@@ -1,11 +1,31 @@
 import { supabase } from './supabase';
 import { EventNexusEvent, User, Notification } from '../types';
 
+// Helper function to transform database event to EventNexusEvent
+const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
+  return {
+    id: dbEvent.id,
+    name: dbEvent.name,
+    category: dbEvent.category,
+    description: dbEvent.description,
+    date: dbEvent.date,
+    time: dbEvent.time || '',
+    location: dbEvent.location,
+    price: dbEvent.price,
+    visibility: dbEvent.visibility || 'public',
+    organizerId: dbEvent.organizer_id,
+    imageUrl: dbEvent.image || '',
+    attendeesCount: dbEvent.attendees_count || 0,
+    maxAttendees: dbEvent.max_capacity || 0
+  };
+};
+
 // Events
 export const getEvents = async (): Promise<EventNexusEvent[]> => {
   const { data, error } = await supabase
     .from('events')
     .select('*')
+    .eq('status', 'active')
     .order('date', { ascending: true });
   
   if (error) {
@@ -13,7 +33,22 @@ export const getEvents = async (): Promise<EventNexusEvent[]> => {
     return [];
   }
   
-  return data || [];
+  return (data || []).map(transformEventFromDB);
+};
+
+export const getOrganizerEvents = async (organizerId: string): Promise<EventNexusEvent[]> => {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('organizer_id', organizerId)
+    .order('date', { ascending: true });
+  
+  if (error) {
+    console.error('Error fetching organizer events:', error);
+    return [];
+  }
+  
+  return (data || []).map(transformEventFromDB);
 };
 
 export const getAllUsers = async (): Promise<User[]> => {
@@ -31,9 +66,28 @@ export const getAllUsers = async (): Promise<User[]> => {
 };
 
 export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<EventNexusEvent | null> => {
+  // Combine date and time into a proper timestamp
+  const dateTimeString = `${event.date}T${event.time}:00`;
+  
+  // Transform to database schema
+  const dbEvent = {
+    name: event.name,
+    description: event.description,
+    category: event.category,
+    date: dateTimeString,
+    location: event.location,
+    price: event.price,
+    visibility: event.visibility,
+    organizer_id: event.organizerId,
+    image: event.imageUrl || null,
+    attendees_count: event.attendeesCount || 0,
+    max_capacity: event.maxAttendees || 100,
+    status: 'active'
+  };
+  
   const { data, error } = await supabase
     .from('events')
-    .insert([event])
+    .insert([dbEvent])
     .select()
     .single();
   
@@ -42,7 +96,7 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
     return null;
   }
   
-  return data;
+  return transformEventFromDB(data);
 };
 
 export const updateEvent = async (id: string, updates: Partial<EventNexusEvent>): Promise<EventNexusEvent | null> => {
