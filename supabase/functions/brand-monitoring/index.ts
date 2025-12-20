@@ -320,48 +320,122 @@ async function scanSearch() {
   return alerts;
 }
 
-// Social Media Monitoring
+// Social Media Monitoring - uses free Nitter scraper (no API key needed)
 async function scanSocial() {
-  const TWITTER_TOKEN = Deno.env.get('TWITTER_BEARER_TOKEN');
-  
-  if (!TWITTER_TOKEN) {
-    console.log('Twitter API not configured');
-    return [];
-  }
-
   const alerts: any[] = [];
 
-  try {
-    const query = 'EventNexus -from:EventNexusApp';
-    const response = await fetch(
-      `https://api.twitter.com/2/tweets/search/recent?query=${encodeURIComponent(query)}&max_results=10`,
-      {
-        headers: {
-          'Authorization': `Bearer ${TWITTER_TOKEN}`,
-          'User-Agent': 'EventNexus-Monitor'
+  // Try Twitter API if token available
+  const TWITTER_TOKEN = Deno.env.get('TWITTER_BEARER_TOKEN');
+  
+  if (TWITTER_TOKEN) {
+    try {
+      const query = 'EventNexus -from:EventNexusApp';
+      const response = await fetch(
+        `https://api.twitter.com/2/tweets/search/recent?query=${encodeURIComponent(query)}&max_results=10`,
+        {
+          headers: {
+            'Authorization': `Bearer ${TWITTER_TOKEN}`,
+            'User-Agent': 'EventNexus-Monitor'
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        for (const tweet of data.data || []) {
+          alerts.push({
+            type: 'social',
+            severity: 'info',
+            title: 'Twitter mention detected',
+            description: tweet.text.substring(0, 200),
+            url: `https://twitter.com/i/web/status/${tweet.id}`,
+            timestamp: new Date().toISOString(),
+            status: 'open',
+            detected_by: 'twitter_api',
+            metadata: { tweetId: tweet.id, source: 'twitter_api' }
+          });
         }
       }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      
-      for (const tweet of data.data || []) {
-        alerts.push({
-          type: 'social',
-          severity: 'info',
-          title: 'Twitter mention',
-          description: tweet.text,
-          url: `https://twitter.com/i/web/status/${tweet.id}`,
-          timestamp: new Date().toISOString(),
-          status: 'open',
-          detected_by: 'twitter_scan',
-          metadata: { tweetId: tweet.id }
-        });
-      }
+    } catch (error) {
+      console.error('Twitter API error:', error);
     }
-  } catch (error) {
-    console.error('Social scan error:', error);
+  }
+
+  // Fallback: Use free Nitter scraper (no API key needed)
+  if (alerts.length === 0) {
+    try {
+      const nitterInstances = [
+        'https://nitter.poast.org',
+        'https://nitter.privacydev.net',
+        'https://nitter.net'
+      ];
+
+      for (const instance of nitterInstances) {
+        try {
+          const searchUrl = `${instance}/search?q=EventNexus&f=tweets`;
+          const response = await fetch(searchUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+            signal: AbortSignal.timeout(10000)
+          });
+
+          if (response.ok) {
+            const html = await response.text();
+            
+            // Basic HTML parsing to find tweets
+            const tweetMatches = html.match(/class="tweet-content[^>]*>([\s\S]*?)<\/div/gi) || [];
+            const usernameMatches = html.match(/class="username"[^>]*>@([^<]+)</gi) || [];
+            const linkMatches = html.match(/href="([^"]+\/status\/\d+)"/gi) || [];
+
+            const maxResults = Math.min(tweetMatches.length, usernameMatches.length, linkMatches.length, 5);
+
+            for (let i = 0; i < maxResults; i++) {
+              const tweetContent = tweetMatches[i]
+                .replace(/<[^>]*>/g, '')
+                .replace(/&[a-z]+;/gi, '')
+                .trim()
+                .substring(0, 200);
+
+              const username = usernameMatches[i].match(/@([^<]+)/)?.[1] || 'unknown';
+              const tweetPath = linkMatches[i].match(/href="([^"]+)"/)?.[1] || '';
+              const tweetUrl = tweetPath.startsWith('http') ? tweetPath : `https://twitter.com${tweetPath}`;
+
+              if (tweetContent.toLowerCase().includes('eventnexus')) {
+                alerts.push({
+                  type: 'social',
+                  severity: 'info',
+                  title: `Twitter mention by @${username}`,
+                  description: tweetContent,
+                  url: tweetUrl,
+                  timestamp: new Date().toISOString(),
+                  status: 'open',
+                  detected_by: 'nitter_scraper',
+                  metadata: { 
+                    username, 
+                    source: 'nitter_free',
+                    instance: instance 
+                  }
+                });
+              }
+            }
+
+            // If found tweets, break the loop
+            if (alerts.length > 0) break;
+          }
+        } catch (instanceError) {
+          console.log(`Nitter instance ${instance} failed, trying next...`);
+          continue;
+        }
+      }
+
+      if (alerts.length === 0) {
+        console.log('No Twitter mentions found via Nitter scraper');
+      }
+    } catch (error) {
+      console.error('Nitter scraper error:', error);
+    }
   }
 
   return alerts;
