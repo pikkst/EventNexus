@@ -75,6 +75,13 @@ serve(async (req) => {
       case 'comprehensive':
         alerts = await runComprehensiveScan();
         break;
+      case 'get-domain-info':
+        // Return primary domain info instead of alerts
+        const domainInfo = await getPrimaryDomainInfo();
+        return new Response(
+          JSON.stringify({ success: true, domainInfo }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), {
           status: 400,
@@ -607,6 +614,72 @@ async function scanCompetitors() {
   // Placeholder - requires custom implementation
   console.log('Competitor scanning - implement custom logic');
   return [];
+}
+
+// Get Primary Domain Info (eventnexus.eu)
+async function getPrimaryDomainInfo() {
+  const domain = 'eventnexus.eu';
+  const domainInfo: any = {
+    domain,
+    status: 'unknown',
+    ssl: { valid: false, issuer: null, expiry: null },
+    registrar: null,
+    lastChecked: new Date().toISOString()
+  };
+
+  try {
+    // 1. Get SSL Certificate info from crt.sh
+    const crtResponse = await fetch(
+      `https://crt.sh/?q=${domain}&output=json`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+
+    if (crtResponse.ok) {
+      const crtData = await crtResponse.json();
+      if (crtData && crtData.length > 0) {
+        const latestCert = crtData[0];
+        domainInfo.ssl = {
+          valid: true,
+          issuer: latestCert.issuer_name,
+          expiry: latestCert.not_after,
+          serial: latestCert.serial_number
+        };
+      }
+    }
+  } catch (error) {
+    console.error('SSL cert check error:', error);
+  }
+
+  try {
+    // 2. Check if domain is reachable
+    const dnsCheck = await fetch(`https://${domain}`, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000)
+    });
+
+    if (dnsCheck.ok || dnsCheck.status < 500) {
+      domainInfo.status = 'active';
+    }
+  } catch (error) {
+    domainInfo.status = 'unknown';
+  }
+
+  try {
+    // 3. Try RDAP for registrar info
+    const rdapResponse = await fetch(
+      `https://rdap.verisign.com/eu/v1/domain/${domain}`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+
+    if (rdapResponse.ok) {
+      const rdapData = await rdapResponse.json();
+      domainInfo.registrar = rdapData.entities?.[0]?.handle || 'EURid';
+    }
+  } catch (error) {
+    domainInfo.registrar = 'EURid'; // Default for .eu domains
+  }
+
+  return domainInfo;
 }
 
 // Comprehensive Scan

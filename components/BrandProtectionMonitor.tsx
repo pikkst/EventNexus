@@ -13,9 +13,11 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const [stats, setStats] = useState<MonitoringStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastScan, setLastScan] = useState<Date | null>(null);
+  const [domainInfo, setDomainInfo] = useState<any>(null);
 
   useEffect(() => {
     loadMonitoringData();
+    loadDomainInfo();
   }, []);
 
   const loadMonitoringData = async () => {
@@ -48,6 +50,15 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
       console.error('Error loading monitoring data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDomainInfo = async () => {
+    try {
+      const info = await brandMonitoringService.getPrimaryDomainInfo();
+      setDomainInfo(info);
+    } catch (error) {
+      console.error('Error loading domain info:', error);
     }
   };
 
@@ -370,24 +381,43 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
               <h4 className="font-semibold text-white">eventnexus.eu (Primary)</h4>
               <CheckCircle className="w-5 h-5 text-green-500" />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm mt-3">
-              <div>
-                <span className="text-gray-400">Status:</span>
-                <span className="text-green-500 ml-2">Active & Protected</span>
+            {domainInfo ? (
+              <div className="grid grid-cols-2 gap-4 text-sm mt-3">
+                <div>
+                  <span className="text-gray-400">Status:</span>
+                  <span className={`ml-2 ${domainInfo.status === 'active' ? 'text-green-500' : 'text-yellow-500'}`}>
+                    {domainInfo.status === 'active' ? 'Active & Protected' : 'Checking...'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-400">SSL Expires:</span>
+                  <span className="text-white ml-2">
+                    {domainInfo.ssl?.expiry ? new Date(domainInfo.ssl.expiry).toLocaleDateString() : 'N/A'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Registrar:</span>
+                  <span className="text-white ml-2">{domainInfo.registrar || 'EURid'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">SSL:</span>
+                  <span className={`ml-2 ${domainInfo.ssl?.valid ? 'text-green-500' : 'text-red-500'}`}>
+                    {domainInfo.ssl?.valid ? 'Valid' : 'Invalid'}
+                  </span>
+                </div>
+                {domainInfo.ssl?.issuer && (
+                  <div className="col-span-2">
+                    <span className="text-gray-400">Certificate Issuer:</span>
+                    <span className="text-white ml-2 text-xs">{domainInfo.ssl.issuer}</span>
+                  </div>
+                )}
               </div>
-              <div>
-                <span className="text-gray-400">Expires:</span>
-                <span className="text-white ml-2">2026-12-15</span>
+            ) : (
+              <div className="text-center py-4">
+                <RefreshCw className="w-5 h-5 animate-spin text-gray-400 mx-auto" />
+                <p className="text-sm text-gray-400 mt-2">Loading domain info...</p>
               </div>
-              <div>
-                <span className="text-gray-400">Registrar:</span>
-                <span className="text-white ml-2">EURid</span>
-              </div>
-              <div>
-                <span className="text-gray-400">SSL:</span>
-                <span className="text-green-500 ml-2">Valid</span>
-              </div>
-            </div>
+            )}
           </div>
 
           <div className="border border-gray-700 rounded-lg p-4">
@@ -395,8 +425,8 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
             <p className="text-sm text-gray-400 mb-3">Monitors for similar domain registrations (eventnexuss.com, evetnexus.eu, etc.)</p>
             <div className="space-y-2 mt-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-300">Domains monitored: 47</span>
-                <span className="text-yellow-500">2 suspicious</span>
+                <span className="text-gray-300">Monitored via URLScan.io & DNS</span>
+                <span className="text-yellow-500">{alerts.filter(a => a.type === 'domain' && a.severity === 'warning').length} suspicious</span>
               </div>
             </div>
           </div>
@@ -431,33 +461,37 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
         <div className="space-y-4">
           <div className="border border-gray-700 rounded-lg p-4">
             <h4 className="font-semibold text-white mb-2">Trademark Monitoring</h4>
-            <p className="text-sm text-gray-400 mb-3">Monitors trademark offices (EUIPO, USPTO, WIPO) for conflicting applications</p>
+            <p className="text-sm text-gray-400 mb-3">Manual monitoring of trademark offices (EUIPO, USPTO, WIPO)</p>
             <div className="grid grid-cols-2 gap-4 text-sm mt-3">
               <div>
-                <span className="text-gray-400">EventNexus™:</span>
-                <span className="text-green-500 ml-2">Registered (EU)</span>
+                <span className="text-gray-400">Brand alerts:</span>
+                <span className="text-white ml-2">{alerts.filter(a => a.type === 'brand').length}</span>
               </div>
               <div>
-                <span className="text-gray-400">Conflicts:</span>
-                <span className="text-white ml-2">0 detected</span>
+                <span className="text-gray-400">Status:</span>
+                <span className="text-gray-400 ml-2">Manual review required</span>
               </div>
             </div>
           </div>
 
           <div className="border border-gray-700 rounded-lg p-4">
             <h4 className="font-semibold text-white mb-2">Logo & Asset Protection</h4>
-            <p className="text-sm text-gray-400 mb-3">Scans web for unauthorized use of EventNexus logo and brand assets</p>
+            <p className="text-sm text-gray-400 mb-3">Reverse image search monitoring via scanBrand()</p>
             <div className="flex items-center gap-4 text-sm">
               <span className="text-gray-300">Last scan: {lastScan?.toLocaleTimeString() || 'Never'}</span>
-              <span className="text-green-500">0 violations</span>
+              <span className="text-gray-400">{alerts.filter(a => a.type === 'brand' && a.title?.includes('logo')).length} potential violations</span>
             </div>
           </div>
 
           <div className="border border-gray-700 rounded-lg p-4">
             <h4 className="font-semibold text-white mb-2">Counterfeit Detection</h4>
-            <p className="text-sm text-gray-400 mb-3">Monitors marketplaces and platforms for counterfeit EventNexus services</p>
+            <p className="text-sm text-gray-400 mb-3">Manual monitoring of marketplaces and platforms</p>
             <div className="flex items-center gap-4 text-sm">
-              <span className="text-green-500">✓ No counterfeits detected</span>
+              <span className={alerts.filter(a => a.type === 'brand' && a.severity === 'critical').length > 0 ? 'text-yellow-500' : 'text-green-500'}>
+                {alerts.filter(a => a.type === 'brand' && a.severity === 'critical').length > 0 
+                  ? `⚠ ${alerts.filter(a => a.type === 'brand' && a.severity === 'critical').length} alerts`
+                  : '✓ No counterfeits detected'}
+              </span>
             </div>
           </div>
         </div>
@@ -604,31 +638,35 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
         <div className="space-y-4">
           <div className="border border-gray-700 rounded-lg p-4">
             <h4 className="font-semibold text-white mb-2">Platform Feature Comparison</h4>
-            <p className="text-sm text-gray-400 mb-3">Tracks competitor feature releases and compares with EventNexus</p>
+            <p className="text-sm text-gray-400 mb-3">Manual feature tracking and comparison analysis</p>
             <div className="flex items-center gap-4 text-sm">
-              <span className="text-gray-300">Competitors monitored: 8</span>
+              <span className="text-gray-300">Competitor alerts: {alerts.filter(a => a.type === 'competitor').length}</span>
             </div>
           </div>
 
           <div className="border border-gray-700 rounded-lg p-4">
             <h4 className="font-semibold text-white mb-2">Pricing Intelligence</h4>
-            <p className="text-sm text-gray-400 mb-3">Monitors competitor pricing changes and promotional campaigns</p>
+            <p className="text-sm text-gray-400 mb-3">Manual monitoring of competitor pricing and campaigns</p>
             <div className="flex items-center gap-4 text-sm">
-              <span className="text-green-500">✓ Competitive advantage maintained</span>
+              <span className={alerts.filter(a => a.type === 'competitor' && a.severity === 'warning').length > 0 ? 'text-yellow-500' : 'text-green-500'}>
+                {alerts.filter(a => a.type === 'competitor' && a.severity === 'warning').length > 0
+                  ? `⚠ ${alerts.filter(a => a.type === 'competitor' && a.severity === 'warning').length} pricing changes`
+                  : '✓ Competitive pricing maintained'}
+              </span>
             </div>
           </div>
 
           <div className="border border-gray-700 rounded-lg p-4">
             <h4 className="font-semibold text-white mb-2">Market Position Tracking</h4>
-            <p className="text-sm text-gray-400 mb-3">Analyzes market share and positioning relative to competitors</p>
+            <p className="text-sm text-gray-400 mb-3">Database-driven competitor monitoring and analysis</p>
             <div className="grid grid-cols-2 gap-4 text-sm mt-3">
               <div>
-                <span className="text-gray-400">Market position:</span>
-                <span className="text-green-500 ml-2">Growing</span>
+                <span className="text-gray-400">Total alerts:</span>
+                <span className="text-white ml-2">{stats?.competitorAlerts || 0}</span>
               </div>
               <div>
-                <span className="text-gray-400">Unique features:</span>
-                <span className="text-white ml-2">15</span>
+                <span className="text-gray-400">Last scan:</span>
+                <span className="text-white ml-2">{lastScan?.toLocaleTimeString() || 'Never'}</span>
               </div>
             </div>
           </div>

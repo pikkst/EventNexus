@@ -460,3 +460,32 @@ export const MONITORING_CONFIG_GUIDE = {
     },
   },
 };
+
+/**
+ * Get Primary Domain Info (eventnexus.eu)
+ * Fetches real SSL, registrar, and status data from Edge Function
+ */
+export async function getPrimaryDomainInfo(): Promise<any> {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/brand-monitoring`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+      },
+      body: JSON.stringify({
+        action: 'get-domain-info',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.domainInfo || null;
+  } catch (error) {
+    console.error('Error fetching domain info:', error);
+    return null;
+  }
+}
