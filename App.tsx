@@ -165,18 +165,19 @@ const App: React.FC = () => {
   };
 
   // Load user and initial data
+  const [sessionRestored, setSessionRestored] = useState(false);
+  
   useEffect(() => {
     let mounted = true;
-    let sessionRestored = false;
     
     const loadInitialData = async () => {
       try {
         // Check for existing session FIRST
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (session?.user && mounted && !user) {
+        if (session?.user && mounted && !user && !sessionRestored) {
           console.log('🔄 Restoring session on mount...');
-          sessionRestored = true;
+          setSessionRestored(true);
           try {
             const userData = await getUser(session.user.id);
             if (userData && mounted) {
@@ -189,13 +190,16 @@ const App: React.FC = () => {
                 cacheNotifications(userNotifications);
               }
               console.log('✅ Session restored:', userData.email);
+            } else {
+              // If user data fails to load, sign out
+              console.error('Failed to load user data, signing out');
+              await supabase.auth.signOut();
+              setSessionRestored(false);
             }
           } catch (userError) {
             console.error('Error loading user data:', userError);
-            // Don't sign out on first error, may be temporary
-            if (!user) {
-              await supabase.auth.signOut();
-            }
+            await supabase.auth.signOut();
+            setSessionRestored(false);
           }
         }
         
@@ -222,9 +226,15 @@ const App: React.FC = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth event:', event);
       
-      // Skip SIGNED_IN if we already restored the session
-      if (event === 'SIGNED_IN' && !sessionRestored && session?.user && mounted) {
-        console.log('User signed in, loading data...');
+      // Skip SIGNED_IN during initial mount - it's already handled by loadInitialData
+      if (event === 'INITIAL_SESSION') {
+        console.log('✅ Session restored:', session?.user?.email || 'No session');
+        return;
+      }
+      
+      // Only handle SIGNED_IN if it's a new login (not initial restore)
+      if (event === 'SIGNED_IN' && session?.user && mounted && sessionRestored) {
+        console.log('User signed in (new login), loading data...');
         try {
           const userData = await getUser(session.user.id);
           if (userData && mounted) {
@@ -236,9 +246,13 @@ const App: React.FC = () => {
               setNotifications(userNotifications);
               cacheNotifications(userNotifications);
             }
+          } else {
+            console.error('Failed to load user data after sign in');
+            await supabase.auth.signOut();
           }
         } catch (userError) {
           console.error('Error loading user data:', userError);
+          await supabase.auth.signOut();
         }
       } else if (event === 'TOKEN_REFRESHED' && session?.user && mounted) {
         console.log('✅ Token refreshed successfully');
@@ -248,6 +262,7 @@ const App: React.FC = () => {
         setNotifications([]);
         cacheUserData(null);
         sessionStorage.removeItem('eventnexus-notifications-cache');
+        setSessionRestored(false);
       } else if (event === 'USER_UPDATED' && session?.user && mounted) {
         console.log('User updated, reloading data...');
         const userData = await getUser(session.user.id);
@@ -380,6 +395,16 @@ const App: React.FC = () => {
   return (
     <Router>
       <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
+        {/* Loading overlay for initial authentication */}
+        {isLoading && (
+          <div className="fixed inset-0 z-[9999] bg-slate-950 flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 mx-auto border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-slate-400 text-sm animate-pulse">Loading EventNexus...</p>
+            </div>
+          </div>
+        )}
+        
         <Navbar 
           toggleSidebar={() => setSidebarOpen(true)} 
           user={user} 
