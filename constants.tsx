@@ -32,7 +32,10 @@ export const SUBSCRIPTION_TIERS = {
     support: 'priority',
     price: 49.99,
     commissionRate: 0.025, // 2.5% platform fee
-    description: 'For agencies and large organizers'
+    description: 'For agencies and large organizers',
+    featuredPlacement: true, // Featured on map
+    affiliateTools: true, // Affiliate marketing
+    advancedAnalytics: true // Advanced metrics
   },
   enterprise: { 
     maxEvents: Infinity, 

@@ -275,6 +275,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                     date={new Date(ticket.created_at).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}
                     location={ticket.event_location || 'Location TBA'}
                     qrValue={ticket.id}
+                    customBranding={ticket.custom_branding}
                   />
                 ))
               ) : (
@@ -672,23 +673,37 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
   );
 };
 
-const TicketItem = ({ name, date, location, qrValue }: any) => {
+const TicketItem = ({ name, date, location, qrValue, customBranding }: any) => {
+  const brandColor = customBranding?.primaryColor || '#6366f1';
+  const brandLogo = customBranding?.logo;
+  
   return (
     <div className={`p-8 flex flex-col sm:flex-row items-center gap-8 group transition-all relative overflow-hidden hover:bg-slate-800/20`}>
-      <div className="w-24 h-24 bg-white p-2.5 rounded-[24px] shadow-2xl shrink-0">
+      {/* Premium Custom Branding Indicator */}
+      {customBranding && (
+        <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full flex items-center gap-1">
+          <Star className="w-3 h-3 fill-current" /> Premium Event
+        </div>
+      )}
+      
+      <div className="w-24 h-24 bg-white p-2.5 rounded-[24px] shadow-2xl shrink-0" style={customBranding ? { backgroundColor: brandColor } : {}}>
         <div className="w-full h-full bg-slate-950 flex items-center justify-center rounded-xl">
-           <div className="w-10 h-10 bg-indigo-500 rounded-sm" />
+           {brandLogo ? (
+             <img src={brandLogo} alt="Brand" className="w-12 h-12 rounded-lg object-cover" />
+           ) : (
+             <div className="w-10 h-10 rounded-sm" style={{ backgroundColor: brandColor }} />
+           )}
         </div>
       </div>
 
       <div className="flex-1 text-center sm:text-left space-y-1">
         <h4 className="font-black text-2xl tracking-tighter text-white">{name}</h4>
         <div className="space-y-1">
-          <p className="text-sm text-indigo-400 font-bold flex items-center justify-center sm:justify-start gap-2">
+          <p className="text-sm font-bold flex items-center justify-center sm:justify-start gap-2" style={customBranding ? { color: brandColor } : { color: '#818cf8' }}>
             <Calendar className="w-4 h-4" /> {date}
           </p>
           <p className="text-xs text-slate-400 font-bold flex items-center justify-center sm:justify-start gap-2">
-            <MapPin className="w-4 h-4 text-indigo-500" /> {location}
+            <MapPin className="w-4 h-4" style={customBranding ? { color: brandColor } : { color: '#6366f1' }} /> {location}
           </p>
         </div>
       </div>

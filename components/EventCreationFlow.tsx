@@ -230,7 +230,12 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
         organizerId: user.id,
         imageUrl: '',
         attendeesCount: 0,
-        maxAttendees: formData.max_capacity
+        maxAttendees: formData.max_capacity,
+        isFeatured: user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise',
+        customBranding: (user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && user.branding ? {
+          primaryColor: user.branding.primaryColor,
+          logo: user.avatar
+        } : undefined
       };
 
       const created = await createEvent(eventData);

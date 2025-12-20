@@ -20,6 +20,11 @@ export interface EventNexusEvent {
   imageUrl: string;
   attendeesCount: number;
   maxAttendees: number;
+  isFeatured?: boolean; // Premium tier feature
+  customBranding?: {
+    primaryColor?: string;
+    logo?: string;
+  };
 }
 
 export interface PlatformCampaign {
