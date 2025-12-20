@@ -32,6 +32,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: 'eventnexus-auth-token',
     flowType: 'pkce',
   },
+  global: {
+    headers: {
+      'X-Client-Info': 'eventnexus-web'
+    }
+  }
 });
 
 console.log('Supabase client initialized successfully');
