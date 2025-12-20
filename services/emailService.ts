@@ -7,7 +7,7 @@
 import { supabase } from './supabase';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-const FROM_EMAIL = 'alerts@eventnexus.eu';
+const FROM_EMAIL = 'alerts@mail.eventnexus.eu'; // Subdomain protects main domain reputation
 const ADMIN_EMAIL = 'huntersest@gmail.com';
 
 export interface EmailAlert {

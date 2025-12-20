@@ -5,7 +5,7 @@ This guide explains how to configure email notifications for critical brand moni
 
 ## Prerequisites
 - Resend account (free tier: 100 emails/day, 3000/month)
-- Domain verified in Resend: `eventnexus.eu`
+- Domain verified in Resend: `mail.eventnexus.eu` (subdomain protects main domain reputation)
 - API key from Resend Dashboard
 
 ## Resend Configuration
@@ -17,18 +17,19 @@ This guide explains how to configure email notifications for critical brand moni
 
 ### 2. Add Domain
 1. Go to **Domains** → **Add Domain**
-2. Enter: `eventnexus.eu`
+2. Enter: `mail.eventnexus.eu` (subdomain recommended by Resend)
 3. Add DNS records to domain provider:
    ```
    Type: TXT
-   Name: @
+   Name: mail
    Value: resend=<verification-code>
    
    Type: MX
-   Name: @
+   Name: mail
    Value: feedback-smtp.eu-west-1.amazonses.com
    Priority: 10
    ```
+   **Note:** Use subdomain `mail` (not `@`) to keep main domain reputation separate
 4. Wait for verification (5-15 minutes)
 
 ### 3. Generate API Key
@@ -94,7 +95,7 @@ npx supabase functions deploy brand-monitoring --no-verify-jwt
 ## Email Templates
 
 ### Critical Alert Email
-- **From:** `alerts@eventnexus.eu`
+- **From:** `alerts@mail.eventnexus.eu`
 - **To:** `huntersest@gmail.com`
 - **Subject:** `🚨 CRITICAL: Brand Protection Alert - [Alert Title]`
 - **Content:** HTML email with:
@@ -107,7 +108,7 @@ npx supabase functions deploy brand-monitoring --no-verify-jwt
   - Legal framework references
 
 ### Weekly Summary Email
-- **From:** `alerts@eventnexus.eu`
+- **From:** `alerts@mail.eventnexus.eu`
 - **To:** `huntersest@gmail.com`
 - **Subject:** `📊 Weekly Brand Monitoring Summary`
 - **Content:** HTML email with:
@@ -207,7 +208,7 @@ Look for:
 **Check 4: Spam Folder**
 - Check huntersest@gmail.com spam folder
 - Mark as "Not Spam" if found
-- Add `alerts@eventnexus.eu` to contacts
+- Add `alerts@mail.eventnexus.eu` to contacts
 
 ### Resend API Errors
 
@@ -343,7 +344,7 @@ jobs:
 Add to DNS:
 ```
 Type: TXT
-Name: @
+Name: mail
 Value: v=spf1 include:amazonses.com ~all
 ```
 
@@ -354,7 +355,7 @@ Verify in Resend Dashboard → Domains → DKIM Status: ✅
 Add to DNS:
 ```
 Type: TXT
-Name: _dmarc
+Name: _dmarc.mail
 Value: v=DMARC1; p=none; rua=mailto:huntersest@gmail.com
 ```
 
@@ -425,8 +426,8 @@ Email send error: {status: 400, message: "Domain not verified"}
 ## Complete Setup Checklist
 
 - [ ] Resend account created
-- [ ] Domain `eventnexus.eu` added to Resend
-- [ ] DNS records added (TXT, MX)
+- [ ] Domain `mail.eventnexus.eu` added to Resend
+- [ ] DNS records added (TXT, MX for subdomain)
 - [ ] Domain verified (green checkmark)
 - [ ] API key generated
 - [ ] `RESEND_API_KEY` set in Supabase secrets
@@ -443,7 +444,7 @@ Email send error: {status: 400, message: "Domain not verified"}
 After email setup is complete:
 1. Monitor first 24 hours for successful delivery
 2. Check spam folder initially
-3. Add `alerts@eventnexus.eu` to Gmail contacts
+3. Add `alerts@mail.eventnexus.eu` to Gmail contacts
 4. Test critical alert triggering
 5. Verify email arrives within 30 seconds
 6. Check Resend Dashboard for delivery stats
