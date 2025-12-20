@@ -603,6 +603,20 @@ async function scanSocial() {
           if (response.ok) {
             const html = await response.text();
             
+            // Helper function to safely remove HTML tags (prevents injection bypass)
+            const sanitizeHtml = (input: string): string => {
+              let previous;
+              let sanitized = input;
+              // Repeatedly apply regex until no more replacements (prevents bypass like <scrip<script>t>)
+              do {
+                previous = sanitized;
+                sanitized = sanitized.replace(/<[^>]*>/g, '');
+              } while (sanitized !== previous);
+              // Also decode HTML entities
+              sanitized = sanitized.replace(/&[a-z]+;/gi, '');
+              return sanitized;
+            };
+            
             // Basic HTML parsing to find tweets
             const tweetMatches = html.match(/class="tweet-content[^>]*>([\s\S]*?)<\/div/gi) || [];
             const usernameMatches = html.match(/class="username"[^>]*>@([^<]+)</gi) || [];
@@ -611,9 +625,7 @@ async function scanSocial() {
             const maxResults = Math.min(tweetMatches.length, usernameMatches.length, linkMatches.length, 5);
 
             for (let i = 0; i < maxResults; i++) {
-              const tweetContent = tweetMatches[i]
-                .replace(/<[^>]*>/g, '')
-                .replace(/&[a-z]+;/gi, '')
+              const tweetContent = sanitizeHtml(tweetMatches[i])
                 .trim()
                 .substring(0, 200);
 
