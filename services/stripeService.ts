@@ -39,9 +39,9 @@ export const createSubscriptionCheckout = async (
 
     // Price mapping (actual Stripe price IDs from Stripe Dashboard)
     const priceIds: Record<string, string> = {
-      pro: 'price_1Sg328J9WsSrj5gMhitFUhiC',
-      premium: 'price_1Sg37QJ9WsSrj5gMkhkHUFf2',
-      enterprise: 'price_1Sg3AoJ9WsSrj5gMUue2YjTZ'
+      pro: 'price_1SgXusJ9WsSrj5gMbJdADsvy',
+      premium: 'price_1SgXwZJ9WsSrj5gMehBiDgWp',
+      enterprise: 'price_1SgXxRJ9WsSrj5gMLhDEB26O'
     };
 
     // Get the base URL including the /EventNexus/ path for GitHub Pages

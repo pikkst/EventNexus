@@ -124,12 +124,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
       setIsConnectLoading(false);
     }
   };
-      const events = await getOrganizerEvents(user.id);
-      setOrganizedEvents(events || []);
-    };
-    loadTickets();
-    loadOrganizedEvents();
-  }, [user.id]);
 
   const handleLogout = () => {
     onLogout();

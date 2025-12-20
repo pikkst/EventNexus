@@ -443,9 +443,11 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
             <Menu className="w-6 h-6" />
           </button>
           <Link to="/" className="flex items-center gap-2 font-bold text-xl tracking-tighter">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-600">
-              <Compass className="w-5 h-5 text-white" />
-            </div>
+            <img 
+              src="/logo for eventnexus.png" 
+              alt="EventNexus Logo" 
+              className="h-10 w-auto object-contain"
+            />
             <span className="hidden sm:inline">EventNexus</span>
           </Link>
         </div>

@@ -54,13 +54,13 @@ Once you have all 3 Price IDs, run these commands:
 cd /workspaces/EventNexus
 
 # Set Pro price ID
-npx supabase secrets set STRIPE_PRICE_PRO="price_1Sg328J9WsSrj5gMhitFUhiC" --project-ref anlivujgkjmajkcgbaxw
+npx supabase secrets set STRIPE_PRICE_PRO="price_1SgXusJ9WsSrj5gMbJdADsvy" --project-ref anlivujgkjmajkcgbaxw
 
 # Set Premium price ID
-npx supabase secrets set STRIPE_PRICE_PREMIUM="price_1Sg37QJ9WsSrj5gMkhkHUFf2" --project-ref anlivujgkjmajkcgbaxw
+npx supabase secrets set STRIPE_PRICE_PREMIUM="price_1SgXwZJ9WsSrj5gMehBiDgWp" --project-ref anlivujgkjmajkcgbaxw
 
 # Set Enterprise price ID
-npx supabase secrets set STRIPE_PRICE_ENTERPRISE="price_1Sg3AoJ9WsSrj5gMUue2YjTZ" --project-ref anlivujgkjmajkcgbaxw
+npx supabase secrets set STRIPE_PRICE_ENTERPRISE="price_1SgXxRJ9WsSrj5gMLhDEB26O" --project-ref anlivujgkjmajkcgbaxw
 ```
 
 ### Step 4: Redeploy Edge Function

@@ -24,11 +24,26 @@ Your Stripe Connect is configured with:
 
 #### Database Schema:
 ```sql
--- users table columns (already exists)
-stripe_connect_account_id TEXT UNIQUE
-stripe_connect_onboarding_complete BOOLEAN DEFAULT FALSE
-stripe_connect_charges_enabled BOOLEAN DEFAULT FALSE
-stripe_connect_payouts_enabled BOOLEAN DEFAULT FALSE
+-- Run this in Supabase SQL Editor:
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS stripe_connect_account_id TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS stripe_connect_onboarding_complete BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS stripe_connect_charges_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS stripe_connect_payouts_enabled BOOLEAN DEFAULT FALSE;
+
+-- Add UNIQUE constraint
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'users_stripe_connect_account_id_key' 
+    AND conrelid = 'public.users'::regclass
+  ) THEN
+    ALTER TABLE public.users ADD CONSTRAINT users_stripe_connect_account_id_key UNIQUE (stripe_connect_account_id);
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_users_stripe_connect_account 
+  ON public.users(stripe_connect_account_id) WHERE stripe_connect_account_id IS NOT NULL;
 ```
 
 #### Service Functions Added:
