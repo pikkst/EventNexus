@@ -12,24 +12,39 @@ This guide explains how to configure email notifications for critical brand moni
 
 ### 1. Create Resend Account
 1. Go to https://resend.com/signup
-2. Sign up with email: `huntersest@gmail.com`
+2. Sign up with email: `jour email`
 3. Verify email address
 
 ### 2. Add Domain
 1. Go to **Domains** → **Add Domain**
 2. Enter: `mail.eventnexus.eu` (subdomain recommended by Resend)
 3. Add DNS records to domain provider:
+
+   **TXT Record (Verification):**
    ```
    Type: TXT
-   Name: mail
+   Host: mail.eventnexus.eu  (or just "mail" depending on your DNS provider)
    Value: resend=<verification-code>
+   ```
    
+   **MX Record (Email Routing):**
+   ```
    Type: MX
-   Name: mail
+   Host: mail.eventnexus.eu  (or just "mail" depending on your DNS provider)
    Value: feedback-smtp.eu-west-1.amazonses.com
    Priority: 10
    ```
-   **Note:** Use subdomain `mail` (not `@`) to keep main domain reputation separate
+
+   **DNS Provider Format Examples:**
+   - **If your DNS manager shows:** `Host: .eventnexus.eu.` or full domain format
+     - Use: `mail.eventnexus.eu` or `mail.eventnexus.eu.` (with trailing dot)
+   - **If your DNS manager uses:** relative names
+     - Use: `mail` (it will automatically append .eventnexus.eu)
+   - **Common providers:**
+     - Cloudflare: Use `mail` (relative)
+     - Route53/AWS: Use `mail.eventnexus.eu.` (FQDN with trailing dot)
+     - Most Estonian providers: Use `mail.eventnexus.eu` (full name without trailing dot)
+
 4. Wait for verification (5-15 minutes)
 
 ### 3. Generate API Key
@@ -342,6 +357,15 @@ jobs:
 
 ### 1. SPF Record
 Add to DNS:
+
+**If your DNS provider uses full domain format (like `.eventnexus.eu.`):**
+```
+Type: TXT
+Host: mail.eventnexus.eu
+Value: v=spf1 include:amazonses.com ~all
+```
+
+**If your DNS provider uses relative names:**
 ```
 Type: TXT
 Name: mail
@@ -353,6 +377,15 @@ Verify in Resend Dashboard → Domains → DKIM Status: ✅
 
 ### 3. DMARC Record
 Add to DNS:
+
+**If your DNS provider uses full domain format:**
+```
+Type: TXT
+Host: _dmarc.mail.eventnexus.eu
+Value: v=DMARC1; p=none; rua=mailto:huntersest@gmail.com
+```
+
+**If your DNS provider uses relative names:**
 ```
 Type: TXT
 Name: _dmarc.mail
