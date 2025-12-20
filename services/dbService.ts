@@ -179,18 +179,11 @@ export const deleteEvent = async (id: string): Promise<boolean> => {
 // Users
 export const getUser = async (id: string): Promise<User | null> => {
   try {
-    // Add timeout protection to prevent hanging
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Query timeout')), 10000);
-    });
-    
-    const queryPromise = supabase
+    const { data, error } = await supabase
       .from('users')
       .select('*')
-      .eq('id', id);
-    
-    const response = await Promise.race([queryPromise, timeoutPromise]);
-    const { data, error } = response as any;
+      .eq('id', id)
+      .single();
     
     if (error) {
       console.error('Error fetching user:', error.message);
@@ -228,8 +221,31 @@ export const getUser = async (id: string): Promise<User | null> => {
     
     if (!data) return null;
     
-    const user = Array.isArray(data) ? data[0] : data;
-    return user || null;
+    const user = data;
+    
+    // Ensure notification_prefs has proper structure
+    if (!user.notification_prefs || typeof user.notification_prefs !== 'object') {
+      user.notification_prefs = {
+        pushEnabled: true,
+        emailEnabled: true,
+        proximityAlerts: true,
+        alertRadius: 10,
+        interestedCategories: []
+      };
+    } else {
+      // Ensure interestedCategories is an array
+      if (!Array.isArray(user.notification_prefs.interestedCategories)) {
+        user.notification_prefs.interestedCategories = [];
+      }
+    }
+    
+    // Ensure followedOrganizers is an array
+    if (!Array.isArray(user.followed_organizers)) {
+      user.followed_organizers = [];
+    }
+    user.followedOrganizers = user.followed_organizers;
+    
+    return user;
   } catch (err) {
     console.error('Error in getUser:', err);
     return null;

@@ -272,7 +272,9 @@ const App: React.FC = () => {
       
       events.forEach(event => {
         if (notifiedEventIds.has(event.id)) return;
-        if (!user.notification_prefs?.interestedCategories?.includes(event.category)) return;
+        if (!user.notification_prefs || 
+            !Array.isArray(user.notification_prefs.interestedCategories) ||
+            !user.notification_prefs.interestedCategories.includes(event.category)) return;
 
         const distance = getDistance(latitude, longitude, event.location.lat, event.location.lng);
 
@@ -359,12 +361,13 @@ const App: React.FC = () => {
     }
     setUser(prev => {
       if (!prev) return null;
-      const isFollowing = prev.followedOrganizers.includes(organizerId);
+      const followedOrgs = Array.isArray(prev.followedOrganizers) ? prev.followedOrganizers : [];
+      const isFollowing = followedOrgs.includes(organizerId);
       return {
         ...prev,
         followedOrganizers: isFollowing 
-          ? prev.followedOrganizers.filter(id => id !== organizerId)
-          : [...prev.followedOrganizers, organizerId]
+          ? followedOrgs.filter(id => id !== organizerId)
+          : [...followedOrgs, organizerId]
       };
     });
   };
