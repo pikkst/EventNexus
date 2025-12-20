@@ -12,7 +12,7 @@ import {
   UserX, Ban, AlertTriangle, MessageSquare, Send, Bug, EyeOff,
   Lock, Unlock, KeyRound, AlertOctagon, Github, Cloud, Key, Link as LinkIcon,
   Wifi, Server, Code, Globe2 as MapIcon, HardDrive, Mail as MailIcon,
-  MonitorOff, Power, ShieldX
+  MonitorOff, Power, ShieldX, Shield
 } from 'lucide-react';
 import { 
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, 
@@ -21,6 +21,7 @@ import {
 import { User, Notification } from '../types';
 import { generatePlatformGrowthCampaign, generateAdImage } from '../services/geminiService';
 import { supabase } from '../services/supabase';
+import BrandProtectionMonitor from './BrandProtectionMonitor';
 import { 
   getEvents, 
   getAllUsers, 
@@ -442,6 +443,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     { id: 'analytics', label: 'Global Insights', icon: <PieChart /> },
     { id: 'users', label: 'User Governance', icon: <Users /> },
     { id: 'marketing', label: 'Campaign Engine', icon: <Rocket /> },
+    { id: 'brand-protection', label: 'Brand Protection', icon: <Shield /> },
     { id: 'financials', label: 'Nexus Economy', icon: <DollarSign /> },
     { id: 'settings', label: 'System Matrix', icon: <Settings /> },
     { id: 'infrastructure', label: 'System Health', icon: <Database /> },
@@ -835,6 +837,12 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 </div>
               )}
            </div>
+        )}
+
+        {activeTab === 'brand-protection' && (
+          <div className="animate-in fade-in duration-500">
+            <BrandProtectionMonitor user={user} />
+          </div>
         )}
 
         {activeTab === 'settings' && (
