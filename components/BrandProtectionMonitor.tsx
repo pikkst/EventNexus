@@ -307,7 +307,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white rounded-lg transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Scan Now
+            {loading ? 'Scanning...' : 'Scan Now'}
           </button>
         </div>
 
@@ -317,25 +317,31 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
             <p className="text-sm text-gray-400 mb-3">Scans GitHub for repositories with similar code to EventNexus</p>
             <div className="flex items-center gap-4 text-sm">
               <span className="text-gray-300">Last scan: {lastScan?.toLocaleTimeString() || 'Never'}</span>
-              <span className="text-green-500">✓ Active</span>
-            </div>
-          </div>
-
-          <div className="border border-gray-700 rounded-lg p-4">
-            <h4 className="font-semibold text-white mb-2">Google Code Search</h4>
-            <p className="text-sm text-gray-400 mb-3">Monitors public code repositories for EventNexus code snippets</p>
-            <div className="flex items-center gap-4 text-sm">
-              <span className="text-gray-300">Last scan: {lastScan?.toLocaleTimeString() || 'Never'}</span>
-              <span className="text-green-500">✓ Active</span>
+              <span className={alerts.filter(a => a.type === 'code' && a.detected_by === 'github_scan').length > 0 ? 'text-yellow-500' : 'text-green-500'}>
+                {alerts.filter(a => a.type === 'code' && a.detected_by === 'github_scan').length} repositories found
+              </span>
             </div>
           </div>
 
           <div className="border border-gray-700 rounded-lg p-4">
             <h4 className="font-semibold text-white mb-2">Package Registry Monitoring</h4>
-            <p className="text-sm text-gray-400 mb-3">Checks npm, PyPI, and other registries for unauthorized packages</p>
+            <p className="text-sm text-gray-400 mb-3">Checks npm & PyPI for typosquatting packages (FREE)</p>
             <div className="flex items-center gap-4 text-sm">
               <span className="text-gray-300">Last scan: {lastScan?.toLocaleTimeString() || 'Never'}</span>
-              <span className="text-green-500">✓ Active</span>
+              <span className={alerts.filter(a => a.detected_by?.includes('registry')).length > 0 ? 'text-yellow-500' : 'text-green-500'}>
+                {alerts.filter(a => a.detected_by?.includes('registry')).length} suspicious packages
+              </span>
+            </div>
+          </div>
+
+          <div className="border border-gray-700 rounded-lg p-4">
+            <h4 className="font-semibold text-white mb-2">Certificate Transparency Logs</h4>
+            <p className="text-sm text-gray-400 mb-3">Monitors SSL certificates issued for EventNexus-related domains (FREE)</p>
+            <div className="flex items-center gap-4 text-sm">
+              <span className="text-gray-300">Last scan: {lastScan?.toLocaleTimeString() || 'Never'}</span>
+              <span className={alerts.filter(a => a.detected_by === 'cert_transparency').length > 0 ? 'text-yellow-500' : 'text-green-500'}>
+                {alerts.filter(a => a.detected_by === 'cert_transparency').length} certificates found
+              </span>
             </div>
           </div>
         </div>
