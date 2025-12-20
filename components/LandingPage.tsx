@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Compass, Zap, Shield, Globe, Map as MapIcon, ChevronRight, Star, Plus, ArrowRight, Gift } from 'lucide-react';
 import { User, PlatformCampaign } from '../types';
+import { getCampaigns } from '../services/dbService';
+import { supabase } from '../services/supabase';
 
 interface LandingPageProps {
   user: User | null;
@@ -12,23 +14,67 @@ interface LandingPageProps {
 const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const navigate = useNavigate();
   const [activeBanner, setActiveBanner] = useState<PlatformCampaign | null>(null);
+  const [hasTrackedView, setHasTrackedView] = useState(false);
 
   useEffect(() => {
-    // Simulated fetch of active landing page campaign
-    // This would normally be filtered by 'landing_page' placement and 'Active' status
-    setActiveBanner({
-      id: 'pc1',
-      title: 'Experience The Future of Nightlife',
-      copy: 'Join the map-first revolution. First 100 registrations today get 30 Nexus Credits instantly.',
-      status: 'Active',
-      placement: 'landing_page',
-      incentive: { type: 'credits', value: 30, limit: 100, redeemed: 42, description: '30 credits bonus' },
-      metrics: { views: 0, clicks: 0, conversions: 0, revenueGenerated: 0 },
-      imageUrl: 'https://images.unsplash.com/photo-1514525253361-bee243870d24?auto=format&fit=crop&w=1200&q=80',
-      cta: 'Claim My Credits',
-      trackingCode: 'LAUNCH24'
-    });
-  }, []);
+    const loadActiveCampaign = async () => {
+      try {
+        // Fetch all campaigns and filter for active landing page campaigns
+        const allCampaigns = await getCampaigns();
+        const landingPageCampaigns = allCampaigns.filter(
+          c => c.status === 'Active' && (c.placement === 'landing_page' || c.placement === 'both')
+        );
+        
+        if (landingPageCampaigns.length > 0) {
+          const campaign = landingPageCampaigns[0]; // Get the first active campaign
+          setActiveBanner(campaign);
+          
+          // Track view (only once per session)
+          if (!hasTrackedView && !user) {
+            await trackCampaignView(campaign.id);
+            setHasTrackedView(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading campaign:', error);
+      }
+    };
+
+    loadActiveCampaign();
+  }, [user, hasTrackedView]);
+
+  const trackCampaignView = async (campaignId: string) => {
+    try {
+      const { error } = await supabase.rpc('increment_campaign_metric', {
+        p_campaign_id: campaignId,
+        p_metric: 'views',
+        p_amount: 1
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error tracking campaign view:', error);
+    }
+  };
+
+  const trackCampaignClick = async (campaignId: string) => {
+    try {
+      const { error } = await supabase.rpc('increment_campaign_metric', {
+        p_campaign_id: campaignId,
+        p_metric: 'clicks',
+        p_amount: 1
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error tracking campaign click:', error);
+    }
+  };
+
+  const handleCampaignClick = async () => {
+    if (activeBanner) {
+      await trackCampaignClick(activeBanner.id);
+    }
+    onOpenAuth();
+  };
 
   const handleCreateEvent = () => {
     if (user) navigate('/create');
@@ -40,7 +86,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
       {/* Active Growth Campaign Banner */}
       {activeBanner && !user && (
         <section className="px-4 pt-10">
-          <div className="max-w-7xl mx-auto bg-slate-900 border border-slate-800 rounded-[32px] overflow-hidden flex flex-col md:flex-row relative group cursor-pointer hover:border-orange-500/50 transition-all shadow-2xl" onClick={onOpenAuth}>
+          <div className="max-w-7xl mx-auto bg-slate-900 border border-slate-800 rounded-[32px] overflow-hidden flex flex-col md:flex-row relative group cursor-pointer hover:border-orange-500/50 transition-all shadow-2xl" onClick={handleCampaignClick}>
              <div className="md:w-1/2 p-10 md:p-14 space-y-6 relative z-10">
                 <div className="inline-flex items-center gap-2 bg-orange-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-600/20">
                    <Zap size={12} className="fill-current" /> Limited Offer
