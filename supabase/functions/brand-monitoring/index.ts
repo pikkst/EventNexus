@@ -3,6 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { sendAlertEmail } from '../_shared/emailService.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -130,6 +131,20 @@ serve(async (req) => {
           console.error('Error storing alerts:', error);
         } else {
           console.log(`Stored ${newAlerts.length} new alerts (filtered ${alerts.length - newAlerts.length} duplicates/whitelisted)`);
+          
+          // Send email for critical alerts
+          const criticalAlerts = newAlerts.filter(a => a.severity === 'critical');
+          if (criticalAlerts.length > 0) {
+            console.log(`Sending emails for ${criticalAlerts.length} critical alerts`);
+            for (const alert of criticalAlerts) {
+              try {
+                await sendAlertEmail(alert);
+                console.log(`✅ Email sent for critical alert: ${alert.title}`);
+              } catch (emailError) {
+                console.error(`❌ Email send error for alert "${alert.title}":`, emailError);
+              }
+            }
+          }
         }
       } else {
         console.log('All alerts are duplicates or whitelisted - skipped insertion');
