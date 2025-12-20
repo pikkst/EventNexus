@@ -179,12 +179,12 @@ export const deleteEvent = async (id: string): Promise<boolean> => {
 // Users
 export const getUser = async (id: string): Promise<User | null> => {
   try {
-    // Add timeout to prevent hanging
+    // Add timeout to prevent hanging (increased for slow connections)
     const timeoutPromise = new Promise<null>((resolve) => {
       setTimeout(() => {
-        console.warn('getUser query timeout');
+        console.warn('⏱️ getUser query timeout after 15 seconds');
         resolve(null);
-      }, 8000);
+      }, 15000); // Increased to 15 seconds for slow connections
     });
     
     const queryPromise = supabase
@@ -196,7 +196,7 @@ export const getUser = async (id: string): Promise<User | null> => {
     const result = await Promise.race([queryPromise, timeoutPromise]);
     
     if (result === null) {
-      console.error('Query timed out after 8 seconds');
+      console.error('⚠️ Database query timed out. Please check your internet connection.');
       return null;
     }
     

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Map as MapIcon, 
@@ -166,23 +166,28 @@ const App: React.FC = () => {
 
   // Load user and initial data
   const [sessionRestored, setSessionRestored] = useState(false);
+  const sessionRestoreAttempted = useRef(false);
   
   useEffect(() => {
     let mounted = true;
     
     const loadInitialData = async () => {
+      // Prevent multiple restoration attempts
+      if (sessionRestoreAttempted.current) return;
+      sessionRestoreAttempted.current = true;
+      
       try {
         // Check for existing session FIRST
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (session?.user && mounted && !user && !sessionRestored) {
+        if (session?.user && mounted && !user) {
           console.log('🔄 Restoring session on mount...');
-          setSessionRestored(true);
           try {
             const userData = await getUser(session.user.id);
             if (userData && mounted) {
               setUser(userData);
               cacheUserData(userData);
+              setSessionRestored(true);
               
               const userNotifications = await getNotifications(userData.id);
               if (mounted) {
@@ -194,13 +199,16 @@ const App: React.FC = () => {
               // If user data fails to load, sign out
               console.error('Failed to load user data, signing out');
               await supabase.auth.signOut();
-              setSessionRestored(false);
+              sessionRestoreAttempted.current = false;
             }
           } catch (userError) {
             console.error('Error loading user data:', userError);
             await supabase.auth.signOut();
-            setSessionRestored(false);
+            sessionRestoreAttempted.current = false;
           }
+        } else {
+          // No session to restore, mark as complete
+          setSessionRestored(true);
         }
         
         // Load events (public data) - in background if we have cache
@@ -263,6 +271,7 @@ const App: React.FC = () => {
         cacheUserData(null);
         sessionStorage.removeItem('eventnexus-notifications-cache');
         setSessionRestored(false);
+        sessionRestoreAttempted.current = false;
       } else if (event === 'USER_UPDATED' && session?.user && mounted) {
         console.log('User updated, reloading data...');
         const userData = await getUser(session.user.id);
