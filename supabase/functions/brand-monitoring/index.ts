@@ -89,14 +89,37 @@ serve(async (req) => {
         });
     }
 
-    // Store alerts in database
+    // Store alerts in database with deduplication
     if (alerts.length > 0) {
-      const { error } = await supabase
+      // Fetch existing alerts to check for duplicates
+      const { data: existingAlerts } = await supabase
         .from('brand_monitoring_alerts')
-        .insert(alerts);
+        .select('url, title, status')
+        .in('status', ['open', 'investigating']); // Only check non-resolved alerts
 
-      if (error) {
-        console.error('Error storing alerts:', error);
+      // Create lookup for existing alerts (URL + title combination)
+      const existingSet = new Set(
+        (existingAlerts || []).map(a => `${a.url}||${a.title}`)
+      );
+
+      // Filter out duplicates - only insert NEW alerts that aren't already open/investigating
+      const newAlerts = alerts.filter(alert => {
+        const key = `${alert.url}||${alert.title}`;
+        return !existingSet.has(key);
+      });
+
+      if (newAlerts.length > 0) {
+        const { error } = await supabase
+          .from('brand_monitoring_alerts')
+          .insert(newAlerts);
+
+        if (error) {
+          console.error('Error storing alerts:', error);
+        } else {
+          console.log(`Stored ${newAlerts.length} new alerts (filtered ${alerts.length - newAlerts.length} duplicates)`);
+        }
+      } else {
+        console.log('All alerts are duplicates - skipped insertion');
       }
     }
 
