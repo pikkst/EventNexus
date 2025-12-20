@@ -85,6 +85,35 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
   const isFollowing = currentUser?.followedOrganizers.includes(organizer.id!) || false;
   const brandColor = organizer.branding?.primaryColor || '#6366f1';
 
+  // Gate free users from having public profiles
+  if (organizer.subscription === 'free' || organizer.subscription_tier === 'free') {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center px-4">
+        <div className="max-w-2xl mx-auto text-center space-y-8">
+          <div className="w-24 h-24 bg-slate-900 rounded-[32px] flex items-center justify-center mx-auto border border-slate-800">
+            <ShieldCheck className="w-12 h-12 text-slate-600" />
+          </div>
+          
+          <div className="space-y-4">
+            <h1 className="text-5xl font-black tracking-tighter text-white">Profile Not Available</h1>
+            <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-lg mx-auto">
+              Public organizer profiles are available for <span className="text-indigo-400 font-bold">Pro tier and above</span>. This organizer needs to upgrade to showcase their events and brand.
+            </p>
+          </div>
+
+          <div className="pt-6">
+            <Link 
+              to="/map" 
+              className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
+            >
+              <Globe2 className="w-4 h-4" /> Explore Events
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
       {/* Visual Manifesto (Hero) */}

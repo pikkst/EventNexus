@@ -99,6 +99,53 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const totalRevenue = events.reduce((acc, ev) => acc + (ev.attendeesCount * ev.price), 0);
   const totalSold = events.reduce((acc, ev) => acc + ev.attendeesCount, 0);
 
+  // Gate free users from Dashboard entirely
+  if (user.subscription_tier === 'free') {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-20">
+        <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-12 text-center space-y-8 shadow-2xl">
+          <div className="w-24 h-24 bg-indigo-600 rounded-[32px] flex items-center justify-center mx-auto shadow-2xl shadow-indigo-600/40">
+            <Lock className="w-12 h-12 text-white" />
+          </div>
+          
+          <div className="space-y-3">
+            <h1 className="text-4xl font-black tracking-tighter text-white">Organizer Dashboard</h1>
+            <p className="text-slate-400 max-w-md mx-auto leading-relaxed font-medium text-lg">
+              The Organizer Dashboard with analytics, marketing tools, and event management is available for <span className="text-indigo-400 font-bold">Pro tier and above</span>.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+             <div className="p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
+                <BarChart3 className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
+                <p className="text-sm font-bold text-white">Analytics Dashboard</p>
+             </div>
+             <div className="p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
+                <Megaphone className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
+                <p className="text-sm font-bold text-white">Marketing Tools</p>
+             </div>
+             <div className="p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
+                <DollarSign className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
+                <p className="text-sm font-bold text-white">Payout History</p>
+             </div>
+          </div>
+
+          <div className="pt-6 flex flex-col gap-4">
+            <Link 
+              to="/pricing" 
+              className="w-full bg-indigo-600 hover:bg-indigo-700 py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/30 active:scale-95"
+            >
+              Upgrade to Pro
+            </Link>
+            <Link to="/map" className="text-slate-500 hover:text-white font-bold text-sm transition-colors">
+              Continue Exploring Events
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleCommitBranding = () => {
     onUpdateUser({ branding: tempBranding, bio: tempBio });
     alert("Agency Shard Updated Successfully.");
@@ -455,9 +502,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
               <div className="lg:col-span-2 space-y-8">
                  <div className="flex justify-between items-center px-4">
                     <h3 className="text-2xl font-black text-white tracking-tighter">Live Shard Preview</h3>
-                    <Link to={`/org/${user.agencySlug}`} className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2 hover:underline">
-                       Open Public Site <ExternalLink size={12} />
-                    </Link>
+                    {(user.subscription_tier === 'pro' || user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && user.agencySlug && (
+                      <Link to={`/org/${user.agencySlug}`} className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2 hover:underline">
+                         Open Public Site <ExternalLink size={12} />
+                      </Link>
+                    )}
                  </div>
                  
                  <div className="bg-slate-900 border border-slate-800 rounded-[48px] overflow-hidden shadow-2xl relative min-h-[600px] pointer-events-none">

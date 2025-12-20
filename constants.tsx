@@ -21,7 +21,7 @@ export const SUBSCRIPTION_TIERS = {
     analytics: true, 
     customBranding: true, 
     support: 'email',
-    price: 29,
+    price: 19.99,
     commissionRate: 0.03, // 3% platform fee
     description: 'For professional event organizers'
   },
@@ -30,7 +30,7 @@ export const SUBSCRIPTION_TIERS = {
     analytics: true, 
     customBranding: true, 
     support: 'priority',
-    price: 99,
+    price: 49.99,
     commissionRate: 0.025, // 2.5% platform fee
     description: 'For agencies and large organizers'
   },
@@ -39,7 +39,7 @@ export const SUBSCRIPTION_TIERS = {
     analytics: true, 
     customBranding: true, 
     support: 'dedicated',
-    price: 299,
+    price: 149.99,
     commissionRate: 0.015, // 1.5% platform fee
     description: 'Custom solutions for enterprises'
   }
