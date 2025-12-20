@@ -400,6 +400,8 @@ EventNexus Legal Protection Framework:
 
     const prompt = `You are a legal and cybersecurity analyst for EventNexus platform.
 
+IMPORTANT: Today's date is ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Use this date in your report.
+
 LEGAL FRAMEWORK:
 ${legalContext}
 
@@ -412,24 +414,27 @@ MONITORING STATISTICS:
 - Brand Mentions: ${alertsByType.brand.length}
 
 CRITICAL ALERTS:
-${criticalAlerts.map(a => `- ${a.title}: ${a.description}`).join('\n') || 'None'}
+${criticalAlerts.map(a => `- ${a.title}: ${a.description} (URL: ${a.url})`).join('\n') || 'None'}
 
-WARNING ALERTS:
-${warningAlerts.slice(0, 10).map(a => `- ${a.title}: ${a.description}`).join('\n') || 'None'}
+HIGH-PRIORITY WARNING ALERTS:
+${warningAlerts.slice(0, 15).map(a => `- ${a.title}: ${a.description} (URL: ${a.url})`).join('\n') || 'None'}
 
-TOP CODE MENTIONS:
-${alertsByType.code.slice(0, 5).map(a => `- ${a.title}: ${a.url}`).join('\n') || 'None'}
+FILTERING INSTRUCTIONS:
+- Ignore "mantidproject" and "LoadEventNexus" (scientific software, not our platform)
+- Ignore "expired-domain-names" lists (passive data, not infringement)
+- Focus on active repositories using "EventNexus" in project names or as main component
+- Prioritize: domain typosquatting, trademark usage in live projects, code similarity
 
 Generate a comprehensive executive report with:
 
-1. EXECUTIVE SUMMARY (2-3 sentences)
-2. THREAT ASSESSMENT (Low/Medium/High/Critical)
-3. KEY FINDINGS (3-5 bullet points)
-4. LEGAL ANALYSIS (which protections apply, potential violations)
-5. RECOMMENDED ACTIONS (prioritized list, cite specific legal frameworks)
-6. MONITORING RECOMMENDATIONS (what to watch closely)
+1. EXECUTIVE SUMMARY (2-3 sentences, mention actual threats vs false positives)
+2. THREAT ASSESSMENT (Low/Medium/High/Critical - be realistic about false positives)
+3. KEY FINDINGS (3-5 bullet points, distinguish real threats from noise)
+4. LEGAL ANALYSIS (which protections apply, cite specific URLs where applicable)
+5. RECOMMENDED ACTIONS (prioritized with SPECIFIC URLs and repos to investigate)
+6. MONITORING RECOMMENDATIONS (practical steps to reduce false positives)
 
-Use professional but clear language. Be specific about legal frameworks. Prioritize actions by urgency.`;
+Use professional but clear language. Be specific about URLs and repositories. Acknowledge false positives where relevant. Prioritize actions by urgency with concrete next steps.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
