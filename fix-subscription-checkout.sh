@@ -9,15 +9,15 @@ echo ""
 
 # Pro tier price ID
 echo "Setting STRIPE_PRICE_PRO..."
-npx supabase secrets set STRIPE_PRICE_PRO="price_1Sg328J9WsSrj5gMhitFUhiC" --project-ref anlivujgkjmajkcgbaxw
+npx supabase secrets set STRIPE_PRICE_PRO="price_1SgXusJ9WsSrj5gMbJdADsvy" --project-ref anlivujgkjmajkcgbaxw
 
 # Premium tier price ID
 echo "Setting STRIPE_PRICE_PREMIUM..."
-npx supabase secrets set STRIPE_PRICE_PREMIUM="price_1Sg37QJ9WsSrj5gMkhkHUFf2" --project-ref anlivujgkjmajkcgbaxw
+npx supabase secrets set STRIPE_PRICE_PREMIUM="price_1SgXwZJ9WsSrj5gMehBiDgWp" --project-ref anlivujgkjmajkcgbaxw
 
 # Enterprise tier price ID
 echo "Setting STRIPE_PRICE_ENTERPRISE..."
-npx supabase secrets set STRIPE_PRICE_ENTERPRISE="price_1Sg3AoJ9WsSrj5gMUue2YjTZ" --project-ref anlivujgkjmajkcgbaxw
+npx supabase secrets set STRIPE_PRICE_ENTERPRISE="price_1SgXxRJ9WsSrj5gMLhDEB26O" --project-ref anlivujgkjmajkcgbaxw
 
 echo ""
 echo "✅ Price IDs configured!"

@@ -32,18 +32,18 @@ Subscription price not configured for tier: premium. Please contact support or s
 ```typescript
 // services/stripeService.ts  
 const priceIds = {
-  pro: 'price_1Sg328J9WsSrj5gMhitFUhiC',       // ✅ Real Stripe ID
-  premium: 'price_1Sg37QJ9WsSrj5gMkhkHUFf2',    // ✅ Real Stripe ID
-  enterprise: 'price_1Sg3AoJ9WsSrj5gMUue2YjTZ'  // ✅ Real Stripe ID
+  pro: 'price_1SgXusJ9WsSrj5gMbJdADsvy',       // ✅ Real Stripe ID
+  premium: 'price_1SgXwZJ9WsSrj5gMehBiDgWp',    // ✅ Real Stripe ID
+  enterprise: 'price_1SgXxRJ9WsSrj5gMLhDEB26O'  // ✅ Real Stripe ID
 };
 ```
 
 ### 2. Configured Edge Function Secrets
 Set environment variables for the `create-checkout` Edge Function:
 ```bash
-STRIPE_PRICE_PRO=price_1Sg328J9WsSrj5gMhitFUhiC
-STRIPE_PRICE_PREMIUM=price_1Sg37QJ9WsSrj5gMkhkHUFf2
-STRIPE_PRICE_ENTERPRISE=price_1Sg3AoJ9WsSrj5gMUue2YjTZ
+STRIPE_PRICE_PRO=price_1SgXusJ9WsSrj5gMbJdADsvy
+STRIPE_PRICE_PREMIUM=price_1SgXwZJ9WsSrj5gMehBiDgWp
+STRIPE_PRICE_ENTERPRISE=price_1SgXxRJ9WsSrj5gMLhDEB26O
 ```
 
 ### 3. Redeployed Edge Function
@@ -93,9 +93,9 @@ No hardcoded URLs to GitHub Pages remain in the checkout flow.
 | Tier | Price | Stripe Price ID |
 |------|-------|----------------|
 | Free | €0 | N/A |
-| **Pro** | €19.99/mo | `price_1Sg328J9WsSrj5gMhitFUhiC` |
-| **Premium** | €49.99/mo | `price_1Sg37QJ9WsSrj5gMkhkHUFf2` |
-| **Enterprise** | €149.99/mo | `price_1Sg3AoJ9WsSrj5gMUue2YjTZ` |
+| **Pro** | €19.99/mo | `price_1SgXusJ9WsSrj5gMbJdADsvy` |
+| **Premium** | €49.99/mo | `price_1SgXwZJ9WsSrj5gMehBiDgWp` |
+| **Enterprise** | €149.99/mo | `price_1SgXxRJ9WsSrj5gMLhDEB26O` |
 
 ## Status
 
