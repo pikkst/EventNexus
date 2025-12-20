@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Search, Globe, AlertTriangle, CheckCircle, XCircle, Eye, TrendingUp, Activity, Code, ExternalLink, RefreshCw, FileText, Download, X, Filter, SortAsc, MessageSquare, Ban } from 'lucide-react';
+import { Shield, Search, Globe, AlertTriangle, CheckCircle, XCircle, Eye, TrendingUp, Activity, Code, ExternalLink, RefreshCw, FileText, Download, X, Filter, SortAsc, MessageSquare, Ban, Clock, TrendingDown } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { BrandMonitoringAlert, MonitoringStats } from '@/types';
 import * as brandMonitoringService from '@/services/brandMonitoringService';
 import { generateBrandProtectionReport } from '@/services/geminiService';
@@ -37,10 +38,14 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const [notesAlert, setNotesAlert] = useState<BrandMonitoringAlert | null>(null);
   const [alertNotes, setAlertNotes] = useState<any[]>([]);
   const [newNote, setNewNote] = useState('');
+  
+  // Trend data
+  const [trendData, setTrendData] = useState<any[]>([]);
 
   useEffect(() => {
     loadMonitoringData();
     loadDomainInfo();
+    loadTrendData();
   }, []);
 
   const loadMonitoringData = async () => {
@@ -85,6 +90,23 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
     }
   };
 
+  const loadTrendData = async () => {
+    try {
+      const trends = await brandMonitoringService.getAlertTrends(30);
+      // Format for Recharts (reverse for chronological order)
+      const formatted = trends.reverse().map(t => ({
+        date: new Date(t.date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }),
+        Total: t.total || 0,
+        Critical: t.critical || 0,
+        Warnings: t.warnings || 0,
+      }));
+      setTrendData(formatted);
+    } catch (error) {
+      console.error('Error loading trend data:', error);
+      setTrendData([]);
+    }
+  };
+
   const runScan = async (scanType: string) => {
     setLoading(true);
     try {
@@ -121,8 +143,12 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
           console.warn(`Unknown scan type: ${scanType}`);
       }
       
-      // Reload all data after scan
-      await loadMonitoringData();
+      // Reload all data after scan (including trends)
+      await Promise.all([
+        loadMonitoringData(),
+        loadTrendData(),
+        brandMonitoringService.snapshotDailyStats() // Update today's snapshot
+      ]);
     } catch (error) {
       console.error(`Error running ${scanType} scan:`, error);
     } finally {
@@ -429,6 +455,110 @@ Legal Framework References:
           </div>
         </div>
       </div>
+
+      {/* Advanced Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-500/20 rounded-xl p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <TrendingUp className="w-6 h-6 text-emerald-400" />
+            <h4 className="font-semibold text-white">This Week</h4>
+          </div>
+          <p className="text-2xl font-bold text-white mb-1">
+            {alerts.filter(a => {
+              const daysDiff = Math.floor((new Date().getTime() - new Date(a.timestamp).getTime()) / (1000 * 60 * 60 * 24));
+              return daysDiff <= 7;
+            }).length}
+          </p>
+          <p className="text-xs text-gray-400">New alerts this week</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20 rounded-xl p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <Clock className="w-6 h-6 text-blue-400" />
+            <h4 className="font-semibold text-white">Avg Response</h4>
+          </div>
+          <p className="text-2xl font-bold text-white mb-1">
+            {alerts.filter(a => a.status !== 'open').length > 0 
+              ? Math.round(alerts.filter(a => a.status !== 'open').reduce((acc, a) => {
+                  const created = new Date(a.timestamp).getTime();
+                  const updated = new Date(a.updated_at || a.timestamp).getTime();
+                  return acc + (updated - created) / (1000 * 60 * 60);
+                }, 0) / alerts.filter(a => a.status !== 'open').length) + 'h'
+              : 'N/A'}
+          </p>
+          <p className="text-xs text-gray-400">Average response time</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <AlertTriangle className="w-6 h-6 text-orange-400" />
+            <h4 className="font-semibold text-white">Open &gt; 7 days</h4>
+          </div>
+          <p className="text-2xl font-bold text-white mb-1">
+            {alerts.filter(a => {
+              const daysDiff = Math.floor((new Date().getTime() - new Date(a.timestamp).getTime()) / (1000 * 60 * 60 * 24));
+              return a.status === 'open' && daysDiff > 7;
+            }).length}
+          </p>
+          <p className="text-xs text-gray-400">Require attention</p>
+        </div>
+      </div>
+
+      {/* Trend Chart */}
+      {trendData.length > 0 && (
+        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-purple-400" />
+            30-Day Trend Analysis
+          </h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={trendData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis 
+                dataKey="date" 
+                stroke="#9CA3AF"
+                style={{ fontSize: '12px' }}
+              />
+              <YAxis 
+                stroke="#9CA3AF"
+                style={{ fontSize: '12px' }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#1F2937', 
+                  border: '1px solid #374151',
+                  borderRadius: '8px',
+                  color: '#fff'
+                }}
+              />
+              <Legend 
+                wrapperStyle={{ color: '#9CA3AF' }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="Total" 
+                stroke="#8B5CF6" 
+                strokeWidth={2}
+                dot={{ fill: '#8B5CF6', r: 3 }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="Critical" 
+                stroke="#EF4444" 
+                strokeWidth={2}
+                dot={{ fill: '#EF4444', r: 3 }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="Warnings" 
+                stroke="#F59E0B" 
+                strokeWidth={2}
+                dot={{ fill: '#F59E0B', r: 3 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* API Configuration Notice */}
       {alerts.length === 0 && (
