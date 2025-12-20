@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
     const geminiApiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY;
     
     return {
-      base: '/EventNexus/',
+      base: '/',
       server: {
         port: 3000,
         host: '0.0.0.0',

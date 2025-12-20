@@ -303,7 +303,7 @@ const App: React.FC = () => {
             <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
             <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/help" element={<HelpCenter />} />
+            <Route path="/help" element={<HelpCenter user={user || undefined} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/cookies" element={<CookieSettings />} />
