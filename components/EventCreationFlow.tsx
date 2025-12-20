@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   ChevronRight, 
@@ -14,11 +14,12 @@ import {
   Unlock,
   Zap,
   Rocket,
-  ShieldAlert
+  ShieldAlert,
+  AlertTriangle
 } from 'lucide-react';
 import { generateMarketingTagline, translateDescription } from '../services/geminiService';
-import { createEvent } from '../services/dbService';
-import { CATEGORIES } from '../constants';
+import { createEvent, getEvents } from '../services/dbService';
+import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
 import { User, EventNexusEvent } from '../types';
 
 interface EventCreationFlowProps {
@@ -29,6 +30,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [userEvents, setUserEvents] = useState<EventNexusEvent[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -48,7 +51,28 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
 
   const navigate = useNavigate();
 
-  // Subscription Gate
+  // Load user's events to check limits
+  useEffect(() => {
+    const loadUserEvents = async () => {
+      try {
+        const allEvents = await getEvents();
+        const filtered = allEvents.filter(e => e.organizerId === user.id);
+        setUserEvents(filtered);
+      } catch (error) {
+        console.error('Error loading events:', error);
+      } finally {
+        setIsLoadingEvents(false);
+      }
+    };
+    loadUserEvents();
+  }, [user.id]);
+
+  // Get tier limits
+  const tierLimits = SUBSCRIPTION_TIERS[user.subscription_tier];
+  const eventLimit = tierLimits.maxEvents;
+  const hasReachedLimit = eventLimit !== Infinity && userEvents.length >= eventLimit;
+
+  // Subscription Gate - Free users
   if (user.subscription_tier === 'free') {
     return (
       <div className="max-w-3xl mx-auto px-4 py-20 animate-in fade-in duration-700">
@@ -74,15 +98,15 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
              <div className="p-4 bg-slate-800/50 rounded-2xl border border-slate-700 text-left">
                 <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">Creation</p>
-                <p className="text-sm font-bold text-white">Unlimited Event Hosting</p>
+                <p className="text-sm font-bold text-white">Up to 20 Events (Pro)</p>
              </div>
              <div className="p-4 bg-slate-800/50 rounded-2xl border border-slate-700 text-left">
                 <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">Promotion</p>
-                <p className="text-sm font-bold text-white">Featured Map Listing</p>
+                <p className="text-sm font-bold text-white">Public Profile Page</p>
              </div>
              <div className="p-4 bg-slate-800/50 rounded-2xl border border-slate-700 text-left">
                 <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">Insights</p>
-                <p className="text-sm font-bold text-white">Attendee Analytics</p>
+                <p className="text-sm font-bold text-white">Analytics Dashboard</p>
              </div>
              <div className="p-4 bg-slate-800/50 rounded-2xl border border-slate-700 text-left">
                 <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">Global</p>
@@ -106,8 +130,72 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
     );
   }
 
+  // Event Limit Gate - Pro/Premium users who reached their limit
+  if (hasReachedLimit && !isLoadingEvents) {
+    const upgradeMap: Record<string, string> = {
+      'pro': 'Premium (100 events)',
+      'premium': 'Enterprise (unlimited events)',
+      'enterprise': ''
+    };
+    const suggestedTier = upgradeMap[user.subscription_tier];
+
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-20 animate-in fade-in duration-700">
+        <div className="bg-slate-900 border border-orange-800/50 rounded-[48px] p-12 text-center space-y-8 shadow-2xl relative overflow-hidden">
+          {/* Decorative blobs */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-orange-600/10 rounded-full blur-[80px] -mr-32 -mt-32" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-600/10 rounded-full blur-[80px] -ml-32 -mb-32" />
+          
+          <div className="w-24 h-24 bg-orange-600 rounded-[32px] flex items-center justify-center mx-auto shadow-2xl shadow-orange-600/40 relative">
+            <AlertTriangle className="w-12 h-12 text-white" />
+          </div>
+          
+          <div className="space-y-3">
+            <h1 className="text-4xl font-black tracking-tighter">Event Limit Reached</h1>
+            <p className="text-slate-400 max-w-md mx-auto leading-relaxed font-medium text-lg">
+              You've created <span className="text-orange-400 font-black">{userEvents.length}</span> events, reaching your <span className="text-orange-400 font-black">{user.subscription_tier.toUpperCase()}</span> tier limit of <span className="text-orange-400 font-black">{eventLimit}</span> events.
+            </p>
+            {suggestedTier && (
+              <p className="text-slate-500 max-w-md mx-auto font-medium">
+                Upgrade to <span className="text-indigo-400 font-bold">{suggestedTier}</span> to create more events.
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 max-w-lg mx-auto">
+             <div className="p-6 bg-slate-800/50 rounded-2xl border border-slate-700 text-center">
+                <p className="text-sm font-bold text-white mb-2">Your Active Events</p>
+                <p className="text-3xl font-black text-orange-400">{userEvents.length} / {eventLimit}</p>
+             </div>
+          </div>
+
+          <div className="pt-6 flex flex-col gap-4">
+            {suggestedTier && (
+              <Link 
+                to="/pricing" 
+                className="w-full bg-indigo-600 hover:bg-indigo-700 py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/30 active:scale-95"
+              >
+                Upgrade to Create More
+              </Link>
+            )}
+            <Link to="/dashboard" className="text-slate-500 hover:text-white font-bold text-sm transition-colors">
+              Back to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleGeminiTagline = async () => {
     if (!formData.name || !formData.category) return;
+    
+    // Gate AI features for free users
+    if (user.subscription_tier === 'free') {
+      alert('AI-powered tagline generation is available for Pro tier and above. Upgrade to unlock this feature.');
+      return;
+    }
+    
     setIsGenerating(true);
     const result = await generateMarketingTagline(formData.name, formData.category);
     setFormData(prev => ({ ...prev, tagline: result }));
@@ -349,7 +437,9 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
               </div>
               <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl">
                 <p className="text-xs text-yellow-500 font-medium leading-relaxed">
-                  Your event will be automatically translated into 5+ languages using Gemini AI to ensure global visibility.
+                  {user.subscription_tier === 'pro' || user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise' 
+                    ? 'Your event will be automatically translated into 5+ languages using Gemini AI to ensure global visibility.'
+                    : 'AI auto-translation is available for Pro tier and above. Upgrade to reach global audiences.'}
                 </p>
               </div>
             </div>

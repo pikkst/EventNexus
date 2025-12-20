@@ -25,12 +25,12 @@ const PLANS = [
     price: '19.99',
     description: 'The standard for creators and promoters.',
     features: [
-      'Create unlimited events',
+      'Create up to 20 events',
       'Organizer Analytics dashboard',
       'AI-Powered auto-translation',
       'Public organizer profile',
-      'Social media promotion',
-      'Reduced service fees'
+      'Social media promotion tools',
+      'Reduced service fees (3%)'
     ],
     cta: 'Get Started with Pro',
     highlight: false,
@@ -41,12 +41,12 @@ const PLANS = [
     price: '49.99',
     description: 'Ultimate power for professional agencies.',
     features: [
-      'All Pro features included',
+      'Create up to 100 events',
       'Featured map placement',
       'Custom branding on tickets',
       'Advanced attendee analytics',
       'Priority organizer support',
-      'Zero platform fees',
+      'Reduced platform fees (2.5%)',
       'Affiliate marketing tools'
     ],
     cta: 'Go Premium Elite',
@@ -58,12 +58,12 @@ const PLANS = [
     price: '149.99',
     description: 'White-labeling & Global Infrastructure.',
     features: [
-      'Custom nexus.com/org URL',
+      'Unlimited events',
       'White-label branded dashboard',
       'Dedicated success manager',
       'Massive scale API access',
       'Custom branded entry apps',
-      'Global event promotion'
+      'Lowest platform fees (1.5%)'
     ],
     cta: 'Launch Agency',
     highlight: false,
