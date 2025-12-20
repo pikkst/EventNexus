@@ -278,12 +278,15 @@ const App: React.FC = () => {
               cacheNotifications(userNotifications);
             }
           } else {
-            console.error('Failed to load user data after sign in');
-            await supabase.auth.signOut();
+            console.error('⚠️ Failed to load user profile. Database may be slow or unavailable.');
+            // Don't sign out on timeout - user is authenticated, just data load failed
+            // Keep the loading state and let user try refreshing
+            setIsLoading(false);
           }
         } catch (userError) {
           console.error('Error loading user data:', userError);
-          await supabase.auth.signOut();
+          // Don't sign out on errors - just stop loading
+          setIsLoading(false);
         }
       } else if (event === 'TOKEN_REFRESHED' && session?.user && mounted) {
         console.log('✅ Token refreshed successfully');
