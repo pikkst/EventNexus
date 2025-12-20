@@ -181,3 +181,8 @@ These instructions help AI coding agents work productively in this repo.
 
 ## Maintainer Contact
 - Primary email: `huntersest@gmail.com` (incidents/security/ops).
+- Production URL: `https://www.eventnexus.eu`
+
+## Maintainer Contact
+- Primary email: `huntersest@gmail.com` (incidents/security/ops).
+- Production URL: `https://www.eventnexus.eu`
