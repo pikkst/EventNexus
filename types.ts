@@ -143,3 +143,30 @@ export interface Notification {
   timestamp: string;
   isRead: boolean;
 }
+
+export interface BrandMonitoringAlert {
+  id: string;
+  type: 'code' | 'domain' | 'brand' | 'search' | 'social' | 'competitor';
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  description: string;
+  url?: string;
+  timestamp: Date;
+  status: 'open' | 'investigating' | 'resolved' | 'dismissed';
+  actionTaken: string | null;
+  detectedBy?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface MonitoringStats {
+  codeScans: number;
+  domainChecks: number;
+  brandMentions: number;
+  searchResults: number;
+  socialMentions: number;
+  competitorAlerts: number;
+  criticalAlerts: number;
+  warningAlerts: number;
+  infoAlerts: number;
+  lastScanTime: Date;
+}
