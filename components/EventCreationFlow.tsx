@@ -17,8 +17,9 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { generateMarketingTagline, translateDescription } from '../services/geminiService';
+import { createEvent } from '../services/dbService';
 import { CATEGORIES } from '../constants';
-import { User } from '../types';
+import { User, EventNexusEvent } from '../types';
 
 interface EventCreationFlowProps {
   user: User;
@@ -27,6 +28,7 @@ interface EventCreationFlowProps {
 const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -35,8 +37,13 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
     date: '',
     time: '',
     location: '',
+    locationLat: 0,
+    locationLng: 0,
+    locationAddress: '',
+    locationCity: '',
     visibility: 'public',
-    price: 0
+    price: 0,
+    max_capacity: 100
   });
 
   const navigate = useNavigate();
@@ -110,6 +117,49 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
   const nextStep = () => setStep(s => Math.min(s + 1, 4));
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
+  const handlePublish = async () => {
+    if (!formData.name || !formData.category || !formData.date || !formData.time) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const eventData: Omit<EventNexusEvent, 'id'> = {
+        name: formData.name,
+        category: formData.category,
+        description: formData.tagline || formData.name,
+        date: formData.date,
+        time: formData.time,
+        location: {
+          lat: formData.locationLat || 40.7128,
+          lng: formData.locationLng || -74.0060,
+          address: formData.locationAddress || formData.location,
+          city: formData.locationCity || 'New York'
+        },
+        price: formData.price,
+        visibility: formData.visibility as any,
+        organizerId: user.id,
+        imageUrl: '',
+        attendeesCount: 0,
+        maxAttendees: formData.max_capacity
+      };
+
+      const created = await createEvent(eventData);
+      if (created) {
+        alert('Event created successfully!');
+        navigate('/dashboard');
+      } else {
+        alert('Failed to create event. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating event:', error);
+      alert('Error creating event. Please try again.');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   const renderStep = () => {
     switch (step) {
       case 1:
@@ -174,21 +224,37 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
                 <label className="block text-sm font-medium text-slate-400 mb-1.5">Date</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <input type="date" className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" />
+                  <input 
+                    type="date" 
+                    value={formData.date}
+                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
+                  />
                 </div>
               </div>
               <div className="col-span-1">
                 <label className="block text-sm font-medium text-slate-400 mb-1.5">Time</label>
                 <div className="relative">
                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <input type="time" className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" />
+                  <input 
+                    type="time" 
+                    value={formData.time}
+                    onChange={(e) => setFormData({...formData, time: e.target.value})}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
+                  />
                 </div>
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-slate-400 mb-1.5">Venue Location</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <input type="text" placeholder="Search address or venue name" className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" />
+                  <input 
+                    type="text" 
+                    placeholder="Search address or venue name" 
+                    value={formData.location}
+                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
+                  />
                 </div>
               </div>
             </div>
@@ -227,16 +293,28 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
                 </div>
               </button>
             </div>
-            <div className="pt-4 border-t border-slate-800">
-              <label className="block text-sm font-medium text-slate-400 mb-1.5">Ticket Price (USD)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-500">$</span>
+            <div className="pt-4 border-t border-slate-800 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1.5">Ticket Price (USD)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-500">$</span>
+                  <input 
+                    type="number" 
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none font-bold"
+                    placeholder="0.00"
+                    value={formData.price}
+                    onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1.5">Max Capacity (Tickets)</label>
                 <input 
                   type="number" 
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none font-bold"
-                  placeholder="0.00"
-                  value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none font-bold"
+                  placeholder="100"
+                  value={formData.max_capacity}
+                  onChange={(e) => setFormData({...formData, max_capacity: Number(e.target.value)})}
                 />
               </div>
             </div>
@@ -276,10 +354,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
               </div>
             </div>
             <button 
-              onClick={() => navigate('/dashboard')}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-500/20 transition-all flex items-center justify-center gap-2"
+              onClick={handlePublish}
+              disabled={isCreating}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Sparkles className="w-5 h-5" /> Publish Event
+              <Sparkles className="w-5 h-5" /> {isCreating ? 'Creating...' : 'Publish Event'}
             </button>
           </div>
         );
