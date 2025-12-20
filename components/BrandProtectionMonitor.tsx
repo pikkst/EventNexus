@@ -18,6 +18,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const [showReport, setShowReport] = useState(false);
   const [aiReport, setAiReport] = useState<any>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [showAllAlerts, setShowAllAlerts] = useState(false);
 
   useEffect(() => {
     loadMonitoringData();
@@ -295,15 +296,25 @@ Legal Framework References:
 
       {/* Recent Alerts */}
       <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Recent Alerts</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white">Recent Alerts</h3>
+          {alerts.length > 5 && (
+            <button
+              onClick={() => setShowAllAlerts(!showAllAlerts)}
+              className="px-4 py-2 text-sm bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 rounded-lg transition-colors"
+            >
+              {showAllAlerts ? `Show Less` : `Show All (${alerts.length})`}
+            </button>
+          )}
+        </div>
         {alerts.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <Shield className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>No alerts detected yet. Run a scan to start monitoring.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {alerts.slice(0, 5).map(alert => (
+          <div className="space-y-3 max-h-[600px] overflow-y-auto">
+            {(showAllAlerts ? alerts : alerts.slice(0, 5)).map(alert => (
               <div key={alert.id} className={`border rounded-lg p-4 ${getSeverityColor(alert.severity)}`}>
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
