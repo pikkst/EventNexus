@@ -18,7 +18,8 @@ BEGIN
         subscription_status,
         credits, 
         followed_organizers, 
-        notification_prefs
+        notification_prefs,
+        status
     )
     VALUES (
         NEW.id,
@@ -36,7 +37,8 @@ BEGIN
             'proximityAlerts', true,
             'alertRadius', 5,
             'interestedCategories', '[]'::jsonb
-        )
+        ),
+        'active'
     );
     RETURN NEW;
 EXCEPTION
@@ -87,7 +89,8 @@ BEGIN
                 subscription_status,
                 credits, 
                 followed_organizers, 
-                notification_prefs
+                notification_prefs,
+                status
             )
             VALUES (
                 auth_user.id,
@@ -105,7 +108,8 @@ BEGIN
                     'proximityAlerts', true,
                     'alertRadius', 5,
                     'interestedCategories', '[]'::jsonb
-                )
+                ),
+                'active'
             );
             created_count := created_count + 1;
             RAISE NOTICE 'Created profile for user: % (%)', auth_user.email, auth_user.id;
