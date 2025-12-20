@@ -38,23 +38,35 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [showSuccess, setShowSuccess] = useState(false);
 
   // Load event from database
-  useEffect(() => {
-    const loadEvent = async () => {
-      try {
-        const events = await getEvents();
-        const foundEvent = events.find(e => e.id === id);
-        if (foundEvent) {
-          setEvent(foundEvent);
-          setCurrentAttendees(foundEvent.attendeesCount);
-        }
-      } catch (error) {
-        console.error('Error loading event:', error);
-      } finally {
-        setIsLoading(false);
+  const loadEvent = React.useCallback(async () => {
+    if (!id) return;
+    try {
+      const events = await getEvents();
+      const foundEvent = events.find(e => e.id === id);
+      if (foundEvent) {
+        setEvent(foundEvent);
+        setCurrentAttendees(foundEvent.attendeesCount);
       }
-    };
-    if (id) loadEvent();
+    } catch (error) {
+      console.error('Error loading event:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    loadEvent();
+  }, [loadEvent]);
+
+  // Check for successful purchase on mount
+  useEffect(() => {
+    if (checkCheckoutSuccess()) {
+      setShowSuccess(true);
+      clearCheckoutStatus();
+      // Refresh event data to get updated attendee count
+      loadEvent();
+    }
+  }, [loadEvent]);
 
   if (isLoading) {
     return (
@@ -81,16 +93,6 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const remaining = event.maxAttendees - currentAttendees;
   const totalRevenue = currentAttendees * event.price;
   const isFollowing = user?.followedOrganizers.includes(event.organizerId) ?? false;
-
-  // Check for successful purchase on mount
-  useEffect(() => {
-    if (checkCheckoutSuccess()) {
-      setShowSuccess(true);
-      clearCheckoutStatus();
-      // Refresh event data to get updated attendee count
-      loadEvent();
-    }
-  }, []);
 
   const handlePurchase = async () => {
     // Require authentication before purchase
