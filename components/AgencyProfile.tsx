@@ -6,10 +6,10 @@ import {
   ShieldCheck, Zap, ExternalLink, UserPlus, UserMinus,
   Mail, Users, Award, Link as LinkIcon, Ticket, ArrowRight,
   Star, Play, Layout, Sparkles, Headphones, Camera, Music, 
-  Volume2, Lightbulb, Briefcase, Globe2
+  Volume2, Lightbulb, Briefcase, Globe2, Loader2
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
-import { getEvents } from '../services/dbService';
+import { getEvents, getUserBySlug } from '../services/dbService';
 import Footer from './Footer';
 
 interface AgencyProfileProps {
@@ -32,58 +32,95 @@ const IconMap: any = {
 const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onToggleFollow }) => {
   const { slug } = useParams();
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
+  const [organizer, setOrganizer] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  // Load events from database
+  const [error, setError] = useState<string | null>(null);
+  
+  // Load events and organizer from database
   useEffect(() => {
-    const loadEvents = async () => {
+    const loadData = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
+        // First, try to get organizer by slug
+        const fetchedOrganizer = await getUserBySlug(slug!);
+        
+        if (!fetchedOrganizer) {
+          setError('Organizer not found');
+          setIsLoading(false);
+          return;
+        }
+        
+        setOrganizer(fetchedOrganizer);
+        
+        // Then load all events
         const allEvents = await getEvents();
         setEvents(allEvents);
       } catch (error) {
-        console.error('Error loading events:', error);
+        console.error('Error loading data:', error);
+        setError('Failed to load organizer data');
       } finally {
         setIsLoading(false);
       }
     };
-    loadEvents();
-  }, []);
-  
-  // In a real app, this would fetch the agency by the slug.
-  // For now, we use the currentUser's data if it matches
-  const organizer: Partial<User> = useMemo(() => {
-    if (currentUser?.agencySlug === slug) return currentUser;
     
-    return {
-      id: 'u2',
-      name: 'Rivera Productions',
-      bio: 'Pioneering immersive experiences across the global Nexus network. We specialize in transforming industrial spaces into cultural hubs through light, sound, and flavor. Our events are more than gatherings—they are shared memories written in light.',
-      avatar: 'https://picsum.photos/seed/rivera/200',
-      subscription: 'enterprise',
-      location: 'New York, NY',
-      branding: {
-        primaryColor: '#6366f1',
-        accentColor: '#10b981',
-        tagline: 'Orchestrating the Extraordinary.',
-        bannerUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=2070&auto=format&fit=crop',
-        customDomain: 'rivera.nexus.events',
-        socialLinks: {
-          twitter: 'riveraprod',
-          instagram: 'rivera_events',
-          website: 'rivera.events'
-        },
-        services: [
-          { id: 's1', icon: 'Volume2', name: 'Heli-Audio Design', desc: 'Custom soundscapes for industrial spaces.' },
-          { id: 's2', icon: 'Lightbulb', name: 'Visual Mapping', desc: 'Projection mapping and custom lighting rigs.' },
-          { id: 's3', icon: 'Briefcase', name: 'Node Strategy', desc: 'Strategic event placement and map promotion.' },
-          { id: 's4', icon: 'Headphones', name: 'Artist Booking', desc: 'Access to elite Nexus-exclusive artists.' }
-        ]
-      }
-    };
-  }, [slug, currentUser]);
+    if (slug) {
+      loadData();
+    }
+  }, [slug]);
+  
+  const agencyEvents = useMemo(() => {
+    if (!organizer) return [];
+    return events.filter(e => e.organizerId === organizer.id);
+  }, [events, organizer]);
+  
+  const isFollowing = useMemo(() => {
+    if (!currentUser || !organizer) return false;
+    return currentUser.followedOrganizers.includes(organizer.id);
+  }, [currentUser, organizer]);
+  
+  const brandColor = organizer?.branding?.primaryColor || '#6366f1';
+  
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center px-4">
+        <div className="text-center space-y-6">
+          <Loader2 className="w-16 h-16 text-indigo-500 animate-spin mx-auto" />
+          <p className="text-slate-400 text-lg font-medium">Loading organizer profile...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Error state
+  if (error || !organizer) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center px-4">
+        <div className="max-w-2xl mx-auto text-center space-y-8">
+          <div className="w-24 h-24 bg-slate-900 rounded-[32px] flex items-center justify-center mx-auto border border-slate-800">
+            <ShieldCheck className="w-12 h-12 text-slate-600" />
+          </div>
+          
+          <div className="space-y-4">
+            <h1 className="text-5xl font-black tracking-tighter text-white">Organizer Not Found</h1>
+            <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-lg mx-auto">
+              The organizer profile you're looking for doesn't exist or has been removed.
+            </p>
+          </div>
 
-  const agencyEvents = useMemo(() => events.filter(e => e.organizerId === organizer.id), [events, organizer.id]);
-  const isFollowing = currentUser?.followedOrganizers.includes(organizer.id!) || false;
-  const brandColor = organizer.branding?.primaryColor || '#6366f1';
+          <div className="pt-6">
+            <Link 
+              to="/map" 
+              className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
+            >
+              <Globe2 className="w-4 h-4" /> Explore Events
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Gate free users from having public profiles
   if (organizer.subscription === 'free' || organizer.subscription_tier === 'free') {
@@ -140,7 +177,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
            </p>
            <div className="flex flex-wrap items-center justify-center gap-6 pt-12">
               <button 
-                onClick={() => onToggleFollow(organizer.id!)}
+                onClick={() => organizer?.id && onToggleFollow(organizer.id)}
                 className={`px-12 py-6 rounded-3xl font-black text-xs uppercase tracking-widest transition-all shadow-2xl active:scale-95 flex items-center gap-3 ${
                   isFollowing ? 'bg-white text-slate-950' : 'bg-indigo-600 text-white shadow-indigo-600/40'
                 }`}
