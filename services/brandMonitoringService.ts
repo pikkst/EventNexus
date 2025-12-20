@@ -490,3 +490,175 @@ export async function getPrimaryDomainInfo(): Promise<any> {
     return null;
   }
 }
+
+/**
+ * WHITELIST MANAGEMENT
+ */
+
+export async function addToWhitelist(url: string, title: string, reason: string): Promise<boolean> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('brand_monitoring_whitelist')
+      .insert({
+        url,
+        title,
+        reason,
+        whitelisted_by: user.id
+      });
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error adding to whitelist:', error);
+    return false;
+  }
+}
+
+export async function getWhitelist(): Promise<any[]> {
+  try {
+    const { data, error } = await supabase
+      .from('brand_monitoring_whitelist')
+      .select('*, whitelisted_by:users(email)')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching whitelist:', error);
+    return [];
+  }
+}
+
+export async function removeFromWhitelist(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('brand_monitoring_whitelist')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error removing from whitelist:', error);
+    return false;
+  }
+}
+
+/**
+ * NOTES MANAGEMENT
+ */
+
+export async function addAlertNote(alertId: string, note: string): Promise<boolean> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('brand_monitoring_notes')
+      .insert({
+        alert_id: alertId,
+        note,
+        created_by: user.id
+      });
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error adding note:', error);
+    return false;
+  }
+}
+
+export async function getAlertNotes(alertId: string): Promise<any[]> {
+  try {
+    const { data, error } = await supabase
+      .from('brand_monitoring_notes')
+      .select('*, created_by:users(email)')
+      .eq('alert_id', alertId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching notes:', error);
+    return [];
+  }
+}
+
+/**
+ * PRIORITY MANAGEMENT
+ */
+
+export async function updateAlertPriority(alertId: string, priority: 'low' | 'medium' | 'high'): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('brand_monitoring_alerts')
+      .update({ priority })
+      .eq('id', alertId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error updating priority:', error);
+    return false;
+  }
+}
+
+/**
+ * TRENDS & ANALYTICS
+ */
+
+export async function getAlertTrends(days: number = 30): Promise<any[]> {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_alert_trends', { days });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching trends:', error);
+    return [];
+  }
+}
+
+export async function snapshotDailyStats(): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .rpc('snapshot_daily_stats');
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error snapshotting stats:', error);
+    return false;
+  }
+}
+
+/**
+ * HISTORICAL ALERTS
+ */
+
+export async function getHistoricalAlerts(status: string[] = ['resolved', 'deleted']): Promise<BrandMonitoringAlert[]> {
+  try {
+    const { data, error } = await supabase
+      .from('brand_monitoring_alerts')
+      .select('*')
+      .in('status', status)
+      .order('timestamp', { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+
+    return data?.map(alert => ({
+      ...alert,
+      timestamp: new Date(alert.timestamp),
+    })) || [];
+  } catch (error) {
+    console.error('Error fetching historical alerts:', error);
+    return [];
+  }
+}
+
