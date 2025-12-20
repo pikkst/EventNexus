@@ -515,46 +515,64 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
             className="flex items-center gap-2 px-4 py-2 bg-pink-500 hover:bg-pink-600 disabled:bg-gray-600 text-white rounded-lg transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh Feed
+            {loading ? 'Scanning...' : 'Refresh Feed'}
           </button>
         </div>
 
         <div className="space-y-4">
           <div className="border border-gray-700 rounded-lg p-4">
-            <h4 className="font-semibold text-white mb-2">Brand Mention Tracking</h4>
-            <p className="text-sm text-gray-400 mb-3">Monitors @EventNexus mentions across Twitter, Facebook, LinkedIn, Instagram</p>
+            <h4 className="font-semibold text-white mb-2">Twitter/X Mentions</h4>
+            <p className="text-sm text-gray-400 mb-3">Tracks EventNexus mentions using free Nitter scraper</p>
             <div className="grid grid-cols-2 gap-4 text-sm mt-3">
               <div>
-                <span className="text-gray-400">Mentions (24h):</span>
-                <span className="text-white ml-2">47</span>
+                <span className="text-gray-400">Mentions found:</span>
+                <span className="text-white ml-2">{alerts.filter(a => a.type === 'social').length}</span>
               </div>
               <div>
-                <span className="text-gray-400">Sentiment:</span>
-                <span className="text-green-500 ml-2">Positive</span>
+                <span className="text-gray-400">Last scan:</span>
+                <span className="text-white ml-2">{lastScan?.toLocaleTimeString() || 'Never'}</span>
               </div>
             </div>
           </div>
 
+          {alerts.filter(a => a.type === 'social').length > 0 && (
+            <div className="border border-pink-500/20 bg-pink-500/10 rounded-lg p-4">
+              <h4 className="font-semibold text-white mb-3">Recent Mentions</h4>
+              <div className="space-y-3">
+                {alerts.filter(a => a.type === 'social').slice(0, 5).map(alert => (
+                  <div key={alert.id} className="border border-gray-700 rounded-lg p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-300 mb-1">{alert.description}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span>{new Date(alert.timestamp).toLocaleString()}</span>
+                          {alert.metadata?.source && (
+                            <>
+                              <span>•</span>
+                              <span>{alert.metadata.source}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {alert.url && (
+                        <a href={alert.url} target="_blank" rel="noopener noreferrer" className="ml-2">
+                          <ExternalLink className="w-4 h-4 text-pink-400 hover:text-pink-300" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="border border-gray-700 rounded-lg p-4">
-            <h4 className="font-semibold text-white mb-2">Impersonation Detection</h4>
-            <p className="text-sm text-gray-400 mb-3">Scans for fake EventNexus accounts and impersonators</p>
+            <h4 className="font-semibold text-white mb-2">Monitoring Status</h4>
+            <p className="text-sm text-gray-400 mb-3">Free Nitter scraper - no Twitter API key required</p>
             <div className="flex items-center gap-4 text-sm">
-              <span className="text-yellow-500">⚠ 2 suspicious accounts flagged</span>
-            </div>
-          </div>
-
-          <div className="border border-gray-700 rounded-lg p-4">
-            <h4 className="font-semibold text-white mb-2">Hashtag Monitoring</h4>
-            <p className="text-sm text-gray-400 mb-3">Tracks #EventNexus and related hashtags for brand awareness</p>
-            <div className="grid grid-cols-2 gap-4 text-sm mt-3">
-              <div>
-                <span className="text-gray-400">#EventNexus:</span>
-                <span className="text-white ml-2">1,234 posts</span>
-              </div>
-              <div>
-                <span className="text-gray-400">Reach:</span>
-                <span className="text-white ml-2">45.7K users</span>
-              </div>
+              <span className={stats && stats.socialMentions > 0 ? 'text-green-500' : 'text-gray-400'}>
+                {stats && stats.socialMentions > 0 ? '✓ Active' : '○ Run scan to activate'}
+              </span>
             </div>
           </div>
         </div>
