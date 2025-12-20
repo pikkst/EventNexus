@@ -90,13 +90,34 @@ const App: React.FC = () => {
     
     const loadInitialData = async () => {
       try {
-        // Load events first (public data)
+        // Check for existing session FIRST (synchronous from localStorage)
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user && mounted) {
+          console.log('🔄 Restoring session on mount...');
+          try {
+            const userData = await getUser(session.user.id);
+            if (userData && mounted) {
+              setUser(userData);
+              const userNotifications = await getNotifications(userData.id);
+              if (mounted) {
+                setNotifications(userNotifications);
+              }
+              console.log('✅ Session restored:', userData.email);
+            }
+          } catch (userError) {
+            console.error('Error loading user data:', userError);
+            await supabase.auth.signOut();
+          }
+        }
+        
+        // Load events (public data)
         const eventsData = await getEvents();
         if (mounted) {
           setEvents(eventsData);
         }
       } catch (error) {
-        console.error('Error loading events:', error);
+        console.error('Error loading initial data:', error);
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -106,12 +127,12 @@ const App: React.FC = () => {
     
     loadInitialData();
 
-    // Listen for auth state changes and restore session
+    // Listen for auth state changes (login, logout, token refresh)
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth event:', event);
       
-      if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session?.user && mounted) {
-        console.log('Session found, loading user data...');
+      if (event === 'SIGNED_IN' && session?.user && mounted) {
+        console.log('User signed in, loading data...');
         try {
           const userData = await getUser(session.user.id);
           if (userData && mounted) {
@@ -120,35 +141,22 @@ const App: React.FC = () => {
             if (mounted) {
               setNotifications(userNotifications);
             }
-            console.log('✅ User session restored:', userData.email);
           }
         } catch (userError) {
           console.error('Error loading user data:', userError);
-          // If user data fails to load, sign out
-          await supabase.auth.signOut();
         }
       } else if (event === 'TOKEN_REFRESHED' && session?.user && mounted) {
         console.log('✅ Token refreshed successfully');
-        // Optionally reload user data to ensure it's fresh
-        try {
-          const userData = await getUser(session.user.id);
-          if (userData && mounted) {
-            setUser(userData);
-          }
-        } catch (error) {
-          console.error('Error reloading user after token refresh:', error);
-        }
       } else if (event === 'SIGNED_OUT' && mounted) {
         console.log('User signed out');
         setUser(null);
         setNotifications([]);
       } else if (event === 'USER_UPDATED' && session?.user && mounted) {
+        console.log('User updated, reloading data...');
         const userData = await getUser(session.user.id);
         if (userData && mounted) {
           setUser(userData);
         }
-      } else if (!session && event === 'INITIAL_SESSION' && mounted) {
-        console.log('No active session found');
       }
     });
 
