@@ -1,9 +1,99 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { supabase } from './supabase';
+import { deductUserCredits, checkUserCredits } from './dbService';
 
 const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+// ADMIN TOOLS - NO CREDIT COST (Platform marketing tools)
+// Admin promotion tools are FREE for admins to market the platform
+
+// User AI Features - Credit costs for FREE tier users
+// Paid tier users (Pro/Premium/Enterprise) have these features included
+export const AI_CREDIT_COSTS = {
+  EVENT_AI_IMAGE: 20,          // AI-generated event image (Free tier only)
+  EVENT_AI_TAGLINE: 10,        // AI marketing tagline (Free tier only)
+  EVENT_AI_DESCRIPTION: 15,    // AI-enhanced description (Free tier only)
+  TRANSLATION: 5,              // Per language translation (Free tier only)
+  AD_CAMPAIGN: 30              // Multi-platform ad campaign (Free tier only)
+};
+
+/**
+ * Generate platform-specific social media posts for a campaign
+ * ADMIN FEATURE - NO CREDIT COST
+ */
+export const generateSocialMediaPosts = async (
+  campaignTitle: string,
+  campaignCopy: string,
+  targetAudience: 'creators' | 'attendees'
+) => {
+  // Admin tool - no credit deduction
+
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: `You are a social media marketing expert for EventNexus.
+      Campaign: ${campaignTitle}
+      Copy: ${campaignCopy}
+      Target: ${targetAudience === 'creators' ? 'Event Organizers and Promoters' : 'Event Attendees'}
+      
+      Generate optimized posts for each platform:
+      1. Facebook - Engaging post with emojis (max 250 chars)
+      2. Instagram - Captivating caption with hashtags (max 200 chars)
+      3. Twitter/X - Punchy tweet (max 280 chars)
+      4. LinkedIn - Professional post (max 300 chars)
+      
+      Each should be platform-appropriate, include relevant hashtags, and drive action.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            facebook: {
+              type: Type.OBJECT,
+              properties: {
+                content: { type: Type.STRING },
+                hashtags: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }
+            },
+            instagram: {
+              type: Type.OBJECT,
+              properties: {
+                caption: { type: Type.STRING },
+                hashtags: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }
+            },
+            twitter: {
+              type: Type.OBJECT,
+              properties: {
+                tweet: { type: Type.STRING },
+                hashtags: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }
+            },
+            linkedin: {
+              type: Type.OBJECT,
+              properties: {
+                content: { type: Type.STRING }
+              }
+            }
+          },
+          required: ["facebook", "instagram", "twitter", "linkedin"]
+        }
+      }
+    });
+
+    return JSON.parse(response.text || '{}');
+  } catch (error) {
+    console.error("Social media post generation failed:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generate platform growth campaign
+ * ADMIN FEATURE - NO CREDIT COST
+ */
 export const generatePlatformGrowthCampaign = async (theme: string, target: 'creators' | 'attendees') => {
   try {
     const ai = getAI();
@@ -36,6 +126,7 @@ export const generatePlatformGrowthCampaign = async (theme: string, target: 'cre
         }
       }
     });
+
     return JSON.parse(response.text || '{}');
   } catch (error) {
     console.error("Platform growth generation failed:", error);
@@ -43,7 +134,26 @@ export const generatePlatformGrowthCampaign = async (theme: string, target: 'cre
   }
 };
 
-export const generateAdImage = async (prompt: string, aspectRatio: "1:1" | "9:16" | "16:9" = "1:1", saveToStorage = true) => {
+/**
+ * Generate AI image
+ * For regular users: costs credits based on tier
+ * For admins: FREE (when used in admin tools)
+ */
+export const generateAdImage = async (
+  prompt: string, 
+  aspectRatio: "1:1" | "9:16" | "16:9" = "1:1", 
+  saveToStorage = true, 
+  userId?: string,
+  userTier?: string
+) => {
+  // Check if user needs to pay with credits (Free tier only)
+  if (userId && userTier === 'free') {
+    const hasCredits = await checkUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_IMAGE);
+    if (!hasCredits) {
+      throw new Error(`Insufficient credits. Need ${AI_CREDIT_COSTS.EVENT_AI_IMAGE} credits (${AI_CREDIT_COSTS.EVENT_AI_IMAGE * 0.5}€ value)`);
+    }
+  }
+
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
@@ -52,9 +162,9 @@ export const generateAdImage = async (prompt: string, aspectRatio: "1:1" | "9:16
         parts: [{ text: `Professional marketing flier for EventNexus: ${prompt}. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements integrated, 8k.` }],
       },
       config: {
-        imageConfig: {
-          aspectRatio: aspectRatio,
-        }
+        imageConfig: { (Free tier only)
+        if (userId && userTier === 'free') {
+          await deductUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_IMAGE
       }
     });
 
@@ -63,6 +173,11 @@ export const generateAdImage = async (prompt: string, aspectRatio: "1:1" | "9:16
         const base64Data = part.inlineData.data;
         const inlineDataUrl = `data:image/png;base64,${base64Data}`;
         
+        // Deduct credits after successful generation
+        if (userId) {
+          await deductUserCredits(userId, AI_CREDIT_COSTS.AD_IMAGE_GENERATION);
+        }
+
         // If saveToStorage is true, upload to Supabase and return public URL
         if (saveToStorage) {
           try {
@@ -119,33 +234,85 @@ export const generateAdImage = async (prompt: string, aspectRatio: "1:1" | "9:16
   }
 };
 
-export const generateMarketingTagline = async (name: string, category: string) => {
+/**
+ * Generate marketing tagline
+ * Free tier: costs credits | Paid tiers: included
+ */
+export const generateMarketingTagline = async (name: string, category: string, userId?: string, userTier?: string) => {
+  // Check if user needs to pay with credits (Free tier only)
+  if (userId && userTier === 'free') {
+    const hasCredits = await checkUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_TAGLINE);
+    if (!hasCredits) {
+      throw new Error(`Insufficient credits. Need ${AI_CREDIT_COSTS.EVENT_AI_TAGLINE} credits (${AI_CREDIT_COSTS.EVENT_AI_TAGLINE * 0.5}€ value)`);
+    }
+  }
+
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Generate a single short, punchy, high-impact marketing tagline for an event named "${name}" in the category "${category}". Return only the tagline text.`,
-    });
+    const result = response.text?.trim() || '';
+
+    // Deduct credits after successful generation (Free tier only)
+    if (userId && userTier === 'free' && result) {
+      await deductUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_TAGLINE);
+    }
+
+    return result
+      await deductUserCredits(userId, AI_CREDIT_COSTS.TAGLINE_GENERATION);
+    }
+
     return response.text?.trim() || '';
   } catch (error) {
     return "Experience the extraordinary.";
   }
-};
+/**
+ * Translate event description
+ * Free tier: costs credits | Paid tiers: included
+ */
+export const translateDescription = async (text: string, targetLanguage: string, userId?: string, userTier?: string) => {
+  // Check if user needs to pay with credits (Free tier only)
+  if (userId && userTier === 'free') {
+    const hasCredits = await checkUserCredits(userId, AI_CREDIT_COSTS.TRANSLATION);
+    if (!hasCredits) {
+      throw new Error(`Insufficient credits. Need ${AI_CREDIT_COSTS.TRANSLATION} credits (${AI_CREDIT_COSTS.TRANSLATION * 0.5}€ value)`);IT_COSTS.TRANSLATION);
+    if (!hasCredits) {
+      return text; // Return original if insufficient credits
+    }
+  }
 
-export const translateDescription = async (text: string, targetLanguage: string) => {
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Translate the following event description into ${targetLanguage}. Keep the tone professional yet inviting. Return only the translated text.\n\nText: ${text}`,
-    });
+    const result = response.text?.trim() || text;
+
+    // Deduct credits after successful generation (Free tier only)
+    if (userId && userTier === 'free' && result !== text) {
+      await deductUserCredits(userId, AI_CREDIT_COSTS.TRANSLATION);
+    }
+
+    return resul
+      await deductUserCredits(userId, AI_CREDIT_COSTS.TRANSLATION);
+    }
+
     return response.text?.trim() || text;
   } catch (error) {
     return text;
   }
-};
+/**
+ * Generate multi-platform ad campaign
+ * Free tier: costs credits | Paid tiers: included
+ */
+export const generateAdCampaign = async (name: string, description: string, objective: string, userId?: string, userTier?: string) => {
+  // Check if user needs to pay with credits (Free tier only)
+  if (userId && userTier === 'free') {
+    const hasCredits = await checkUserCredits(userId, AI_CREDIT_COSTS.AD_CAMPAIGN);
+    if (!hasCredits) {
+      throw new Error(`Insufficient credits. Need ${AI_CREDIT_COSTS.AD_CAMPAIGN} credits (${AI_CREDIT_COSTS.AD_CAMPAIGN * 0.5}€ value)`D_CAMPAIGN_GENERATION);
+    if (!hasCredits) {
+      throw new Error('Insufficient credits for ad campaign generation');
+    }
+  }
 
-export const generateAdCampaign = async (name: string, description: string, objective: string) => {
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
@@ -176,8 +343,16 @@ export const generateAdCampaign = async (name: string, description: string, obje
           }
         }
       }
-    });
-    return JSON.parse(response.text || '[]');
+    }); (Free tier only)
+    if (userId && userTier === 'free' && result.length > 0) {
+      await deductUserCredits(userId, AI_CREDIT_COSTS.AD_CAMPAIG
+
+    // Deduct credits after successful generation
+    if (userId) {
+      await deductUserCredits(userId, AI_CREDIT_COSTS.AD_CAMPAIGN_GENERATION);
+    }
+
+    return result;
   } catch (error) {
     return [];
   }

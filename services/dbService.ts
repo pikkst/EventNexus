@@ -712,6 +712,111 @@ export const updateUserCredits = async (userId: string, credits: number): Promis
   }
 };
 
+/**
+ * Add credits to a user's account
+ */
+export const addUserCredits = async (userId: string, amount: number): Promise<boolean> => {
+  try {
+    // Get current credits
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
+      .select('credits')
+      .eq('id', userId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    
+    const newCredits = (user?.credits || 0) + amount;
+    
+    const { error } = await supabase
+      .from('users')
+      .update({ credits: newCredits })
+      .eq('id', userId);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error adding user credits:', error);
+    return false;
+  }
+};
+
+/**
+ * Deduct credits from a user's account
+ * Returns true if successful, false if insufficient credits or error
+ */
+export const deductUserCredits = async (userId: string, amount: number): Promise<boolean> => {
+  try {
+    // Get current credits
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
+      .select('credits')
+      .eq('id', userId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    
+    const currentCredits = user?.credits || 0;
+    
+    // Check if user has enough credits
+    if (currentCredits < amount) {
+      console.error('Insufficient credits:', { currentCredits, required: amount });
+      return false;
+    }
+    
+    const newCredits = currentCredits - amount;
+    
+    const { error } = await supabase
+      .from('users')
+      .update({ credits: newCredits })
+      .eq('id', userId);
+    
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error deducting user credits:', error);
+    return false;
+  }
+};
+
+/**
+ * Check if user has sufficient credits
+ */
+export const checkUserCredits = async (userId: string, requiredAmount: number): Promise<boolean> => {
+  try {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('credits')
+      .eq('id', userId)
+      .single();
+    
+    if (error) throw error;
+    return (user?.credits || 0) >= requiredAmount;
+  } catch (error) {
+    console.error('Error checking user credits:', error);
+    return false;
+  }
+};
+
+/**
+ * Get user's current credit balance
+ */
+export const getUserCredits = async (userId: string): Promise<number> => {
+  try {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('credits')
+      .eq('id', userId)
+      .single();
+    
+    if (error) throw error;
+    return user?.credits || 0;
+  } catch (error) {
+    console.error('Error getting user credits:', error);
+    return 0;
+  }
+};
+
 export const updateUserSubscription = async (userId: string, tier: string): Promise<boolean> => {
   try {
     const { error } = await supabase

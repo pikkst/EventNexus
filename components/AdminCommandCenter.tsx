@@ -763,9 +763,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {campaigns.map(campaign => (
                     <div key={campaign.id} className="bg-slate-900 border border-slate-800 rounded-[40px] overflow-hidden hover:border-slate-700 transition-all shadow-2xl group">
-                      {campaign.imageUrl && (
+                      {(campaign.imageUrl || campaign.image_url) && (
                         <div className="h-48 overflow-hidden bg-slate-950">
-                          <img src={campaign.imageUrl} alt={campaign.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <img src={campaign.imageUrl || campaign.image_url} alt={campaign.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         </div>
                       )}
                       <div className="p-6 space-y-4">
@@ -1355,11 +1355,103 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Image URL</label>
                            <input 
                              type="text"
-                             value={editingCampaign.imageUrl || ''}
-                             onChange={(e) => setEditingCampaign({ ...editingCampaign, imageUrl: e.target.value })}
+                             value={editingCampaign.imageUrl || editingCampaign.image_url || ''}
+                             onChange={(e) => setEditingCampaign({ ...editingCampaign, imageUrl: e.target.value, image_url: e.target.value })}
                              className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3.5 text-sm text-indigo-400 font-mono outline-none focus:border-indigo-500 transition-all"
                              placeholder="https://..."
                            />
+                        </div>
+                     </div>
+
+                     {/* Incentive Configuration */}
+                     <div className="bg-orange-500/5 border border-orange-500/20 rounded-[32px] p-6 space-y-4">
+                        <div className="flex items-center gap-3">
+                           <Gift className="text-orange-400" size={20} />
+                           <h3 className="text-lg font-black text-white">Incentive Configuration</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Type</label>
+                              <select 
+                                value={editingCampaign.incentive?.type || 'credits'}
+                                onChange={(e) => setEditingCampaign({ 
+                                  ...editingCampaign, 
+                                  incentive: { 
+                                    ...editingCampaign.incentive, 
+                                    type: e.target.value as any,
+                                    value: editingCampaign.incentive?.value || 0,
+                                    limit: editingCampaign.incentive?.limit || 100,
+                                    redeemed: editingCampaign.incentive?.redeemed || 0
+                                  } 
+                                })}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white outline-none"
+                              >
+                                 <option value="credits">Credits</option>
+                                 <option value="pro_discount">Pro Discount</option>
+                                 <option value="none">None</option>
+                              </select>
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                 {editingCampaign.incentive?.type === 'pro_discount' ? 'Discount %' : 'Credits'}
+                              </label>
+                              <input 
+                                type="number"
+                                value={editingCampaign.incentive?.value || 0}
+                                onChange={(e) => setEditingCampaign({ 
+                                  ...editingCampaign, 
+                                  incentive: { ...editingCampaign.incentive!, value: parseInt(e.target.value) || 0 } 
+                                })}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500 transition-all"
+                                min="0"
+                              />
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Limit</label>
+                              <input 
+                                type="number"
+                                value={editingCampaign.incentive?.limit || 100}
+                                onChange={(e) => setEditingCampaign({ 
+                                  ...editingCampaign, 
+                                  incentive: { ...editingCampaign.incentive!, limit: parseInt(e.target.value) || 0 } 
+                                })}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500 transition-all"
+                                min="0"
+                              />
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Redeemed</label>
+                              <input 
+                                type="number"
+                                value={editingCampaign.incentive?.redeemed || 0}
+                                onChange={(e) => setEditingCampaign({ 
+                                  ...editingCampaign, 
+                                  incentive: { ...editingCampaign.incentive!, redeemed: parseInt(e.target.value) || 0 } 
+                                })}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-orange-400 outline-none focus:border-orange-500 transition-all"
+                                min="0"
+                                max={editingCampaign.incentive?.limit || 100}
+                              />
+                           </div>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-slate-950 rounded-xl">
+                           <div>
+                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Spots Remaining</p>
+                              <p className="text-2xl font-black text-orange-400">
+                                 {(editingCampaign.incentive?.limit || 0) - (editingCampaign.incentive?.redeemed || 0)}
+                              </p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Reward Value</p>
+                              <p className="text-2xl font-black text-emerald-400">
+                                 {editingCampaign.incentive?.type === 'credits' 
+                                   ? `€${((editingCampaign.incentive?.value || 0) * 0.5).toFixed(2)}`
+                                   : editingCampaign.incentive?.type === 'pro_discount'
+                                   ? `${editingCampaign.incentive?.value || 0}%`
+                                   : 'N/A'
+                                 }
+                              </p>
+                           </div>
                         </div>
                      </div>
 

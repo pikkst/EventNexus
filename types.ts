@@ -31,15 +31,16 @@ export interface PlatformCampaign {
   id: string;
   title: string;
   copy: string;
-  status: 'Active' | 'Draft' | 'Archived' | 'Scheduled';
-  placement: 'landing_page' | 'social_flyer' | 'both';
-  target: 'attendees' | 'organizers';
+  status: 'Active' | 'Draft' | 'Paused' | 'Completed';
+  placement: 'landing_page' | 'dashboard' | 'both';
+  target: 'attendees' | 'organizers' | 'all';
   incentive: {
     type: 'credits' | 'pro_discount' | 'none';
     value: number; // e.g., 30 credits or 30 percent
     limit: number; // e.g., first 100 users
     redeemed: number;
     durationMonths?: number; // for pro discounts
+    description?: string;
   };
   metrics: {
     views: number;
@@ -47,8 +48,10 @@ export interface PlatformCampaign {
     guestSignups: number;
     proConversions: number;
     revenueValue: number;
+    conversions?: number; // for backwards compatibility
+    revenueGenerated?: number; // for backwards compatibility
   };
-  tracking: {
+  tracking?: {
     sources: {
       facebook: number;
       x: number;
@@ -56,9 +59,13 @@ export interface PlatformCampaign {
       direct: number;
     };
   };
-  imageUrl: string;
+  imageUrl?: string;
+  image_url?: string; // database column name
   cta: string;
-  trackingCode: string;
+  trackingCode?: string;
+  tracking_code?: string; // database column name
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface SocialLinks {
