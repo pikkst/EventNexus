@@ -163,8 +163,17 @@ serve(async (req: Request) => {
         throw new Error('Event organizer has not set up payment receiving. Please contact the organizer.');
       }
 
-      if (!event.organizer.stripe_connect_charges_enabled) {
+      // In test mode, allow charges even if charges_enabled is false (pending requirements don't block test payments)
+      // In live mode, strictly check charges_enabled
+      const isTestMode = event.organizer.stripe_connect_account_id.startsWith('acct_') && 
+                         Deno.env.get('STRIPE_SECRET_KEY')?.includes('_test_');
+      
+      if (!event.organizer.stripe_connect_charges_enabled && !isTestMode) {
         throw new Error('Event organizer payment account is not fully activated yet.');
+      }
+      
+      if (!event.organizer.stripe_connect_charges_enabled && isTestMode) {
+        console.log('⚠️ Test mode: Allowing checkout despite pending account requirements');
       }
 
       // Calculate amounts for Stripe Connect transfer
