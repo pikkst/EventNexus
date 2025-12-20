@@ -18,34 +18,52 @@ This guide explains how to configure email notifications for critical brand moni
 ### 2. Add Domain
 1. Go to **Domains** → **Add Domain**
 2. Enter: `mail.eventnexus.eu` (subdomain recommended by Resend)
-3. Add DNS records to domain provider:
+3. Resend will show you the exact DNS records needed. Add them to your DNS provider:
 
-   **TXT Record (Verification):**
+   **DKIM Record (Domain Verification):**
    ```
    Type: TXT
-   Host: mail.eventnexus.eu  (or just "mail" depending on your DNS provider)
-   Value: resend=<verification-code>
+   Host: resend._domainkey.mail.eventnexus.eu
+   Value: p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDfRgqJv0yu4uaBTW8BnSpHIDGn5hmUWsAeNid+12+HjRtCiGvaEL7KegaAg7bWjC9oPV9INfywAx01RbRv+DC4+s9iiMAFn8T8WYR8ZvNX+p7cOnlreLa7aiJ5l0PIj7mSKqjaKX83fYrL3elQ5oa33iA+DQFiHBPKjqfv4o0R3wIDAQAB
+   TTL: Auto
    ```
    
-   **MX Record (Email Routing):**
+   **MX Record (Email Sending):**
    ```
    Type: MX
-   Host: mail.eventnexus.eu  (or just "mail" depending on your DNS provider)
+   Host: send.mail.eventnexus.eu
    Value: feedback-smtp.eu-west-1.amazonses.com
    Priority: 10
+   TTL: Auto
    ```
 
-   **DNS Provider Format Examples:**
-   - **If your DNS manager shows:** `Host: .eventnexus.eu.` or full domain format
-     - Use: `mail.eventnexus.eu` or `mail.eventnexus.eu.` (with trailing dot)
-   - **If your DNS manager uses:** relative names
-     - Use: `mail` (it will automatically append .eventnexus.eu)
-   - **Common providers:**
-     - Cloudflare: Use `mail` (relative)
-     - Route53/AWS: Use `mail.eventnexus.eu.` (FQDN with trailing dot)
-     - Most Estonian providers: Use `mail.eventnexus.eu` (full name without trailing dot)
+   **SPF Record (Email Authentication):**
+   ```
+   Type: TXT
+   Host: send.mail.eventnexus.eu
+   Value: v=spf1 include:amazonses.com ~all
+   TTL: Auto
+   ```
+
+   **MX Record (Email Receiving - Optional):**
+   ```
+   Type: MX
+   Host: mail.eventnexus.eu
+   Value: inbound-smtp.eu-west-1.amazonaws.com
+   Priority: 10
+   TTL: Auto
+   ```
+
+   **DMARC Record (Optional but Recommended):**
+   ```
+   Type: TXT
+   Host: _dmarc.eventnexus.eu
+   Value: v=DMARC1; p=none;
+   TTL: Auto
+   ```
 
 4. Wait for verification (5-15 minutes)
+5. Check Resend Dashboard → Domains → Status should show **Verified** ✅
 
 ### 3. Generate API Key
 1. Go to **API Keys** → **Create API Key**
@@ -355,42 +373,58 @@ jobs:
 
 ## Email Deliverability Best Practices
 
+### DNS Records Summary
+
+All the DNS records you need are shown in your Resend Dashboard. Here's what each one does:
+
+1. **DKIM** (`resend._domainkey.mail.eventnexus.eu`) - Verifies your domain and signs emails
+2. **SPF** (`send.mail.eventnexus.eu`) - Authorizes Resend to send emails on your behalf
+3. **MX for Sending** (`send.mail.eventnexus.eu`) - Routes outbound emails through Amazon SES
+4. **MX for Receiving** (`mail.eventnexus.eu`) - Optional, only if you want to receive emails
+5. **DMARC** (`_dmarc.eventnexus.eu`) - Optional, sets email authentication policy
+
+**Important:** Copy the exact values from your Resend Dashboard, as they contain unique keys.
+
 ### 1. SPF Record
-Add to DNS:
+Already included above as `send.mail.eventnexus.eu` TXT record.
 
 **If your DNS provider uses full domain format (like `.eventnexus.eu.`):**
 ```
 Type: TXT
-Host: mail.eventnexus.eu
+Host: send.mail.eventnexus.eu
 Value: v=spf1 include:amazonses.com ~all
 ```
 
 **If your DNS provider uses relative names:**
 ```
 Type: TXT
-Name: mail
+Name: send.mail
 Value: v=spf1 include:amazonses.com ~all
 ```
 
 ### 2. DKIM (Resend manages automatically)
+Already included above as `resend._domainkey.mail.eventnexus.eu` TXT record.
+
 Verify in Resend Dashboard → Domains → DKIM Status: ✅
 
 ### 3. DMARC Record
-Add to DNS:
+Already included above as `_dmarc.eventnexus.eu` TXT record (optional but recommended).
 
 **If your DNS provider uses full domain format:**
 ```
 Type: TXT
-Host: _dmarc.mail.eventnexus.eu
-Value: v=DMARC1; p=none; rua=mailto:huntersest@gmail.com
+Host: _dmarc.eventnexus.eu
+Value: v=DMARC1; p=none;
 ```
 
 **If your DNS provider uses relative names:**
 ```
 Type: TXT
-Name: _dmarc.mail
-Value: v=DMARC1; p=none; rua=mailto:huntersest@gmail.com
+Name: _dmarc
+Value: v=DMARC1; p=none;
 ```
+
+**Note:** Resend suggests `p=none` initially. After monitoring, you can change to `p=quarantine` or `p=reject` for stricter policy.
 
 ### 4. PTR Record (Reverse DNS)
 Managed by Resend/AWS SES - no action needed
