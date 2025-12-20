@@ -26,10 +26,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
     setError('');
     
     // Add timeout protection
+    let timeoutOccurred = false;
     const timeoutId = setTimeout(() => {
+      timeoutOccurred = true;
       setIsLoading(false);
       setError('Connection timeout. Please check your internet connection and try again.');
-    }, 15000); // 15 second timeout
+    }, 12000); // 12 second timeout
     
     try {
       console.log('Starting authentication...', mode);
@@ -61,15 +63,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
         console.log(`📧 Profile fetch completed in ${profileDuration}ms`);
         console.log('📧 User profile result:', userData ? `✅ ${userData.email}` : '❌ null');
         
+        if (timeoutOccurred) {
+          console.log('⏱️ Login attempt timed out, skipping');
+          return;
+        }
+        
         if (userData) {
           console.log('✅ Login successful, setting user state');
           clearTimeout(timeoutId);
+          setIsLoading(false);
           onLogin(userData);
           onClose();
           setEmail('');
           setPassword('');
         } else {
           clearTimeout(timeoutId);
+          setIsLoading(false);
           setError('User profile not found. Please contact support.');
         }
       } else {
