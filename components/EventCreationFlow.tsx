@@ -15,12 +15,24 @@ import {
   Zap,
   Rocket,
   ShieldAlert,
-  AlertTriangle
+  AlertTriangle,
+  Search
 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { generateMarketingTagline, translateDescription } from '../services/geminiService';
 import { createEvent, getEvents } from '../services/dbService';
 import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
 import { User, EventNexusEvent } from '../types';
+
+// Fix Leaflet default marker icon
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
 
 interface EventCreationFlowProps {
   user: User;
@@ -32,6 +44,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [userEvents, setUserEvents] = useState<EventNexusEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -40,8 +53,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
     date: '',
     time: '',
     location: '',
-    locationLat: 0,
-    locationLng: 0,
+    locationLat: 58.8934,
+    locationLng: 25.9659,
     locationAddress: '',
     locationCity: '',
     visibility: 'public',
@@ -50,6 +63,39 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
   });
 
   const navigate = useNavigate();
+
+  // Geocode address using Nominatim (OpenStreetMap)
+  const geocodeAddress = async (address: string) => {
+    if (!address || address.trim().length < 3) return;
+    
+    setIsGeocoding(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=ee&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'EventNexus/1.0'
+          }
+        }
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const result = data[0];
+        setFormData(prev => ({
+          ...prev,
+          locationLat: parseFloat(result.lat),
+          locationLng: parseFloat(result.lon),
+          locationAddress: result.display_name,
+          locationCity: result.address?.city || result.address?.town || result.address?.village || 'Estonia'
+        }));
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
 
   // Load user's events to check limits
   useEffect(() => {
@@ -340,19 +386,68 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-slate-400 mb-1.5">Venue Location</label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
                   <input 
                     type="text" 
-                    placeholder="Search address or venue name" 
+                    placeholder="Search address or venue name (e.g., Põltsamaa lossi 61)" 
                     value={formData.location}
                     onChange={(e) => setFormData({...formData, location: e.target.value})}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        geocodeAddress(formData.location);
+                      }
+                    }}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-24 py-3 focus:border-indigo-500 outline-none" 
                   />
+                  <button
+                    type="button"
+                    onClick={() => geocodeAddress(formData.location)}
+                    disabled={isGeocoding}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                    {isGeocoding ? 'Searching...' : 'Search'}
+                  </button>
                 </div>
+                {formData.locationAddress && (
+                  <p className="text-xs text-slate-500 mt-1.5 pl-1">
+                    📍 {formData.locationAddress}
+                  </p>
+                )}
               </div>
             </div>
-            <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 h-40 flex items-center justify-center text-slate-600">
-              <p className="text-sm font-medium flex items-center gap-2 italic"><MapPin className="w-4 h-4" /> Interactive Map Preview Area</p>
+            
+            {/* Interactive Map */}
+            <div className="relative rounded-2xl border border-slate-800 overflow-hidden h-64">
+              <MapContainer 
+                center={[formData.locationLat, formData.locationLng]} 
+                zoom={formData.locationAddress ? 15 : 7}
+                style={{ height: '100%', width: '100%' }}
+                key={`${formData.locationLat}-${formData.locationLng}`}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {formData.locationAddress && (
+                  <Marker position={[formData.locationLat, formData.locationLng]}>
+                    <Popup>
+                      <div className="text-sm">
+                        <p className="font-semibold">{formData.name || 'Event Location'}</p>
+                        <p className="text-xs text-slate-600 mt-1">{formData.locationCity}</p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                )}
+              </MapContainer>
+              {!formData.locationAddress && (
+                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+                  <p className="text-sm font-medium flex items-center gap-2 text-slate-400">
+                    <MapPin className="w-4 h-4" /> Enter address and click Search to preview location
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         );
