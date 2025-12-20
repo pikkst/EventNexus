@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Search, Globe, AlertTriangle, CheckCircle, XCircle, Eye, TrendingUp, Activity, Code, ExternalLink, RefreshCw } from 'lucide-react';
+import { Shield, Search, Globe, AlertTriangle, CheckCircle, XCircle, Eye, TrendingUp, Activity, Code, ExternalLink, RefreshCw, FileText, Download, X } from 'lucide-react';
 import type { BrandMonitoringAlert, MonitoringStats } from '@/types';
 import * as brandMonitoringService from '@/services/brandMonitoringService';
+import { generateBrandProtectionReport } from '@/services/geminiService';
 
 interface BrandProtectionMonitorProps {
   user: any;
@@ -14,6 +15,9 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const [loading, setLoading] = useState(false);
   const [lastScan, setLastScan] = useState<Date | null>(null);
   const [domainInfo, setDomainInfo] = useState<any>(null);
+  const [showReport, setShowReport] = useState(false);
+  const [aiReport, setAiReport] = useState<any>(null);
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   useEffect(() => {
     loadMonitoringData();
@@ -121,6 +125,46 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
     }
   };
 
+  const generateReport = async () => {
+    setGeneratingReport(true);
+    try {
+      const report = await generateBrandProtectionReport(alerts, stats);
+      setAiReport(report);
+      setShowReport(true);
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  const downloadReport = () => {
+    if (!aiReport?.report) return;
+    
+    const content = `
+EventNexus Brand Protection Report
+Generated: ${new Date().toLocaleString()}
+Alerts Analyzed: ${aiReport.alertsAnalyzed}
+Critical: ${aiReport.criticalCount} | Warnings: ${aiReport.warningCount}
+
+${aiReport.report}
+
+---
+Legal Framework References:
+- LICENSE.md: /workspaces/EventNexus/LICENSE.md
+- LEGAL_PROTECTION.md: /workspaces/EventNexus/docs/LEGAL_PROTECTION.md
+- SECURITY.md: /workspaces/EventNexus/SECURITY.md
+`;
+
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `brand-protection-report-${new Date().toISOString().split('T')[0]}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical': return 'text-red-500 bg-red-500/10 border-red-500/20';
@@ -147,14 +191,24 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
           <h3 className="text-xl font-semibold text-white mb-2">Comprehensive Security Scan</h3>
           <p className="text-sm text-gray-400">Run all monitoring checks (Code, Domain, Search, Brand)</p>
         </div>
-        <button
-          onClick={() => runScan('comprehensive')}
-          disabled={loading}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-lg transition-all font-semibold"
-        >
-          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          {loading ? 'Scanning...' : 'Run Full Scan'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={generateReport}
+            disabled={generatingReport || alerts.length === 0}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-lg transition-all font-semibold"
+          >
+            <FileText className={`w-5 h-5 ${generatingReport ? 'animate-pulse' : ''}`} />
+            {generatingReport ? 'Generating...' : 'AI Report'}
+          </button>
+          <button
+            onClick={() => runScan('comprehensive')}
+            disabled={loading}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-lg transition-all font-semibold"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Scanning...' : 'Run Full Scan'}
+          </button>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -758,6 +812,77 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
           </div>
         </div>
       </div>
+
+      {/* AI Report Modal */}
+      {showReport && aiReport && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-purple-500/30 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700 bg-gradient-to-r from-purple-900/50 to-indigo-900/50">
+              <div className="flex items-center gap-3">
+                <FileText className="w-6 h-6 text-purple-400" />
+                <div>
+                  <h2 className="text-xl font-bold text-white">AI Brand Protection Report</h2>
+                  <p className="text-sm text-gray-400">
+                    Generated {new Date(aiReport.timestamp).toLocaleString()} • {aiReport.alertsAnalyzed} alerts analyzed
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={downloadReport}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  title="Download Report"
+                >
+                  <Download className="w-5 h-5 text-gray-400 hover:text-white" />
+                </button>
+                <button
+                  onClick={() => setShowReport(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-400 hover:text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Alert Stats */}
+            <div className="flex items-center gap-6 px-6 py-4 bg-gray-800/50 border-b border-gray-700">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <span className="text-sm text-gray-300">{aiReport.criticalCount} Critical</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <span className="text-sm text-gray-300">{aiReport.warningCount} Warnings</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-purple-400" />
+                <span className="text-sm text-gray-300">Legal Framework Applied</span>
+              </div>
+            </div>
+
+            {/* Report Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+              <div className="prose prose-invert max-w-none">
+                <div className="whitespace-pre-wrap text-gray-300 leading-relaxed">
+                  {aiReport.report}
+                </div>
+              </div>
+
+              {/* Legal References */}
+              <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                <h3 className="text-sm font-semibold text-purple-400 mb-2">Legal Framework References</h3>
+                <div className="text-xs text-gray-400 space-y-1">
+                  <p>• <strong>LICENSE.md</strong> - Proprietary Software License Agreement</p>
+                  <p>• <strong>LEGAL_PROTECTION.md</strong> - Comprehensive Legal Framework</p>
+                  <p>• <strong>SECURITY.md</strong> - Security Policy & Disclosure</p>
+                  <p className="mt-2 text-gray-500">Framework includes: Copyright (Berne Convention), Trade Secrets (EU 2016/943), Trademark Protection, Domain Rights (ICANN UDRP)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
