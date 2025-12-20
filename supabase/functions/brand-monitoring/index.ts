@@ -165,6 +165,120 @@ async function scanGitHubCode() {
     console.error('GitHub scan error:', error);
   }
 
+  // Add Package Registry Monitoring (npm, PyPI)
+  try {
+    // Scan npm registry
+    const npmResponse = await fetch(
+      'https://registry.npmjs.org/-/v1/search?text=eventnexus&size=20'
+    );
+    
+    if (npmResponse.ok) {
+      const npmData = await npmResponse.json();
+      for (const pkg of npmData.objects || []) {
+        // Skip if it's our official package
+        if (pkg.package.name === 'eventnexus' || pkg.package.publisher?.username === 'pikkst') continue;
+        
+        alerts.push({
+          type: 'code',
+          severity: 'warning',
+          title: `Suspicious npm package: ${pkg.package.name}`,
+          description: `Package "${pkg.package.name}" may be typosquatting. Description: ${pkg.package.description?.substring(0, 150) || 'No description'}`,
+          url: pkg.package.links?.npm || `https://www.npmjs.com/package/${pkg.package.name}`,
+          timestamp: new Date().toISOString(),
+          status: 'open',
+          detected_by: 'npm_registry',
+          metadata: { 
+            package: pkg.package.name, 
+            version: pkg.package.version,
+            registry: 'npm'
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error('npm registry scan error:', error);
+  }
+
+  // Scan PyPI registry
+  try {
+    const pypiSearch = await fetch(
+      'https://pypi.org/search/?q=eventnexus&o='
+    );
+    // PyPI search returns HTML, so we'll check specific package
+    const pypiPackages = ['eventnexus', 'event-nexus', 'eventnexuss'];
+    
+    for (const pkgName of pypiPackages) {
+      try {
+        const pkgResponse = await fetch(`https://pypi.org/pypi/${pkgName}/json`);
+        if (pkgResponse.ok) {
+          const pkgData = await pkgResponse.json();
+          alerts.push({
+            type: 'code',
+            severity: 'warning',
+            title: `Suspicious PyPI package: ${pkgName}`,
+            description: `Python package "${pkgName}" found on PyPI. ${pkgData.info.summary || 'No summary'}`,
+            url: `https://pypi.org/project/${pkgName}/`,
+            timestamp: new Date().toISOString(),
+            status: 'open',
+            detected_by: 'pypi_registry',
+            metadata: { 
+              package: pkgName,
+              version: pkgData.info.version,
+              registry: 'pypi'
+            }
+          });
+        }
+      } catch (pkgError) {
+        // Package doesn't exist, which is good
+        continue;
+      }
+    }
+  } catch (error) {
+    console.error('PyPI registry scan error:', error);
+  }
+
+  // Certificate Transparency Logs - Find SSL certificates
+  try {
+    const ctResponse = await fetch(
+      'https://crt.sh/?q=%25eventnexus%25&output=json',
+      { signal: AbortSignal.timeout(10000) }
+    );
+    
+    if (ctResponse.ok) {
+      const ctData = await ctResponse.json();
+      const seenDomains = new Set();
+      
+      for (const cert of ctData.slice(0, 10)) {
+        const domain = cert.name_value.toLowerCase();
+        
+        // Skip our own domain and duplicates
+        if (domain === 'eventnexus.eu' || domain === '*.eventnexus.eu' || seenDomains.has(domain)) {
+          continue;
+        }
+        
+        seenDomains.add(domain);
+        
+        alerts.push({
+          type: 'domain',
+          severity: 'warning',
+          title: `SSL certificate issued for: ${domain}`,
+          description: `Certificate Transparency log shows SSL cert for "${domain}". Issuer: ${cert.issuer_name}`,
+          url: `https://crt.sh/?q=${encodeURIComponent(domain)}`,
+          timestamp: new Date().toISOString(),
+          status: 'open',
+          detected_by: 'cert_transparency',
+          metadata: { 
+            domain,
+            issuer: cert.issuer_name,
+            serial: cert.serial_number
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Certificate Transparency scan error:', error);
+  }
+
   return alerts;
 }
 
@@ -264,6 +378,53 @@ async function scanDomains() {
         console.error(`Error checking domain ${domain}:`, domainError);
       }
     }
+
+    // URLScan.io security check (free, no API key needed)
+    try {
+      const urlscanResponse = await fetch(
+        'https://urlscan.io/api/v1/search/?q=domain:eventnexus',
+        {
+          headers: { 'User-Agent': 'EventNexus-Monitor' },
+          signal: AbortSignal.timeout(10000)
+        }
+      );
+
+      if (urlscanResponse.ok) {
+        const urlscanData = await urlscanResponse.json();
+        
+        for (const result of (urlscanData.results || []).slice(0, 5)) {
+          const scanDomain = new URL(result.page.url).hostname;
+          
+          // Skip our own domain
+          if (scanDomain === 'eventnexus.eu') continue;
+          
+          const verdictScore = result.verdicts?.overall?.score || 0;
+          const isMalicious = result.verdicts?.overall?.malicious || false;
+          
+          if (isMalicious || verdictScore > 50) {
+            alerts.push({
+              type: 'domain',
+              severity: 'critical',
+              title: `Malicious domain detected: ${scanDomain}`,
+              description: `URLScan.io flagged "${scanDomain}" as potentially malicious (score: ${verdictScore})`,
+              url: result.result,
+              timestamp: new Date().toISOString(),
+              status: 'open',
+              detected_by: 'urlscan_security',
+              metadata: {
+                domain: scanDomain,
+                score: verdictScore,
+                malicious: isMalicious,
+                scan_id: result._id
+              }
+            });
+          }
+        }
+      }
+    } catch (urlscanError) {
+      console.error('URLScan.io error:', urlscanError);
+    }
+
   } catch (error) {
     console.error('WHOIS scan error:', error);
   }
