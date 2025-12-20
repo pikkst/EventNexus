@@ -16,7 +16,10 @@ const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
     organizerId: dbEvent.organizer_id,
     imageUrl: dbEvent.image || '',
     attendeesCount: dbEvent.attendees_count || 0,
-    maxAttendees: dbEvent.max_capacity || 0
+    maxAttendees: dbEvent.max_capacity || 0,
+    // Premium tier fields
+    isFeatured: dbEvent.is_featured || false,
+    customBranding: dbEvent.custom_branding || undefined
   };
 };
 
@@ -70,7 +73,7 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
   const dateTimeString = `${event.date}T${event.time}:00`;
   
   // Transform to database schema
-  const dbEvent = {
+  const dbEvent: any = {
     name: event.name,
     description: event.description,
     category: event.category,
@@ -84,6 +87,14 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
     max_capacity: event.maxAttendees || 100,
     status: 'active'
   };
+
+  // Add Premium tier fields if present
+  if (event.isFeatured !== undefined) {
+    dbEvent.is_featured = event.isFeatured;
+  }
+  if (event.customBranding) {
+    dbEvent.custom_branding = event.customBranding;
+  }
   
   const { data, error } = await supabase
     .from('events')
