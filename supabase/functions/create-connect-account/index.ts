@@ -7,6 +7,14 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const PLATFORM_URL = Deno.env.get('PLATFORM_URL') || 'http://localhost:3000';
 
+// Validate required environment variables
+if (!STRIPE_SECRET_KEY) {
+  console.error('STRIPE_SECRET_KEY is not set');
+}
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('Supabase credentials are not set');
+}
+
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),

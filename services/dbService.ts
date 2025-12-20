@@ -108,16 +108,17 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
   // Notify followers of the organizer
   try {
     // Get all users who follow this organizer
+    // Use JSONB contains operator (@>) since followed_organizers is JSONB type
     const { data: followers, error: followersError } = await supabase
       .from('users')
-      .select('id, display_name')
-      .contains('followed_organizers', [event.organizerId]);
+      .select('id, name')
+      .filter('followed_organizers', 'cs', `["${event.organizerId}"]`);
     
     if (!followersError && followers && followers.length > 0) {
       // Get organizer info for notification
       const { data: organizer } = await supabase
         .from('users')
-        .select('display_name')
+        .select('name')
         .eq('id', event.organizerId)
         .single();
       
@@ -125,9 +126,9 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
       const notifications = followers.map(follower => ({
         user_id: follower.id,
         title: 'New Event from Organizer You Follow',
-        message: `${organizer?.display_name || 'An organizer'} just created "${event.name}". Check it out!`,
+        message: `${organizer?.name || 'An organizer'} just created "${event.name}". Check it out!`,
         type: 'new_event_from_followed',
-        sender_name: organizer?.display_name || 'EventNexus',
+        sender_name: organizer?.name || 'EventNexus',
         event_id: data.id,
         is_read: false,
         created_at: new Date().toISOString()
