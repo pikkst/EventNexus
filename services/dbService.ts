@@ -535,8 +535,19 @@ export const getCurrentUser = async () => {
 export const getUserTickets = async (userId: string) => {
   const { data, error } = await supabase
     .from('tickets')
-    .select('*')
-    .eq('user_id', userId);
+    .select(`
+      *,
+      event:events!tickets_event_id_fkey(
+        id,
+        name,
+        date,
+        time,
+        location,
+        imageUrl:image_url
+      )
+    `)
+    .eq('user_id', userId)
+    .order('purchase_date', { ascending: false });
   
   if (error) {
     console.error('Error fetching tickets:', error);
@@ -546,7 +557,7 @@ export const getUserTickets = async (userId: string) => {
   return data || [];
 };
 
-export const validateTicket = async (ticketId: string) => {
+export const validateTicket = async (qrCodeData: string) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -554,7 +565,7 @@ export const validateTicket = async (ticketId: string) => {
     }
 
     const { data, error } = await supabase.functions.invoke('validate-ticket', {
-      body: { ticketId },
+      body: { qrCode: qrCodeData },
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
