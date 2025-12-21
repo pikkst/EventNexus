@@ -1072,11 +1072,21 @@ export const claimCampaignIncentive = async (userId: string, campaignId: string)
 // System Configuration
 export const updateSystemConfig = async (key: string, value: any): Promise<boolean> => {
   try {
+    // Convert value to JSONB format (wrap strings in quotes for JSONB)
+    const jsonbValue = typeof value === 'string' ? JSON.stringify(value) : value;
+    
     const { error } = await supabase
       .from('system_config')
-      .upsert({ key, value, updated_at: new Date().toISOString() });
+      .upsert({ 
+        key, 
+        value: jsonbValue, 
+        updated_at: new Date().toISOString() 
+      });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating system config:', error);
+      throw error;
+    }
     return true;
   } catch (error) {
     console.error('Error updating system config:', error);
