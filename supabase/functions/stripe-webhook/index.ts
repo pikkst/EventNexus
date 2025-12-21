@@ -4,8 +4,30 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET') || '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const TICKET_HASH_SECRET = Deno.env.get('TICKET_HASH_SECRET') || 'eventnexus-production-secret-2025';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+/**
+ * Generate secure QR code data for ticket
+ * Format: ENX-{ticketId}-{hash}
+ */
+async function generateSecureQRCode(
+  ticketId: string,
+  eventId: string,
+  userId: string
+): Promise<string> {
+  const data = `${ticketId}-${eventId}-${userId}-${TICKET_HASH_SECRET}`;
+  
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  const hash = hashHex.substring(0, 12);
+  return `ENX-${ticketId}-${hash}`;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,18 +70,37 @@ serve(async (req: Request) => {
         
         // Handle ticket purchase
         if (metadata.type === 'ticket' && metadata.event_id) {
-          // Update ticket status from pending to paid
-          await supabase
+          // Get pending tickets for this session
+          const { data: pendingTickets } = await supabase
             .from('tickets')
-            .update({ 
-              payment_status: 'paid',
-              stripe_payment_id: session.payment_intent,
-              qr_code: crypto.randomUUID() // Generate final QR code
-            })
+            .select('id')
             .eq('stripe_session_id', session.id)
             .eq('payment_status', 'pending');
-          
-          console.log('Tickets updated for session:', session.id);
+
+          if (pendingTickets && pendingTickets.length > 0) {
+            // Generate secure QR codes for each ticket using Edge Function
+            for (const ticket of pendingTickets) {
+              // Generate secure hash-based QR code data
+              const qrData = await generateSecureQRCode(
+                ticket.id,
+                metadata.event_id,
+                metadata.user_id
+              );
+
+              // Update ticket with proper QR code and payment status
+              await supabase
+                .from('tickets')
+                .update({ 
+                  payment_status: 'paid',
+                  stripe_payment_id: session.payment_intent,
+                  qr_code: qrData,
+                  status: 'valid'
+                })
+                .eq('id', ticket.id);
+            }
+            
+            console.log(`Generated secure QR codes for ${pendingTickets.length} tickets (session: ${session.id})`);
+          }
           
           // NOTE: DO NOT transfer money immediately to organizer
           // Money is held until 2 days after event date for refund protection
@@ -69,9 +110,11 @@ serve(async (req: Request) => {
           // Send notification to customer
           await supabase.from('notifications').insert({
             user_id: metadata.user_id,
-            type: 'ticket',
-            message: `✓ Payment confirmed! Your tickets for the event are ready.`,
-            read: false,
+            type: 'update',
+            title: 'Tickets Ready!',
+            message: `✓ Payment confirmed! Your tickets are ready with QR codes. View them in your profile.`,
+            sender_name: 'EventNexus',
+            isRead: false,
           });
         }
         

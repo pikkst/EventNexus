@@ -37,6 +37,7 @@ import {
 import { User, EventNexusEvent } from '../types';
 import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount } from '../services/dbService';
 import { supabase } from '../services/supabase';
+import TicketCard from './TicketCard';
 
 interface UserProfileProps {
   user: User;
@@ -538,19 +539,20 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                 </div>
                 My Tickets
               </h3>
+              <span className="px-3 py-1.5 bg-indigo-600/20 text-indigo-400 rounded-full text-sm font-bold">
+                {userTickets.length}
+              </span>
             </div>
-            <div className="divide-y divide-slate-800">
+            <div className="p-6">
               {userTickets.length > 0 ? (
-                userTickets.map((ticket) => (
-                  <TicketItem
-                    key={ticket.id}
-                    name={ticket.event_name || 'Event'}
-                    date={new Date(ticket.created_at).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}
-                    location={ticket.event_location || 'Location TBA'}
-                    qrValue={ticket.id}
-                    customBranding={ticket.custom_branding}
-                  />
-                ))
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {userTickets.map((ticket) => (
+                    <TicketCard
+                      key={ticket.id}
+                      ticket={ticket}
+                    />
+                  ))}
+                </div>
               ) : (
                 <div className="p-12 text-center text-slate-500">
                   <TicketIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />

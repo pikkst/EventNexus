@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, X, CheckCircle, AlertCircle, RefreshCw, ShieldCheck, User, Info, Lock } from 'lucide-react';
+import { Camera, X, CheckCircle, AlertCircle, RefreshCw, ShieldCheck, User as UserIcon, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import QrScanner from 'qr-scanner';
 import { User as UserType } from '../types';
+import { validateTicket } from '../services/dbService';
 
 interface TicketScannerProps {
   user?: UserType;
@@ -12,58 +14,97 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<null | { success: boolean; message: string; data?: any }>(null);
   const [hasCamera, setHasCamera] = useState(true);
+  const [processing, setProcessing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const qrScannerRef = useRef<QrScanner | null>(null);
   const navigate = useNavigate();
 
   const isEnterprise = user?.subscription === 'enterprise';
   const brandColor = isEnterprise && user?.branding ? user.branding.primaryColor : '#6366f1';
 
   const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setScanning(true);
-        setHasCamera(true);
-      }
-    } catch (err) {
-      console.error("Camera access denied", err);
-      setHasCamera(false);
-    }
-  };
+    if (!videoRef.current) return;
 
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+    try {
+      const qrScanner = new QrScanner(
+        videoRef.current,
+        (result) => handleQRCodeScanned(result.data),
+        {
+          returnDetailedScanResult: true,
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          preferredCamera: 'environment',
+        }
+      );
+
+      qrScannerRef.current = qrScanner;
+      await qrScanner.start();
+      setScanning(true);
+      setHasCamera(true);
+    } catch (err) {
+      console.error('Camera access denied', err);
+      setHasCamera(false);
       setScanning(false);
     }
   };
 
-  const validateTicket = async (ticketId: string) => {
+  const stopCamera = () => {
+    if (qrScannerRef.current) {
+      qrScannerRef.current.stop();
+      qrScannerRef.current.destroy();
+      qrScannerRef.current = null;
+      setScanning(false);
+    }
+  };
+
+  const handleQRCodeScanned = async (qrData: string) => {
+    if (processing || !user) return;
+
+    setProcessing(true);
+    
     try {
-      // TODO: Implement real ticket validation via dbService
-      // For now, simulate validation with realistic logic
-      const isSuccess = Math.random() > 0.2;
-      setResult({
-        success: isSuccess,
-        message: isSuccess ? "Access Granted" : "Invalid Ticket",
-        data: isSuccess ? {
-          name: "Event Attendee",
-          type: "General Admission",
-          ref: ticketId || "TKT-" + Math.random().toString(36).substr(2, 6).toUpperCase()
-        } : null
-      });
+      // Validate ticket via backend
+      const validation = await validateTicket(qrData);
       
-      // Auto-clear result after 4 seconds
-      setTimeout(() => setResult(null), 4000);
+      if (validation && validation.valid) {
+        setResult({
+          success: true,
+          message: validation.message || 'Access Granted',
+          data: {
+            name: validation.ticket?.user?.name || 'Attendee',
+            email: validation.ticket?.user?.email || '',
+            type: validation.ticket?.ticket_type || 'General',
+            eventName: validation.ticket?.event?.name || 'Event',
+            ref: validation.ticket?.id || '',
+          }
+        });
+      } else {
+        setResult({
+          success: false,
+          message: validation?.message || validation?.error || 'Invalid Ticket',
+          data: validation?.ticket ? {
+            name: validation.ticket.user?.name || 'Unknown',
+            status: validation.ticket.status,
+          } : null
+        });
+      }
+      
+      // Auto-clear result after 5 seconds
+      setTimeout(() => {
+        setResult(null);
+        setProcessing(false);
+      }, 5000);
     } catch (error) {
       console.error('Ticket validation failed:', error);
       setResult({
         success: false,
-        message: "Validation Error",
+        message: 'Validation Error',
         data: null
       });
+      setTimeout(() => {
+        setResult(null);
+        setProcessing(false);
+      }, 3000);
     }
   };
 
@@ -71,6 +112,24 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
     startCamera();
     return () => stopCamera();
   }, []);
+
+  if (!user) {
+    return (
+      <div className="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center">
+        <div className="text-center p-8">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Authentication Required</h2>
+          <p className="text-slate-400 mb-6">Please sign in to use the ticket scanner</p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-slate-950 z-[100] flex flex-col">
@@ -152,13 +211,22 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
                 <div className="bg-slate-800/50 rounded-2xl p-4 space-y-3 border border-slate-700">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: brandColor }}>
-                      <User className="w-5 h-5" />
+                      <UserIcon className="w-5 h-5" />
                     </div>
-                    <div className="text-left">
+                    <div className="text-left flex-1">
                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Attendee</p>
                       <p className="font-bold text-white">{result.data.name}</p>
+                      {result.data.email && (
+                        <p className="text-xs text-slate-400">{result.data.email}</p>
+                      )}
                     </div>
                   </div>
+                  {result.data.type && (
+                    <div className="pt-2 border-t border-slate-700">
+                      <p className="text-xs text-slate-500">Ticket Type</p>
+                      <p className="text-sm font-bold text-white capitalize">{result.data.type}</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -183,11 +251,12 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
         </button>
         
         <button 
-          onClick={() => validateTicket('')}
+          onClick={() => !processing && handleQRCodeScanned('test')}
           className="relative group"
+          disabled={processing}
         >
           <div className="absolute inset-0 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: brandColor }}></div>
-          <div className="w-20 h-20 rounded-full flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 shadow-2xl relative text-white" style={{ backgroundColor: brandColor }}>
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 shadow-2xl relative text-white ${processing ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ backgroundColor: brandColor }}>
             <Camera className="w-10 h-10" />
           </div>
         </button>

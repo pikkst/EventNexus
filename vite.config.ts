@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
     const supabaseUrl = process.env.VITE_SUPABASE_URL || env.VITE_SUPABASE_URL;
     const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY;
+    const ticketHashSecret = process.env.TICKET_HASH_SECRET || env.TICKET_HASH_SECRET || env.VITE_TICKET_HASH_SECRET;
     
     return {
       base: '/',
@@ -25,6 +26,7 @@ export default defineConfig(({ mode }) => {
         'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
         'process.env.API_KEY': JSON.stringify(geminiApiKey),
         'process.env.GEMINI_API_KEY': JSON.stringify(geminiApiKey),
+        'process.env.TICKET_HASH_SECRET': JSON.stringify(ticketHashSecret),
       },
       resolve: {
         alias: {
