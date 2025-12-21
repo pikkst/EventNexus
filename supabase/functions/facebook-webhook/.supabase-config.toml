@@ -1,0 +1,2 @@
+# Facebook Webhook Configuration
+verify_jwt = false
