@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './supabase';
+import { generateAdImage } from './geminiService';
 
 export interface SocialMediaPost {
   platform: 'facebook' | 'instagram' | 'twitter' | 'linkedin';
@@ -28,25 +29,98 @@ export interface CampaignSocialPosts {
     content: string;
     hashtags: string[];
     imageUrl?: string;
+    trackingUrl?: string;
+    trackingCode?: string;
   };
   instagram?: {
     caption: string;
     hashtags: string[];
     imageUrl?: string;
+    trackingUrl?: string;
+    trackingCode?: string;
   };
   twitter?: {
     tweet: string;
     hashtags: string[];
     imageUrl?: string;
+    trackingUrl?: string;
+    trackingCode?: string;
   };
   linkedin?: {
     content: string;
     imageUrl?: string;
+    trackingUrl?: string;
+    trackingCode?: string;
   };
 }
 
 /**
- * Generate platform-specific social media content from campaign data
+ * Generate platform-specific social media content with AI images and unique tracking codes
+ * Each platform gets optimized image size and unique tracking code to measure conversions
+ */
+export const generateSocialMediaContentWithImages = async (
+  campaignTitle: string,
+  campaignCopy: string,
+  campaignCta: string,
+  baseTrackingCode: string,
+  visualPrompt: string
+): Promise<CampaignSocialPosts> => {
+  const baseUrl = 'https://eventnexus.eu';
+  
+  // Generate platform-specific tracking codes
+  const facebookTrackingCode = `${baseTrackingCode}-FB`;
+  const instagramTrackingCode = `${baseTrackingCode}-IG`;
+  const twitterTrackingCode = `${baseTrackingCode}-TW`;
+  const linkedinTrackingCode = `${baseTrackingCode}-LI`;
+  
+  // Generate platform-specific tracking URLs
+  const facebookUrl = `${baseUrl}?utm_source=facebook&utm_campaign=${facebookTrackingCode}`;
+  const instagramUrl = `${baseUrl}?utm_source=instagram&utm_campaign=${instagramTrackingCode}`;
+  const twitterUrl = `${baseUrl}?utm_source=twitter&utm_campaign=${twitterTrackingCode}`;
+  const linkedinUrl = `${baseUrl}?utm_source=linkedin&utm_campaign=${linkedinTrackingCode}`;
+  
+  // Generate images for each platform in optimal size
+  console.log('🎨 Generating platform-specific images...');
+  const [facebookImage, instagramImage, twitterImage, linkedinImage] = await Promise.all([
+    generateAdImage(visualPrompt, '16:9', true), // Facebook - landscape
+    generateAdImage(visualPrompt, '1:1', true),  // Instagram - square
+    generateAdImage(visualPrompt, '16:9', true), // Twitter - landscape
+    generateAdImage(visualPrompt, '16:9', true)  // LinkedIn - landscape
+  ]);
+
+  return {
+    facebook: {
+      content: `🎉 ${campaignTitle}\n\n${campaignCopy}\n\n${campaignCta} 👉`,
+      hashtags: ['EventNexus', 'Events', 'Community'],
+      imageUrl: facebookImage || undefined,
+      trackingUrl: facebookUrl,
+      trackingCode: facebookTrackingCode
+    },
+    instagram: {
+      caption: `${campaignTitle}\n\n${campaignCopy}\n\n${campaignCta} - Link in bio! 💫`,
+      hashtags: ['EventNexus', 'Events', 'Community', 'EventPlanning', 'LocalEvents'],
+      imageUrl: instagramImage || undefined,
+      trackingUrl: instagramUrl,
+      trackingCode: instagramTrackingCode
+    },
+    twitter: {
+      tweet: `${campaignTitle}\n\n${campaignCopy}\n\n${campaignCta} 👇`,
+      hashtags: ['EventNexus', 'Events'],
+      imageUrl: twitterImage || undefined,
+      trackingUrl: twitterUrl,
+      trackingCode: twitterTrackingCode
+    },
+    linkedin: {
+      content: `${campaignTitle}\n\n${campaignCopy}\n\n${campaignCta}\n\nDiscover events that matter.`,
+      imageUrl: linkedinImage || undefined,
+      trackingUrl: linkedinUrl,
+      trackingCode: linkedinTrackingCode
+    }
+  };
+};
+
+/**
+ * Generate platform-specific social media content from campaign data (legacy - without images)
  */
 export const generateSocialMediaContent = (
   campaignTitle: string,
@@ -54,7 +128,7 @@ export const generateSocialMediaContent = (
   campaignCta: string,
   trackingCode: string
 ): CampaignSocialPosts => {
-  const baseUrl = 'https://pikkst.github.io/EventNexus';
+  const baseUrl = 'https://eventnexus.eu';
   const trackingUrl = `${baseUrl}?utm_source=social&utm_campaign=${trackingCode}`;
 
   return {
