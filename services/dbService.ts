@@ -1046,6 +1046,29 @@ export const deleteCampaign = async (id: string): Promise<boolean> => {
   }
 };
 
+// Claim campaign incentive for a user
+export const claimCampaignIncentive = async (userId: string, campaignId: string): Promise<{
+  success: boolean;
+  type?: string;
+  value?: number;
+  description?: string;
+  error?: string;
+} | null> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('claim_campaign_incentive', {
+        p_user_id: userId,
+        p_campaign_id: campaignId
+      });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error claiming campaign incentive:', error);
+    return null;
+  }
+};
+
 // System Configuration
 export const updateSystemConfig = async (key: string, value: any): Promise<boolean> => {
   try {

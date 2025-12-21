@@ -72,6 +72,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const handleCampaignClick = async () => {
     if (activeBanner) {
       await trackCampaignClick(activeBanner.id);
+      // Store campaign ID in localStorage for claiming after registration
+      localStorage.setItem('pendingCampaignClaim', activeBanner.id);
     }
     onOpenAuth();
   };
