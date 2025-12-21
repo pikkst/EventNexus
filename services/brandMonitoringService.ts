@@ -57,14 +57,19 @@ export async function getMonitoringStats(): Promise<MonitoringStats | null> {
     const { data, error } = await supabase
       .from('monitoring_stats')
       .select('*')
-      .single();
+      .limit(1);
 
     if (error) throw error;
 
-    return data ? {
-      ...data,
-      lastScanTime: new Date(data.last_scan_time),
-    } : null;
+    // Return first record if exists, otherwise null
+    if (data && data.length > 0) {
+      return {
+        ...data[0],
+        lastScanTime: new Date(data[0].last_scan_time),
+      };
+    }
+
+    return null;
   } catch (error) {
     console.error('Error fetching monitoring stats:', error);
     return null;
