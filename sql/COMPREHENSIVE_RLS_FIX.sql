@@ -161,39 +161,6 @@ FOR ALL
 TO public
 USING (true);
 
--- FINANCIAL_LEDGER TABLE
-CREATE POLICY "financial_public_read"
-ON public.financial_ledger
-FOR SELECT
-TO public
-USING (true);
-
-CREATE POLICY "financial_auth_insert"
-ON public.financial_ledger
-FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
--- PAYOUTS TABLE
-CREATE POLICY "payouts_public_read"
-ON public.payouts
-FOR SELECT
-TO public
-USING (true);
-
-CREATE POLICY "payouts_user_insert"
-ON public.payouts
-FOR INSERT
-TO authenticated
-WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "payouts_user_update"
-ON public.payouts
-FOR UPDATE
-TO authenticated
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
-
 -- ============================================
 -- Verification
 -- ============================================
