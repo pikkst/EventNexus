@@ -97,6 +97,18 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   // Financial State
   const [financialLedger, setFinancialLedger] = useState<FinancialTransaction[]>([]);
   const [isLoadingFinancials, setIsLoadingFinancials] = useState(true);
+  
+  // Social Media State
+  const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
+  const [isLoadingSocial, setIsLoadingSocial] = useState(true);
+  const [socialSetupGuide, setSocialSetupGuide] = useState({
+    facebook: { step: 0, completed: false },
+    instagram: { step: 0, completed: false },
+    twitter: { step: 0, completed: false },
+    linkedin: { step: 0, completed: false }
+  });
+  const [showSocialSetupModal, setShowSocialSetupModal] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<'facebook' | 'instagram' | 'twitter' | 'linkedin' | null>(null);
 
   // Diagnostic Scan State
   const [isDiagnosticRunning, setIsDiagnosticRunning] = useState(false);
@@ -211,7 +223,21 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       }
     };
 
+    const loadSocialAccounts = async () => {
+      setIsLoadingSocial(true);
+      try {
+        const { getConnectedAccounts } = await import('../services/socialAuthHelper');
+        const accounts = await getConnectedAccounts();
+        setConnectedAccounts(accounts);
+      } catch (error) {
+        console.error('Error loading social accounts:', error);
+      } finally {
+        setIsLoadingSocial(false);
+      }
+    };
+
     loadData();
+    loadSocialAccounts();
 
     // Auto-refresh infrastructure stats every 10 seconds
     const infraInterval = setInterval(async () => {
@@ -446,6 +472,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     { id: 'users', label: 'User Governance', icon: <Users /> },
     { id: 'inbox', label: 'Email Inbox', icon: <Mail /> },
     { id: 'marketing', label: 'Campaign Engine', icon: <Rocket /> },
+    { id: 'social-media', label: 'Social Media Hub', icon: <Share2 /> },
     { id: 'brand-protection', label: 'Brand Protection', icon: <Shield /> },
     { id: 'financials', label: 'Nexus Economy', icon: <DollarSign /> },
     { id: 'settings', label: 'System Matrix', icon: <Settings /> },
@@ -840,6 +867,305 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 </div>
               )}
            </div>
+        )}
+
+        {activeTab === 'social-media' && (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-black tracking-tight mb-2">Social Media Hub</h2>
+                <p className="text-slate-400">Connect platforms and post campaigns directly</p>
+              </div>
+              <button
+                onClick={async () => {
+                  const { quickConnectAll } = await import('../services/socialAuthHelper');
+                  try {
+                    await quickConnectAll();
+                    const { getConnectedAccounts } = await import('../services/socialAuthHelper');
+                    const accounts = await getConnectedAccounts();
+                    setConnectedAccounts(accounts);
+                  } catch (error) {
+                    console.error('Quick connect failed:', error);
+                  }
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 rounded-xl font-bold hover:shadow-lg hover:shadow-orange-500/20 transition-all flex items-center gap-2"
+              >
+                <Sparkles size={18} />
+                Quick Connect All
+              </button>
+            </div>
+
+            {/* Setup Guide Banner */}
+            <div className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border border-blue-500/30 rounded-3xl p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <Share2 className="w-8 h-8 text-blue-500" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-lg font-black text-white mb-2">Setup Guide: Connect Social Platforms</h4>
+                  <p className="text-slate-400 mb-4">Follow these steps to enable direct posting to Facebook, Instagram, Twitter, and LinkedIn:</p>
+                  <ol className="space-y-2 text-sm text-slate-300">
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                      <span><strong>Create API Apps:</strong> Visit each platform's developer portal and create an app (see button below for links)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                      <span><strong>Configure OAuth:</strong> Set redirect URI to <code className="px-2 py-1 bg-slate-800 rounded text-orange-400">{window.location.origin}/admin/social-callback</code></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                      <span><strong>Save Keys:</strong> Add Client ID and Client Secret to System Config below (scroll to "API Configuration")</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                      <span><strong>Connect:</strong> Click the "Connect" button for each platform to authorize EventNexus</span>
+                    </li>
+                  </ol>
+                  <button
+                    onClick={() => setShowSocialSetupModal(true)}
+                    className="mt-4 px-4 py-2 bg-blue-600 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2"
+                  >
+                    <Key size={16} />
+                    View Detailed Setup Instructions
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Platform Connection Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                { 
+                  platform: 'facebook' as const, 
+                  name: 'Facebook', 
+                  icon: '📘', 
+                  color: 'from-blue-600 to-blue-800',
+                  devPortal: 'https://developers.facebook.com/apps',
+                  scopes: 'pages_manage_posts, pages_read_engagement'
+                },
+                { 
+                  platform: 'instagram' as const, 
+                  name: 'Instagram', 
+                  icon: '📸', 
+                  color: 'from-pink-600 to-purple-800',
+                  devPortal: 'https://developers.facebook.com/apps',
+                  scopes: 'instagram_basic, instagram_content_publish'
+                },
+                { 
+                  platform: 'twitter' as const, 
+                  name: 'Twitter/X', 
+                  icon: '🐦', 
+                  color: 'from-blue-400 to-slate-800',
+                  devPortal: 'https://developer.twitter.com/en/portal/dashboard',
+                  scopes: 'tweet.read, tweet.write, users.read'
+                },
+                { 
+                  platform: 'linkedin' as const, 
+                  name: 'LinkedIn', 
+                  icon: '💼', 
+                  color: 'from-blue-700 to-blue-900',
+                  devPortal: 'https://www.linkedin.com/developers/apps',
+                  scopes: 'w_member_social, r_liteprofile'
+                }
+              ].map(({ platform, name, icon, color, devPortal, scopes }) => {
+                const isConnected = connectedAccounts.some(acc => acc.platform === platform && acc.is_connected);
+                return (
+                  <div key={platform} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition-all">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center text-2xl shadow-lg`}>
+                          {icon}
+                        </div>
+                        <div>
+                          <h3 className="font-black text-lg">{name}</h3>
+                          <p className="text-xs text-slate-500">{platform}.com</p>
+                        </div>
+                      </div>
+                      {isConnected ? (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-bold">
+                          <CheckCircle2 size={14} />
+                          Connected
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-slate-800 text-slate-500 rounded-full text-xs font-bold">
+                          <X size={14} />
+                          Not Connected
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Quick Setup Info */}
+                    <div className="space-y-2 mb-4 text-xs">
+                      <div className="flex items-start gap-2">
+                        <Globe2 className="flex-shrink-0 w-4 h-4 text-slate-500 mt-0.5" />
+                        <div>
+                          <p className="text-slate-400">Developer Portal:</p>
+                          <a href={devPortal} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">
+                            {devPortal}
+                          </a>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Key className="flex-shrink-0 w-4 h-4 text-slate-500 mt-0.5" />
+                        <div>
+                          <p className="text-slate-400">Required Scopes:</p>
+                          <code className="text-orange-400">{scopes}</code>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <LinkIcon className="flex-shrink-0 w-4 h-4 text-slate-500 mt-0.5" />
+                        <div>
+                          <p className="text-slate-400">Redirect URI:</p>
+                          <code className="text-orange-400 break-all">{window.location.origin}/admin/social-callback</code>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      {!isConnected ? (
+                        <button
+                          onClick={async () => {
+                            const { connectSocialAccount, getConnectedAccounts } = await import('../services/socialAuthHelper');
+                            try {
+                              await connectSocialAccount(platform);
+                              const accounts = await getConnectedAccounts();
+                              setConnectedAccounts(accounts);
+                              alert(`✅ ${name} connected successfully!`);
+                            } catch (error) {
+                              alert(`❌ Failed to connect ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                            }
+                          }}
+                          className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-600 to-red-600 rounded-xl font-bold hover:shadow-lg hover:shadow-orange-500/20 transition-all flex items-center justify-center gap-2"
+                        >
+                          <LinkIcon size={16} />
+                          Connect {name}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            const { disconnectSocialAccount, getConnectedAccounts } = await import('../services/socialAuthHelper');
+                            const confirmed = confirm(`Disconnect ${name}? You'll need to reconnect to post again.`);
+                            if (confirmed) {
+                              const success = await disconnectSocialAccount(platform);
+                              if (success) {
+                                const accounts = await getConnectedAccounts();
+                                setConnectedAccounts(accounts);
+                                alert(`${name} disconnected.`);
+                              }
+                            }
+                          }}
+                          className="flex-1 px-4 py-2 bg-slate-800 rounded-xl font-bold hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
+                        >
+                          <X size={16} />
+                          Disconnect
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setSelectedPlatform(platform);
+                          setShowSocialSetupModal(true);
+                        }}
+                        className="px-4 py-2 bg-slate-800 rounded-xl font-bold hover:bg-slate-700 transition-all"
+                        title="Setup guide"
+                      >
+                        ?
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Post to Connected Platforms */}
+            {connectedAccounts.filter(acc => acc.is_connected).length > 0 && (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <h3 className="text-xl font-black mb-4">Quick Post to Connected Platforms</h3>
+                <p className="text-slate-400 mb-4">Paste campaign content here to post directly to all connected accounts:</p>
+                <textarea
+                  className="w-full h-32 px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-orange-600 focus:border-transparent outline-none mb-4"
+                  placeholder="Enter your campaign content here..."
+                />
+                <button
+                  onClick={async () => {
+                    alert('Coming soon: Direct posting from this interface!');
+                  }}
+                  className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 rounded-xl font-bold hover:shadow-lg hover:shadow-orange-500/20 transition-all flex items-center gap-2"
+                >
+                  <Send size={18} />
+                  Post to All Connected Platforms
+                </button>
+              </div>
+            )}
+
+            {/* API Configuration Section */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <h3 className="text-xl font-black mb-4 flex items-center gap-2">
+                <Key size={20} />
+                API Configuration
+              </h3>
+              <p className="text-slate-400 mb-6">Add your OAuth client credentials here after creating apps in each platform's developer portal.</p>
+              
+              <div className="space-y-4">
+                {[
+                  { platform: 'facebook', label: 'Facebook', portal: 'developers.facebook.com' },
+                  { platform: 'instagram', label: 'Instagram (via Facebook)', portal: 'developers.facebook.com' },
+                  { platform: 'twitter', label: 'Twitter/X', portal: 'developer.twitter.com' },
+                  { platform: 'linkedin', label: 'LinkedIn', portal: 'linkedin.com/developers' }
+                ].map(({ platform, label, portal }) => (
+                  <div key={platform} className="bg-slate-800 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-bold text-white">{label}</h4>
+                      <a 
+                        href={`https://${portal}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                      >
+                        <Globe2 size={12} />
+                        {portal}
+                      </a>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Client ID</label>
+                        <input
+                          type="text"
+                          placeholder={`${platform}_client_id`}
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 placeholder-slate-600 focus:ring-2 focus:ring-orange-600 focus:border-transparent outline-none"
+                          onChange={(e) => {
+                            // Save to system config
+                            updateSystemConfig(`${platform}_client_id`, e.target.value);
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Client Secret</label>
+                        <input
+                          type="password"
+                          placeholder={`${platform}_client_secret`}
+                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 placeholder-slate-600 focus:ring-2 focus:ring-orange-600 focus:border-transparent outline-none"
+                          onChange={(e) => {
+                            // Save to system config
+                            updateSystemConfig(`${platform}_client_secret`, e.target.value);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                <p className="text-sm text-blue-300 flex items-start gap-2">
+                  <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
+                  <span>Keys are saved to <code className="px-2 py-0.5 bg-slate-800 rounded">system_config</code> table in Supabase. Make sure you have proper RLS policies configured.</span>
+                </p>
+              </div>
+            </div>
+          </div>
         )}
 
         {activeTab === 'brand-protection' && (
@@ -1500,6 +1826,13 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         onAuthenticate={handleMasterAuth}
         operationName={pendingOperation}
       />
+      
+      {/* Social Media Setup Modal */}
+      <SocialSetupModal
+        isOpen={showSocialSetupModal}
+        onClose={() => setShowSocialSetupModal(false)}
+        platform={selectedPlatform}
+      />
     </div>
   );
 };
@@ -1687,5 +2020,173 @@ const DiagnosticModal: React.FC<{
     </div>
   </div>
 );
+
+// Social Media Setup Modal Component
+const SocialSetupModal = ({ isOpen, onClose, platform }: { isOpen: boolean; onClose: () => void; platform: string | null }) => {
+  if (!isOpen) return null;
+
+  const platformGuides: Record<string, any> = {
+    facebook: {
+      name: 'Facebook',
+      icon: '📘',
+      steps: [
+        { title: 'Go to Meta Developer Portal', content: 'Visit https://developers.facebook.com/apps and log in', link: 'https://developers.facebook.com/apps' },
+        { title: 'Create New App', content: 'Click "Create App" → Select "Business" type → Fill in app name' },
+        { title: 'Add Facebook Login Product', content: 'In dashboard, click "Add Product" → Select "Facebook Login" → Web' },
+        { title: 'Configure OAuth Redirect', content: `Add this URI: ${window.location.origin}/admin/social-callback` },
+        { title: 'Get App Credentials', content: 'Go to Settings → Basic → Copy "App ID" (Client ID) and "App Secret" (Client Secret)' },
+        { title: 'Set Required Permissions', content: 'In App Review → Permissions: Request pages_manage_posts, pages_read_engagement' },
+        { title: 'Add Keys to EventNexus', content: 'Paste Client ID and Client Secret into the API Configuration section above' },
+        { title: 'Connect Account', content: 'Click "Connect Facebook" button to authorize' }
+      ]
+    },
+    instagram: {
+      name: 'Instagram',
+      icon: '📸',
+      steps: [
+        { title: 'Use Facebook App', content: 'Instagram uses the same app as Facebook via Meta Business Suite', link: 'https://developers.facebook.com/apps' },
+        { title: 'Enable Instagram Graph API', content: 'In your Facebook app, add "Instagram Graph API" product' },
+        { title: 'Connect Instagram Business Account', content: 'Link your Instagram Business or Creator account to a Facebook Page' },
+        { title: 'Configure OAuth', content: `Add redirect URI: ${window.location.origin}/admin/social-callback` },
+        { title: 'Request Permissions', content: 'In App Review: instagram_basic, instagram_content_publish' },
+        { title: 'Add Keys to EventNexus', content: 'Use same Client ID/Secret as Facebook' },
+        { title: 'Connect Account', content: 'Click "Connect Instagram" button' }
+      ]
+    },
+    twitter: {
+      name: 'Twitter/X',
+      icon: '🐦',
+      steps: [
+        { title: 'Go to Twitter Developer Portal', content: 'Visit https://developer.twitter.com/en/portal/dashboard', link: 'https://developer.twitter.com/en/portal/dashboard' },
+        { title: 'Create Project & App', content: 'Create new project → Add app → Select "Production" environment' },
+        { title: 'Enable OAuth 2.0', content: 'In app settings → User authentication settings → Enable OAuth 2.0' },
+        { title: 'Set App Type', content: 'Type of App: "Web App, Automated App or Bot"' },
+        { title: 'Configure Callback URL', content: `Callback URI: ${window.location.origin}/admin/social-callback` },
+        { title: 'Get Client Credentials', content: 'In Keys and tokens → OAuth 2.0 Client ID and Client Secret' },
+        { title: 'Add Keys to EventNexus', content: 'Paste credentials into API Configuration section' },
+        { title: 'Connect Account', content: 'Click "Connect Twitter" button' }
+      ]
+    },
+    linkedin: {
+      name: 'LinkedIn',
+      icon: '💼',
+      steps: [
+        { title: 'Go to LinkedIn Developers', content: 'Visit https://www.linkedin.com/developers/apps', link: 'https://www.linkedin.com/developers/apps' },
+        { title: 'Create New App', content: 'Click "Create app" → Fill in app details → Associate with LinkedIn page' },
+        { title: 'Add Products', content: 'In Products tab → Request "Share on LinkedIn" and "Sign In with LinkedIn"' },
+        { title: 'Configure OAuth', content: `In Auth tab → Add redirect URL: ${window.location.origin}/admin/social-callback` },
+        { title: 'Get Credentials', content: 'In Auth tab → Copy "Client ID" and "Client Secret"' },
+        { title: 'Verify Permissions', content: 'Ensure you have w_member_social and r_liteprofile scopes' },
+        { title: 'Add Keys to EventNexus', content: 'Paste credentials into API Configuration section' },
+        { title: 'Connect Account', content: 'Click "Connect LinkedIn" button' }
+      ]
+    }
+  };
+
+  const currentPlatform = platform || 'facebook';
+  const guide = platformGuides[currentPlatform];
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+        <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-500/10 to-purple-500/10">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-2xl shadow-lg">
+              {guide.icon}
+            </div>
+            <div>
+              <h3 className="text-2xl font-black">{guide.name} Setup Guide</h3>
+              <p className="text-sm text-slate-400">Step-by-step OAuth integration</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-center transition-all"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          <div className="space-y-4">
+            {guide.steps.map((step: any, index: number) => (
+              <div key={index} className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-slate-600 transition-all">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-orange-600 to-red-600 rounded-full flex items-center justify-center text-sm font-black">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-white mb-1">{step.title}</h4>
+                    <p className="text-sm text-slate-400">{step.content}</p>
+                    {step.link && (
+                      <a
+                        href={step.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 mt-2 text-sm text-blue-400 hover:text-blue-300 font-medium"
+                      >
+                        <Globe2 size={14} />
+                        Open {guide.name} Portal
+                        <ArrowUpRight size={12} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Quick Reference */}
+          <div className="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+            <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+              <Key size={16} />
+              Quick Reference
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="text-slate-400">Redirect URI:</span>
+                <code className="ml-2 px-2 py-1 bg-slate-800 rounded text-orange-400">{window.location.origin}/admin/social-callback</code>
+              </div>
+              <div>
+                <span className="text-slate-400">Required Scopes:</span>
+                <code className="ml-2 px-2 py-1 bg-slate-800 rounded text-orange-400">
+                  {currentPlatform === 'facebook' && 'pages_manage_posts, pages_read_engagement'}
+                  {currentPlatform === 'instagram' && 'instagram_basic, instagram_content_publish'}
+                  {currentPlatform === 'twitter' && 'tweet.read, tweet.write, users.read'}
+                  {currentPlatform === 'linkedin' && 'w_member_social, r_liteprofile'}
+                </code>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-800 flex justify-between items-center">
+          <button
+            onClick={() => {
+              const platforms = ['facebook', 'instagram', 'twitter', 'linkedin'];
+              const currentIndex = platforms.indexOf(currentPlatform);
+              const nextPlatform = platforms[(currentIndex + 1) % platforms.length];
+              onClose();
+              setTimeout(() => {
+                setSelectedPlatform(nextPlatform as any);
+                setShowSocialSetupModal(true);
+              }, 100);
+            }}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+          >
+            <ChevronRight size={16} />
+            Next Platform
+          </button>
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 rounded-xl font-bold hover:shadow-lg hover:shadow-orange-500/20 transition-all"
+          >
+            Got It!
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default AdminCommandCenter;
