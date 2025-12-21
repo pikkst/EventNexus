@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { X, Mail, Lock, Github, Chrome, Facebook, ArrowRight, Loader2, Sparkles } from 'lucide-react';
-import { signInUser, signUpUser, getUser, updateUser } from '../services/dbService';
+import { signInUser, signUpUser, getUser, updateUser, claimCampaignIncentive } from '../services/dbService';
 import { User } from '../types';
 
 interface AuthModalProps {
@@ -125,6 +125,30 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
           if (fullName && fullName !== email.split('@')[0]) {
             await updateUser(authUser.id, { name: fullName });
             userData.name = fullName;
+          }
+          
+          // Check for pending campaign claim
+          const pendingCampaignId = localStorage.getItem('pendingCampaignClaim');
+          if (pendingCampaignId) {
+            try {
+              console.log('🎁 Claiming campaign incentive...', pendingCampaignId);
+              const claimResult = await claimCampaignIncentive(authUser.id, pendingCampaignId);
+              
+              if (claimResult?.success) {
+                console.log('✅ Campaign incentive claimed:', claimResult);
+                // Refresh user data to get updated credits
+                const updatedUser = await getUser(authUser.id);
+                if (updatedUser) {
+                  userData.credits = updatedUser.credits;
+                }
+                // Clear the pending claim
+                localStorage.removeItem('pendingCampaignClaim');
+              } else {
+                console.error('❌ Failed to claim campaign incentive:', claimResult?.error);
+              }
+            } catch (claimErr) {
+              console.error('Campaign claim error:', claimErr);
+            }
           }
           
           clearTimeout(timeoutId);
