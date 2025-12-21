@@ -961,6 +961,26 @@ export interface Campaign {
   updated_at?: string;
 }
 
+// Helper function to transform Campaign from camelCase to snake_case for database
+const campaignToDbFormat = (campaign: Campaign): any => {
+  const { imageUrl, trackingCode, ...rest } = campaign;
+  return {
+    ...rest,
+    image_url: imageUrl,
+    tracking_code: trackingCode,
+  };
+};
+
+// Helper function to transform Campaign from snake_case to camelCase from database
+const campaignFromDbFormat = (dbCampaign: any): Campaign => {
+  const { image_url, tracking_code, ...rest } = dbCampaign;
+  return {
+    ...rest,
+    imageUrl: image_url,
+    trackingCode: tracking_code,
+  };
+};
+
 export const getCampaigns = async (): Promise<Campaign[]> => {
   try {
     const { data, error } = await supabase
@@ -969,7 +989,7 @@ export const getCampaigns = async (): Promise<Campaign[]> => {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []).map(campaignFromDbFormat);
   } catch (error) {
     console.error('Error fetching campaigns:', error);
     return [];
@@ -978,14 +998,15 @@ export const getCampaigns = async (): Promise<Campaign[]> => {
 
 export const createCampaign = async (campaign: Campaign): Promise<Campaign | null> => {
   try {
+    const dbCampaign = campaignToDbFormat(campaign);
     const { data, error } = await supabase
       .from('campaigns')
-      .insert([campaign])
+      .insert([dbCampaign])
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    return data ? campaignFromDbFormat(data) : null;
   } catch (error) {
     console.error('Error creating campaign:', error);
     return null;
@@ -994,15 +1015,16 @@ export const createCampaign = async (campaign: Campaign): Promise<Campaign | nul
 
 export const updateCampaign = async (id: string, updates: Partial<Campaign>): Promise<Campaign | null> => {
   try {
+    const dbUpdates = campaignToDbFormat(updates as Campaign);
     const { data, error } = await supabase
       .from('campaigns')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    return data ? campaignFromDbFormat(data) : null;
   } catch (error) {
     console.error('Error updating campaign:', error);
     return null;
