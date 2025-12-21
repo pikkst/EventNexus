@@ -18,16 +18,17 @@ SELECT
     policyname,
     cmd,
     CASE 
-        WHEN definition LIKE '%EXISTS%SELECT%users%' THEN 'EXISTS query on users'
-        WHEN definition LIKE '%users.role%' THEN 'Direct users.role reference'
+        WHEN qual::text LIKE '%EXISTS%SELECT%users%' THEN 'EXISTS query on users'
+        WHEN qual::text LIKE '%users.role%' THEN 'Direct users.role reference'
         ELSE 'Other users reference'
-    END as recursion_type
+    END as recursion_type,
+    LEFT(qual::text, 80) as policy_preview
 FROM pg_policies
 WHERE schemaname = 'public'
 AND (
-    definition LIKE '%users.role%'
-    OR definition LIKE '%FROM users%'
-    OR definition LIKE '%FROM public.users%'
+    qual::text LIKE '%users.role%'
+    OR qual::text LIKE '%FROM users%'
+    OR qual::text LIKE '%FROM public.users%'
 )
 ORDER BY tablename, policyname;
 
@@ -39,9 +40,9 @@ SELECT
 FROM pg_policies
 WHERE schemaname = 'public'
 AND (
-    definition LIKE '%users.role%'
-    OR definition LIKE '%FROM users%'
-    OR definition LIKE '%FROM public.users%'
+    qual::text LIKE '%users.role%'
+    OR qual::text LIKE '%FROM users%'
+    OR qual::text LIKE '%FROM public.users%'
 );
 
 -- 4. Test a simple query on users table
