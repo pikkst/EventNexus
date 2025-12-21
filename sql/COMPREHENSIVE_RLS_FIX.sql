@@ -7,12 +7,13 @@ DECLARE
     policy_record RECORD;
     dropped_count INTEGER := 0;
 BEGIN
-    -- Get all tables in public schema with RLS enabled
+    -- Get all tables in public schema with RLS enabled (exclude PostGIS system tables)
     FOR table_record IN 
         SELECT tablename 
         FROM pg_tables 
         WHERE schemaname = 'public'
         AND tablename NOT LIKE 'pg_%'
+        AND tablename NOT IN ('spatial_ref_sys', 'geometry_columns', 'geography_columns', 'raster_columns', 'raster_overviews')
     LOOP
         RAISE NOTICE 'Processing table: %', table_record.tablename;
         
