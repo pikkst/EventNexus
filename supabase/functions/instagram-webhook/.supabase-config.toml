@@ -1,0 +1,2 @@
+# Instagram Webhook Configuration
+verify_jwt = false

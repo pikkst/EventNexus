@@ -1,0 +1,2 @@
+# Facebook Deauthorize Configuration
+verify_jwt = false
