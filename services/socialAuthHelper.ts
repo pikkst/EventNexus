@@ -29,11 +29,19 @@ export interface ConnectedAccount {
 const getOAuthConfig = async (platform: string): Promise<OAuthConfig | null> => {
   try {
     const config = await getSystemConfig();
-    const clientId = config[`${platform}_client_id`];
-    const clientSecret = config[`${platform}_client_secret`];
+    let clientId = config[`${platform}_client_id`];
+    let clientSecret = config[`${platform}_client_secret`];
+    
+    // Parse JSONB strings if needed
+    if (typeof clientId === 'string' && clientId.startsWith('"')) {
+      try { clientId = JSON.parse(clientId); } catch { /* already a plain string */ }
+    }
+    if (typeof clientSecret === 'string' && clientSecret.startsWith('"')) {
+      try { clientSecret = JSON.parse(clientSecret); } catch { /* already a plain string */ }
+    }
     
     if (!clientId || !clientSecret) {
-      console.error(`OAuth config missing for ${platform}`);
+      console.error(`OAuth config missing for ${platform}:`, { clientId: !!clientId, clientSecret: !!clientSecret });
       return null;
     }
 
@@ -158,7 +166,7 @@ export const checkConnectionStatus = async (
       .select('is_connected')
       .eq('platform', platform)
       .eq('is_connected', true)
-      .single();
+      .maybeSingle();
 
     return !error && data?.is_connected === true;
   } catch {
