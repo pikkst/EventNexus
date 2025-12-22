@@ -536,6 +536,12 @@ ALTER TABLE autonomous_actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE autonomous_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE optimization_opportunities ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Admin full access to autonomous_actions" ON autonomous_actions;
+DROP POLICY IF EXISTS "Admin full access to autonomous_rules" ON autonomous_rules;
+DROP POLICY IF EXISTS "Admin full access to optimization_opportunities" ON optimization_opportunities;
+
+-- Create new policies
 CREATE POLICY "Admin full access to autonomous_actions" ON autonomous_actions
   FOR ALL USING (
     EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
