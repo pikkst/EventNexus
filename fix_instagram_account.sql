@@ -27,12 +27,17 @@ INSERT INTO social_media_accounts (
   'instagram',
   '17841473316101833', -- Instagram Business Account ID (blogpieesti)
   'blogpieesti',
-  'PASTE_YOUR_LATEST_ACCESS_TOKEN_HERE', -- Get from Facebook connection
+  'EAAVtP2I4llMBQUmHTj2PKacvDfWJBnJtnRfZA1ejFbYVnr1ULNg1BTG3BWQq8G9rPvGrpwoSgYBsdvUWXSXGeILoNrobziH3LwDZB3mKraSYaHLdwsFqNBok1ZCzWZCiPOmO94XFJ3PLK5TxS7HlWeQXZAVUN3eZCUu0FZAARrkZAHo0KTi5blm5uA6Qw64ZCkZCqxXvtnBPtLz1dkoZARZC8vTGRulm63aAgaWZCzj9i0wDzzPMVOBYm3k5KzxWwK9MeeebCkIVGBOtDzQq389iL45ZARXI0cAHN1myih', -- Facebook token (works for Instagram too)
   NULL,
   NOW() + INTERVAL '60 days', -- Token expires in 60 days
   true,
   NOW()
-);
+)
+ON CONFLICT (user_id, platform, account_id)
+DO UPDATE SET
+  access_token = EXCLUDED.access_token,
+  is_connected = true,
+  updated_at = NOW();
 
 -- Verify both accounts
 SELECT 
