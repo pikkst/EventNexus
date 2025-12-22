@@ -76,6 +76,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     loadEvents();
   }, [user.id, selectedEventId]);
 
+  // Load revenue data
+  useEffect(() => {
+    const loadRevenue = async () => {
+      setIsLoadingRevenue(true);
+      try {
+        const [summary, byEvent] = await Promise.all([
+          getOrganizerRevenueSummary(user.id),
+          getOrganizerRevenue(user.id)
+        ]);
+        setRevenueSummary(summary);
+        setRevenueByEvent(byEvent);
+      } catch (error) {
+        console.error('Error loading revenue:', error);
+      } finally {
+        setIsLoadingRevenue(false);
+      }
+    };
+    loadRevenue();
+  }, [user.id]);
+
   // Edit State
   const [tempBranding, setTempBranding] = useState(user.branding || {
     primaryColor: '#6366f1',
@@ -95,11 +115,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     x: { connected: true, apiKey: 'x_auth_token_...' }
   });
 
+  // Revenue State
+  const [revenueSummary, setRevenueSummary] = useState<RevenueSummary | null>(null);
+  const [revenueByEvent, setRevenueByEvent] = useState<RevenueByEvent[]>([]);
+  const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
+
   const isGated = user.subscription === 'free';
   const isEnterprise = user.subscription === 'enterprise';
   const selectedEvent = events.find(e => e.id === selectedEventId);
-  const totalRevenue = events.reduce((acc, ev) => acc + (ev.attendeesCount * ev.price), 0);
-  const totalSold = events.reduce((acc, ev) => acc + ev.attendeesCount, 0);
+  const totalRevenue = revenueSummary?.total_gross || 0;
+  const totalSold = revenueSummary?.total_tickets_sold || 0;
 
   // Gate free users from Dashboard entirely
   if (user.subscription_tier === 'free') {
