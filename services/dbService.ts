@@ -1424,6 +1424,76 @@ export const getConnectDashboardLink = async (userId: string): Promise<string | 
 };
 
 /**
+ * Revenue Dashboard Interfaces
+ */
+export interface RevenueByEvent {
+  event_id: string;
+  event_name: string;
+  event_date: string;
+  tickets_sold: number;
+  gross_revenue: number;
+  subscription_tier: string;
+  platform_fee_percent: number;
+  platform_fee_amount: number;
+  stripe_fee_amount: number;
+  net_revenue: number;
+  payout_status: 'pending' | 'processing' | 'paid';
+  payout_date?: string;
+}
+
+export interface RevenueSummary {
+  total_events: number;
+  total_tickets_sold: number;
+  total_gross: number;
+  total_platform_fees: number;
+  total_stripe_fees: number;
+  total_net: number;
+  pending_payouts: number;
+  paid_out: number;
+  subscription_tier: string;
+}
+
+/**
+ * Get organizer revenue breakdown by event
+ */
+export const getOrganizerRevenue = async (organizerId: string): Promise<RevenueByEvent[]> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_organizer_revenue', { org_id: organizerId });
+
+    if (error) {
+      console.error('Error fetching organizer revenue:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getOrganizerRevenue:', error);
+    return [];
+  }
+};
+
+/**
+ * Get organizer revenue summary (totals)
+ */
+export const getOrganizerRevenueSummary = async (organizerId: string): Promise<RevenueSummary | null> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_organizer_revenue_summary', { org_id: organizerId });
+
+    if (error) {
+      console.error('Error fetching revenue summary:', error);
+      return null;
+    }
+
+    return data?.[0] || null;
+  } catch (error) {
+    console.error('Error in getOrganizerRevenueSummary:', error);
+    return null;
+  }
+};
+
+/**
  * Check if user has completed Stripe Connect onboarding
  */
 export const checkConnectStatus = async (userId: string): Promise<{
