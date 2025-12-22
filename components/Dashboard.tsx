@@ -17,7 +17,13 @@ import {
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, EventNexusEvent, Notification, AgencyService } from '../types';
-import { getEvents } from '../services/dbService';
+import { 
+  getEvents, 
+  getOrganizerRevenue, 
+  getOrganizerRevenueSummary,
+  RevenueByEvent,
+  RevenueSummary
+} from '../services/dbService';
 import { generateAdCampaign, generateAdImage } from '../services/geminiService';
 import { supabase } from '../services/supabase';
 import PayoutsHistory from './PayoutsHistory';
@@ -338,11 +344,136 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       {activeTab === 'overview' && (
         <div className="space-y-8 animate-in fade-in duration-500">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard title="Gross Volume" value={`$${totalRevenue.toLocaleString()}`} change="+12.5%" icon={<DollarSign />} color="emerald" />
+            <StatCard title="Gross Volume" value={`€${totalRevenue.toLocaleString()}`} change="+12.5%" icon={<DollarSign />} color="emerald" />
             <StatCard title="Active Tickets" value={totalSold.toLocaleString()} change="+18.2%" icon={<TicketIcon />} color="indigo" />
             <StatCard title="API Traffic" value="1.4M" change="+40%" icon={<Cpu />} color="blue" />
             <StatCard title="Backbone Node" value="Optimal" change="99.9%" icon={<Globe />} color="violet" />
           </div>
+
+          {/* Revenue Breakdown Section */}
+          {!isLoadingRevenue && revenueSummary && (
+            <div className="bg-gradient-to-br from-emerald-900/20 to-blue-900/20 border border-emerald-800/50 rounded-[48px] p-10 space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                    <DollarSign className="text-emerald-400" /> Revenue Breakdown
+                  </h3>
+                  <p className="text-slate-400 font-medium text-sm mt-2">Real-time ticket sales and payouts for all events</p>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-full">
+                  {revenueSummary.total_events} Events
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Gross</p>
+                  <h4 className="text-3xl font-black text-white">€{revenueSummary.total_gross.toFixed(2)}</h4>
+                  <p className="text-xs text-slate-400 font-medium">From {revenueSummary.total_tickets_sold} tickets</p>
+                </div>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Platform Fees</p>
+                  <h4 className="text-3xl font-black text-orange-400">€{revenueSummary.total_platform_fees.toFixed(2)}</h4>
+                  <p className="text-xs text-slate-400 font-medium">{user.subscription_tier} tier rate</p>
+                </div>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stripe Fees</p>
+                  <h4 className="text-3xl font-black text-blue-400">€{revenueSummary.total_stripe_fees.toFixed(2)}</h4>
+                  <p className="text-xs text-slate-400 font-medium">2.9% + €0.25/tx</p>
+                </div>
+                <div className="bg-slate-900/50 border border-emerald-800 rounded-2xl p-6 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Net Revenue</p>
+                  <h4 className="text-3xl font-black text-emerald-400">€{revenueSummary.total_net.toFixed(2)}</h4>
+                  <p className="text-xs text-emerald-400 font-bold">Your earnings</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-yellow-500">Pending Payouts</p>
+                    <Clock className="w-4 h-4 text-yellow-500" />
+                  </div>
+                  <h4 className="text-3xl font-black text-white">€{revenueSummary.pending_amount.toFixed(2)}</h4>
+                  <p className="text-xs text-slate-400 font-medium">Processing soon</p>
+                </div>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Paid Out</p>
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <h4 className="text-3xl font-black text-white">€{revenueSummary.paid_amount.toFixed(2)}</h4>
+                  <p className="text-xs text-slate-400 font-medium">Already transferred</p>
+                </div>
+              </div>
+
+              {/* Per-Event Revenue Table */}
+              {revenueByEvent.length > 0 && (
+                <div className="mt-8 space-y-4">
+                  <h4 className="font-black text-white text-lg">Revenue by Event</h4>
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-slate-950 border-b border-slate-800">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Event</th>
+                            <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Tickets</th>
+                            <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Gross</th>
+                            <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Platform Fee</th>
+                            <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Stripe Fee</th>
+                            <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Net</th>
+                            <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-500">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800">
+                          {revenueByEvent.map((event) => (
+                            <tr key={event.event_id} className="hover:bg-slate-800/30 transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="font-bold text-white text-sm">{event.event_name}</div>
+                                <div className="text-xs text-slate-500">{new Date(event.event_date).toLocaleDateString()}</div>
+                              </td>
+                              <td className="px-6 py-4 text-right text-white font-bold">{event.tickets_sold}</td>
+                              <td className="px-6 py-4 text-right text-white font-bold">€{event.gross_revenue.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-right text-orange-400 font-bold">-€{event.platform_fee.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-right text-blue-400 font-bold">-€{event.stripe_fee.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-right text-emerald-400 font-black">€{event.net_revenue.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-center">
+                                {event.payout_status === 'paid' && (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase">
+                                    <CheckCircle className="w-3 h-3" /> Paid
+                                  </span>
+                                )}
+                                {event.payout_status === 'pending' && (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-[10px] font-black uppercase">
+                                    <Clock className="w-3 h-3" /> Pending
+                                  </span>
+                                )}
+                                {event.payout_status === 'processing' && (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase">
+                                    <RefreshCcw className="w-3 h-3" /> Processing
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {isLoadingRevenue && (
+            <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 flex items-center justify-center">
+              <div className="flex items-center gap-3 text-slate-400">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="font-medium">Loading revenue data...</span>
+              </div>
+            </div>
+          )}
+
           <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 shadow-2xl space-y-8">
              <div className="flex justify-between items-center">
                 <h3 className="text-xl font-black tracking-tight text-white">Experience Sales Velocity</h3>
