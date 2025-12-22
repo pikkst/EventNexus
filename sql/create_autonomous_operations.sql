@@ -5,6 +5,10 @@
 -- proactive optimization opportunities, self-healing logic
 -- ============================================================
 
+-- Add budget column to campaigns table if it doesn't exist
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS budget DECIMAL(10,2) DEFAULT 100.00;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS daily_budget DECIMAL(10,2);
+
 -- Table: autonomous_actions
 -- Tracks all autonomous decisions and actions taken by the system
 CREATE TABLE IF NOT EXISTS autonomous_actions (
@@ -103,12 +107,12 @@ BEGIN
   SELECT 
     c.id,
     c.title,
-    c.budget,
+    COALESCE(c.budget, 0.0)::DECIMAL AS current_budget,
     cp.total_spend,
     cp.roi,
     cp.ctr,
     cp.conversion_rate,
-    EXTRACT(EPOCH FROM (NOW() - c.created_at))/3600 AS hours_running,
+    EXTRACT(EPOCH FROM (NOW() - c.created_at))/3600::INTEGER AS hours_running,
     CASE 
       WHEN cp.roi < 0.5 THEN 'CRITICAL: Pause immediately - ROI below 0.5x'
       WHEN cp.roi < max_roi AND cp.total_spend > min_spend THEN 'HIGH: Consider pausing - ROI below target'
@@ -117,7 +121,7 @@ BEGIN
     END AS recommendation
   FROM campaigns c
   JOIN campaign_performance cp ON c.id = cp.campaign_id
-  WHERE c.status = 'active'
+  WHERE (c.status = 'active' OR c.status = 'Active')
     AND EXTRACT(EPOCH FROM (NOW() - c.created_at))/3600 >= min_duration_hours
     AND (
       (cp.roi < max_roi AND cp.total_spend > min_spend)
@@ -153,8 +157,8 @@ BEGIN
   SELECT 
     c.id,
     c.title,
-    c.budget,
-    LEAST(c.budget * 1.5, c.budget * max_budget_multiplier) AS suggested_budget,
+    COALESCE(c.budget, 100.0)::DECIMAL AS current_budget,
+    LEAST(COALESCE(c.budget, 100.0) * 1.5, COALESCE(c.budget, 100.0) * max_budget_multiplier)::DECIMAL AS suggested_budget,
     cp.roi,
     cp.conversions,
     cp.ctr,
@@ -172,10 +176,10 @@ BEGIN
     END AS reasoning
   FROM campaigns c
   JOIN campaign_performance cp ON c.id = cp.campaign_id
-  WHERE c.status = 'active'
+  WHERE (c.status = 'active' OR c.status = 'Active')
     AND cp.roi >= min_roi
     AND cp.conversions >= min_conversions
-    AND c.budget < 10000 -- Max budget cap
+    AND COALESCE(c.budget, 0.0) < 10000 -- Max budget cap
   ORDER BY cp.roi DESC, cp.conversions DESC;
 END;
 $$ LANGUAGE plpgsql;
@@ -207,7 +211,7 @@ BEGIN
     85.0::DECIMAL
   FROM campaigns c
   JOIN campaign_performance cp ON c.id = cp.campaign_id
-  WHERE c.status = 'active'
+  WHERE (c.status = 'active' OR c.status = 'Active')
     AND cp.clicks > 100
     AND cp.conversion_rate < 2.0
     AND cp.total_spend > 50
@@ -228,7 +232,7 @@ BEGIN
     75.0::DECIMAL
   FROM campaigns c
   JOIN campaign_performance cp ON c.id = cp.campaign_id
-  WHERE c.status = 'active'
+  WHERE (c.status = 'active' OR c.status = 'Active')
     AND EXISTS (
       SELECT 1 FROM campaign_analytics ca 
       WHERE ca.campaign_id = c.id 
@@ -251,7 +255,7 @@ BEGIN
     90.0::DECIMAL
   FROM campaigns c
   JOIN campaign_performance cp ON c.id = cp.campaign_id
-  WHERE c.status = 'active'
+  WHERE (c.status = 'active' OR c.status = 'Active')
     AND cp.total_spend > 100
     AND cp.roi < 1.0
 
@@ -276,18 +280,18 @@ BEGIN
   -- Capture current state
   SELECT jsonb_build_object(
     'status', c.status,
-    'budget', c.budget,
-    'roi', cp.roi,
-    'ctr', cp.ctr,
-    'total_spend', cp.total_spend
+    'budget', COALESCE(c.budget, 0.0),
+    'roi', COALESCE(cp.roi, 0.0),
+    'ctr', COALESCE(cp.ctr, 0.0),
+    'total_spend', COALESCE(cp.total_spend, 0.0)
   ) INTO v_previous_state
   FROM campaigns c
   LEFT JOIN campaign_performance cp ON c.id = cp.campaign_id
   WHERE c.id = p_campaign_id;
 
-  -- Update campaign status
+  -- Update campaign status (use Paused with capital P to match schema)
   UPDATE campaigns 
-  SET status = 'paused',
+  SET status = 'Paused',
       updated_at = NOW()
   WHERE id = p_campaign_id;
 
@@ -335,11 +339,11 @@ DECLARE
   v_old_budget DECIMAL;
 BEGIN
   -- Capture current state
-  SELECT c.budget, jsonb_build_object(
-    'budget', c.budget,
-    'roi', cp.roi,
-    'conversions', cp.conversions,
-    'ctr', cp.ctr
+  SELECT COALESCE(c.budget, 100.0), jsonb_build_object(
+    'budget', COALESCE(c.budget, 100.0),
+    'roi', COALESCE(cp.roi, 0.0),
+    'conversions', COALESCE(cp.conversions, 0),
+    'ctr', COALESCE(cp.ctr, 0.0)
   ) INTO v_old_budget, v_previous_state
   FROM campaigns c
   LEFT JOIN campaign_performance cp ON c.id = cp.campaign_id
