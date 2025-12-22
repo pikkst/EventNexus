@@ -51,7 +51,7 @@ const getOAuthConfig = async (platform: string): Promise<OAuthConfig | null> => 
     // Platform-specific scopes
     const scopes: Record<string, string> = {
       facebook: 'pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish',
-      instagram: 'instagram_basic,instagram_content_publish',
+      instagram: 'pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish,pages_show_list',
       twitter: 'tweet.read,tweet.write,users.read,offline.access',
       linkedin: 'w_member_social,r_liteprofile'
     };
