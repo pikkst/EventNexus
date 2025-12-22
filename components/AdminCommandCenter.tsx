@@ -847,6 +847,51 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                           </div>
                         )}
 
+                        {/* Social Media Publishing */}
+                        <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2">
+                          <p className="text-[9px] font-black text-slate-500 uppercase mb-2">📤 Publish to Social Media</p>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={async () => {
+                                try {
+                                  const { publishToConnectedPlatforms } = await import('../services/socialAuthHelper');
+                                  await publishToConnectedPlatforms({
+                                    instagram: {
+                                      caption: `${campaign.title}\n\n${campaign.copy}\n\n#EventNexus #Events`,
+                                      imageUrl: campaign.imageUrl || campaign.image_url || ''
+                                    }
+                                  });
+                                  alert('✅ Posted to Instagram!');
+                                } catch (error) {
+                                  alert('❌ Failed to post: ' + (error as Error).message);
+                                }
+                              }}
+                              className="flex-1 py-2 bg-gradient-to-br from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg text-[10px] font-black uppercase text-white transition-all flex items-center justify-center gap-1"
+                            >
+                              📸 Instagram
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                try {
+                                  const { publishToConnectedPlatforms } = await import('../services/socialAuthHelper');
+                                  await publishToConnectedPlatforms({
+                                    facebook: {
+                                      content: `${campaign.title}\n\n${campaign.copy}`,
+                                      imageUrl: campaign.imageUrl || campaign.image_url
+                                    }
+                                  });
+                                  alert('✅ Posted to Facebook!');
+                                } catch (error) {
+                                  alert('❌ Failed to post: ' + (error as Error).message);
+                                }
+                              }}
+                              className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-[10px] font-black uppercase text-white transition-all flex items-center justify-center gap-1"
+                            >
+                              📘 Facebook
+                            </button>
+                          </div>
+                        </div>
+
                         <div className="flex gap-2 pt-2">
                           <button 
                             onClick={() => { setEditingCampaign(campaign); setIsCampaignModalOpen(true); }}
