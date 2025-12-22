@@ -10,9 +10,10 @@ const PLANS = [
     price: '0',
     description: 'Perfect for exploring and attending events.',
     features: [
+      '100 welcome credits (€50 value)',
       'Browse events worldwide',
       'Purchase tickets securely',
-      'Multilingual interface',
+      'Unlock features with credits',
       'Basic profile',
       'Mobile check-in'
     ],
