@@ -4,6 +4,10 @@
 -- Purpose: Real-time revenue tracking with platform fee calculation
 -- ============================================
 
+-- Drop existing functions to allow type changes
+DROP FUNCTION IF EXISTS get_organizer_revenue(UUID);
+DROP FUNCTION IF EXISTS get_organizer_revenue_summary(UUID);
+
 -- STEP 1: Create function to get organizer revenue breakdown
 CREATE OR REPLACE FUNCTION get_organizer_revenue(org_id UUID)
 RETURNS TABLE (
