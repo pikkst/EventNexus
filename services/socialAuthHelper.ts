@@ -123,23 +123,41 @@ const exchangeCodeForToken = async (
       // For Instagram, we need the Instagram Business Account ID, not the Facebook User ID
       if (platform === 'instagram') {
         try {
-          // Get Facebook Pages managed by the user
+          // Get Facebook Pages managed by the user with access tokens
           const pagesResponse = await fetch(
-            `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,instagram_business_account&access_token=${data.access_token}`
+            `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${data.access_token}`
           );
           
           const pagesData = await pagesResponse.json();
           
-          console.log('📄 Facebook Pages:', pagesData);
+          console.log('📄 Facebook Pages API response:', pagesData);
           
           if (pagesData.error) {
             console.error('Facebook API error:', pagesData.error);
             throw new Error(`Facebook API error: ${pagesData.error.message}`);
           }
           
+          // If no pages returned, try alternative approach - get user's Instagram accounts directly
           if (!pagesData.data || pagesData.data.length === 0) {
-            console.error('❌ No Facebook Pages found');
-            throw new Error('No Facebook Pages found. Create a Facebook Page first, then connect your Instagram Business Account to it.');
+            console.warn('⚠️ /me/accounts returned empty, trying alternative approach...');
+            
+            // Try getting Instagram Business Account IDs directly
+            const igAccountsResponse = await fetch(
+              `https://graph.facebook.com/v18.0/me/accounts?fields=instagram_business_account&access_token=${data.access_token}`
+            );
+            const igAccountsData = await igAccountsResponse.json();
+            console.log('📸 Direct Instagram accounts:', igAccountsData);
+            
+            // If still empty, we need user to check their Facebook Page permissions
+            if (!igAccountsData.data || igAccountsData.data.length === 0) {
+              console.error('❌ Cannot access Facebook Pages. Token might not have pages_show_list permission.');
+              throw new Error(
+                'Cannot access your Facebook Pages. Please ensure:\n' +
+                '1. You selected the Facebook Page during authorization\n' +
+                '2. Your Instagram Business Account is connected to that Page\n' +
+                '3. Try disconnecting and reconnecting with all permissions granted'
+              );
+            }
           }
           
           // Find the first page with an Instagram Business Account
@@ -147,12 +165,14 @@ const exchangeCodeForToken = async (
           
           if (pageWithInstagram?.instagram_business_account) {
             const igAccountId = pageWithInstagram.instagram_business_account.id;
+            const pageAccessToken = pageWithInstagram.access_token || data.access_token;
             
             console.log('✅ Found Instagram Business Account:', igAccountId);
+            console.log('📄 Using Page access token for Instagram API calls');
             
             // Get Instagram account details using the page's access token
             const igResponse = await fetch(
-              `https://graph.facebook.com/v18.0/${igAccountId}?fields=id,username,name&access_token=${data.access_token}`
+              `https://graph.facebook.com/v18.0/${igAccountId}?fields=id,username,name&access_token=${pageAccessToken}`
             );
             
             const igData = await igResponse.json();
@@ -165,7 +185,7 @@ const exchangeCodeForToken = async (
             console.log('📸 Instagram account:', igData);
             
             return {
-              accessToken: data.access_token,
+              accessToken: pageAccessToken, // Use page token for posting
               refreshToken: data.refresh_token,
               expiresAt: data.expires_in,
               accountId: igAccountId,
