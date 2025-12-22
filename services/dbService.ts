@@ -880,20 +880,22 @@ export const addUserCredits = async (userId: string, amount: number): Promise<bo
     // Get current credits
     const { data: user, error: fetchError } = await supabase
       .from('users')
-      .select('credits')
+      .select('credits_balance')
       .eq('id', userId)
       .single();
     
     if (fetchError) throw fetchError;
     
-    const newCredits = (user?.credits || 0) + amount;
+    const newCredits = (user?.credits_balance || 0) + amount;
     
     const { error } = await supabase
       .from('users')
-      .update({ credits: newCredits })
+      .update({ credits_balance: newCredits })
       .eq('id', userId);
     
     if (error) throw error;
+    
+    console.log(`✅ Added ${amount} credits. New balance: ${newCredits}`);
     return true;
   } catch (error) {
     console.error('Error adding user credits:', error);
@@ -910,13 +912,13 @@ export const deductUserCredits = async (userId: string, amount: number): Promise
     // Get current credits
     const { data: user, error: fetchError } = await supabase
       .from('users')
-      .select('credits')
+      .select('credits_balance')
       .eq('id', userId)
       .single();
     
     if (fetchError) throw fetchError;
     
-    const currentCredits = user?.credits || 0;
+    const currentCredits = user?.credits_balance || 0;
     
     // Check if user has enough credits
     if (currentCredits < amount) {
@@ -928,10 +930,12 @@ export const deductUserCredits = async (userId: string, amount: number): Promise
     
     const { error } = await supabase
       .from('users')
-      .update({ credits: newCredits })
+      .update({ credits_balance: newCredits })
       .eq('id', userId);
     
     if (error) throw error;
+    
+    console.log(`✅ Deducted ${amount} credits. New balance: ${newCredits}`);
     return true;
   } catch (error) {
     console.error('Error deducting user credits:', error);
@@ -946,12 +950,12 @@ export const checkUserCredits = async (userId: string, requiredAmount: number): 
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('credits')
+      .select('credits_balance')
       .eq('id', userId)
       .single();
     
     if (error) throw error;
-    return (user?.credits || 0) >= requiredAmount;
+    return (user?.credits_balance || 0) >= requiredAmount;
   } catch (error) {
     console.error('Error checking user credits:', error);
     return false;

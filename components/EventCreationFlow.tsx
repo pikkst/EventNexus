@@ -37,9 +37,10 @@ L.Icon.Default.mergeOptions({
 
 interface EventCreationFlowProps {
   user: User;
+  onUpdateUser?: (updates: Partial<User>) => void;
 }
 
-const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
+const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUser }) => {
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -277,10 +278,18 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
       try {
         const success = await deductUserCredits(user.id, eventCost);
         if (success) {
-          setUserCredits(prev => prev - eventCost);
+          const newBalance = userCredits - eventCost;
+          setUserCredits(newBalance);
+          
+          // Update parent component's user state
+          if (onUpdateUser) {
+            onUpdateUser({ credits_balance: newBalance });
+          }
+          
           alert('Event creation unlocked! You can now create 1 event.');
-          // Reload to remove gate
-          window.location.reload();
+          
+          // Instead of reloading, just let the component re-render
+          // The gate will disappear because userCredits is now updated
         } else {
           alert('Failed to unlock. Please try again.');
         }
