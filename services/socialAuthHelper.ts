@@ -206,7 +206,44 @@ const exchangeCodeForToken = async (
         }
       }
       
-      // For Facebook, get user/page info
+      // For Facebook, get Page access token (required for posting)
+      if (platform === 'facebook') {
+        try {
+          // Get user's Facebook Pages
+          const pagesResponse = await fetch(
+            `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token&access_token=${data.access_token}`
+          );
+          
+          const pagesData = await pagesResponse.json();
+          
+          console.log('📄 Facebook Pages for Facebook platform:', pagesData);
+          
+          if (pagesData.error) {
+            console.error('Facebook API error:', pagesData.error);
+            throw new Error(`Facebook API error: ${pagesData.error.message}`);
+          }
+          
+          // Use the first page's access token (Page token has posting permissions)
+          if (pagesData.data && pagesData.data.length > 0) {
+            const page = pagesData.data[0];
+            console.log('✅ Using Facebook Page:', page.name, page.id);
+            
+            return {
+              accessToken: page.access_token, // Use Page token, not user token!
+              refreshToken: data.refresh_token,
+              expiresAt: data.expires_in,
+              accountId: page.id,
+              accountName: page.name
+            };
+          } else {
+            console.warn('⚠️ No Facebook Pages found, using user token (posting will fail)');
+          }
+        } catch (error) {
+          console.error('Failed to fetch Facebook Pages:', error);
+        }
+      }
+      
+      // Fallback: get user info (but won't have posting permissions)
       const userResponse = await fetch(
         `https://graph.facebook.com/v18.0/me?fields=id,name&access_token=${data.access_token}`
       );
