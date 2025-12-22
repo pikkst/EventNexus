@@ -113,6 +113,7 @@ export interface User {
   subscription?: 'free' | 'pro' | 'premium' | 'enterprise';
   avatar: string;
   credits: number; 
+  credits_balance?: number; // User's credit balance (same as credits, for clarity)
   agencySlug?: string;
   followedOrganizers: string[];
   branding?: UserBranding;

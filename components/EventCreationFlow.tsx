@@ -22,8 +22,9 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { generateMarketingTagline, translateDescription } from '../services/geminiService';
-import { createEvent, getEvents } from '../services/dbService';
+import { createEvent, getEvents, getUser, deductUserCredits } from '../services/dbService';
 import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
+import { FEATURE_UNLOCK_COSTS } from '../services/featureUnlockService';
 import { User, EventNexusEvent } from '../types';
 
 // Fix Leaflet default marker icon
@@ -45,6 +46,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
   const [userEvents, setUserEvents] = useState<EventNexusEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [userCredits, setUserCredits] = useState<number>(user.credits_balance || 0);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -120,6 +122,35 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
 
   // Subscription Gate - Free users
   if (user.subscription_tier === 'free') {
+    const eventCost = FEATURE_UNLOCK_COSTS.CREATE_SINGLE_EVENT;
+    const canAfford = userCredits >= eventCost;
+
+    const handleUnlockEvent = async () => {
+      if (!canAfford) {
+        alert(`You need ${eventCost} credits to create an event. You have ${userCredits} credits.\\n\\nUpgrade to Pro for unlimited event creation, or purchase more credits!`);
+        return;
+      }
+
+      if (!confirm(`Use ${eventCost} credits (€${(eventCost * 0.5).toFixed(2)} value) to unlock event creation?\\n\\nYou have ${userCredits} credits.`)) {
+        return;
+      }
+
+      try {
+        const success = await deductUserCredits(user.id, eventCost);
+        if (success) {
+          setUserCredits(prev => prev - eventCost);
+          alert('Event creation unlocked! You can now create 1 event.');
+          // Reload to remove gate
+          window.location.reload();
+        } else {
+          alert('Failed to unlock. Please try again.');
+        }
+      } catch (error) {
+        console.error('Unlock error:', error);
+        alert('Error unlocking feature. Please try again.');
+      }
+    };
+
     return (
       <div className="max-w-3xl mx-auto px-4 py-20 animate-in fade-in duration-700">
         <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-12 text-center space-y-8 shadow-2xl relative overflow-hidden">
@@ -137,8 +168,42 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
           <div className="space-y-3">
             <h1 className="text-4xl font-black tracking-tighter">Become a Creator</h1>
             <p className="text-slate-400 max-w-md mx-auto leading-relaxed font-medium text-lg">
-              Unlock event creation, global AI translation, and organizer analytics by upgrading to a <span className="text-indigo-400">Nexus Elite</span> plan.
+              Free tier users can create events using <span className="text-orange-400 font-bold">credits</span>, or upgrade to <span className="text-indigo-400 font-bold">Pro</span> for unlimited creation.
             </p>
+          </div>
+
+          {/* Credit Balance Display */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-3xl p-6 max-w-md mx-auto">
+            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Your Credit Balance</p>
+            <div className="flex items-center justify-center gap-3">
+              <Zap className="w-8 h-8 text-orange-400" />
+              <p className="text-5xl font-black text-white">{userCredits}</p>
+              <span className="text-slate-400 text-sm font-bold">credits</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-2">= €{(userCredits * 0.5).toFixed(2)} value</p>
+          </div>
+
+          {/* Unlock Options */}
+          <div className="grid grid-cols-1 gap-4 max-w-md mx-auto">
+            <button
+              onClick={handleUnlockEvent}
+              disabled={!canAfford}
+              className={\`w-full py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 \${
+                canAfford 
+                  ? 'bg-orange-600 hover:bg-orange-700 shadow-orange-600/30' 
+                  : 'bg-slate-800 cursor-not-allowed opacity-50'\n              }\`}
+            >
+              {canAfford 
+                ? `Unlock 1 Event (${eventCost} Credits)` 
+                : `Need ${eventCost - userCredits} More Credits`}
+            </button>
+            
+            <Link 
+              to="/pricing" 
+              className="w-full bg-indigo-600 hover:bg-indigo-700 py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/30 active:scale-95"
+            >
+              Upgrade to Pro (20 Events)
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
@@ -160,13 +225,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
              </div>
           </div>
 
-          <div className="pt-6 flex flex-col gap-4">
-            <Link 
-              to="/pricing" 
-              className="w-full bg-indigo-600 hover:bg-indigo-700 py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/30 active:scale-95"
-            >
-              View Elite Plans
-            </Link>
+          <div className="pt-4">
             <Link to="/map" className="text-slate-500 hover:text-white font-bold text-sm transition-colors">
               Continue Exploring Events
             </Link>

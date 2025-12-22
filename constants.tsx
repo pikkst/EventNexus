@@ -8,7 +8,7 @@ export const CATEGORIES = [
 // Subscription tiers and their limits
 export const SUBSCRIPTION_TIERS = {
   free: { 
-    maxEvents: 3, 
+    maxEvents: 0,  // Free tier is attendance-only (use credits to unlock event creation)
     analytics: false, 
     customBranding: false, 
     support: 'community',

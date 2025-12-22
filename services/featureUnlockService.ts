@@ -13,6 +13,7 @@ import { deductUserCredits, checkUserCredits, addUserCredits } from './dbService
 // Feature unlock costs (in credits)
 export const FEATURE_UNLOCK_COSTS = {
   // Event Management Features
+  CREATE_SINGLE_EVENT: 15,          // Create 1 event (Free tier users)
   FEATURED_EVENT_7_DAYS: 20,        // Make event featured for 7 days (Pro feature)
   FEATURED_EVENT_30_DAYS: 60,       // Make event featured for 30 days
   CUSTOM_BRANDING: 30,              // Enable custom branding on event page (Premium feature)
