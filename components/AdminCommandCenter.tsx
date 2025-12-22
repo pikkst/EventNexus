@@ -309,15 +309,18 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       const data = await generatePlatformGrowthCampaign(newCampaignTheme, targetAudience);
       if (data) {
         const imageUrl = await generateAdImage(data.visualPrompt, "16:9");
+        const trackingCode = `AI-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+        const trackingUrl = `https://www.eventnexus.eu?utm_source=campaign&utm_medium=social&utm_campaign=${trackingCode}&utm_content=${targetAudience}`;
+        
         setEditingCampaign({
           title: data.title,
           copy: data.copy,
-          cta: data.cta,
+          cta: `${data.cta} → ${trackingUrl}`,
           imageUrl: imageUrl || undefined,
           status: 'Draft',
           placement: 'both',
           target: targetAudience === 'creators' ? 'organizers' : 'attendees',
-          trackingCode: `AI-${Math.random().toString(36).substr(2, 4).toUpperCase()}`,
+          trackingCode: trackingCode,
           incentive: { 
             type: data.recommendedIncentiveType as any, 
             value: data.recommendedIncentiveValue, 

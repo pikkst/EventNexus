@@ -111,13 +111,21 @@ export const generatePlatformGrowthCampaign = async (theme: string, target: stri
     
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `You are an expert growth marketing copywriter and visual designer for EventNexus, a premium map-first event discovery platform.
+      contents: `You are an expert growth marketing copywriter and visual designer for EventNexus, a premium map-first event discovery WEB PLATFORM (NOT a mobile app).
+      
+      CRITICAL PLATFORM INFO:
+      - EventNexus is a WEBSITE accessible at www.eventnexus.eu
+      - It is NOT an iOS or Android mobile app
+      - Users access it through web browsers on any device
+      - NEVER mention "download app", "app store", "iOS", "Android", or "mobile app"
+      - Instead use: "Visit EventNexus", "Access online", "Discover on the web", "Join at eventnexus.eu"
       
       Campaign Details:
       - Theme: ${theme}
       - Target Audience: ${audience.name}
       - Tone: ${audience.tone}
       - Primary CTA: ${audience.cta}
+      - Platform URL: www.eventnexus.eu
       
       Generate a high-converting marketing campaign with:
       
@@ -130,27 +138,31 @@ export const generatePlatformGrowthCampaign = async (theme: string, target: stri
          - Lead with benefit, not feature
          - Create FOMO (fear of missing out)
          - NEVER mention specific user numbers or fake statistics (NO "50k users", "10k+ downloads", etc.)
+         - NEVER mention mobile app, iOS, Android, or app stores
+         - Focus on the WEB PLATFORM experience
          - Focus on emotions and experiences instead
          - Include aspirational language
          - End with clear value proposition
       
       3. VISUAL PROMPT (detailed DALL-E/Midjourney style):
-         - Describe a premium, modern, eye-catching image
+         - Describe a premium, modern, eye-catching image FOR A WEB PLATFORM
          - Specify style: "cinematic photography", "vibrant gradient design", "minimalist tech aesthetic"
          - Include: composition, colors, mood, lighting, key visual elements
          - Match EventNexus brand (modern, bold, community-focused)
-         - Avoid text, logos, or specific people faces
-         - Example: "Cinematic wide shot of diverse young people celebrating at colorful outdoor festival at sunset, vibrant purple and orange lighting, confetti in air, joyful atmosphere, premium lifestyle photography, shallow depth of field, 8k quality"
+         - Include promotional text overlay with campaign title and "www.eventnexus.eu"
+         - Should look like professional web marketing material
+         - Example: "Professional web platform marketing banner, cinematic wide shot of diverse young people celebrating at colorful outdoor festival at sunset, vibrant purple and orange lighting, confetti in air, joyful atmosphere, bold text overlay with 'Discover Your City's Events' and 'www.eventnexus.eu', premium lifestyle photography, shallow depth of field, 8k quality, web-optimized composition"
       
       4. CALL TO ACTION:
          - Use ${audience.cta} or similar action-oriented phrase
          - Make it urgent and specific
+         - Should drive traffic to www.eventnexus.eu
       
       5. INCENTIVE:
          - Suggest relevant reward based on audience
          - Options: credits, discount, exclusive access, referral bonus
       
-      Make it conversion-optimized and visually striking!`,
+      Make it conversion-optimized, web-focused, and visually striking!`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
