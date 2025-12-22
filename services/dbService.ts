@@ -176,6 +176,85 @@ export const deleteEvent = async (id: string): Promise<boolean> => {
   return true;
 };
 
+// Event Likes
+export const likeEvent = async (userId: string, eventId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('event_likes')
+      .insert([{ user_id: userId, event_id: eventId }]);
+    
+    if (error) {
+      console.error('Error liking event:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error liking event:', error);
+    return false;
+  }
+};
+
+export const unlikeEvent = async (userId: string, eventId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('event_likes')
+      .delete()
+      .eq('user_id', userId)
+      .eq('event_id', eventId);
+    
+    if (error) {
+      console.error('Error unliking event:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error unliking event:', error);
+    return false;
+  }
+};
+
+export const checkIfUserLikedEvent = async (userId: string, eventId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_likes')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('event_id', eventId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error checking like status:', error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error('Error checking like status:', error);
+    return false;
+  }
+};
+
+export const getUserLikedEvents = async (userId: string): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_likes')
+      .select('event_id')
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error('Error fetching liked events:', error);
+      return [];
+    }
+    
+    return (data || []).map(like => like.event_id);
+  } catch (error) {
+    console.error('Error fetching liked events:', error);
+    return [];
+  }
+};
+
 // Users
 export const getUser = async (id: string): Promise<User | null> => {
   try {
@@ -543,7 +622,7 @@ export const getUserTickets = async (userId: string) => {
         date,
         time,
         location,
-        imageUrl:image_url
+        image
       )
     `)
     .eq('user_id', userId)

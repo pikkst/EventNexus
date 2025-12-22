@@ -296,10 +296,10 @@ export const generateMarketingTagline = async (name: string, category: string, u
     const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Generate a short, punchy marketing tagline (max 60 chars) for this event: "${name}" in the ${category} category.`
+      contents: `Create ONE compelling marketing tagline (maximum 60 characters) for an event named "${name}" in the ${category} category. Return ONLY the tagline text, no explanations, no numbering, no quotes, no alternatives.`
     });
 
-    const result = response.text?.trim() || '';
+    const result = response.text?.trim().replace(/^["']|["']$/g, '') || '';
 
     // Deduct credits after successful generation (Free tier only)
     if (userId && userTier === 'free' && result) {

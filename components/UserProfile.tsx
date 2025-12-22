@@ -35,7 +35,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
-import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount } from '../services/dbService';
+import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, deleteEvent } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import TicketCard from './TicketCard';
 import { SimplifiedSocialMediaManager } from './SimplifiedSocialMediaManager';
@@ -56,6 +56,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
   const [organizedEvents, setOrganizedEvents] = useState<EventNexusEvent[]>([]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [isDeletingEvent, setIsDeletingEvent] = useState<string | null>(null);
   const [connectStatus, setConnectStatus] = useState<{
     hasAccount: boolean;
     onboardingComplete: boolean;
@@ -92,6 +93,34 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
       loadConnectStatus();
     }
   }, [user.id, user.subscription_tier]);
+
+  const handleDeleteEvent = async (eventId: string, eventName: string, ticketsSold: number) => {
+    // Only allow deletion if no tickets sold
+    if (ticketsSold > 0) {
+      alert('Cannot delete events with sold tickets. Please contact support for assistance.');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete "${eventName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setIsDeletingEvent(eventId);
+    try {
+      const success = await deleteEvent(eventId);
+      if (success) {
+        setOrganizedEvents(prev => prev.filter(e => e.id !== eventId));
+        alert('Event deleted successfully');
+      } else {
+        alert('Failed to delete event. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert('Failed to delete event. Please try again.');
+    } finally {
+      setIsDeletingEvent(null);
+    }
+  };
 
   const handleOpenStripeDashboard = async () => {
     setIsConnectLoading(true);
@@ -484,11 +513,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                   organizedEvents.map((event) => (
                     <div
                       key={event.id}
-                      onClick={() => navigate(`/event/${event.id}`)}
-                      className="p-6 hover:bg-slate-800/30 transition-all cursor-pointer group"
+                      className="p-6 hover:bg-slate-800/30 transition-all group"
                     >
                       <div className="flex items-start justify-between">
-                        <div className="flex-1">
+                        <div 
+                          className="flex-1 cursor-pointer"
+                          onClick={() => navigate(`/event/${event.id}`)}
+                        >
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">
                               {event.category}
@@ -510,7 +541,31 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                             </span>
                           </div>
                         </div>
-                        <ArrowRight className="w-5 h-5 text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
+                        <div className="flex items-center gap-2">
+                          {event.attendeesCount === 0 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteEvent(event.id, event.name, event.attendeesCount);
+                              }}
+                              disabled={isDeletingEvent === event.id}
+                              className="p-2 bg-red-600/10 hover:bg-red-600/20 border border-red-600/30 rounded-xl transition-all disabled:opacity-50 group/del"
+                              title="Delete event (0 tickets sold)"
+                            >
+                              {isDeletingEvent === event.id ? (
+                                <RefreshCw className="w-4 h-4 text-red-400 animate-spin" />
+                              ) : (
+                                <XOctagon className="w-4 h-4 text-red-400 group-hover/del:text-red-300" />
+                              )}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => navigate(`/event/${event.id}`)}
+                            className="p-2 hover:bg-slate-700/50 rounded-xl transition-all"
+                          >
+                            <ArrowRight className="w-5 h-5 text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))

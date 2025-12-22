@@ -18,7 +18,7 @@ import {
   UserMinus,
   Star
 } from 'lucide-react';
-import { getEvents } from '../services/dbService';
+import { getEvents, likeEvent, unlikeEvent, checkIfUserLikedEvent } from '../services/dbService';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus } from '../services/stripeService';
 import { User, EventNexusEvent } from '../types';
 
@@ -36,6 +36,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [ticketCount, setTicketCount] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
   // Load event from database
   const loadEvent = React.useCallback(async () => {
@@ -47,12 +49,18 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         setEvent(foundEvent);
         setCurrentAttendees(foundEvent.attendeesCount);
       }
+      
+      // Check if user has liked this event
+      if (user && id) {
+        const liked = await checkIfUserLikedEvent(user.id, id);
+        setIsLiked(liked);
+      }
     } catch (error) {
       console.error('Error loading event:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     loadEvent();
@@ -93,6 +101,34 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const remaining = event.maxAttendees - currentAttendees;
   const totalRevenue = currentAttendees * event.price;
   const isFollowing = user?.followedOrganizers.includes(event.organizerId) ?? false;
+
+  const handleLike = async () => {
+    if (!user) {
+      onOpenAuth?.();
+      return;
+    }
+
+    if (!event || isLiking) return;
+
+    setIsLiking(true);
+    try {
+      if (isLiked) {
+        const success = await unlikeEvent(user.id, event.id);
+        if (success) {
+          setIsLiked(false);
+        }
+      } else {
+        const success = await likeEvent(user.id, event.id);
+        if (success) {
+          setIsLiked(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    } finally {
+      setIsLiking(false);
+    }
+  };
 
   const handlePurchase = async () => {
     // Require authentication before purchase
@@ -149,35 +185,65 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Left: Image & Info */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="relative rounded-[32px] overflow-hidden shadow-2xl aspect-video border border-slate-800 group">
-            <img src={event.imageUrl} className="w-full h-full object-cover transition-transform duration-[10s] group-hover:scale-110" alt={event.name} />
-            <div className="absolute top-6 left-6 flex gap-2">
-              <span className="bg-slate-950/80 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-bold uppercase border border-slate-700 text-indigo-400">{event.category}</span>
-              <span className="bg-indigo-600 px-4 py-1.5 rounded-full text-xs font-bold uppercase shadow-lg shadow-indigo-600/30">{event.visibility}</span>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-              <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 leading-tight">{event.name}</h1>
-                <div className="flex flex-wrap gap-6 text-sm font-medium">
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Calendar className="w-5 h-5 text-indigo-500" /> {event.date}
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Clock className="w-5 h-5 text-indigo-500" /> {event.time}
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <MapPin className="w-5 h-5 text-indigo-500" /> {event.location.address}, {event.location.city}
-                  </div>
-                </div>
-              </div>
+        {/* Left: Image & IhandleLike}
+                  disabled={isLiking}
+                  className={`p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all shadow-xl disabled:opacity-50 ${
+                    isLiked ? 'text-pink-500 bg-pink-500/10 border-pink-500/30' : 'text-pink-500'
+                  }`}
+                  title={isLiked ? 'Unlike this event' : 'Like this event'}
+                >
+                  <Heart className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`} />
+                </button>
+                <button 
+                  onClick={() => {
+                    const url = window.location.href;
+                    if (navigator.share) {
+                      navigator.share({
+                        title: event.name,
+                        text: event.description,
+                        url: url
+                      }).catch(() => {
+                        navigator.clipboard.writeText(url);
+                        alert('Event link copied to clipboard!');
+                      });
+                    } else {
+                      navigator.clipboard.writeText(url);
+                      alert('Event link copied to clipboard!');
+                    }
+                  }}
+                  className="p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-indigo-400 shadow-xl"
+                  title="Share this event
               <div className="flex gap-2 shrink-0">
-                <button className="p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-pink-500 shadow-xl"><Heart className="w-6 h-6" /></button>
-                <button className="p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-indigo-400 shadow-xl"><Share2 className="w-6 h-6" /></button>
+                <button 
+                  onClick={() => {
+                    // TODO: Implement like/favorite functionality
+                    alert('Like feature coming soon!');
+                  }}
+                  className="p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-pink-500 shadow-xl"
+                >
+                  <Heart className="w-6 h-6" />
+                </button>
+                <button 
+                  onClick={() => {
+                    const url = window.location.href;
+                    if (navigator.share) {
+                      navigator.share({
+                        title: event.name,
+                        text: event.description,
+                        url: url
+                      }).catch(() => {
+                        navigator.clipboard.writeText(url);
+                        alert('Event link copied to clipboard!');
+                      });
+                    } else {
+                      navigator.clipboard.writeText(url);
+                      alert('Event link copied to clipboard!');
+                    }
+                  }}
+                  className="p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-indigo-400 shadow-xl"
+                >
+                  <Share2 className="w-6 h-6" />
+                </button>
               </div>
             </div>
 
