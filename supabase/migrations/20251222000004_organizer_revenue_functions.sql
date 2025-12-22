@@ -12,7 +12,7 @@ RETURNS TABLE (
   event_date TIMESTAMP WITH TIME ZONE,
   tickets_sold BIGINT,
   gross_revenue NUMERIC,
-  subscription_tier TEXT,
+  subscription_tier VARCHAR(50),
   platform_fee_percent NUMERIC,
   platform_fee_amount NUMERIC,
   stripe_fee_amount NUMERIC,
@@ -64,14 +64,14 @@ BEGIN
     
     -- Payout status
     COALESCE(p.status, 'pending') as payout_status,
-    p.payout_date
+    p.processed_at as payout_date
     
   FROM public.events e
   LEFT JOIN public.tickets t ON t.event_id = e.id AND t.status = 'valid' AND t.payment_status = 'paid'
   LEFT JOIN public.users u ON e.organizer_id = u.id
   LEFT JOIN public.payouts p ON p.event_id = e.id
   WHERE e.organizer_id = org_id
-  GROUP BY e.id, e.name, e.date, u.subscription_tier, p.status, p.payout_date
+  GROUP BY e.id, e.name, e.date, u.subscription_tier, p.status, p.processed_at
   ORDER BY e.date DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -85,9 +85,9 @@ RETURNS TABLE (
   total_platform_fees NUMERIC,
   total_stripe_fees NUMERIC,
   total_net NUMERIC,
-  pending_payouts NUMERIC,
-  paid_out NUMERIC,
-  subscription_tier TEXT
+  pending_amount NUMERIC,
+  paid_amount NUMERIC,
+  subscription_tier VARCHAR(50)
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -120,8 +120,8 @@ BEGIN
     ((COALESCE(SUM(t.price), 0) * 0.029) + (COUNT(t.id)::NUMERIC * 0.25)) as total_net,
     
     -- Pending vs paid out
-    COALESCE(SUM(CASE WHEN p.status = 'pending' OR p.status IS NULL THEN t.price ELSE 0 END), 0) as pending_payouts,
-    COALESCE(SUM(CASE WHEN p.status = 'paid' THEN t.price ELSE 0 END), 0) as paid_out,
+    COALESCE(SUM(CASE WHEN p.status = 'pending' OR p.status IS NULL THEN t.price ELSE 0 END), 0) as pending_amount,
+    COALESCE(SUM(CASE WHEN p.status = 'paid' THEN t.price ELSE 0 END), 0) as paid_amount,
     
     u.subscription_tier
     
