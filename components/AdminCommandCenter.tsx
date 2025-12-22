@@ -1112,7 +1112,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                      <span><strong>Configure OAuth:</strong> Set redirect URI to <code className="px-2 py-1 bg-slate-800 rounded text-orange-400">{window.location.origin}/admin/social-callback</code></span>
+                      <span><strong>Configure OAuth:</strong> Set redirect URI to <code className="px-2 py-1 bg-slate-800 rounded text-orange-400">{window.location.origin}/oauth-callback.html</code></span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold">3</span>
@@ -1218,7 +1218,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                         <LinkIcon className="flex-shrink-0 w-4 h-4 text-slate-500 mt-0.5" />
                         <div>
                           <p className="text-slate-400">Redirect URI:</p>
-                          <code className="text-orange-400 break-all">{window.location.origin}/admin/social-callback</code>
+                          <code className="text-orange-400 break-all">{window.location.origin}/oauth-callback.html</code>
                         </div>
                       </div>
                     </div>
