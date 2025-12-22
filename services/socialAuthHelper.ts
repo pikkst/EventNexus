@@ -323,7 +323,16 @@ export const connectSocialAccount = async (
 
           // Exchange code for token
           const tokenResponse = await exchangeCodeForToken(platform, event.data.code, config);
+          
+          console.log('🔄 Token exchange result:', {
+            platform,
+            success: !!tokenResponse,
+            hasAccountId: !!tokenResponse?.accountId,
+            hasAccessToken: !!tokenResponse?.accessToken
+          });
+          
           if (!tokenResponse) {
+            console.error('❌ Token exchange returned null');
             reject(new Error('Failed to exchange code for access token'));
             return;
           }
@@ -331,11 +340,19 @@ export const connectSocialAccount = async (
           // Save account to database
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) {
+            console.error('❌ User not authenticated');
             reject(new Error('User not authenticated'));
             return;
           }
 
-          const { error } = await supabase
+          console.log('💾 Saving account to database:', {
+            user_id: user.id,
+            platform,
+            account_id: tokenResponse.accountId,
+            account_name: tokenResponse.accountName
+          });
+
+          const { data: savedAccount, error } = await supabase
             .from('social_media_accounts')
             .upsert({
               user_id: user.id,
@@ -349,14 +366,17 @@ export const connectSocialAccount = async (
               updated_at: new Date().toISOString()
             }, {
               onConflict: 'user_id,platform,account_id'
-            });
+            })
+            .select()
+            .single();
 
           if (error) {
-            console.error('Error saving social account:', error);
-            reject(new Error('Failed to save account to database'));
+            console.error('❌ Database save error:', error);
+            reject(new Error(`Failed to save account to database: ${error.message}`));
             return;
           }
 
+          console.log('✅ Account saved successfully:', savedAccount);
           resolve();
         } catch (error) {
           console.error('OAuth exchange error:', error);
