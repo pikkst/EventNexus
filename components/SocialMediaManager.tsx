@@ -119,7 +119,13 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
       const { publishToConnectedPlatforms } = await import('../services/socialAuthHelper');
       
       if (platform === 'facebook') {
-        await publishToConnectedPlatforms({
+        console.log('📘 Starting Facebook post...', { 
+          campaignId: campaign.id, 
+          title: campaign.title,
+          hasImage: !!(campaign.imageUrl || campaign.image_url)
+        });
+        
+        const result = await publishToConnectedPlatforms({
           facebook: {
             content: `${campaign.title}\n\n${campaign.copy}\n\n👉 ${campaign.cta}`,
             imageUrl: campaign.imageUrl || campaign.image_url,
@@ -127,54 +133,89 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
           }
         });
         
-        // Update campaign status in database
-        const { error } = await supabase
-          .from('user_campaigns')
-          .update({ 
-            facebook_posted: true,
-            status: 'published'
-          })
-          .eq('id', campaign.id);
+        console.log('📘 Facebook post result:', result);
         
-        if (error) console.error('Failed to update campaign status:', error);
+        // Check if posting was successful
+        if (result.facebook?.success) {
+          // Update campaign status in database
+          const { error } = await supabase
+            .from('user_campaigns')
+            .update({ 
+              facebook_posted: true,
+              facebook_post_id: result.facebook.postId,
+              status: 'published'
+            })
+            .eq('id', campaign.id);
+          
+          if (error) {
+            console.error('Failed to update campaign status:', error);
+            throw new Error('Database update failed: ' + error.message);
+          }
+          
+          // Update local state
+          setCampaigns(prev => prev.map(c => 
+            c.id === campaign.id 
+              ? { ...c, facebook_posted: true, facebook_post_id: result.facebook!.postId, status: 'published' } 
+              : c
+          ));
+          
+          alert(`✅ Posted to Facebook!\nPost ID: ${result.facebook.postId}`);
+        } else {
+          throw new Error(result.facebook?.error || 'Facebook posting failed');
+        }
         
-        // Update local state
-        setCampaigns(prev => prev.map(c => 
-          c.id === campaign.id 
-            ? { ...c, facebook_posted: true, status: 'published' } 
-            : c
-        ));
-        
-        alert('✅ Posted to Facebook!');
       } else if (platform === 'instagram') {
-        await publishToConnectedPlatforms({
+        console.log('📸 Starting Instagram post...', { 
+          campaignId: campaign.id, 
+          title: campaign.title,
+          hasImage: !!(campaign.imageUrl || campaign.image_url)
+        });
+        
+        const imageUrl = campaign.imageUrl || campaign.image_url;
+        if (!imageUrl) {
+          throw new Error('Instagram requires an image. Please add an image to this campaign.');
+        }
+        
+        const result = await publishToConnectedPlatforms({
           instagram: {
             caption: `${campaign.title}\n\n${campaign.copy}\n\n🔗 www.eventnexus.eu\n\n#EventNexus #Events`,
-            imageUrl: campaign.imageUrl || campaign.image_url || ''
+            imageUrl: imageUrl
           }
         });
         
-        // Update campaign status in database
-        const { error } = await supabase
-          .from('user_campaigns')
-          .update({ 
-            instagram_posted: true,
-            status: 'published'
-          })
-          .eq('id', campaign.id);
+        console.log('📸 Instagram post result:', result);
         
-        if (error) console.error('Failed to update campaign status:', error);
-        
-        // Update local state
-        setCampaigns(prev => prev.map(c => 
-          c.id === campaign.id 
-            ? { ...c, instagram_posted: true, status: 'published' } 
-            : c
-        ));
-        
-        alert('✅ Posted to Instagram!');
+        // Check if posting was successful
+        if (result.instagram?.success) {
+          // Update campaign status in database
+          const { error } = await supabase
+            .from('user_campaigns')
+            .update({ 
+              instagram_posted: true,
+              instagram_post_id: result.instagram.postId,
+              status: 'published'
+            })
+            .eq('id', campaign.id);
+          
+          if (error) {
+            console.error('Failed to update campaign status:', error);
+            throw new Error('Database update failed: ' + error.message);
+          }
+          
+          // Update local state
+          setCampaigns(prev => prev.map(c => 
+            c.id === campaign.id 
+              ? { ...c, instagram_posted: true, instagram_post_id: result.instagram!.postId, status: 'published' } 
+              : c
+          ));
+          
+          alert(`✅ Posted to Instagram!\nPost ID: ${result.instagram.postId}`);
+        } else {
+          throw new Error(result.instagram?.error || 'Instagram posting failed');
+        }
       }
     } catch (error) {
+      console.error('❌ Post failed:', error);
       alert('❌ Failed to post: ' + (error as Error).message);
     }
   };
