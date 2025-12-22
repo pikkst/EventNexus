@@ -1525,3 +1525,37 @@ export const checkConnectStatus = async (userId: string): Promise<{
     return null;
   }
 };
+
+/**
+ * Verify Stripe Connect onboarding completion and sync status with Stripe
+ * This should be called when user returns from Stripe onboarding
+ */
+export const verifyConnectOnboarding = async (userId: string): Promise<{
+  success: boolean;
+  hasAccount: boolean;
+  onboardingComplete: boolean;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+} | null> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('verify-connect-onboarding', {
+      body: { userId }
+    });
+
+    if (error) {
+      console.error('Error verifying Connect onboarding:', error);
+      return null;
+    }
+
+    return {
+      success: data.success || false,
+      hasAccount: data.hasAccount || false,
+      onboardingComplete: data.onboardingComplete || false,
+      chargesEnabled: data.chargesEnabled || false,
+      payoutsEnabled: data.payoutsEnabled || false,
+    };
+  } catch (error) {
+    console.error('Error invoking verify-connect-onboarding:', error);
+    return null;
+  }
+};

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/services/supabase';
 import { DollarSign, Calendar, CheckCircle, XCircle, Clock, TrendingUp, ExternalLink, AlertCircle } from 'lucide-react';
-import { createConnectAccount, checkConnectStatus, getConnectDashboardLink } from '@/services/dbService';
+import { createConnectAccount, checkConnectStatus, getConnectDashboardLink, verifyConnectOnboarding } from '@/services/dbService';
 
 interface Payout {
   id: string;
