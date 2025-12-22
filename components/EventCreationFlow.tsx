@@ -21,8 +21,8 @@ import {
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { generateMarketingTagline, translateDescription } from '../services/geminiService';
-import { createEvent, getEvents, getUser, deductUserCredits } from '../services/dbService';
+import { generateMarketingTagline, translateDescription, generateAdImage } from '../services/geminiService';
+import { createEvent, getEvents, getUser, deductUserCredits, uploadEventImage } from '../services/dbService';
 import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
 import { FEATURE_UNLOCK_COSTS } from '../services/featureUnlockService';
 import { User, EventNexusEvent } from '../types';
@@ -47,6 +47,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [userCredits, setUserCredits] = useState<number>(user.credits_balance || 0);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -65,6 +69,141 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
   });
 
   const navigate = useNavigate();
+
+  // Image handling functions
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 800;
+          const MAX_FILE_SIZE = 800 * 1024; // 800KB target
+          
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = height * (MAX_WIDTH / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = width * (MAX_HEIGHT / height);
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+          
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          const tryCompress = (quality: number) => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error('Failed to compress image'));
+                  return;
+                }
+                
+                if (blob.size > MAX_FILE_SIZE && quality > 0.5) {
+                  tryCompress(quality - 0.1);
+                  return;
+                }
+                
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                
+                resolve(compressedFile);
+              },
+              'image/jpeg',
+              quality
+            );
+          };
+          
+          tryCompress(0.85);
+        };
+        
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+      
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image must be less than 10MB');
+      return;
+    }
+
+    try {
+      const compressed = await compressImage(file);
+      setImageFile(compressed);
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(compressed);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      alert('Failed to process image. Please try another file.');
+    }
+  };
+
+  const handleGenerateAIImage = async () => {
+    if (!formData.name || !formData.description) {
+      alert('Please fill in event name and description first');
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    try {
+      const prompt = `${formData.name}: ${formData.description}. Category: ${formData.category}`;
+      const imageData = await generateAdImage(prompt, '16:9');
+      
+      if (imageData) {
+        setImagePreview(imageData);
+        // Convert base64 to File
+        const base64Response = await fetch(imageData);
+        const blob = await base64Response.blob();
+        const file = new File([blob], `ai-generated-${Date.now()}.png`, { type: 'image/png' });
+        setImageFile(file);
+      } else {
+        alert('Failed to generate AI image. Please try uploading manually.');
+      }
+    } catch (error) {
+      console.error('Error generating AI image:', error);
+      alert('AI image generation failed. Please upload an image manually.');
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
 
   // Geocode address using Nominatim (OpenStreetMap)
   const geocodeAddress = async (address: string) => {
@@ -318,6 +457,19 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
 
     setIsCreating(true);
     try {
+      // First, upload event image if provided
+      let uploadedImageUrl = '';
+      if (imageFile) {
+        // Create temporary event ID for image upload
+        const tempEventId = `temp-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        uploadedImageUrl = await uploadEventImage(tempEventId, imageFile) || '';
+        
+        if (!uploadedImageUrl && imagePreview.startsWith('data:')) {
+          // Use AI-generated image directly if upload fails
+          uploadedImageUrl = imagePreview;
+        }
+      }
+
       const eventData: Omit<EventNexusEvent, 'id'> = {
         name: formData.name,
         category: formData.category,
@@ -333,7 +485,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
         price: formData.price,
         visibility: formData.visibility as any,
         organizerId: user.id,
-        imageUrl: '',
+        imageUrl: uploadedImageUrl,
         attendeesCount: 0,
         maxAttendees: formData.max_capacity,
         isFeatured: user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise',
@@ -513,6 +665,90 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
       case 3:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <h2 className="text-2xl font-bold">Event Image</h2>
+            <p className="text-sm text-slate-400">Add a compelling visual to attract attendees</p>
+            
+            {/* Image Preview */}
+            {imagePreview && (
+              <div className="relative rounded-2xl overflow-hidden border border-slate-700 aspect-video">
+                <img src={imagePreview} alt="Event preview" className="w-full h-full object-cover" />
+                <button
+                  onClick={() => {
+                    setImagePreview('');
+                    setImageFile(null);
+                  }}
+                  className="absolute top-3 right-3 p-2 bg-slate-900/90 hover:bg-red-600/90 rounded-xl transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+
+            {/* Upload Options */}
+            {!imagePreview && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Upload from Device */}
+                <label className="relative cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <div className="h-48 border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/50">
+                    <div className="w-16 h-16 bg-indigo-600/10 rounded-2xl flex items-center justify-center">
+                      <Upload className="w-8 h-8 text-indigo-400" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-sm">Upload Image</p>
+                      <p className="text-xs text-slate-500 mt-1">Click to browse files</p>
+                      <p className="text-xs text-slate-600 mt-1">Max 10MB, auto-compressed</p>
+                    </div>
+                  </div>
+                </label>
+
+                {/* AI Generate Image */}
+                <button
+                  type="button"
+                  onClick={handleGenerateAIImage}
+                  disabled={isGeneratingImage || !formData.name || !formData.category}
+                  className="h-48 border-2 border-dashed border-slate-700 hover:border-orange-500 rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="w-16 h-16 bg-orange-600/10 rounded-2xl flex items-center justify-center">
+                    {isGeneratingImage ? (
+                      <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Sparkles className="w-8 h-8 text-orange-400" />
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-sm">
+                      {isGeneratingImage ? 'Generating...' : 'AI Generate Image'}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {!formData.name || !formData.category 
+                        ? 'Fill name & category first'
+                        : 'Powered by Gemini AI'}
+                    </p>
+                    {user.subscription_tier === 'free' && (
+                      <p className="text-xs text-orange-400 mt-1">20 credits per image</p>
+                    )}
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {/* Skip Option */}
+            {!imagePreview && (
+              <p className="text-xs text-center text-slate-500">
+                You can skip this step, but events with images get 3x more engagement!
+              </p>
+            )}
+          </div>
+        );
+      case 4:
+        return (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <h2 className="text-2xl font-bold">Privacy & Visibility</h2>
             <div className="space-y-3">
               <button 
@@ -567,47 +803,73 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
             </div>
           </div>
         );
-      case 4:
+      case 5:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <h2 className="text-2xl font-bold">Review & Publish</h2>
-            <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 space-y-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{formData.category || 'CATEGORY'}</span>
-                  <h3 className="text-xl font-bold">{formData.name || 'Untitled Event'}</h3>
-                  <p className="text-sm text-slate-400">{formData.tagline}</p>
+            
+            {/* Event Preview Card */}
+            <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="relative aspect-video border-b border-slate-800">
+                  <img src={imagePreview} alt={formData.name} className="w-full h-full object-cover" />
+                  <div className="absolute top-3 right-3 bg-indigo-600 px-3 py-1 rounded-full text-xs font-bold uppercase">
+                    {formData.visibility}
+                  </div>
                 </div>
-                <div className="bg-indigo-600 px-3 py-1 rounded-full text-xs font-bold uppercase">
-                  {formData.visibility}
+              )}
+              
+              {/* Event Details */}
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{formData.category || 'CATEGORY'}</span>
+                    <h3 className="text-xl font-bold mt-1">{formData.name || 'Untitled Event'}</h3>
+                    <p className="text-sm text-slate-400 mt-1">{formData.tagline}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-slate-800/50 p-3 rounded-xl">
-                  <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Price</p>
-                  <p className="font-bold text-lg">{formData.price === 0 ? 'Free' : `$${formData.price}`}</p>
-                </div>
-                <div className="bg-slate-800/50 p-3 rounded-xl">
-                  <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Language</p>
-                  <div className="flex items-center gap-1 font-bold">
-                    <Globe className="w-4 h-4" /> Auto-Translate
+                
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-slate-800/50 p-3 rounded-xl">
+                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Date & Time</p>
+                    <p className="font-bold">{formData.date || 'TBD'}</p>
+                    <p className="text-xs text-slate-400">{formData.time || 'TBD'}</p>
+                  </div>
+                  <div className="bg-slate-800/50 p-3 rounded-xl">
+                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Location</p>
+                    <p className="font-bold text-sm">{formData.locationCity || 'TBD'}</p>
+                  </div>
+                  <div className="bg-slate-800/50 p-3 rounded-xl">
+                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Price</p>
+                    <p className="font-bold text-lg">{formData.price === 0 ? 'Free' : `€${formData.price}`}</p>
+                  </div>
+                  <div className="bg-slate-800/50 p-3 rounded-xl">
+                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Capacity</p>
+                    <p className="font-bold text-lg">{formData.max_capacity}</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl">
-                <p className="text-xs text-yellow-500 font-medium leading-relaxed">
-                  {user.subscription_tier === 'pro' || user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise' 
-                    ? 'Your event will be automatically translated into 5+ languages using Gemini AI to ensure global visibility.'
-                    : 'AI auto-translation is available for Pro tier and above. Upgrade to reach global audiences.'}
-                </p>
-              </div>
             </div>
+
+            {/* AI Translation Info */}
+            <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl">
+              <p className="text-xs text-yellow-500 font-medium leading-relaxed flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                {user.subscription_tier === 'pro' || user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise' 
+                  ? 'Your event will be automatically translated into 5+ languages using Gemini AI to ensure global visibility.'
+                  : 'AI auto-translation is available for Pro tier and above. Upgrade to reach global audiences.'}
+              </p>
+            </div>
+
+            {/* Publish Button */}
             <button 
               onClick={handlePublish}
-              disabled={isCreating}
+              disabled={isCreating || isUploadingImage}
               className="w-full bg-indigo-600 hover:bg-indigo-700 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Sparkles className="w-5 h-5" /> {isCreating ? 'Creating...' : 'Publish Event'}
+              <Sparkles className="w-5 h-5" /> 
+              {isCreating ? 'Publishing...' : isUploadingImage ? 'Uploading Image...' : 'Publish Event'}
             </button>
           </div>
         );
@@ -626,7 +888,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
             </div>
             <div>
               <h1 className="text-xl font-bold">Create New Event</h1>
-              <p className="text-xs text-slate-400">Step {step} of 4</p>
+              <p className="text-xs text-slate-400">Step {step} of 5</p>
             </div>
           </div>
         </div>
@@ -635,7 +897,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
         <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
           <div 
             className="h-full bg-indigo-500 transition-all duration-500 ease-out"
-            style={{ width: `${(step / 4) * 100}%` }}
+            style={{ width: `${(step / 5) * 100}%` }}
           />
         </div>
       </div>
@@ -651,7 +913,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
           >
             <ChevronLeft className="w-5 h-5" /> Back
           </button>
-          {step < 4 && (
+          {step < 5 && (
             <button 
               onClick={nextStep}
               className="bg-slate-100 text-slate-950 px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-white transition-all"
