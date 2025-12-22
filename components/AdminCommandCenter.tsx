@@ -959,9 +959,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                     />
                     <button
                       onClick={async () => {
-                        const pageId = (document.getElementById('fb-page-id') as HTMLInputElement).value;
-                        const pageName = (document.getElementById('fb-page-name') as HTMLInputElement).value;
-                        const token = (document.getElementById('fb-access-token') as HTMLInputElement).value;
+                        const pageId = (document.getElementById('fb-page-id') as HTMLInputElement).value.trim();
+                        const pageName = (document.getElementById('fb-page-name') as HTMLInputElement).value.trim();
+                        const token = (document.getElementById('fb-access-token') as HTMLInputElement).value.trim();
                         
                         if (!pageId || !pageName || !token) {
                           alert('⚠️ Täida kõik väljad');
@@ -972,7 +972,13 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                           const { data: { user } } = await supabase.auth.getUser();
                           if (!user) throw new Error('Not authenticated');
                           
-                          const { error } = await supabase.from('social_media_accounts').upsert({
+                          // Delete old Facebook accounts first to avoid USER ID confusion
+                          await supabase.from('social_media_accounts')
+                            .delete()
+                            .eq('user_id', user.id)
+                            .eq('platform', 'facebook');
+                          
+                          const { error } = await supabase.from('social_media_accounts').insert({
                             user_id: user.id,
                             platform: 'facebook',
                             account_id: pageId,
@@ -1027,9 +1033,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                     />
                     <button
                       onClick={async () => {
-                        const accountId = (document.getElementById('ig-account-id') as HTMLInputElement).value;
-                        const username = (document.getElementById('ig-username') as HTMLInputElement).value;
-                        const token = (document.getElementById('ig-access-token') as HTMLInputElement).value;
+                        const accountId = (document.getElementById('ig-account-id') as HTMLInputElement).value.trim();
+                        const username = (document.getElementById('ig-username') as HTMLInputElement).value.trim();
+                        const token = (document.getElementById('ig-access-token') as HTMLInputElement).value.trim();
                         
                         if (!accountId || !username || !token) {
                           alert('⚠️ Täida kõik väljad');
@@ -1040,7 +1046,13 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                           const { data: { user } } = await supabase.auth.getUser();
                           if (!user) throw new Error('Not authenticated');
                           
-                          const { error } = await supabase.from('social_media_accounts').upsert({
+                          // Delete old Instagram accounts first
+                          await supabase.from('social_media_accounts')
+                            .delete()
+                            .eq('user_id', user.id)
+                            .eq('platform', 'instagram');
+                          
+                          const { error } = await supabase.from('social_media_accounts').insert({
                             user_id: user.id,
                             platform: 'instagram',
                             account_id: accountId,
@@ -1072,12 +1084,13 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
               
               <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl">
                 <p className="text-xs text-blue-300">
-                  <strong>Kuidas saada õigeid väärtusi:</strong><br/>
+                  <strong>⚠️ Kuidas saada õigeid väärtusi:</strong><br/>
                   1. Mine <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener" className="underline">Graph API Explorer</a><br/>
                   2. Vali oma EventNexus App<br/>
-                  3. Get Token → Page Access Token<br/>
-                  4. Vali EventNexus leht (ID: 864504226754704)<br/>
-                  5. Kopeeri access token siia
+                  3. Vajuta "Get Token" → <strong className="text-yellow-300">"Get Page Access Token"</strong> (MITTE "Get User Access Token"!)<br/>
+                  4. Vali "EventNexus" leht (ID: 864504226754704)<br/>
+                  5. Kopeeri <strong className="text-yellow-300">PAGE ACCESS TOKEN</strong> (pikk string algusega EAA...)<br/>
+                  6. Kasuta SAMA tokenit nii Facebookile kui Instagramile
                 </p>
               </div>
             </div>
