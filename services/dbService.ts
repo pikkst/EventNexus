@@ -436,6 +436,37 @@ export const uploadBanner = async (userId: string, file: File): Promise<string |
   }
 };
 
+export const uploadEventImage = async (eventId: string, file: File): Promise<string | null> => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${eventId}-${Date.now()}.${fileExt}`;
+    const filePath = `event-images/${fileName}`;
+
+    // Upload file to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('event-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('Error uploading event image:', uploadError);
+      return null;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('event-images')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error in uploadEventImage:', error);
+    return null;
+  }
+};
+
 export const updateUser = async (id: string, updates: Partial<User>): Promise<User | null> => {
   const { data, error } = await supabase
     .from('users')
