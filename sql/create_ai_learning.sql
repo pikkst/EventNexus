@@ -86,7 +86,7 @@ BEGIN
   ELSIF p_element_type = 'audience' THEN
     RETURN QUERY
     SELECT 
-      c.target_audience::TEXT as element_value,
+      c.target::TEXT as element_value,
       ROUND(AVG(cp.ctr), 2) as avg_ctr,
       ROUND(AVG(cp.engagement_rate), 2) as avg_engagement_rate,
       SUM(cp.total_impressions)::BIGINT as total_impressions,
@@ -94,9 +94,9 @@ BEGIN
       COUNT(*)::BIGINT as campaign_count
     FROM campaigns c
     JOIN campaign_performance cp ON c.id = cp.campaign_id
-    WHERE c.target_audience IS NOT NULL
+    WHERE c.target IS NOT NULL
       AND c.created_at >= NOW() - INTERVAL '90 days'
-    GROUP BY c.target_audience
+    GROUP BY c.target
     ORDER BY avg_ctr DESC, avg_engagement_rate DESC
     LIMIT p_limit;
   
@@ -107,62 +107,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Identify campaigns that need optimization
-CREATE OR REPLACE FUNCTION identify_underperforming_campaigns()
-RETURNS TABLE(
-  campaign_id UUID,
-  campaign_title VARCHAR,
-  issue_type VARCHAR,
-  severity VARCHAR,
-  current_ctr DECIMAL(5,2),
-  current_roi DECIMAL(10,2),
-  total_spend DECIMAL(10,2),
-  recommendation TEXT
-) AS $$
-BEGIN
-  RETURN QUERY
-  SELECT 
-    c.id as campaign_id,
-    c.title as campaign_title,
-    CASE 
-      WHEN cp.ctr < 0.5 AND cp.total_impressions > 1000 THEN 'low_ctr'
-      WHEN cp.roi < 0 AND cp.total_spend > 100 THEN 'negative_roi'
-      WHEN cp.conversion_rate < 1.0 AND cp.total_clicks > 100 THEN 'low_conversion'
-      WHEN cp.engagement_rate < 0.5 AND cp.total_impressions > 500 THEN 'low_engagement'
-    END as issue_type,
-    CASE 
-      WHEN cp.total_spend > 500 OR cp.total_impressions > 10000 THEN 'critical'
-      WHEN cp.total_spend > 200 OR cp.total_impressions > 5000 THEN 'warning'
-      ELSE 'info'
-    END as severity,
-    cp.ctr as current_ctr,
-    cp.roi as current_roi,
-    cp.total_spend,
-    CASE 
-      WHEN cp.ctr < 0.5 AND cp.total_impressions > 1000 THEN 'Consider A/B testing headline and image. Current CTR is below platform average.'
-      WHEN cp.roi < 0 AND cp.total_spend > 100 THEN 'Pause campaign immediately. Negative ROI detected. Review targeting and creative.'
-      WHEN cp.conversion_rate < 1.0 AND cp.total_clicks > 100 THEN 'Improve landing page or CTA. Getting clicks but no conversions.'
-      WHEN cp.engagement_rate < 0.5 AND cp.total_impressions > 500 THEN 'Content not resonating. Try different messaging or visuals.'
-    END as recommendation
-  FROM campaigns c
-  JOIN campaign_performance cp ON c.id = cp.campaign_id
-  WHERE 
-    cp.is_active = true
-    AND (
-      (cp.ctr < 0.5 AND cp.total_impressions > 1000)
-      OR (cp.roi < 0 AND cp.total_spend > 100)
-      OR (cp.conversion_rate < 1.0 AND cp.total_clicks > 100)
-      OR (cp.engagement_rate < 0.5 AND cp.total_impressions > 500)
-    )
-  ORDER BY 
-    CASE 
-      WHEN cp.total_spend > 500 OR cp.total_impressions > 10000 THEN 1
-      WHEN cp.total_spend > 200 OR cp.total_impressions > 5000 THEN 2
-      ELSE 3
-    END,
-    cp.total_spend DESC;
-END;
-$$ LANGUAGE plpgsql;
+-- NOTE: identify_underperforming_campaigns is defined in create_autonomous_operations.sql
+-- with default parameters to avoid function overloading conflicts.
+-- That function can be called with or without parameters:
+--   - identify_underperforming_campaigns() uses defaults
+--   - identify_underperforming_campaigns(50.0, 1.0, 24) with custom values
 
 -- ============================================
 -- A/B Test Creation Functions
@@ -431,7 +380,7 @@ WHERE c.created_at >= NOW() - INTERVAL '90 days';
 -- Grant permissions
 GRANT EXECUTE ON FUNCTION analyze_campaign_patterns TO authenticated;
 GRANT EXECUTE ON FUNCTION get_top_performing_elements TO authenticated;
-GRANT EXECUTE ON FUNCTION identify_underperforming_campaigns TO authenticated;
+-- identify_underperforming_campaigns permissions granted in create_autonomous_operations.sql
 GRANT EXECUTE ON FUNCTION create_ab_test_from_campaign TO authenticated;
 GRANT EXECUTE ON FUNCTION evaluate_ab_test TO authenticated;
 GRANT EXECUTE ON FUNCTION store_campaign_insight TO authenticated;

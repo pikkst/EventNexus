@@ -28,11 +28,12 @@ export interface PerformingElement {
 export interface UnderperformingCampaign {
   campaign_id: string;
   campaign_title: string;
-  issue_type: string;
-  severity: string;
-  current_ctr: number;
-  current_roi: number;
+  current_budget: number;
   total_spend: number;
+  roi: number;
+  ctr: number;
+  conversion_rate: number;
+  hours_running: number;
   recommendation: string;
 }
 
@@ -120,9 +121,17 @@ export async function getTopPerformingElements(
 /**
  * Identify campaigns that need optimization
  */
-export async function identifyUnderperformingCampaigns(): Promise<UnderperformingCampaign[]> {
+export async function identifyUnderperformingCampaigns(
+  minSpend: number = 50.0,
+  maxRoi: number = 1.0,
+  minDurationHours: number = 24
+): Promise<UnderperformingCampaign[]> {
   try {
-    const { data, error } = await supabase.rpc('identify_underperforming_campaigns');
+    const { data, error } = await supabase.rpc('identify_underperforming_campaigns', {
+      min_spend: minSpend,
+      max_roi: maxRoi,
+      min_duration_hours: minDurationHours
+    });
 
     if (error) throw error;
     return data || [];
@@ -467,20 +476,33 @@ export async function autoGenerateInsights(): Promise<number> {
     let count = 0;
 
     for (const campaign of underperforming.slice(0, 5)) { // Limit to 5 to avoid rate limits
+      // Determine severity based on recommendation
+      const severity = campaign.recommendation.includes('CRITICAL') ? 'critical' 
+        : campaign.recommendation.includes('HIGH') ? 'warning' 
+        : 'info';
+      
+      // Determine issue type from recommendation
+      const issueType = campaign.roi < 0.5 ? 'negative_roi'
+        : campaign.roi < 1.0 ? 'low_roi'
+        : campaign.ctr < 1.0 ? 'low_ctr'
+        : 'low_performance';
+
       const insightId = await storeCampaignInsight(
         campaign.campaign_id,
         'performance',
-        campaign.severity as any,
-        `${campaign.issue_type.replace('_', ' ').toUpperCase()} Detected`,
+        severity as any,
+        `${issueType.replace('_', ' ').toUpperCase()} Detected`,
         campaign.recommendation,
-        `AI detected ${campaign.issue_type}. ${campaign.recommendation}`,
-        campaign.severity === 'critical' ? 'pause' : 'optimize',
+        `AI detected ${issueType}. ${campaign.recommendation}`,
+        severity === 'critical' ? 'pause' : 'optimize',
         75.0,
         {
-          current_ctr: campaign.current_ctr,
-          current_roi: campaign.current_roi,
+          ctr: campaign.ctr,
+          roi: campaign.roi,
           total_spend: campaign.total_spend,
-          issue_type: campaign.issue_type
+          conversion_rate: campaign.conversion_rate,
+          hours_running: campaign.hours_running,
+          issue_type: issueType
         }
       );
 
