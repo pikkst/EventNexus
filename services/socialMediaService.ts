@@ -166,59 +166,28 @@ export const postToFacebook = async (
   eventUrl?: string
 ): Promise<{ success: boolean; postId?: string; error?: string }> => {
   try {
-    console.log('📘 Facebook posting:', { pageId, hasImage: !!imageUrl, hasEventUrl: !!eventUrl });
+    console.log('📘 Facebook posting (NEW API):', { pageId, hasImage: !!imageUrl, hasEventUrl: !!eventUrl });
     
     if (!pageId) {
       throw new Error('Facebook Page ID is required');
     }
 
-    // If we have an image, post to /photos endpoint (supports both image and link)
-    if (imageUrl) {
-      const photoData: any = {
-        url: imageUrl,
-        caption: content,
-        access_token: accessToken
-      };
-
-      // Add event URL as link
-      if (eventUrl) {
-        photoData.link = eventUrl;
-      }
-
-      const response = await fetch(
-        `https://graph.facebook.com/v18.0/${pageId}/photos`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(photoData)
-        }
-      );
-
-      const result = await response.json();
-      
-      if (result.error) {
-        console.error('Facebook photo API error:', result.error);
-        throw new Error(result.error.message || 'Facebook photo posting failed');
-      }
-
-      console.log('✅ Posted photo to Facebook:', result.id);
-      return {
-        success: true,
-        postId: result.id,
-        error: undefined
-      };
-    }
-
-    // No image - post to /feed endpoint
+    // Use /feed endpoint for all posts (with or without image)
     const postData: any = {
       message: content,
       access_token: accessToken
     };
 
-    if (eventUrl) {
+    // Add image URL (Facebook will fetch and display it)
+    if (imageUrl) {
+      postData.link = imageUrl;
+      console.log('📷 Adding image:', imageUrl);
+    } else if (eventUrl) {
+      // If no image, add event URL as link
       postData.link = eventUrl;
     }
 
+    console.log('📤 Posting to Facebook /feed endpoint...');
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${pageId}/feed`,
       {
@@ -231,7 +200,13 @@ export const postToFacebook = async (
     const result = await response.json();
     
     if (result.error) {
-      console.error('Facebook API error:', result.error);
+      console.error('❌ Facebook API error:', result.error);
+      
+      // Check if token expired
+      if (result.error.code === 190) {
+        throw new Error('Facebook access token has expired. Please reconnect your Facebook account.');
+      }
+      
       throw new Error(result.error.message || 'Facebook posting failed');
     }
 
@@ -242,7 +217,7 @@ export const postToFacebook = async (
       error: undefined
     };
   } catch (error) {
-    console.error('Facebook posting error:', error);
+    console.error('❌ Facebook posting error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
