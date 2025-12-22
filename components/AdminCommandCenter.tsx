@@ -218,21 +218,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       }
     };
 
-    const loadSocialAccounts = async () => {
-      setIsLoadingSocial(true);
-      try {
-        const { getConnectedAccounts } = await import('../services/socialAuthHelper');
-        const accounts = await getConnectedAccounts();
-        setConnectedAccounts(accounts);
-      } catch (error) {
-        console.error('Error loading social accounts:', error);
-      } finally {
-        setIsLoadingSocial(false);
-      }
-    };
-
     loadData();
-    loadSocialAccounts();
 
     // Auto-refresh infrastructure stats every 10 seconds
     const infraInterval = setInterval(async () => {
