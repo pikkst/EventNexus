@@ -1448,8 +1448,8 @@ export interface RevenueSummary {
   total_platform_fees: number;
   total_stripe_fees: number;
   total_net: number;
-  pending_payouts: number;
-  paid_out: number;
+  pending_amount: number;
+  paid_amount: number;
   subscription_tier: string;
 }
 
