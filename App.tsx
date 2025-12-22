@@ -199,6 +199,10 @@ const App: React.FC = () => {
       }
       
       try {
+        // Initialize campaign tracking
+        const { initializeTracking } = await import('./services/campaignTrackingService');
+        await initializeTracking(session?.user?.id);
+        
         // Check for existing session FIRST
         const { data: { session } } = await supabase.auth.getSession();
         
