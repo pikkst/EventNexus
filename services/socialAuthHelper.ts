@@ -130,33 +130,59 @@ const exchangeCodeForToken = async (
           
           const pagesData = await pagesResponse.json();
           
+          console.log('📄 Facebook Pages:', pagesData);
+          
+          if (pagesData.error) {
+            console.error('Facebook API error:', pagesData.error);
+            throw new Error(`Facebook API error: ${pagesData.error.message}`);
+          }
+          
+          if (!pagesData.data || pagesData.data.length === 0) {
+            console.error('❌ No Facebook Pages found');
+            throw new Error('No Facebook Pages found. Create a Facebook Page first, then connect your Instagram Business Account to it.');
+          }
+          
           // Find the first page with an Instagram Business Account
           const pageWithInstagram = pagesData.data?.find((page: any) => page.instagram_business_account);
           
           if (pageWithInstagram?.instagram_business_account) {
             const igAccountId = pageWithInstagram.instagram_business_account.id;
             
-            // Get Instagram account details
+            console.log('✅ Found Instagram Business Account:', igAccountId);
+            
+            // Get Instagram account details using the page's access token
             const igResponse = await fetch(
-              `https://graph.facebook.com/v18.0/${igAccountId}?fields=id,username&access_token=${data.access_token}`
+              `https://graph.facebook.com/v18.0/${igAccountId}?fields=id,username,name&access_token=${data.access_token}`
             );
             
             const igData = await igResponse.json();
+            
+            if (igData.error) {
+              console.error('Instagram API error:', igData.error);
+              throw new Error(`Instagram API error: ${igData.error.message}`);
+            }
+            
+            console.log('📸 Instagram account:', igData);
             
             return {
               accessToken: data.access_token,
               refreshToken: data.refresh_token,
               expiresAt: data.expires_in,
               accountId: igAccountId,
-              accountName: igData.username || 'Instagram Business Account'
+              accountName: igData.username || igData.name || 'Instagram Business Account'
             };
           } else {
-            console.error('No Instagram Business Account found. Make sure your Instagram is a Business Account connected to a Facebook Page.');
-            return null;
+            console.error('❌ No Instagram Business Account found on any page');
+            console.log('Available pages:', pagesData.data.map((p: any) => ({ id: p.id, name: p.name, hasIG: !!p.instagram_business_account })));
+            throw new Error(
+              'No Instagram Business Account found. ' +
+              'Make sure your Instagram is a Business Account connected to a Facebook Page. ' +
+              'Guide: https://help.instagram.com/502981923235522'
+            );
           }
         } catch (error) {
           console.error('Failed to fetch Instagram Business Account:', error);
-          return null;
+          throw error;
         }
       }
       
