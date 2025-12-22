@@ -281,7 +281,23 @@ export const postToInstagram = async (
 
     console.log('✅ Instagram container created:', containerResult.id);
 
-    // Step 2: Publish the media container
+    // Step 2: Wait for container to be ready (Instagram needs time to process image)
+    console.log('⏳ Waiting for Instagram to process media container...');
+    await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds
+
+    // Step 2.5: Check container status
+    const statusResponse = await fetch(
+      `https://graph.facebook.com/v18.0/${containerResult.id}?fields=status_code&access_token=${accessToken}`
+    );
+    const statusResult = await statusResponse.json();
+    console.log('📊 Container status:', statusResult);
+
+    if (statusResult.status_code !== 'FINISHED' && statusResult.status_code !== 'IN_PROGRESS') {
+      throw new Error(`Container not ready: ${statusResult.status_code || 'unknown status'}`);
+    }
+
+    // Step 3: Publish the media container
+    console.log('📤 Publishing Instagram post...');
     const publishResponse = await fetch(
       `https://graph.facebook.com/v18.0/${accountId}/media_publish`,
       {
@@ -297,7 +313,7 @@ export const postToInstagram = async (
     const publishResult = await publishResponse.json();
     
     if (publishResult.error) {
-      console.error('Instagram publish error:', publishResult.error);
+      console.error('❌ Instagram publish error:', publishResult.error);
       throw new Error(publishResult.error.message || 'Failed to publish Instagram post');
     }
 
