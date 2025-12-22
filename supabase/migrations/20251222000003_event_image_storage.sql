@@ -19,12 +19,14 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- STEP 2: Allow public read access to event images
-CREATE POLICY IF NOT EXISTS "Public read access for event images"
+DROP POLICY IF EXISTS "Public read access for event images" ON storage.objects;
+CREATE POLICY "Public read access for event images"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'event-images');
 
 -- STEP 3: Allow authenticated users to upload event images
-CREATE POLICY IF NOT EXISTS "Authenticated users can upload event images"
+DROP POLICY IF EXISTS "Authenticated users can upload event images" ON storage.objects;
+CREATE POLICY "Authenticated users can upload event images"
 ON storage.objects FOR INSERT
 WITH CHECK (
   bucket_id = 'event-images' 
@@ -32,7 +34,8 @@ WITH CHECK (
 );
 
 -- STEP 4: Allow users to update their own event images
-CREATE POLICY IF NOT EXISTS "Users can update own event images"
+DROP POLICY IF EXISTS "Users can update own event images" ON storage.objects;
+CREATE POLICY "Users can update own event images"
 ON storage.objects FOR UPDATE
 USING (
   bucket_id = 'event-images' 
@@ -43,7 +46,8 @@ WITH CHECK (
 );
 
 -- STEP 5: Allow users to delete their own event images
-CREATE POLICY IF NOT EXISTS "Users can delete own event images"
+DROP POLICY IF EXISTS "Users can delete own event images" ON storage.objects;
+CREATE POLICY "Users can delete own event images"
 ON storage.objects FOR DELETE
 USING (
   bucket_id = 'event-images' 
