@@ -44,6 +44,7 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
   // Load connected accounts
   useEffect(() => {
     loadConnectedAccounts();
+    loadUserCampaigns();
   }, [user.id]);
 
   const loadConnectedAccounts = async () => {
@@ -58,6 +59,21 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
     }
   };
 
+  const loadUserCampaigns = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_campaigns')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setCampaigns(data || []);
+    } catch (error) {
+      console.error('Failed to load campaigns:', error);
+    }
+  };
+
   // Generate new campaign with AI
   const handleGenerateCampaign = async (eventName: string, audienceType: string) => {
     try {
@@ -66,7 +82,7 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
       
       // Save to database
       const { data: savedCampaign, error } = await supabase
-        .from('campaign_social_content')
+        .from('user_campaigns')
         .insert({
           user_id: user.id,
           title: campaign.title,
