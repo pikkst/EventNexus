@@ -24,6 +24,7 @@ import { generateSocialMediaContentWithImages } from '../services/socialMediaSer
 import { supabase } from '../services/supabase';
 import BrandProtectionMonitor from './BrandProtectionMonitor';
 import AdminInbox from './AdminInbox';
+import CampaignAnalyticsDashboard from './CampaignAnalyticsDashboard';
 import { 
   getEvents, 
   getAllUsers, 
@@ -475,6 +476,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     { id: 'users', label: 'User Governance', icon: <Users /> },
     { id: 'inbox', label: 'Email Inbox', icon: <Mail /> },
     { id: 'marketing', label: 'Campaign Engine', icon: <Rocket /> },
+    { id: 'analytics-campaign', label: 'Campaign Analytics', icon: <Target /> },
     { id: 'social-media', label: 'Social Media Hub', icon: <Share2 /> },
     { id: 'brand-protection', label: 'Brand Protection', icon: <Shield /> },
     { id: 'financials', label: 'Nexus Economy', icon: <DollarSign /> },
@@ -918,6 +920,18 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
            </div>
         )}
 
+        {activeTab === 'analytics-campaign' && (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+              <div>
+                <h3 className="text-2xl font-black tracking-tighter">Campaign Analytics</h3>
+                <p className="text-slate-500 text-sm font-medium">Real-time performance tracking and insights for AI campaigns.</p>
+              </div>
+            </div>
+            <CampaignAnalyticsDashboard />
+          </div>
+        )}
+
         {activeTab === 'social-media' && (
           <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
@@ -934,7 +948,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 <Key size={20} />
                 🔧 Manual Connection (Recommended)
               </h3>
-              <p className="text-slate-400 mb-4">OAuth auto-fetch võib ebaõnnestuda. Sisesta Meta poolt antud andmed otse:</p>
+              <p className="text-slate-400 mb-4">OAuth auto-fetch may fail. Enter Meta-provided credentials directly:</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Facebook Manual */}
@@ -945,13 +959,13 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                   <div className="space-y-2">
                     <input
                       type="text"
-                      placeholder="Page ID (nt: 864504226754704)"
+                      placeholder="Page ID (e.g., 864504226754704)"
                       id="fb-page-id"
                       className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
                     />
                     <input
                       type="text"
-                      placeholder="Page Name (nt: EventNexus)"
+                      placeholder="Page Name (e.g., EventNexus)"
                       id="fb-page-name"
                       className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
                     />
@@ -968,7 +982,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                         const token = (document.getElementById('fb-access-token') as HTMLInputElement).value.trim();
                         
                         if (!pageId || !pageName || !token) {
-                          alert('⚠️ Täida kõik väljad');
+                          alert('⚠️ Please fill all fields');
                           return;
                         }
                         
@@ -999,14 +1013,14 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                           const accounts = await getConnectedAccounts();
                           setConnectedAccounts(accounts);
                           
-                          alert('✅ Facebook ühendatud!');
+                          alert('✅ Facebook connected!');
                         } catch (error) {
-                          alert('❌ Viga: ' + (error as Error).message);
+                          alert('❌ Error: ' + (error as Error).message);
                         }
                       }}
                       className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-bold"
                     >
-                      💾 Salvesta Facebook
+                      💾 Save Facebook
                     </button>
                   </div>
                 </div>
@@ -1019,19 +1033,19 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                   <div className="space-y-2">
                     <input
                       type="text"
-                      placeholder="IG Business Account ID (nt: 17841473316101833)"
+                      placeholder="IG Business Account ID (e.g., 17841473316101833)"
                       id="ig-account-id"
                       className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
                     />
                     <input
                       type="text"
-                      placeholder="Instagram Username (nt: blogpieesti)"
+                      placeholder="Instagram Username (e.g., blogpieesti)"
                       id="ig-username"
                       className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
                     />
                     <input
                       type="password"
-                      placeholder="Access Token (sama mis Facebook)"
+                      placeholder="Access Token (same as Facebook)"
                       id="ig-access-token"
                       className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
                     />
@@ -1042,7 +1056,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                         const token = (document.getElementById('ig-access-token') as HTMLInputElement).value.trim();
                         
                         if (!accountId || !username || !token) {
-                          alert('⚠️ Täida kõik väljad');
+                          alert('⚠️ Please fill all fields');
                           return;
                         }
                         
@@ -1073,14 +1087,14 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                           const accounts = await getConnectedAccounts();
                           setConnectedAccounts(accounts);
                           
-                          alert('✅ Instagram ühendatud!');
+                          alert('✅ Instagram connected!');
                         } catch (error) {
-                          alert('❌ Viga: ' + (error as Error).message);
+                          alert('❌ Error: ' + (error as Error).message);
                         }
                       }}
                       className="w-full py-2 bg-gradient-to-br from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg text-sm font-bold"
                     >
-                      💾 Salvesta Instagram
+                      💾 Save Instagram
                     </button>
                   </div>
                 </div>
@@ -1088,13 +1102,13 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
               
               <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl">
                 <p className="text-xs text-blue-300">
-                  <strong>⚠️ Kuidas saada õigeid väärtusi:</strong><br/>
-                  1. Mine <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener" className="underline">Graph API Explorer</a><br/>
-                  2. Vali oma EventNexus App<br/>
-                  3. Vajuta "Get Token" → <strong className="text-yellow-300">"Get Page Access Token"</strong> (MITTE "Get User Access Token"!)<br/>
-                  4. Vali "EventNexus" leht (ID: 864504226754704)<br/>
-                  5. Kopeeri <strong className="text-yellow-300">PAGE ACCESS TOKEN</strong> (pikk string algusega EAA...)<br/>
-                  6. Kasuta SAMA tokenit nii Facebookile kui Instagramile
+                  <strong>⚠️ How to get correct values:</strong><br/>
+                  1. Go to <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener" className="underline">Graph API Explorer</a><br/>
+                  2. Select your EventNexus App<br/>
+                  3. Click "Get Token" → <strong className="text-yellow-300">"Get Page Access Token"</strong> (NOT "Get User Access Token"!)<br/>
+                  4. Select "EventNexus" page (ID: 864504226754704)<br/>
+                  5. Copy the <strong className="text-yellow-300">PAGE ACCESS TOKEN</strong> (long string starting with EAA...)<br/>
+                  6. Use the SAME token for both Facebook and Instagram
                 </p>
               </div>
             </div>

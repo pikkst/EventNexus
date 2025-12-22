@@ -486,7 +486,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                       <Megaphone size={48} className="text-slate-700" />
                       <div className="space-y-2">
                          <h4 className="text-xl font-bold text-slate-500">Campaign Results</h4>
-                         <p className="text-sm text-slate-600 max-w-sm mx-auto">Generated ads will appear here with professional headlines and müügitekst.</p>
+                         <p className="text-sm text-slate-600 max-w-sm mx-auto">Generated ads will appear here with professional headlines and copy.</p>
                       </div>
                    </div>
                  ) : (
