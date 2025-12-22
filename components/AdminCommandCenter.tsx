@@ -122,8 +122,6 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [diagnosticResults, setDiagnosticResults] = useState<any>(null);
   const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
 
-  if (user.role !== 'admin') return <div className="p-20 text-center font-black bg-slate-950 min-h-screen text-red-500">UNAUTHORIZED_ACCESS_DENIED</div>;
-
   const filteredUsers = useMemo(() => {
     return platformUsers.filter(u => {
       const matchesSearch = u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase());
@@ -525,6 +523,15 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       </div>
     );
   };
+
+  // Authorization check
+  if (user.role !== 'admin') {
+    return (
+      <div className="p-20 text-center font-black bg-slate-950 min-h-screen text-red-500">
+        UNAUTHORIZED_ACCESS_DENIED
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-slate-950 text-slate-50 overflow-hidden">
