@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION get_organizer_revenue(org_id UUID)
 RETURNS TABLE (
   event_id UUID,
   event_name VARCHAR(255),
-  event_date TIMESTAMP WITH TIME ZONE,
+  event_date DATE,
   tickets_sold BIGINT,
   gross_revenue NUMERIC,
   subscription_tier VARCHAR(50),
