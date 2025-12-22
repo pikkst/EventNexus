@@ -25,6 +25,14 @@ interface Campaign {
   imageUrl?: string;
   image_url?: string;
   status: string;
+  facebook_posted?: boolean;
+  instagram_posted?: boolean;
+  twitter_posted?: boolean;
+  linkedin_posted?: boolean;
+  facebook_post_id?: string;
+  instagram_post_id?: string;
+  twitter_post_id?: string;
+  linkedin_post_id?: string;
 }
 
 interface SocialMediaManagerProps {
@@ -90,7 +98,7 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
           cta: campaign.cta,
           image_url: campaign.imageUrl,
           tracking_code: campaign.trackingCode,
-          status: 'Draft',
+          status: 'draft',
           created_at: new Date().toISOString()
         })
         .select()
@@ -118,6 +126,25 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
             eventUrl: 'https://www.eventnexus.eu'
           }
         });
+        
+        // Update campaign status in database
+        const { error } = await supabase
+          .from('user_campaigns')
+          .update({ 
+            facebook_posted: true,
+            status: 'published'
+          })
+          .eq('id', campaign.id);
+        
+        if (error) console.error('Failed to update campaign status:', error);
+        
+        // Update local state
+        setCampaigns(prev => prev.map(c => 
+          c.id === campaign.id 
+            ? { ...c, facebook_posted: true, status: 'published' } 
+            : c
+        ));
+        
         alert('✅ Posted to Facebook!');
       } else if (platform === 'instagram') {
         await publishToConnectedPlatforms({
@@ -126,6 +153,25 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
             imageUrl: campaign.imageUrl || campaign.image_url || ''
           }
         });
+        
+        // Update campaign status in database
+        const { error } = await supabase
+          .from('user_campaigns')
+          .update({ 
+            instagram_posted: true,
+            status: 'published'
+          })
+          .eq('id', campaign.id);
+        
+        if (error) console.error('Failed to update campaign status:', error);
+        
+        // Update local state
+        setCampaigns(prev => prev.map(c => 
+          c.id === campaign.id 
+            ? { ...c, instagram_posted: true, status: 'published' } 
+            : c
+        ));
+        
         alert('✅ Posted to Instagram!');
       }
     } catch (error) {
@@ -407,6 +453,20 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
                   <div className="flex-1">
                     <h4 className="text-lg font-black text-white mb-1">{campaign.title}</h4>
                     <p className="text-xs text-slate-400 line-clamp-2">{campaign.copy}</p>
+                    
+                    {/* Posting status badges */}
+                    <div className="flex gap-2 mt-2">
+                      {campaign.facebook_posted && (
+                        <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">
+                          📘 Posted to Facebook
+                        </span>
+                      )}
+                      {campaign.instagram_posted && (
+                        <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full bg-pink-500/20 text-pink-400">
+                          📸 Posted to Instagram
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className="text-xs font-black px-3 py-1 rounded-full bg-slate-700 text-slate-400">
                     {campaign.status}
