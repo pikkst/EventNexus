@@ -120,7 +120,47 @@ const exchangeCodeForToken = async (
 
       const data = await response.json();
       
-      // Get account info
+      // For Instagram, we need the Instagram Business Account ID, not the Facebook User ID
+      if (platform === 'instagram') {
+        try {
+          // Get Facebook Pages managed by the user
+          const pagesResponse = await fetch(
+            `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,instagram_business_account&access_token=${data.access_token}`
+          );
+          
+          const pagesData = await pagesResponse.json();
+          
+          // Find the first page with an Instagram Business Account
+          const pageWithInstagram = pagesData.data?.find((page: any) => page.instagram_business_account);
+          
+          if (pageWithInstagram?.instagram_business_account) {
+            const igAccountId = pageWithInstagram.instagram_business_account.id;
+            
+            // Get Instagram account details
+            const igResponse = await fetch(
+              `https://graph.facebook.com/v18.0/${igAccountId}?fields=id,username&access_token=${data.access_token}`
+            );
+            
+            const igData = await igResponse.json();
+            
+            return {
+              accessToken: data.access_token,
+              refreshToken: data.refresh_token,
+              expiresAt: data.expires_in,
+              accountId: igAccountId,
+              accountName: igData.username || 'Instagram Business Account'
+            };
+          } else {
+            console.error('No Instagram Business Account found. Make sure your Instagram is a Business Account connected to a Facebook Page.');
+            return null;
+          }
+        } catch (error) {
+          console.error('Failed to fetch Instagram Business Account:', error);
+          return null;
+        }
+      }
+      
+      // For Facebook, get user/page info
       const userResponse = await fetch(
         `https://graph.facebook.com/v18.0/me?fields=id,name&access_token=${data.access_token}`
       );
