@@ -88,6 +88,63 @@ export const getAuthorizationUrl = async (
 };
 
 /**
+ * Exchange authorization code for access token
+ */
+const exchangeCodeForToken = async (
+  platform: string,
+  code: string,
+  config: OAuthConfig
+): Promise<{
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: number;
+  accountId?: string;
+  accountName?: string;
+} | null> => {
+  try {
+    // Facebook/Instagram use the same token exchange
+    if (platform === 'facebook' || platform === 'instagram') {
+      const response = await fetch(
+        `https://graph.facebook.com/v18.0/oauth/access_token?` +
+        `client_id=${config.clientId}&` +
+        `redirect_uri=${encodeURIComponent(config.redirectUri)}&` +
+        `client_secret=${config.clientSecret}&` +
+        `code=${code}`
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Token exchange error:', error);
+        return null;
+      }
+
+      const data = await response.json();
+      
+      // Get account info
+      const userResponse = await fetch(
+        `https://graph.facebook.com/v18.0/me?fields=id,name&access_token=${data.access_token}`
+      );
+      
+      const userData = userResponse.ok ? await userResponse.json() : {};
+
+      return {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresAt: data.expires_in,
+        accountId: userData.id || 'unknown',
+        accountName: userData.name || platform
+      };
+    }
+
+    // Add other platforms here if needed
+    return null;
+  } catch (error) {
+    console.error('Error exchanging code for token:', error);
+    return null;
+  }
+};
+
+/**
  * Connect a social media account (opens OAuth flow)
  */
 export const connectSocialAccount = async (
@@ -127,12 +184,61 @@ export const connectSocialAccount = async (
     }, 500);
 
     // Listen for OAuth callback message
-    const messageHandler = (event: MessageEvent) => {
+    const messageHandler = async (event: MessageEvent) => {
       if (event.data.type === 'oauth-success' && event.data.platform === platform) {
         clearInterval(interval);
         window.removeEventListener('message', messageHandler);
         popup?.close();
-        resolve();
+        
+        // Exchange authorization code for access token
+        try {
+          const config = await getOAuthConfig(platform);
+          if (!config || !event.data.code) {
+            reject(new Error('Missing OAuth config or authorization code'));
+            return;
+          }
+
+          // Exchange code for token
+          const tokenResponse = await exchangeCodeForToken(platform, event.data.code, config);
+          if (!tokenResponse) {
+            reject(new Error('Failed to exchange code for access token'));
+            return;
+          }
+
+          // Save account to database
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            reject(new Error('User not authenticated'));
+            return;
+          }
+
+          const { error } = await supabase
+            .from('social_media_accounts')
+            .upsert({
+              user_id: user.id,
+              platform: platform,
+              account_id: tokenResponse.accountId || 'unknown',
+              account_name: tokenResponse.accountName || platform,
+              access_token: tokenResponse.accessToken,
+              refresh_token: tokenResponse.refreshToken,
+              expires_at: tokenResponse.expiresAt ? new Date(Date.now() + tokenResponse.expiresAt * 1000).toISOString() : null,
+              is_connected: true,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'user_id,platform,account_id'
+            });
+
+          if (error) {
+            console.error('Error saving social account:', error);
+            reject(new Error('Failed to save account to database'));
+            return;
+          }
+
+          resolve();
+        } catch (error) {
+          console.error('OAuth exchange error:', error);
+          reject(error);
+        }
       } else if (event.data.type === 'oauth-error') {
         clearInterval(interval);
         window.removeEventListener('message', messageHandler);
