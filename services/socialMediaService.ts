@@ -172,22 +172,74 @@ export const postToFacebook = async (
       throw new Error('Facebook Page ID is required');
     }
 
-    // Use /feed endpoint for all posts (with or without image)
+    // If we have an image, use /photos endpoint to upload image with clickable link
+    if (imageUrl) {
+      const photoData: any = {
+        url: imageUrl,  // Facebook fetches image from this URL
+        message: content,
+        access_token: accessToken
+      };
+
+      // Add tracking link if provided (makes image clickable)
+      if (eventUrl) {
+        photoData.link = eventUrl;
+        console.log('🔗 Adding clickable tracking link to photo:', eventUrl);
+      }
+
+      console.log('📤 Posting photo to Facebook with clickable link...');
+      const response = await fetch(
+        `https://graph.facebook.com/v18.0/${pageId}/photos`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(photoData)
+        }
+      );
+
+      const result = await response.json();
+      
+      console.log('📊 Facebook photo API response:', {
+        status: response.status,
+        ok: response.ok,
+        hasError: !!result.error,
+        hasId: !!result.id,
+        result: result
+      });
+      
+      if (result.error) {
+        console.error('❌ Facebook API error details:', {
+          code: result.error.code,
+          type: result.error.type,
+          message: result.error.message,
+          fbtrace_id: result.error.fbtrace_id
+        });
+        
+        if (result.error.code === 190) {
+          throw new Error('Facebook access token has expired. Please reconnect your Facebook account.');
+        }
+        
+        throw new Error(result.error.message || 'Facebook photo posting failed');
+      }
+
+      console.log('✅ Posted photo to Facebook with tracking link:', result.id);
+      return {
+        success: true,
+        postId: result.id,
+        error: undefined
+      };
+    }
+
+    // No image: Use /feed endpoint with text and optional link
     const postData: any = {
       message: content,
       access_token: accessToken
     };
 
-    // Add image URL (Facebook will fetch and display it)
-    if (imageUrl) {
-      postData.link = imageUrl;
-      console.log('📷 Adding image:', imageUrl);
-    } else if (eventUrl) {
-      // If no image, add event URL as link
+    if (eventUrl) {
       postData.link = eventUrl;
     }
 
-    console.log('📤 Posting to Facebook /feed endpoint...');
+    console.log('📤 Posting to Facebook /feed endpoint (text only)...');
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${pageId}/feed`,
       {
