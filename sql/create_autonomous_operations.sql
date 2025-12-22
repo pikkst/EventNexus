@@ -224,8 +224,8 @@ BEGIN
     'declining_performance'::TEXT,
     'medium'::TEXT,
     format('Campaign "%s" CTR declined from %s%% to %s%% over past 7 days', c.title, 
-      COALESCE((SELECT AVG(ctr) FROM campaign_analytics ca2 WHERE ca2.campaign_id = c.id AND ca2.timestamp >= NOW() - INTERVAL '14 days' AND ca2.timestamp < NOW() - INTERVAL '7 days'), 0),
-      COALESCE((SELECT AVG(ctr) FROM campaign_analytics ca3 WHERE ca3.campaign_id = c.id AND ca3.timestamp >= NOW() - INTERVAL '7 days'), 0)
+      COALESCE((SELECT AVG((clicks::DECIMAL / NULLIF(impressions, 0)) * 100) FROM campaign_analytics ca2 WHERE ca2.campaign_id = c.id AND ca2.recorded_at >= NOW() - INTERVAL '14 days' AND ca2.recorded_at < NOW() - INTERVAL '7 days'), 0),
+      COALESCE((SELECT AVG((clicks::DECIMAL / NULLIF(impressions, 0)) * 100) FROM campaign_analytics ca3 WHERE ca3.campaign_id = c.id AND ca3.recorded_at >= NOW() - INTERVAL '7 days'), 0)
     ),
     'Refresh creative assets. Test new images, headlines, or ad copy variations.'::TEXT,
     jsonb_build_object('ctr_increase', 2.5, 'engagement_increase', 30.0),
@@ -236,10 +236,11 @@ BEGIN
     AND EXISTS (
       SELECT 1 FROM campaign_analytics ca 
       WHERE ca.campaign_id = c.id 
-      AND ca.timestamp >= NOW() - INTERVAL '14 days'
+      AND ca.recorded_at >= NOW() - INTERVAL '14 days'
+      AND ca.impressions > 0
       GROUP BY ca.campaign_id
-      HAVING AVG(CASE WHEN ca.timestamp >= NOW() - INTERVAL '7 days' THEN ca.ctr ELSE NULL END) <
-             AVG(CASE WHEN ca.timestamp < NOW() - INTERVAL '7 days' THEN ca.ctr ELSE NULL END) * 0.7
+      HAVING AVG(CASE WHEN ca.recorded_at >= NOW() - INTERVAL '7 days' THEN (ca.clicks::DECIMAL / NULLIF(ca.impressions, 0)) * 100 ELSE NULL END) <
+             AVG(CASE WHEN ca.recorded_at < NOW() - INTERVAL '7 days' THEN (ca.clicks::DECIMAL / NULLIF(ca.impressions, 0)) * 100 ELSE NULL END) * 0.7
     )
 
   UNION ALL
