@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS campaign_analytics (
   
   -- Time Tracking
   recorded_at TIMESTAMPTZ DEFAULT now(),
-  date DATE GENERATED ALWAYS AS (recorded_at::date) STORED
+  date DATE DEFAULT CURRENT_DATE
 );
 
 -- ============================================
@@ -65,36 +65,20 @@ CREATE TABLE IF NOT EXISTS campaign_performance (
   total_clicks INTEGER DEFAULT 0,
   total_conversions INTEGER DEFAULT 0,
   
-  -- Calculated Metrics
-  ctr DECIMAL(5,2) GENERATED ALWAYS AS (
-    CASE WHEN total_impressions > 0 
-    THEN (total_clicks::decimal / total_impressions * 100) 
-    ELSE 0 END
-  ) STORED,
-  conversion_rate DECIMAL(5,2) GENERATED ALWAYS AS (
-    CASE WHEN total_clicks > 0 
-    THEN (total_conversions::decimal / total_clicks * 100) 
-    ELSE 0 END
-  ) STORED,
+  -- Calculated Metrics (will be updated via trigger)
+  ctr DECIMAL(5,2) DEFAULT 0,
+  conversion_rate DECIMAL(5,2) DEFAULT 0,
   
   -- Financial Metrics
   total_spend DECIMAL(10,2) DEFAULT 0,
   total_revenue DECIMAL(10,2) DEFAULT 0,
-  roi DECIMAL(10,2) GENERATED ALWAYS AS (
-    CASE WHEN total_spend > 0 
-    THEN ((total_revenue - total_spend) / total_spend * 100) 
-    ELSE 0 END
-  ) STORED,
+  roi DECIMAL(10,2) DEFAULT 0,
   
   -- Engagement
   total_likes INTEGER DEFAULT 0,
   total_shares INTEGER DEFAULT 0,
   total_comments INTEGER DEFAULT 0,
-  engagement_rate DECIMAL(5,2) GENERATED ALWAYS AS (
-    CASE WHEN total_impressions > 0 
-    THEN ((total_likes + total_shares + total_comments)::decimal / total_impressions * 100) 
-    ELSE 0 END
-  ) STORED,
+  engagement_rate DECIMAL(5,2) DEFAULT 0,
   
   -- Status
   is_active BOOLEAN DEFAULT true,
@@ -355,6 +339,57 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Calculate performance metrics
+CREATE OR REPLACE FUNCTION calculate_campaign_metrics()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Calculate CTR
+  IF NEW.total_impressions > 0 THEN
+    NEW.ctr := (NEW.total_clicks::decimal / NEW.total_impressions * 100);
+  ELSE
+    NEW.ctr := 0;
+  END IF;
+  
+  -- Calculate Conversion Rate
+  IF NEW.total_clicks > 0 THEN
+    NEW.conversion_rate := (NEW.total_conversions::decimal / NEW.total_clicks * 100);
+  ELSE
+    NEW.conversion_rate := 0;
+  END IF;
+  
+  -- Calculate ROI
+  IF NEW.total_spend > 0 THEN
+    NEW.roi := ((NEW.total_revenue - NEW.total_spend) / NEW.total_spend * 100);
+  ELSE
+    NEW.roi := 0;
+  END IF;
+  
+  -- Calculate Engagement Rate
+  IF NEW.total_impressions > 0 THEN
+    NEW.engagement_rate := ((NEW.total_likes + NEW.total_shares + NEW.total_comments)::decimal / NEW.total_impressions * 100);
+  ELSE
+    NEW.engagement_rate := 0;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER campaign_analytics_to_performance
+  AFTER INSERT ON campaign_analytics
+  FOR EACH ROW
+  EXECUTE FUNCTION update_campaign_performance();
+
+CREATE TRIGGER calculate_metrics_on_insert
+  BEFORE INSERT ON campaign_performance
+  FOR EACH ROW
+  EXECUTE FUNCTION calculate_campaign_metrics();
+
+CREATE TRIGGER calculate_metrics_on_update
+  BEFORE UPDATE ON campaign_performance
+  FOR EACH ROW
+  EXECUTE FUNCTION calculate_campaign_metrics();
 
 CREATE TRIGGER campaign_analytics_to_performance
   AFTER INSERT ON campaign_analytics
