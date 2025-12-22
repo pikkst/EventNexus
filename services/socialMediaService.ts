@@ -27,8 +27,9 @@ export interface SocialMediaAccount {
 export interface CampaignSocialPosts {
   facebook?: {
     content: string;
-    hashtags: string[];
+    hashtags?: string[];
     imageUrl?: string;
+    eventUrl?: string;
     trackingUrl?: string;
     trackingCode?: string;
   };
@@ -161,10 +162,11 @@ export const postToFacebook = async (
   accessToken: string,
   pageId: string,
   content: string,
-  imageUrl?: string
+  imageUrl?: string,
+  eventUrl?: string
 ): Promise<{ success: boolean; postId?: string; error?: string }> => {
   try {
-    console.log('📘 Facebook posting:', { pageId, hasImage: !!imageUrl });
+    console.log('📘 Facebook posting:', { pageId, hasImage: !!imageUrl, hasEventUrl: !!eventUrl });
     
     if (!pageId) {
       throw new Error('Facebook Page ID is required');
@@ -175,9 +177,9 @@ export const postToFacebook = async (
       access_token: accessToken
     };
 
-    // If image URL provided, add it
-    if (imageUrl) {
-      postData.link = imageUrl;
+    // Add event URL as link (not image URL!)
+    if (eventUrl) {
+      postData.link = eventUrl;
     }
 
     const response = await fetch(

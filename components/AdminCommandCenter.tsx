@@ -876,8 +876,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                                   const { publishToConnectedPlatforms } = await import('../services/socialAuthHelper');
                                   await publishToConnectedPlatforms({
                                     facebook: {
-                                      content: `${campaign.title}\n\n${campaign.copy}`,
-                                      imageUrl: campaign.imageUrl || campaign.image_url
+                                      content: `${campaign.title}\n\n${campaign.copy}\n\n👉 ${campaign.cta || 'Join us at EventNexus!'}`,
+                                      imageUrl: campaign.imageUrl || campaign.image_url,
+                                      eventUrl: 'https://www.eventnexus.eu'
                                     }
                                   });
                                   alert('✅ Posted to Facebook!');
