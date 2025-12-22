@@ -46,7 +46,8 @@ const getSessionId = (): string => {
   let sessionId = sessionStorage.getItem('eventnexus_session_id');
   
   if (!sessionId) {
-    sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Use crypto.randomUUID() for secure random ID generation
+    sessionId = `session_${Date.now()}_${crypto.randomUUID()}`;
     sessionStorage.setItem('eventnexus_session_id', sessionId);
   }
   
