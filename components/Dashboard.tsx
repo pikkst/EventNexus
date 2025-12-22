@@ -29,14 +29,41 @@ import { supabase } from '../services/supabase';
 import PayoutsHistory from './PayoutsHistory';
 import EnterpriseSuccessManager from './EnterpriseSuccessManager';
 
-// Generate dynamic sales data based on user's events
-const generateSalesData = (events: EventNexusEvent[]) => {
+// Generate sales data from real revenue data (last 7 days)
+const generateSalesData = (revenueByEvent: RevenueByEvent[]) => {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  return days.map(day => ({
-    name: day,
-    sales: Math.floor(Math.random() * 800 + 200),
-    views: Math.floor(Math.random() * 2000 + 500)
-  }));
+  const now = new Date();
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - (6 - i));
+    return d;
+  });
+
+  return days.map((day, index) => {
+    const targetDate = last7Days[index];
+    const dayStart = new Date(targetDate.setHours(0, 0, 0, 0));
+    const dayEnd = new Date(targetDate.setHours(23, 59, 59, 999));
+
+    const daySales = revenueByEvent
+      .filter(event => {
+        const eventDate = new Date(event.event_date);
+        return eventDate >= dayStart && eventDate <= dayEnd;
+      })
+      .reduce((sum, event) => sum + event.gross_revenue, 0);
+
+    const dayTickets = revenueByEvent
+      .filter(event => {
+        const eventDate = new Date(event.event_date);
+        return eventDate >= dayStart && eventDate <= dayEnd;
+      })
+      .reduce((sum, event) => sum + event.tickets_sold, 0);
+
+    return {
+      name: day,
+      sales: daySales,
+      views: dayTickets * 8 // Estimate: 8 views per ticket sold
+    };
+  });
 };
 
 interface DashboardProps {
@@ -69,7 +96,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
         // Filter events by current user if they are organizer
         const userEvents = allEvents.filter(event => event.organizerId === user.id);
         setEvents(userEvents);
-        setSalesData(generateSalesData(userEvents));
         if (userEvents.length > 0 && !selectedEventId) {
           setSelectedEventId(userEvents[0].id);
         }
@@ -93,6 +119,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
         ]);
         setRevenueSummary(summary);
         setRevenueByEvent(byEvent);
+        // Generate sales chart data from real revenue
+        setSalesData(generateSalesData(byEvent));
       } catch (error) {
         console.error('Error loading revenue:', error);
       } finally {
@@ -517,68 +545,104 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Avg. Ticket Value</p>
-                     <h4 className="text-3xl font-black text-white">$42.50</h4>
-                     <p className="text-xs text-emerald-400 font-bold">+8.2% vs last month</p>
+                     <h4 className="text-3xl font-black text-white">
+                       €{revenueSummary && revenueSummary.total_tickets_sold > 0 
+                         ? (revenueSummary.total_gross / revenueSummary.total_tickets_sold).toFixed(2)
+                         : '0.00'}
+                     </h4>
+                     <p className="text-xs text-slate-400 font-medium">Per ticket sold</p>
                   </div>
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
-                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Repeat Rate</p>
-                     <h4 className="text-3xl font-black text-white">34%</h4>
-                     <p className="text-xs text-emerald-400 font-bold">+12% vs industry</p>
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Events</p>
+                     <h4 className="text-3xl font-black text-white">{revenueSummary?.total_events || 0}</h4>
+                     <p className="text-xs text-slate-400 font-medium">Events created</p>
                   </div>
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
-                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Conversion Rate</p>
-                     <h4 className="text-3xl font-black text-white">67%</h4>
-                     <p className="text-xs text-emerald-400 font-bold">Top 10% performer</p>
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Net Margin</p>
+                     <h4 className="text-3xl font-black text-white">
+                       {revenueSummary && revenueSummary.total_gross > 0
+                         ? ((revenueSummary.total_net / revenueSummary.total_gross) * 100).toFixed(1)
+                         : '0.0'}%
+                     </h4>
+                     <p className="text-xs text-emerald-400 font-bold">After fees</p>
                   </div>
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
-                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Share Rate</p>
-                     <h4 className="text-3xl font-black text-white">22%</h4>
-                     <p className="text-xs text-indigo-400 font-bold">High virality</p>
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Tickets Sold</p>
+                     <h4 className="text-3xl font-black text-white">{revenueSummary?.total_tickets_sold || 0}</h4>
+                     <p className="text-xs text-indigo-400 font-bold">All events</p>
                   </div>
                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-4">
-                     <h4 className="font-black text-white">Top Demographics</h4>
+                     <h4 className="font-black text-white">Event Categories</h4>
                      <div className="space-y-3">
-                        {[
-                           { age: '25-34', percent: 42, color: 'bg-indigo-500' },
-                           { age: '35-44', percent: 28, color: 'bg-violet-500' },
-                           { age: '18-24', percent: 20, color: 'bg-blue-500' },
-                           { age: '45+', percent: 10, color: 'bg-slate-500' }
-                        ].map((demo, i) => (
-                           <div key={i} className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                 <span className="text-slate-400 font-medium">{demo.age} years</span>
-                                 <span className="text-white font-black">{demo.percent}%</span>
-                              </div>
-                              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                                 <div className={`h-full ${demo.color}`} style={{ width: `${demo.percent}%` }} />
-                              </div>
-                           </div>
-                        ))}
+                        {(() => {
+                          const categoryRevenue: Record<string, number> = {};
+                          const total = revenueByEvent.reduce((sum, event) => {
+                            const category = events.find(e => e.id === event.event_id)?.category || 'Other';
+                            categoryRevenue[category] = (categoryRevenue[category] || 0) + event.gross_revenue;
+                            return sum + event.gross_revenue;
+                          }, 0);
+                          
+                          const colors = ['bg-indigo-500', 'bg-violet-500', 'bg-blue-500', 'bg-emerald-500'];
+                          return Object.entries(categoryRevenue)
+                            .sort(([,a], [,b]) => b - a)
+                            .slice(0, 4)
+                            .map(([category, revenue], i) => {
+                              const percent = total > 0 ? Math.round((revenue / total) * 100) : 0;
+                              return (
+                                <div key={i} className="space-y-2">
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-slate-400 font-medium">{category}</span>
+                                    <span className="text-white font-black">{percent}%</span>
+                                  </div>
+                                  <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                                    <div className={`h-full ${colors[i % colors.length]}`} style={{ width: `${percent}%` }} />
+                                  </div>
+                                </div>
+                              );
+                            });
+                        })()}
                      </div>
                   </div>
 
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-4">
-                     <h4 className="font-black text-white">Traffic Sources</h4>
+                     <h4 className="font-black text-white">Revenue by Status</h4>
                      <div className="space-y-3">
-                        {[
-                           { source: 'Organic Search', percent: 38, color: 'bg-emerald-500' },
-                           { source: 'Social Media', percent: 32, color: 'bg-indigo-500' },
-                           { source: 'Direct', percent: 18, color: 'bg-violet-500' },
-                           { source: 'Referrals', percent: 12, color: 'bg-yellow-500' }
-                        ].map((traffic, i) => (
-                           <div key={i} className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                 <span className="text-slate-400 font-medium">{traffic.source}</span>
-                                 <span className="text-white font-black">{traffic.percent}%</span>
-                              </div>
-                              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                                 <div className={`h-full ${traffic.color}`} style={{ width: `${traffic.percent}%` }} />
-                              </div>
-                           </div>
-                        ))}
+                        {(() => {
+                          const statusRevenue: Record<string, { revenue: number; color: string }> = {
+                            'paid': { revenue: 0, color: 'bg-emerald-500' },
+                            'pending': { revenue: 0, color: 'bg-yellow-500' },
+                            'processing': { revenue: 0, color: 'bg-blue-500' }
+                          };
+                          
+                          const total = revenueByEvent.reduce((sum, event) => {
+                            const status = event.payout_status || 'pending';
+                            if (statusRevenue[status]) {
+                              statusRevenue[status].revenue += event.net_revenue;
+                            }
+                            return sum + event.net_revenue;
+                          }, 0);
+                          
+                          return Object.entries(statusRevenue)
+                            .filter(([, data]) => data.revenue > 0)
+                            .sort(([,a], [,b]) => b.revenue - a.revenue)
+                            .map(([status, data], i) => {
+                              const percent = total > 0 ? Math.round((data.revenue / total) * 100) : 0;
+                              return (
+                                <div key={i} className="space-y-2">
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-slate-400 font-medium capitalize">{status}</span>
+                                    <span className="text-white font-black">{percent}%</span>
+                                  </div>
+                                  <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                                    <div className={`h-full ${data.color}`} style={{ width: `${percent}%` }} />
+                                  </div>
+                                </div>
+                              );
+                            });
+                        })()}
                      </div>
                   </div>
                </div>
