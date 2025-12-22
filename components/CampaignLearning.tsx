@@ -261,31 +261,39 @@ const CampaignLearning: React.FC<Props> = ({ campaignId }) => {
                     <AlertTriangle className="text-red-500" size={20} />
                     Needs Attention ({underperforming.length})
                   </h4>
-                  {underperforming.map((campaign) => (
+                  {underperforming.map((campaign) => {
+                    const severity = campaign.recommendation.includes('CRITICAL') ? 'critical' 
+                      : campaign.recommendation.includes('HIGH') ? 'warning' 
+                      : 'info';
+                    const issueType = campaign.roi < 0.5 ? 'negative_roi'
+                      : campaign.roi < 1.0 ? 'low_roi'
+                      : campaign.ctr < 1.0 ? 'low_ctr'
+                      : 'low_performance';
+                    return (
                     <div
                       key={campaign.campaign_id}
-                      className={`border rounded-2xl p-4 ${getSeverityColor(campaign.severity)}`}
+                      className={`border rounded-2xl p-4 ${getSeverityColor(severity)}`}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h5 className="font-bold text-white mb-1">{campaign.campaign_title}</h5>
                           <p className="text-xs opacity-75 uppercase font-black">
-                            {campaign.issue_type.replace('_', ' ')}
+                            {issueType.replace('_', ' ')}
                           </p>
                         </div>
                         <span className="text-xs font-black px-3 py-1 rounded-full bg-black/20 uppercase">
-                          {campaign.severity}
+                          {severity}
                         </span>
                       </div>
                       <p className="text-sm mb-3">{campaign.recommendation}</p>
                       <div className="grid grid-cols-3 gap-2 text-center text-xs">
                         <div>
                           <p className="opacity-60">CTR</p>
-                          <p className="font-bold">{campaign.current_ctr.toFixed(2)}%</p>
+                          <p className="font-bold">{campaign.ctr.toFixed(2)}%</p>
                         </div>
                         <div>
                           <p className="opacity-60">ROI</p>
-                          <p className="font-bold">{campaign.current_roi.toFixed(0)}%</p>
+                          <p className="font-bold">{campaign.roi.toFixed(0)}%</p>
                         </div>
                         <div>
                           <p className="opacity-60">Spend</p>
@@ -293,7 +301,8 @@ const CampaignLearning: React.FC<Props> = ({ campaignId }) => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               )}
 
