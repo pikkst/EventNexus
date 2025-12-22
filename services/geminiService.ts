@@ -92,22 +92,63 @@ export const generateSocialMediaPosts = async (
  * Generate platform growth campaign
  * ADMIN FEATURE - NO CREDIT COST
  */
-export const generatePlatformGrowthCampaign = async (theme: string, target: 'creators' | 'attendees') => {
+export const generatePlatformGrowthCampaign = async (theme: string, target: string) => {
   try {
     const ai = getAI();
+    
+    const audienceMap: Record<string, { name: string; tone: string; cta: string }> = {
+      attendees: { name: 'Event Attendees', tone: 'exciting and fun', cta: 'Discover Events' },
+      creators: { name: 'Event Creators & Organizers', tone: 'professional and empowering', cta: 'Start Creating' },
+      'platform-growth': { name: 'New Users', tone: 'welcoming and innovative', cta: 'Join EventNexus' },
+      'new-features': { name: 'Existing Users', tone: 'exciting and informative', cta: 'Try New Features' },
+      community: { name: 'Community Members', tone: 'friendly and engaging', cta: 'Join the Community' },
+      seasonal: { name: 'Seasonal Event-Goers', tone: 'festive and energetic', cta: 'Explore Events' },
+      retention: { name: 'Returning Users', tone: 'warm and appreciative', cta: 'Welcome Back' },
+      referral: { name: 'Active Users', tone: 'rewarding and motivational', cta: 'Invite Friends' }
+    };
+    
+    const audience = audienceMap[target] || audienceMap.attendees;
+    
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `You are a growth marketing expert for EventNexus, a map-first event platform.
-      Task: Generate a high-impact acquisition campaign.
-      Theme: ${theme}
-      Target Audience: ${target === 'creators' ? 'Event Organizers and Promoters' : 'General Attendees'}
+      contents: `You are an expert growth marketing copywriter and visual designer for EventNexus, a premium map-first event discovery platform.
       
-      Requirements:
-      1. Bold, high-conversion Title (max 40 chars).
-      2. Emotional, benefit-driven Marketing Copy (max 120 chars).
-      3. A visual prompt for an image generator (DALL-E style) that feels like premium lifestyle/tech.
-      4. A Call to Action (CTA) like "Start Exploring" or "Launch Your Brand".
-      5. Recommended 'Incentive' (e.g., credits for attendees, discount for creators).`,
+      Campaign Details:
+      - Theme: ${theme}
+      - Target Audience: ${audience.name}
+      - Tone: ${audience.tone}
+      - Primary CTA: ${audience.cta}
+      
+      Generate a high-converting marketing campaign with:
+      
+      1. TITLE (max 40 chars):
+         - Bold, attention-grabbing headline
+         - Use power words and emotional triggers
+         - Make it memorable and shareable
+      
+      2. MARKETING COPY (max 120 chars):
+         - Lead with benefit, not feature
+         - Create FOMO (fear of missing out)
+         - Include social proof element
+         - End with clear value proposition
+      
+      3. VISUAL PROMPT (detailed DALL-E/Midjourney style):
+         - Describe a premium, modern, eye-catching image
+         - Specify style: "cinematic photography", "vibrant gradient design", "minimalist tech aesthetic"
+         - Include: composition, colors, mood, lighting, key visual elements
+         - Match EventNexus brand (modern, bold, community-focused)
+         - Avoid text, logos, or specific people faces
+         - Example: "Cinematic wide shot of diverse young people celebrating at colorful outdoor festival at sunset, vibrant purple and orange lighting, confetti in air, joyful atmosphere, premium lifestyle photography, shallow depth of field, 8k quality"
+      
+      4. CALL TO ACTION:
+         - Use ${audience.cta} or similar action-oriented phrase
+         - Make it urgent and specific
+      
+      5. INCENTIVE:
+         - Suggest relevant reward based on audience
+         - Options: credits, discount, exclusive access, referral bonus
+      
+      Make it conversion-optimized and visually striking!`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
