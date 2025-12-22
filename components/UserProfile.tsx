@@ -38,6 +38,7 @@ import { User, EventNexusEvent } from '../types';
 import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import TicketCard from './TicketCard';
+import { SocialMediaManager } from './SocialMediaManager';
 
 interface UserProfileProps {
   user: User;
@@ -527,6 +528,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Social Media Manager - Only for Enterprise/Premium users */}
+          {(user.subscription_tier === 'enterprise' || user.subscription_tier === 'premium') && (
+            <div className="bg-slate-900 border border-slate-800 rounded-[40px] overflow-hidden shadow-2xl p-8">
+              <SocialMediaManager 
+                user={user} 
+                showCampaignEngine={user.subscription_tier === 'enterprise'} 
+              />
             </div>
           )}
 
