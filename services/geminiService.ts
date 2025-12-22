@@ -198,7 +198,7 @@ export const generateAdImage = async (
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: 'models/imagen-4.0-generate-001',
+      model: 'gemini-2.5-flash-image',
       contents: {
         parts: [{ text: `Professional marketing flier for EventNexus with clear promotional text overlay: ${prompt}. Include eye-catching headlines and call-to-action text directly on the image. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements, bold typography, 8k. Aspect ratio: ${aspectRatio}` }]
       }
