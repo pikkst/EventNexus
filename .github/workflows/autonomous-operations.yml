@@ -1,0 +1,32 @@
+name: Autonomous Campaign Operations
+
+on:
+  schedule:
+    # Run every hour at minute 0
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  run-autonomous-operations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Autonomous Operations Edge Function
+        run: |
+          response=$(curl -X POST \
+            https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/autonomous-operations \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -s -w "\nHTTP_STATUS:%{http_code}")
+          
+          http_status=$(echo "$response" | grep HTTP_STATUS | cut -d':' -f2)
+          response_body=$(echo "$response" | sed '/HTTP_STATUS/d')
+          
+          echo "Response: $response_body"
+          echo "HTTP Status: $http_status"
+          
+          if [ "$http_status" -ne 200 ]; then
+            echo "❌ Autonomous operations failed with status $http_status"
+            exit 1
+          fi
+          
+          echo "✅ Autonomous operations completed successfully"

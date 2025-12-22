@@ -27,6 +27,7 @@ import AdminInbox from './AdminInbox';
 import CampaignAnalyticsDashboard from './CampaignAnalyticsDashboard';
 import CampaignScheduler from './CampaignScheduler';
 import CampaignLearning from './CampaignLearning';
+import AutonomousOperations from './AutonomousOperations';
 import { 
   getEvents, 
   getAllUsers, 
@@ -482,6 +483,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     { id: 'marketing', label: 'Campaign Engine', icon: <Rocket /> },
     { id: 'analytics-campaign', label: 'Campaign Analytics', icon: <Target /> },
     { id: 'ai-learning', label: 'AI Learning', icon: <Sparkles /> },
+    { id: 'autonomous', label: 'Autonomous Ops', icon: <Bot /> },
     { id: 'social-media', label: 'Social Media Hub', icon: <Share2 /> },
     { id: 'brand-protection', label: 'Brand Protection', icon: <Shield /> },
     { id: 'financials', label: 'Nexus Economy', icon: <DollarSign /> },
@@ -990,6 +992,12 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         {activeTab === 'ai-learning' && (
           <div className="space-y-8 animate-in fade-in duration-500">
             <CampaignLearning />
+          </div>
+        )}
+
+        {activeTab === 'autonomous' && (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <AutonomousOperations />
           </div>
         )}
 
