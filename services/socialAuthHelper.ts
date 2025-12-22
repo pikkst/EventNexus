@@ -504,7 +504,8 @@ export const publishToConnectedPlatforms = async (content: {
               account.accessToken,
               account.accountId,
               platformContent.content,
-              platformContent.imageUrl
+              platformContent.imageUrl,
+              'eventUrl' in platformContent ? platformContent.eventUrl : undefined
             );
           }
           break;
