@@ -164,14 +164,42 @@ export const postToFacebook = async (
   imageUrl?: string
 ): Promise<{ success: boolean; postId?: string; error?: string }> => {
   try {
-    // This would call Facebook Graph API
-    // POST https://graph.facebook.com/v18.0/{page-id}/feed
-    console.log('Facebook posting would happen here:', { pageId, content, imageUrl });
+    console.log('📘 Facebook posting:', { pageId, hasImage: !!imageUrl });
     
-    // Placeholder response
+    if (!pageId) {
+      throw new Error('Facebook Page ID is required');
+    }
+
+    const postData: any = {
+      message: content,
+      access_token: accessToken
+    };
+
+    // If image URL provided, add it
+    if (imageUrl) {
+      postData.link = imageUrl;
+    }
+
+    const response = await fetch(
+      `https://graph.facebook.com/v18.0/${pageId}/feed`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postData)
+      }
+    );
+
+    const result = await response.json();
+    
+    if (result.error) {
+      console.error('Facebook API error:', result.error);
+      throw new Error(result.error.message || 'Facebook posting failed');
+    }
+
+    console.log('✅ Posted to Facebook:', result.id);
     return {
       success: true,
-      postId: `fb_${Date.now()}`,
+      postId: result.id,
       error: undefined
     };
   } catch (error) {
@@ -184,7 +212,7 @@ export const postToFacebook = async (
 };
 
 /**
- * Post to Instagram (placeholder - requires Instagram Graph API setup)
+ * Post to Instagram using Instagram Graph API
  */
 export const postToInstagram = async (
   accessToken: string,
@@ -193,13 +221,59 @@ export const postToInstagram = async (
   imageUrl: string
 ): Promise<{ success: boolean; postId?: string; error?: string }> => {
   try {
-    // This would call Instagram Graph API
-    // Requires media upload first, then container creation
-    console.log('Instagram posting would happen here:', { accountId, caption, imageUrl });
+    console.log('📸 Instagram posting:', { accountId, hasImage: !!imageUrl });
     
+    if (!accountId) {
+      throw new Error('Instagram Business Account ID is required');
+    }
+
+    // Step 1: Create media container
+    const containerResponse = await fetch(
+      `https://graph.facebook.com/v18.0/${accountId}/media`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_url: imageUrl,
+          caption: caption,
+          access_token: accessToken
+        })
+      }
+    );
+
+    const containerResult = await containerResponse.json();
+    
+    if (containerResult.error) {
+      console.error('Instagram container creation error:', containerResult.error);
+      throw new Error(containerResult.error.message || 'Failed to create Instagram media container');
+    }
+
+    console.log('✅ Instagram container created:', containerResult.id);
+
+    // Step 2: Publish the media container
+    const publishResponse = await fetch(
+      `https://graph.facebook.com/v18.0/${accountId}/media_publish`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          creation_id: containerResult.id,
+          access_token: accessToken
+        })
+      }
+    );
+
+    const publishResult = await publishResponse.json();
+    
+    if (publishResult.error) {
+      console.error('Instagram publish error:', publishResult.error);
+      throw new Error(publishResult.error.message || 'Failed to publish Instagram post');
+    }
+
+    console.log('✅ Posted to Instagram:', publishResult.id);
     return {
       success: true,
-      postId: `ig_${Date.now()}`,
+      postId: publishResult.id,
       error: undefined
     };
   } catch (error) {
