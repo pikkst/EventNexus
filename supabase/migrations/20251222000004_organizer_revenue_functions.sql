@@ -12,7 +12,7 @@ DROP FUNCTION IF EXISTS get_organizer_revenue_summary(UUID);
 CREATE OR REPLACE FUNCTION get_organizer_revenue(org_id UUID)
 RETURNS TABLE (
   event_id UUID,
-  event_name TEXT,
+  event_name VARCHAR(255),
   event_date TIMESTAMP WITH TIME ZONE,
   tickets_sold BIGINT,
   gross_revenue NUMERIC,
