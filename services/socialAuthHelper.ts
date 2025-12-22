@@ -292,7 +292,17 @@ export const getConnectedAccounts = async (): Promise<ConnectedAccount[]> => {
       .eq('is_connected', true);
 
     if (error) throw error;
-    return data || [];
+    
+    // Map snake_case database columns to camelCase TypeScript properties
+    return (data || []).map(account => ({
+      platform: account.platform as any,
+      accountId: account.account_id,
+      accountName: account.account_name,
+      accessToken: account.access_token,
+      refreshToken: account.refresh_token,
+      expiresAt: account.expires_at,
+      isConnected: account.is_connected
+    }));
   } catch (error) {
     console.error('Error fetching connected accounts:', error);
     return [];
