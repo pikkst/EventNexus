@@ -327,10 +327,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user }) => {
             <button
               onClick={handleUnlockEvent}
               disabled={!canAfford}
-              className={\`w-full py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 \${
+              className={`w-full py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 ${
                 canAfford 
                   ? 'bg-orange-600 hover:bg-orange-700 shadow-orange-600/30' 
-                  : 'bg-slate-800 cursor-not-allowed opacity-50'\n              }\`}
+                  : 'bg-slate-800 cursor-not-allowed opacity-50'
+              }`}
             >
               {canAfford 
                 ? `Unlock 1 Event (${eventCost} Credits)` 
