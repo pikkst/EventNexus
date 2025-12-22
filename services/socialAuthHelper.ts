@@ -45,7 +45,8 @@ const getOAuthConfig = async (platform: string): Promise<OAuthConfig | null> => 
       return null;
     }
 
-    const redirectUri = `${window.location.origin}/admin/social-callback`;
+    // Use static HTML callback page (not HashRouter route) for OAuth
+    const redirectUri = `${window.location.origin}/oauth-callback.html`;
 
     // Platform-specific scopes
     const scopes: Record<string, string> = {
