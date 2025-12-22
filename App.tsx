@@ -37,6 +37,7 @@ import TicketScanner from './components/TicketScanner';
 import PricingPage from './components/PricingPage';
 import AgencyProfile from './components/AgencyProfile';
 import AdminCommandCenter from './components/AdminCommandCenter';
+import { SimplifiedSocialMediaManager } from './components/SimplifiedSocialMediaManager';
 import Footer from './components/Footer';
 import HelpCenter from './components/HelpCenter';
 import TermsOfService from './components/TermsOfService';
@@ -469,6 +470,7 @@ const App: React.FC = () => {
             <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
             <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/help" element={<HelpCenter user={user || undefined} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -683,6 +685,7 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
             <>
               <div className="pt-6 pb-2 px-3 text-[10px] font-black text-orange-500 uppercase tracking-widest">Admin</div>
               <SidebarItem icon={<ShieldCheck />} label="Command Center" to="/admin" onClick={closeSidebar} />
+              <SidebarItem icon={<Globe />} label="Social Media" to="/social-media" onClick={closeSidebar} />
             </>
           )}
         </div>
