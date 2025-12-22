@@ -491,6 +491,41 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     { id: 'infrastructure', label: 'System Health', icon: <Database /> },
   ];
 
+  // Campaign Scheduler Modal Component
+  const SchedulerModal = () => {
+    if (!isSchedulerModalOpen) return null;
+
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+        <div className="bg-slate-950 border border-slate-800 rounded-[40px] w-full max-w-4xl shadow-2xl">
+          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+            <div>
+              <h3 className="text-2xl font-black tracking-tight">Smart Campaign Scheduler</h3>
+              <p className="text-sm text-slate-400">Schedule posts at optimal times for maximum engagement</p>
+            </div>
+            <button
+              onClick={() => { setIsSchedulerModalOpen(false); setSelectedCampaignForScheduling(null); }}
+              className="p-2 hover:bg-slate-800 rounded-xl transition-all"
+            >
+              <X size={24} className="text-slate-400" />
+            </button>
+          </div>
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+            <CampaignScheduler
+              campaignId={selectedCampaignForScheduling || undefined}
+              onScheduled={(scheduleId) => {
+                console.log('Campaign scheduled:', scheduleId);
+                setIsSchedulerModalOpen(false);
+                setSelectedCampaignForScheduling(null);
+                alert('✅ Campaign scheduled successfully!');
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-slate-950 text-slate-50 overflow-hidden">
       {/* Mobile Overlay */}
@@ -2441,39 +2476,4 @@ const SocialSetupModal = ({ isOpen, onClose, platform }: { isOpen: boolean; onCl
 };
 
   {/* Campaign Scheduler Modal */}
-  const SchedulerModal = () => {
-    if (!isSchedulerModalOpen) return null;
-
-    return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-        <div className="bg-slate-950 border border-slate-800 rounded-[40px] w-full max-w-4xl shadow-2xl">
-          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-black tracking-tight">Smart Campaign Scheduler</h3>
-              <p className="text-sm text-slate-400">Schedule posts at optimal times for maximum engagement</p>
-            </div>
-            <button
-              onClick={() => { setIsSchedulerModalOpen(false); setSelectedCampaignForScheduling(null); }}
-              className="p-2 hover:bg-slate-800 rounded-xl transition-all"
-            >
-              <X size={24} className="text-slate-400" />
-            </button>
-          </div>
-
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-            <CampaignScheduler
-              campaignId={selectedCampaignForScheduling || undefined}
-              onScheduled={(scheduleId) => {
-                console.log('Campaign scheduled:', scheduleId);
-                setIsSchedulerModalOpen(false);
-                setSelectedCampaignForScheduling(null);
-                alert('✅ Campaign scheduled successfully!');
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  };
-
 export default AdminCommandCenter;
