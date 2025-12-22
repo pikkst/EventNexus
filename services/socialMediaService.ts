@@ -199,8 +199,21 @@ export const postToFacebook = async (
 
     const result = await response.json();
     
+    console.log('📊 Facebook API response:', {
+      status: response.status,
+      ok: response.ok,
+      hasError: !!result.error,
+      hasId: !!result.id,
+      result: result
+    });
+    
     if (result.error) {
-      console.error('❌ Facebook API error:', result.error);
+      console.error('❌ Facebook API error details:', {
+        code: result.error.code,
+        type: result.error.type,
+        message: result.error.message,
+        fbtrace_id: result.error.fbtrace_id
+      });
       
       // Check if token expired
       if (result.error.code === 190) {
@@ -217,7 +230,11 @@ export const postToFacebook = async (
       error: undefined
     };
   } catch (error) {
-    console.error('❌ Facebook posting error:', error);
+    console.error('❌ Facebook posting error (caught):', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
