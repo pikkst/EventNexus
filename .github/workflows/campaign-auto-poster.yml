@@ -1,0 +1,37 @@
+name: Campaign Auto-Poster
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  trigger-auto-poster:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger Campaign Auto-Poster Edge Function
+        run: |
+          curl -X POST 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/campaign-auto-poster' \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP Status: %{http_code}\n" \
+            -o response.json
+          
+          echo "Response:"
+          cat response.json
+          
+      - name: Check for errors
+        run: |
+          if [ -f response.json ]; then
+            if grep -q '"error"' response.json; then
+              echo "❌ Error detected in response"
+              cat response.json
+              exit 1
+            else
+              echo "✅ Campaign auto-poster executed successfully"
+            fi
+          fi
