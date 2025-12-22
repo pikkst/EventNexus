@@ -64,8 +64,8 @@ USING (
 -- Check storage policies (use pg_policies view)
 -- SELECT * FROM pg_policies WHERE tablename = 'objects' AND policyname LIKE '%event images%';
 
--- Check uploaded images
--- SELECT name, size, created_at FROM storage.objects WHERE bucket_id = 'event-images' ORDER BY created_at DESC LIMIT 10;
+-- Check uploaded images (metadata contains size info)
+-- SELECT name, metadata, created_at FROM storage.objects WHERE bucket_id = 'event-images' ORDER BY created_at DESC LIMIT 10;
 
 -- Test bucket accessibility
 -- SELECT id, name, public, file_size_limit FROM storage.buckets WHERE id = 'event-images';
