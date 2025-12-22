@@ -376,6 +376,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop existing triggers if they exist
+DROP TRIGGER IF EXISTS campaign_analytics_to_performance ON campaign_analytics;
+DROP TRIGGER IF EXISTS calculate_metrics_on_insert ON campaign_performance;
+DROP TRIGGER IF EXISTS calculate_metrics_on_update ON campaign_performance;
+DROP TRIGGER IF EXISTS campaign_ab_tests_updated_at ON campaign_ab_tests;
+DROP TRIGGER IF EXISTS campaign_schedule_updated_at ON campaign_schedule;
+
 CREATE TRIGGER campaign_analytics_to_performance
   AFTER INSERT ON campaign_analytics
   FOR EACH ROW
@@ -390,11 +397,6 @@ CREATE TRIGGER calculate_metrics_on_update
   BEFORE UPDATE ON campaign_performance
   FOR EACH ROW
   EXECUTE FUNCTION calculate_campaign_metrics();
-
-CREATE TRIGGER campaign_analytics_to_performance
-  AFTER INSERT ON campaign_analytics
-  FOR EACH ROW
-  EXECUTE FUNCTION update_campaign_performance();
 
 -- Auto-update timestamps
 CREATE OR REPLACE FUNCTION update_updated_at()
