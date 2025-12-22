@@ -50,7 +50,7 @@ const getOAuthConfig = async (platform: string): Promise<OAuthConfig | null> => 
 
     // Platform-specific scopes
     const scopes: Record<string, string> = {
-      facebook: 'pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish',
+      facebook: 'pages_manage_posts,pages_read_engagement,pages_show_list,instagram_basic,instagram_content_publish',
       instagram: 'pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish,pages_show_list',
       twitter: 'tweet.read,tweet.write,users.read,offline.access',
       linkedin: 'w_member_social,r_liteprofile'
@@ -123,85 +123,105 @@ const exchangeCodeForToken = async (
       // For Instagram, we need the Instagram Business Account ID, not the Facebook User ID
       if (platform === 'instagram') {
         try {
-          // Get Facebook Pages managed by the user with access tokens
+          // STEP 1: Exchange short-lived user token for long-lived user token
+          console.log('🔄 Step 1: Exchanging for long-lived user token...');
+          const longLivedResponse = await fetch(
+            `https://graph.facebook.com/v18.0/oauth/access_token?` +
+            `grant_type=fb_exchange_token&` +
+            `client_id=${config.clientId}&` +
+            `client_secret=${config.clientSecret}&` +
+            `fb_exchange_token=${data.access_token}`
+          );
+          
+          const longLivedData = await longLivedResponse.json();
+          
+          if (longLivedData.error) {
+            console.error('Long-lived token exchange error:', longLivedData.error);
+            throw new Error(`Token exchange failed: ${longLivedData.error.message}`);
+          }
+          
+          const longLivedUserToken = longLivedData.access_token;
+          console.log('✅ Got long-lived user token (expires in', longLivedData.expires_in, 'seconds)');
+          
+          // STEP 2: Get Facebook Pages with Instagram Business Accounts
+          console.log('🔄 Step 2: Fetching Facebook Pages with Instagram...');
           const pagesResponse = await fetch(
-            `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${data.access_token}`
+            `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${longLivedUserToken}`
           );
           
           const pagesData = await pagesResponse.json();
           
-          console.log('📄 Facebook Pages API response:', pagesData);
+          console.log('📄 Facebook Pages API response:', {
+            hasData: !!pagesData.data,
+            pageCount: pagesData.data?.length || 0,
+            pagesWithIG: pagesData.data?.filter((p: any) => p.instagram_business_account).length || 0,
+            error: pagesData.error
+          });
           
           if (pagesData.error) {
             console.error('Facebook API error:', pagesData.error);
-            throw new Error(`Facebook API error: ${pagesData.error.message}`);
+            throw new Error(`Cannot access Pages: ${pagesData.error.message}`);
           }
           
-          // If no pages returned, try alternative approach - get user's Instagram accounts directly
+          // If no pages returned, provide clear instructions
           if (!pagesData.data || pagesData.data.length === 0) {
-            console.warn('⚠️ /me/accounts returned empty, trying alternative approach...');
-            
-            // Try getting Instagram Business Account IDs directly
-            const igAccountsResponse = await fetch(
-              `https://graph.facebook.com/v18.0/me/accounts?fields=instagram_business_account&access_token=${data.access_token}`
-            );
-            const igAccountsData = await igAccountsResponse.json();
-            console.log('📸 Direct Instagram accounts:', igAccountsData);
-            
-            // If still empty, we need user to check their Facebook Page permissions
-            if (!igAccountsData.data || igAccountsData.data.length === 0) {
-              console.error('❌ Cannot access Facebook Pages. Token might not have pages_show_list permission.');
-              throw new Error(
-                'Cannot access your Facebook Pages. Please ensure:\n' +
-                '1. You selected the Facebook Page during authorization\n' +
-                '2. Your Instagram Business Account is connected to that Page\n' +
-                '3. Try disconnecting and reconnecting with all permissions granted'
-              );
-            }
-          }
-          
-          // Find the first page with an Instagram Business Account
-          const pageWithInstagram = pagesData.data?.find((page: any) => page.instagram_business_account);
-          
-          if (pageWithInstagram?.instagram_business_account) {
-            const igAccountId = pageWithInstagram.instagram_business_account.id;
-            const pageAccessToken = pageWithInstagram.access_token || data.access_token;
-            
-            console.log('✅ Found Instagram Business Account:', igAccountId);
-            console.log('📄 Using Page access token for Instagram API calls');
-            
-            // Get Instagram account details using the page's access token
-            const igResponse = await fetch(
-              `https://graph.facebook.com/v18.0/${igAccountId}?fields=id,username,name&access_token=${pageAccessToken}`
-            );
-            
-            const igData = await igResponse.json();
-            
-            if (igData.error) {
-              console.error('Instagram API error:', igData.error);
-              throw new Error(`Instagram API error: ${igData.error.message}`);
-            }
-            
-            console.log('📸 Instagram account:', igData);
-            
-            return {
-              accessToken: pageAccessToken, // Use page token for posting
-              refreshToken: data.refresh_token,
-              expiresAt: data.expires_in,
-              accountId: igAccountId,
-              accountName: igData.username || igData.name || 'Instagram Business Account'
-            };
-          } else {
-            console.error('❌ No Instagram Business Account found on any page');
-            console.log('Available pages:', pagesData.data.map((p: any) => ({ id: p.id, name: p.name, hasIG: !!p.instagram_business_account })));
+            console.error('❌ /me/accounts returned empty array');
             throw new Error(
-              'No Instagram Business Account found. ' +
-              'Make sure your Instagram is a Business Account connected to a Facebook Page. ' +
+              'No Facebook Pages found. To use Instagram posting:\\n' +
+              '1. Create a Facebook Page\\n' +
+              '2. Convert your Instagram to Business Account\\n' +
+              '3. Connect Instagram to your Facebook Page\\n' +
+              '4. Try authorization again and grant all permissions\\n\\n' +
               'Guide: https://help.instagram.com/502981923235522'
             );
           }
+          
+          // STEP 3: Find the first page with an Instagram Business Account
+          const pageWithInstagram = pagesData.data.find((page: any) => page.instagram_business_account);
+          
+          if (!pageWithInstagram?.instagram_business_account) {
+            console.error('❌ No Instagram Business Account found on any page');
+            console.log('Available pages:', pagesData.data.map((p: any) => ({ 
+              id: p.id, 
+              name: p.name, 
+              hasIG: !!p.instagram_business_account 
+            })));
+            throw new Error(
+              'None of your Facebook Pages have an Instagram Business Account connected.\\n' +
+              'Connect your Instagram at: https://www.facebook.com/settings?tab=business_tools'
+            );
+          }
+          
+          const igAccountId = pageWithInstagram.instagram_business_account.id;
+          const pageAccessToken = pageWithInstagram.access_token;
+          
+          console.log('✅ Found Instagram Business Account:', igAccountId);
+          console.log('📄 Using Page token:', pageWithInstagram.name);
+          
+          // STEP 4: Get Instagram account details
+          console.log('🔄 Step 3: Fetching Instagram account details...');
+          const igResponse = await fetch(
+            `https://graph.facebook.com/v18.0/${igAccountId}?fields=id,username,name&access_token=${pageAccessToken}`
+          );
+          
+          const igData = await igResponse.json();
+          
+          if (igData.error) {
+            console.error('Instagram API error:', igData.error);
+            throw new Error(`Instagram API error: ${igData.error.message}`);
+          }
+          
+          console.log('✅ Instagram account verified:', igData.username || igData.name);
+          
+          return {
+            accessToken: pageAccessToken, // Use page token for posting
+            refreshToken: data.refresh_token,
+            expiresAt: data.expires_in,
+            accountId: igAccountId,
+            accountName: igData.username || igData.name || 'Instagram Business Account'
+          };
         } catch (error) {
-          console.error('Failed to fetch Instagram Business Account:', error);
+          console.error('❌ Failed to setup Instagram:', error);
           throw error;
         }
       }
@@ -209,37 +229,100 @@ const exchangeCodeForToken = async (
       // For Facebook, get Page access token (required for posting)
       if (platform === 'facebook') {
         try {
-          // Get user's Facebook Pages
+          // STEP 1: Exchange short-lived user token for long-lived user token
+          console.log('🔄 Step 1: Exchanging for long-lived user token...');
+          const longLivedResponse = await fetch(
+            `https://graph.facebook.com/v18.0/oauth/access_token?` +
+            `grant_type=fb_exchange_token&` +
+            `client_id=${config.clientId}&` +
+            `client_secret=${config.clientSecret}&` +
+            `fb_exchange_token=${data.access_token}`
+          );
+          
+          const longLivedData = await longLivedResponse.json();
+          
+          if (longLivedData.error) {
+            console.error('Long-lived token exchange error:', longLivedData.error);
+            throw new Error(`Token exchange failed: ${longLivedData.error.message}`);
+          }
+          
+          const longLivedUserToken = longLivedData.access_token;
+          console.log('✅ Got long-lived user token (expires in', longLivedData.expires_in, 'seconds)');
+          
+          // STEP 2: Get user's Facebook Pages with their Page tokens
+          console.log('🔄 Step 2: Fetching Facebook Pages...');
           const pagesResponse = await fetch(
-            `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token&access_token=${data.access_token}`
+            `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token,category&access_token=${longLivedUserToken}`
           );
           
           const pagesData = await pagesResponse.json();
           
-          console.log('📄 Facebook Pages for Facebook platform:', pagesData);
+          console.log('📄 Facebook Pages response:', {
+            hasData: !!pagesData.data,
+            pageCount: pagesData.data?.length || 0,
+            error: pagesData.error
+          });
           
           if (pagesData.error) {
-            console.error('Facebook API error:', pagesData.error);
-            throw new Error(`Facebook API error: ${pagesData.error.message}`);
+            console.error('Facebook Pages API error:', pagesData.error);
+            throw new Error(`Cannot access Pages: ${pagesData.error.message}. Make sure you granted all permissions during authorization.`);
           }
           
-          // Use the first page's access token (Page token has posting permissions)
-          if (pagesData.data && pagesData.data.length > 0) {
-            const page = pagesData.data[0];
-            console.log('✅ Using Facebook Page:', page.name, page.id);
+          // Check if user has any pages
+          if (!pagesData.data || pagesData.data.length === 0) {
+            console.error('❌ /me/accounts returned empty array');
+            console.log('🔍 Debug info:', {
+              tokenLength: longLivedUserToken.length,
+              tokenStart: longLivedUserToken.substring(0, 20) + '...',
+              responseStatus: pagesResponse.status
+            });
             
-            return {
-              accessToken: page.access_token, // Use Page token, not user token!
-              refreshToken: data.refresh_token,
-              expiresAt: data.expires_in,
-              accountId: page.id,
-              accountName: page.name
-            };
-          } else {
-            console.warn('⚠️ No Facebook Pages found, using user token (posting will fail)');
+            throw new Error(
+              'No Facebook Pages found. To post to Facebook, you need:\n' +
+              '1. A Facebook Page (not just personal profile)\n' +
+              '2. Admin access to that Page\n' +
+              '3. Select the Page during authorization\n' +
+              '4. Grant all requested permissions\n\n' +
+              'Create a Page at: https://www.facebook.com/pages/create'
+            );
           }
+          
+          // STEP 3: Use the first page's token (or let user select if multiple)
+          const page = pagesData.data[0];
+          console.log('✅ Using Facebook Page:', {
+            id: page.id,
+            name: page.name,
+            category: page.category,
+            hasToken: !!page.access_token
+          });
+          
+          // Page tokens from /me/accounts are already long-lived (never expire)
+          const pageAccessToken = page.access_token;
+          
+          // Verify the page token works
+          console.log('🔄 Step 3: Verifying Page token...');
+          const verifyResponse = await fetch(
+            `https://graph.facebook.com/v18.0/${page.id}?fields=id,name,access_token&access_token=${pageAccessToken}`
+          );
+          const verifyData = await verifyResponse.json();
+          
+          if (verifyData.error) {
+            console.error('Page token verification failed:', verifyData.error);
+            throw new Error(`Page token invalid: ${verifyData.error.message}`);
+          }
+          
+          console.log('✅ Page token verified successfully');
+          
+          return {
+            accessToken: pageAccessToken, // Use Page token, not user token!
+            refreshToken: data.refresh_token,
+            expiresAt: data.expires_in ? data.expires_in : undefined,
+            accountId: page.id,
+            accountName: page.name
+          };
         } catch (error) {
-          console.error('Failed to fetch Facebook Pages:', error);
+          console.error('❌ Failed to get Facebook Page token:', error);
+          throw error;
         }
       }
       
