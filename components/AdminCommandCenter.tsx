@@ -922,23 +922,164 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 <h2 className="text-3xl font-black tracking-tight mb-2">Social Media Hub</h2>
                 <p className="text-slate-400">Connect platforms and post campaigns directly</p>
               </div>
-              <button
-                onClick={async () => {
-                  const { quickConnectAll } = await import('../services/socialAuthHelper');
-                  try {
-                    await quickConnectAll();
-                    const { getConnectedAccounts } = await import('../services/socialAuthHelper');
-                    const accounts = await getConnectedAccounts();
-                    setConnectedAccounts(accounts);
-                  } catch (error) {
-                    console.error('Quick connect failed:', error);
-                  }
-                }}
-                className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 rounded-xl font-bold hover:shadow-lg hover:shadow-orange-500/20 transition-all flex items-center gap-2"
-              >
-                <Sparkles size={18} />
-                Quick Connect All
-              </button>
+            </div>
+
+            {/* Manual Connection Form */}
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-3xl p-6">
+              <h3 className="text-xl font-black text-white mb-2 flex items-center gap-2">
+                <Key size={20} />
+                🔧 Manual Connection (Recommended)
+              </h3>
+              <p className="text-slate-400 mb-4">OAuth auto-fetch võib ebaõnnestuda. Sisesta Meta poolt antud andmed otse:</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Facebook Manual */}
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                    📘 Facebook Page
+                  </h4>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Page ID (nt: 864504226754704)"
+                      id="fb-page-id"
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Page Name (nt: EventNexus)"
+                      id="fb-page-name"
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Page Access Token"
+                      id="fb-access-token"
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
+                    />
+                    <button
+                      onClick={async () => {
+                        const pageId = (document.getElementById('fb-page-id') as HTMLInputElement).value;
+                        const pageName = (document.getElementById('fb-page-name') as HTMLInputElement).value;
+                        const token = (document.getElementById('fb-access-token') as HTMLInputElement).value;
+                        
+                        if (!pageId || !pageName || !token) {
+                          alert('⚠️ Täida kõik väljad');
+                          return;
+                        }
+                        
+                        try {
+                          const { data: { user } } = await supabase.auth.getUser();
+                          if (!user) throw new Error('Not authenticated');
+                          
+                          const { error } = await supabase.from('social_media_accounts').upsert({
+                            user_id: user.id,
+                            platform: 'facebook',
+                            account_id: pageId,
+                            account_name: pageName,
+                            access_token: token,
+                            is_connected: true,
+                            expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+                            updated_at: new Date().toISOString()
+                          }, { onConflict: 'user_id,platform,account_id' });
+                          
+                          if (error) throw error;
+                          
+                          const { getConnectedAccounts } = await import('../services/socialAuthHelper');
+                          const accounts = await getConnectedAccounts();
+                          setConnectedAccounts(accounts);
+                          
+                          alert('✅ Facebook ühendatud!');
+                        } catch (error) {
+                          alert('❌ Viga: ' + (error as Error).message);
+                        }
+                      }}
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-bold"
+                    >
+                      💾 Salvesta Facebook
+                    </button>
+                  </div>
+                </div>
+
+                {/* Instagram Manual */}
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                    📸 Instagram Business
+                  </h4>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="IG Business Account ID (nt: 17841473316101833)"
+                      id="ig-account-id"
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Instagram Username (nt: blogpieesti)"
+                      id="ig-username"
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Access Token (sama mis Facebook)"
+                      id="ig-access-token"
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white"
+                    />
+                    <button
+                      onClick={async () => {
+                        const accountId = (document.getElementById('ig-account-id') as HTMLInputElement).value;
+                        const username = (document.getElementById('ig-username') as HTMLInputElement).value;
+                        const token = (document.getElementById('ig-access-token') as HTMLInputElement).value;
+                        
+                        if (!accountId || !username || !token) {
+                          alert('⚠️ Täida kõik väljad');
+                          return;
+                        }
+                        
+                        try {
+                          const { data: { user } } = await supabase.auth.getUser();
+                          if (!user) throw new Error('Not authenticated');
+                          
+                          const { error } = await supabase.from('social_media_accounts').upsert({
+                            user_id: user.id,
+                            platform: 'instagram',
+                            account_id: accountId,
+                            account_name: username,
+                            access_token: token,
+                            is_connected: true,
+                            expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+                            updated_at: new Date().toISOString()
+                          }, { onConflict: 'user_id,platform,account_id' });
+                          
+                          if (error) throw error;
+                          
+                          const { getConnectedAccounts } = await import('../services/socialAuthHelper');
+                          const accounts = await getConnectedAccounts();
+                          setConnectedAccounts(accounts);
+                          
+                          alert('✅ Instagram ühendatud!');
+                        } catch (error) {
+                          alert('❌ Viga: ' + (error as Error).message);
+                        }
+                      }}
+                      className="w-full py-2 bg-gradient-to-br from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg text-sm font-bold"
+                    >
+                      💾 Salvesta Instagram
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                <p className="text-xs text-blue-300">
+                  <strong>Kuidas saada õigeid väärtusi:</strong><br/>
+                  1. Mine <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener" className="underline">Graph API Explorer</a><br/>
+                  2. Vali oma EventNexus App<br/>
+                  3. Get Token → Page Access Token<br/>
+                  4. Vali EventNexus leht (ID: 864504226754704)<br/>
+                  5. Kopeeri access token siia
+                </p>
+              </div>
             </div>
 
             {/* Setup Guide Banner */}
