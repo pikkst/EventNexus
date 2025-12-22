@@ -52,6 +52,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isEventUnlocked, setIsEventUnlocked] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -261,7 +262,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   const hasReachedLimit = eventLimit !== Infinity && userEvents.length >= eventLimit;
 
   // Subscription Gate - Free users
-  if (user.subscription_tier === 'free') {
+  if (user.subscription_tier === 'free' && !isEventUnlocked) {
     const eventCost = FEATURE_UNLOCK_COSTS.CREATE_SINGLE_EVENT;
     const canAfford = userCredits >= eventCost;
 
@@ -286,10 +287,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             onUpdateUser({ credits_balance: newBalance });
           }
           
-          alert('Event creation unlocked! You can now create 1 event.');
+          // Mark event as unlocked so gate disappears
+          setIsEventUnlocked(true);
           
-          // Instead of reloading, just let the component re-render
-          // The gate will disappear because userCredits is now updated
+          alert('Event creation unlocked! You can now create 1 event.');
         } else {
           alert('Failed to unlock. Please try again.');
         }
