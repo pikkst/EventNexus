@@ -25,6 +25,7 @@ import { supabase } from '../services/supabase';
 import BrandProtectionMonitor from './BrandProtectionMonitor';
 import AdminInbox from './AdminInbox';
 import CampaignAnalyticsDashboard from './CampaignAnalyticsDashboard';
+import CampaignScheduler from './CampaignScheduler';
 import { 
   getEvents, 
   getAllUsers, 
@@ -83,6 +84,10 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [targetAudience, setTargetAudience] = useState<'attendees' | 'creators' | 'platform-growth' | 'new-features' | 'community' | 'seasonal' | 'retention' | 'referral'>('attendees');
   const [editingCampaign, setEditingCampaign] = useState<Partial<Campaign> | null>(null);
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
+  
+  // Scheduler State
+  const [isSchedulerModalOpen, setIsSchedulerModalOpen] = useState(false);
+  const [selectedCampaignForScheduling, setSelectedCampaignForScheduling] = useState<string | null>(null);
 
   // User Actions State
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -898,16 +903,22 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                           </div>
                         </div>
 
-                        <div className="flex gap-2 pt-2">
+                        <div className="grid grid-cols-3 gap-2 pt-2">
                           <button 
                             onClick={() => { setEditingCampaign(campaign); setIsCampaignModalOpen(true); }}
-                            className="flex-1 py-2.5 bg-slate-800 hover:bg-indigo-600 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:text-white transition-all"
+                            className="py-2.5 bg-slate-800 hover:bg-indigo-600 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:text-white transition-all"
                           >
                             Edit
                           </button>
                           <button 
+                            onClick={() => { setSelectedCampaignForScheduling(campaign.id); setIsSchedulerModalOpen(true); }}
+                            className="py-2.5 bg-slate-800 hover:bg-orange-600 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:text-white transition-all"
+                          >
+                            📅 Schedule
+                          </button>
+                          <button 
                             onClick={() => handleDeleteCampaign(campaign.id!)}
-                            className="flex-1 py-2.5 bg-slate-800 hover:bg-red-600 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:text-white transition-all"
+                            className="py-2.5 bg-slate-800 hover:bg-red-600 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:text-white transition-all"
                           >
                             Delete
                           </button>
@@ -2062,6 +2073,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         onClose={() => setShowSocialSetupModal(false)}
         platform={selectedPlatform}
       />
+
+      {/* Campaign Scheduler Modal */}
+      <SchedulerModal />
     </div>
   );
 };
@@ -2417,5 +2431,41 @@ const SocialSetupModal = ({ isOpen, onClose, platform }: { isOpen: boolean; onCl
     </div>
   );
 };
+
+  {/* Campaign Scheduler Modal */}
+  const SchedulerModal = () => {
+    if (!isSchedulerModalOpen) return null;
+
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+        <div className="bg-slate-950 border border-slate-800 rounded-[40px] w-full max-w-4xl shadow-2xl">
+          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+            <div>
+              <h3 className="text-2xl font-black tracking-tight">Smart Campaign Scheduler</h3>
+              <p className="text-sm text-slate-400">Schedule posts at optimal times for maximum engagement</p>
+            </div>
+            <button
+              onClick={() => { setIsSchedulerModalOpen(false); setSelectedCampaignForScheduling(null); }}
+              className="p-2 hover:bg-slate-800 rounded-xl transition-all"
+            >
+              <X size={24} className="text-slate-400" />
+            </button>
+          </div>
+
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+            <CampaignScheduler
+              campaignId={selectedCampaignForScheduling || undefined}
+              onScheduled={(scheduleId) => {
+                console.log('Campaign scheduled:', scheduleId);
+                setIsSchedulerModalOpen(false);
+                setSelectedCampaignForScheduling(null);
+                alert('✅ Campaign scheduled successfully!');
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
 
 export default AdminCommandCenter;
