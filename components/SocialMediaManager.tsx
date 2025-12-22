@@ -149,7 +149,7 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
       } else if (platform === 'instagram') {
         await publishToConnectedPlatforms({
           instagram: {
-            caption: `${campaign.title}\n\n${campaign.copy}\n\n#EventNexus #Events`,
+            caption: `${campaign.title}\n\n${campaign.copy}\n\n🔗 www.eventnexus.eu\n\n#EventNexus #Events`,
             imageUrl: campaign.imageUrl || campaign.image_url || ''
           }
         });

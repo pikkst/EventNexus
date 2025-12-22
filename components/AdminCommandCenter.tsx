@@ -857,7 +857,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                                   const { publishToConnectedPlatforms } = await import('../services/socialAuthHelper');
                                   await publishToConnectedPlatforms({
                                     instagram: {
-                                      caption: `${campaign.title}\n\n${campaign.copy}\n\n#EventNexus #Events`,
+                                      caption: `${campaign.title}\n\n${campaign.copy}\n\n🔗 www.eventnexus.eu\n\n#EventNexus #Events`,
                                       imageUrl: campaign.imageUrl || campaign.image_url || ''
                                     }
                                   });
