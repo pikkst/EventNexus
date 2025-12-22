@@ -22,7 +22,8 @@ import {
   getOrganizerRevenue, 
   getOrganizerRevenueSummary,
   RevenueByEvent,
-  RevenueSummary
+  RevenueSummary,
+  verifyConnectOnboarding
 } from '../services/dbService';
 import { generateAdCampaign, generateAdImage } from '../services/geminiService';
 import { supabase } from '../services/supabase';
@@ -82,11 +83,59 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [genStage, setGenStage] = useState('');
   const [adCampaign, setAdCampaign] = useState<any[]>([]);
   const [isSuccessManagerOpen, setIsSuccessManagerOpen] = useState(false);
+  const [showConnectSuccess, setShowConnectSuccess] = useState(false);
+  const [isVerifyingConnect, setIsVerifyingConnect] = useState(false);
   
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [broadcastingTo, setBroadcastingTo] = useState<string | null>(null);
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+
+  // Check for Stripe Connect return and verify onboarding status
+  useEffect(() => {
+    const checkStripeReturn = async () => {
+      const params = new URLSearchParams(window.location.hash.split('?')[1]);
+      const connectStatus = params.get('connect');
+      
+      if (connectStatus === 'success' || connectStatus === 'refresh') {
+        setIsVerifyingConnect(true);
+        console.log('Returned from Stripe Connect onboarding, verifying status...');
+        
+        try {
+          const result = await verifyConnectOnboarding(user.id);
+          
+          if (result?.success) {
+            console.log('Connect verification result:', result);
+            
+            // Update user state with new Connect status
+            onUpdateUser({
+              stripe_connect_onboarding_complete: result.onboardingComplete,
+              stripe_connect_charges_enabled: result.chargesEnabled,
+              stripe_connect_payouts_enabled: result.payoutsEnabled,
+            });
+            
+            // Show success message if onboarding completed
+            if (result.onboardingComplete) {
+              setShowConnectSuccess(true);
+              setTimeout(() => setShowConnectSuccess(false), 8000);
+            }
+          } else {
+            console.warn('Connect verification returned no result');
+          }
+        } catch (error) {
+          console.error('Error verifying Connect status:', error);
+        } finally {
+          setIsVerifyingConnect(false);
+          
+          // Clean up URL parameters
+          const cleanUrl = window.location.hash.split('?')[0];
+          window.history.replaceState({}, '', cleanUrl);
+        }
+      }
+    };
+    
+    checkStripeReturn();
+  }, [user.id, onUpdateUser]);
 
   // Load user's events from database
   useEffect(() => {
@@ -265,6 +314,43 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-12 relative min-h-screen pb-32">
+      {/* Stripe Connect Success Banner */}
+      {showConnectSuccess && (
+        <div className="fixed top-4 right-4 z-50 max-w-md animate-in slide-in-from-right duration-300">
+          <div className="bg-gradient-to-r from-emerald-600 to-green-600 rounded-2xl p-6 shadow-2xl border-2 border-emerald-400/50">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-7 h-7 text-white" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-black text-white mb-1">Bank Account Connected!</h3>
+                <p className="text-emerald-50 text-sm font-medium">
+                  ✓ Your Stripe Connect setup is complete. You'll receive payouts automatically 2 days after each event.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowConnectSuccess(false)}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verifying Connect Status Indicator */}
+      {isVerifyingConnect && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className="bg-slate-800 rounded-2xl p-4 shadow-xl border border-slate-700 flex items-center gap-3">
+            <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
+            <span className="text-white font-medium">Verifying bank connection...</span>
+          </div>
+        </div>
+      )}
+
       <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 ${isGated ? 'opacity-20 pointer-events-none' : ''}`}>
         <div className="space-y-2">
           <h1 className="text-5xl font-black tracking-tighter text-white flex items-center gap-4">
@@ -293,8 +379,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
         </div>
       </div>
 
-      {/* Stripe Connect Onboarding Banner */}
-      {!user.stripe_connect_onboarding_complete && events.some(e => e.price > 0) && (
+      {/* Stripe Connect Onboarding Banner - Only show on Overview tab, not on Payouts tab */}
+      {!user.stripe_connect_onboarding_complete && events.some(e => e.price > 0) && activeTab === 'overview' && (
         <div className="bg-gradient-to-r from-yellow-900/40 to-orange-900/40 border-2 border-yellow-600/50 rounded-3xl p-6 backdrop-blur-sm">
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
