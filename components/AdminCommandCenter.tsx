@@ -79,7 +79,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [newCampaignTheme, setNewCampaignTheme] = useState('');
-  const [targetAudience, setTargetAudience] = useState<'creators' | 'attendees'>('attendees');
+  const [targetAudience, setTargetAudience] = useState<'attendees' | 'creators' | 'platform-growth' | 'new-features' | 'community' | 'seasonal' | 'retention' | 'referral'>('attendees');
   const [editingCampaign, setEditingCampaign] = useState<Partial<Campaign> | null>(null);
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
 
@@ -1587,11 +1587,23 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                      />
                      <select 
                        value={targetAudience}
-                       onChange={(e) => setTargetAudience(e.target.value as 'creators' | 'attendees')}
+                       onChange={(e) => setTargetAudience(e.target.value as any)}
                        className="bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-sm text-white outline-none"
                      >
-                        <option value="attendees">Attendees</option>
-                        <option value="creators">Creators</option>
+                        <optgroup label="User Acquisition">
+                          <option value="attendees">🎉 Event Attendees</option>
+                          <option value="creators">🎨 Event Creators & Organizers</option>
+                        </optgroup>
+                        <optgroup label="Platform Growth">
+                          <option value="platform-growth">🚀 Platform Discovery</option>
+                          <option value="new-features">✨ New Features Announcement</option>
+                          <option value="community">💬 Community Engagement</option>
+                        </optgroup>
+                        <optgroup label="Campaigns">
+                          <option value="seasonal">🌞 Seasonal Campaign</option>
+                          <option value="retention">💝 User Retention</option>
+                          <option value="referral">🎁 Referral Program</option>
+                        </optgroup>
                      </select>
                      <button 
                        onClick={handleAiCampaignGenerate}
