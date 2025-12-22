@@ -129,7 +129,9 @@ export const generatePlatformGrowthCampaign = async (theme: string, target: stri
       2. MARKETING COPY (max 120 chars):
          - Lead with benefit, not feature
          - Create FOMO (fear of missing out)
-         - Include social proof element
+         - NEVER mention specific user numbers or fake statistics (NO "50k users", "10k+ downloads", etc.)
+         - Focus on emotions and experiences instead
+         - Include aspirational language
          - End with clear value proposition
       
       3. VISUAL PROMPT (detailed DALL-E/Midjourney style):
