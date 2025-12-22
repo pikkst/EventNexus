@@ -160,12 +160,12 @@ BEGIN
     COALESCE(c.budget, 100.0)::DECIMAL AS current_budget,
     LEAST(COALESCE(c.budget, 100.0) * 1.5, COALESCE(c.budget, 100.0) * max_budget_multiplier)::DECIMAL AS suggested_budget,
     cp.roi,
-    cp.conversions,
+    cp.total_conversions,
     cp.ctr,
     CASE 
-      WHEN cp.conversions >= 50 AND cp.roi >= 4.0 THEN 95.0
-      WHEN cp.conversions >= 20 AND cp.roi >= 3.5 THEN 85.0
-      WHEN cp.conversions >= 10 AND cp.roi >= 3.0 THEN 75.0
+      WHEN cp.total_conversions >= 50 AND cp.roi >= 4.0 THEN 95.0
+      WHEN cp.total_conversions >= 20 AND cp.roi >= 3.5 THEN 85.0
+      WHEN cp.total_conversions >= 10 AND cp.roi >= 3.0 THEN 75.0
       ELSE 60.0
     END AS confidence_score,
     CASE 
@@ -178,9 +178,9 @@ BEGIN
   JOIN campaign_performance cp ON c.id = cp.campaign_id
   WHERE (c.status = 'active' OR c.status = 'Active')
     AND cp.roi >= min_roi
-    AND cp.conversions >= min_conversions
+    AND cp.total_conversions >= min_conversions
     AND COALESCE(c.budget, 0.0) < 10000 -- Max budget cap
-  ORDER BY cp.roi DESC, cp.conversions DESC;
+  ORDER BY cp.roi DESC, cp.total_conversions DESC;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -205,14 +205,14 @@ BEGIN
     c.id,
     'high_traffic_low_conversion'::TEXT,
     'high'::TEXT,
-    format('Campaign "%s" has %s clicks but only %s%% conversion rate', c.title, cp.clicks, ROUND(cp.conversion_rate, 2)),
+    format('Campaign "%s" has %s clicks but only %s%% conversion rate', c.title, cp.total_clicks, ROUND(cp.conversion_rate, 2)),
     'Review targeting parameters and landing page experience. Consider A/B testing different audiences or CTAs.'::TEXT,
     jsonb_build_object('conversion_rate_increase', 3.0, 'roi_increase', 1.5),
     85.0::DECIMAL
   FROM campaigns c
   JOIN campaign_performance cp ON c.id = cp.campaign_id
   WHERE (c.status = 'active' OR c.status = 'Active')
-    AND cp.clicks > 100
+    AND cp.total_clicks > 100
     AND cp.conversion_rate < 2.0
     AND cp.total_spend > 50
 
@@ -342,7 +342,7 @@ BEGIN
   SELECT COALESCE(c.budget, 100.0), jsonb_build_object(
     'budget', COALESCE(c.budget, 100.0),
     'roi', COALESCE(cp.roi, 0.0),
-    'conversions', COALESCE(cp.conversions, 0),
+    'conversions', COALESCE(cp.total_conversions, 0),
     'ctr', COALESCE(cp.ctr, 0.0)
   ) INTO v_old_budget, v_previous_state
   FROM campaigns c
