@@ -122,7 +122,8 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
         console.log('📘 Starting Facebook post...', { 
           campaignId: campaign.id, 
           title: campaign.title,
-          hasImage: !!(campaign.imageUrl || campaign.image_url)
+          hasImage: !!(campaign.imageUrl || campaign.image_url),
+          userId: user.id
         });
         
         const result = await publishToConnectedPlatforms({
@@ -137,20 +138,26 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
         
         // Check if posting was successful
         if (result.facebook?.success) {
-          // Update campaign status in database
-          const { error } = await supabase
-            .from('user_campaigns')
-            .update({ 
-              facebook_posted: true,
-              facebook_post_id: result.facebook.postId,
-              status: 'published'
-            })
-            .eq('id', campaign.id);
+          console.log('📘 Logging Facebook post to database...', {
+            campaignId: campaign.id,
+            postId: result.facebook.postId,
+            userId: user.id
+          });
           
-          if (error) {
-            console.error('Failed to update campaign status:', error);
-            throw new Error('Database update failed: ' + error.message);
+          // Use database function to log the post and update campaign
+          const { error: logError } = await supabase.rpc('log_user_campaign_post', {
+            p_campaign_id: campaign.id,
+            p_platform: 'facebook',
+            p_post_id: result.facebook.postId,
+            p_user_id: user.id
+          });
+          
+          if (logError) {
+            console.error('❌ Database logging failed:', logError);
+            throw new Error(`Post succeeded but database logging failed: ${logError.message}`);
           }
+          
+          console.log('✅ Database updated successfully');
           
           // Update local state
           setCampaigns(prev => prev.map(c => 
@@ -159,16 +166,19 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
               : c
           ));
           
-          alert(`✅ Posted to Facebook!\nPost ID: ${result.facebook.postId}`);
+          alert(`✅ Posted to Facebook!\n\nPost ID: ${result.facebook.postId}\n\nThe post has been logged to the database.`);
         } else {
-          throw new Error(result.facebook?.error || 'Facebook posting failed');
+          const errorMsg = result.facebook?.error || 'Facebook posting failed - no error details';
+          console.error('❌ Facebook post failed:', errorMsg);
+          throw new Error(errorMsg);
         }
         
       } else if (platform === 'instagram') {
         console.log('📸 Starting Instagram post...', { 
           campaignId: campaign.id, 
           title: campaign.title,
-          hasImage: !!(campaign.imageUrl || campaign.image_url)
+          hasImage: !!(campaign.imageUrl || campaign.image_url),
+          userId: user.id
         });
         
         const imageUrl = campaign.imageUrl || campaign.image_url;
@@ -187,20 +197,26 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
         
         // Check if posting was successful
         if (result.instagram?.success) {
-          // Update campaign status in database
-          const { error } = await supabase
-            .from('user_campaigns')
-            .update({ 
-              instagram_posted: true,
-              instagram_post_id: result.instagram.postId,
-              status: 'published'
-            })
-            .eq('id', campaign.id);
+          console.log('📸 Logging Instagram post to database...', {
+            campaignId: campaign.id,
+            postId: result.instagram.postId,
+            userId: user.id
+          });
           
-          if (error) {
-            console.error('Failed to update campaign status:', error);
-            throw new Error('Database update failed: ' + error.message);
+          // Use database function to log the post and update campaign
+          const { error: logError } = await supabase.rpc('log_user_campaign_post', {
+            p_campaign_id: campaign.id,
+            p_platform: 'instagram',
+            p_post_id: result.instagram.postId,
+            p_user_id: user.id
+          });
+          
+          if (logError) {
+            console.error('❌ Database logging failed:', logError);
+            throw new Error(`Post succeeded but database logging failed: ${logError.message}`);
           }
+          
+          console.log('✅ Database updated successfully');
           
           // Update local state
           setCampaigns(prev => prev.map(c => 
@@ -209,14 +225,17 @@ export const SocialMediaManager: React.FC<SocialMediaManagerProps> = ({
               : c
           ));
           
-          alert(`✅ Posted to Instagram!\nPost ID: ${result.instagram.postId}`);
+          alert(`✅ Posted to Instagram!\n\nPost ID: ${result.instagram.postId}\n\nThe post has been logged to the database.`);
         } else {
-          throw new Error(result.instagram?.error || 'Instagram posting failed');
+          const errorMsg = result.instagram?.error || 'Instagram posting failed - no error details';
+          console.error('❌ Instagram post failed:', errorMsg);
+          throw new Error(errorMsg);
         }
       }
     } catch (error) {
-      console.error('❌ Post failed:', error);
-      alert('❌ Failed to post: ' + (error as Error).message);
+      console.error('❌ Post operation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`❌ Failed to post:\n\n${errorMessage}\n\nPlease check the console for details.`);
     }
   };
 
