@@ -112,7 +112,7 @@ BEGIN
     cp.roi,
     cp.ctr,
     cp.conversion_rate,
-    EXTRACT(EPOCH FROM (NOW() - c.created_at))/3600::INTEGER AS hours_running,
+    (EXTRACT(EPOCH FROM (NOW() - c.created_at))/3600)::INTEGER AS hours_running,
     CASE 
       WHEN cp.roi < 0.5 THEN 'CRITICAL: Pause immediately - ROI below 0.5x'
       WHEN cp.roi < max_roi AND cp.total_spend > min_spend THEN 'HIGH: Consider pausing - ROI below target'
@@ -122,7 +122,7 @@ BEGIN
   FROM campaigns c
   JOIN campaign_performance cp ON c.id = cp.campaign_id
   WHERE (c.status = 'active' OR c.status = 'Active')
-    AND EXTRACT(EPOCH FROM (NOW() - c.created_at))/3600 >= min_duration_hours
+    AND (EXTRACT(EPOCH FROM (NOW() - c.created_at))/3600)::INTEGER >= min_duration_hours
     AND (
       (cp.roi < max_roi AND cp.total_spend > min_spend)
       OR (cp.ctr < 1.0 AND cp.total_spend > min_spend)
