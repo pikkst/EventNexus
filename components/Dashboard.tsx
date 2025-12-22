@@ -462,8 +462,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                               </td>
                               <td className="px-6 py-4 text-right text-white font-bold">{event.tickets_sold}</td>
                               <td className="px-6 py-4 text-right text-white font-bold">€{event.gross_revenue.toFixed(2)}</td>
-                              <td className="px-6 py-4 text-right text-orange-400 font-bold">-€{event.platform_fee.toFixed(2)}</td>
-                              <td className="px-6 py-4 text-right text-blue-400 font-bold">-€{event.stripe_fee.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-right text-orange-400 font-bold">-€{event.platform_fee_amount.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-right text-blue-400 font-bold">-€{event.stripe_fee_amount.toFixed(2)}</td>
                               <td className="px-6 py-4 text-right text-emerald-400 font-black">€{event.net_revenue.toFixed(2)}</td>
                               <td className="px-6 py-4 text-center">
                                 {event.payout_status === 'paid' && (
