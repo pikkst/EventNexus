@@ -3,7 +3,7 @@
  * Run this in browser console with your Facebook access token
  */
 
-const ACCESS_TOKEN = 'EAAVtP2I4llMBQXKLXD17fgAqgr0FdYO0ae5DrkK25ToAC9ZB3ErQVvJZAEDPa0IO97TE3PnjiZCwVaVZA3xA41uJAPQNi8kRCMZB7wTLFIzLUvy1KjrANksA3caGm0R8my0Lw131ZANK1TUbTZAT32dKSPmpyMlgHzkStBifXCWYOrv3OBaSR2zPWdTMIKAJJIGc5ShQbXo4OrunZAxk4RYLY96Obz22ImksS9FXB13kSmthHxFwN4Nj8ZC1joaepiOechx9XxB2lpotNRLYSeJE0Dq1Hmc0ZAOnlZB';
+const ACCESS_TOKEN = 'EAAVtP2I4llMBQbI2pW2WTqyeZB9MnI3svobZAUJEWphQE4UXamt7vfpT1aVe9i5TYYZCm0XZAwpWp1hMZAiZAZBtXsFPt04KoYC98jfQE44Nuy9l93wRrLzwuj2FynyuJsGCE6Hdl6hCl411AHmeCw7eqGDw3PBiEXnqr3OPnMHg6vv12Lkek2ZAYur1YPAU0Wb2ccCZBkydIfwhO5RSsk307of3w12oZApgcd';
 
 async function debugInstagramAccount() {
   console.log('🔍 Debugging Instagram Business Account setup...\n');
