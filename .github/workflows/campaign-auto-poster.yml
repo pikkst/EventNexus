@@ -16,7 +16,7 @@ jobs:
       - name: Trigger Campaign Auto-Poster Edge Function
         run: |
           curl -X POST 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/campaign-auto-poster' \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Content-Type: application/json" \
             -w "\nHTTP Status: %{http_code}\n" \
             -o response.json
