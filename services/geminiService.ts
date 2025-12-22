@@ -198,9 +198,9 @@ export const generateAdImage = async (
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: 'models/gemini-3-pro-preview',
       contents: {
-        parts: [{ text: `Professional marketing flier for EventNexus: ${prompt}. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements integrated, 8k. Aspect ratio: ${aspectRatio}` }]
+        parts: [{ text: `Professional marketing flier for EventNexus with clear promotional text overlay: ${prompt}. Include eye-catching headlines and call-to-action text directly on the image. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements, bold typography, 8k. Aspect ratio: ${aspectRatio}` }]
       }
     });
 

@@ -172,12 +172,49 @@ export const postToFacebook = async (
       throw new Error('Facebook Page ID is required');
     }
 
+    // If we have an image, post to /photos endpoint (supports both image and link)
+    if (imageUrl) {
+      const photoData: any = {
+        url: imageUrl,
+        caption: content,
+        access_token: accessToken
+      };
+
+      // Add event URL as link
+      if (eventUrl) {
+        photoData.link = eventUrl;
+      }
+
+      const response = await fetch(
+        `https://graph.facebook.com/v18.0/${pageId}/photos`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(photoData)
+        }
+      );
+
+      const result = await response.json();
+      
+      if (result.error) {
+        console.error('Facebook photo API error:', result.error);
+        throw new Error(result.error.message || 'Facebook photo posting failed');
+      }
+
+      console.log('✅ Posted photo to Facebook:', result.id);
+      return {
+        success: true,
+        postId: result.id,
+        error: undefined
+      };
+    }
+
+    // No image - post to /feed endpoint
     const postData: any = {
       message: content,
       access_token: accessToken
     };
 
-    // Add event URL as link (not image URL!)
     if (eventUrl) {
       postData.link = eventUrl;
     }
