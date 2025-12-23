@@ -313,7 +313,15 @@ export const translateDescription = async (text: string, targetLanguage: string,
  * Generate multi-platform ad campaign
  * Free tier: costs credits | Paid tiers: included
  */
-export const generateAdCampaign = async (name: string, description: string, objective: string, userId?: string, userTier?: string) => {
+export const generateAdCampaign = async (
+  name: string, 
+  description: string, 
+  campaignTheme: string,
+  targetAudience: string = 'general',
+  eventUrl?: string,
+  userId?: string, 
+  userTier?: string
+) => {
   // Check if user needs to pay with credits (Free tier only)
   if (userId && userTier === 'free') {
     const hasCredits = await checkUserCredits(userId, AI_CREDIT_COSTS.AD_CAMPAIGN);
@@ -322,19 +330,50 @@ export const generateAdCampaign = async (name: string, description: string, obje
     }
   }
 
+  // Map audience types to marketing language
+  const audienceMap: Record<string, string> = {
+    'general': 'broad audience of event-goers',
+    'young-adults': 'young adults aged 18-30 who love social experiences',
+    'professionals': 'working professionals aged 30-50 looking for networking and quality events',
+    'families': 'families with children looking for safe, fun activities',
+    'students': 'university students seeking affordable entertainment',
+    'luxury': 'affluent individuals seeking exclusive VIP experiences'
+  };
+
+  const audienceDescription = audienceMap[targetAudience] || audienceMap['general'];
+
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `Generate 3 distinct marketing ads for this event: "${name}". 
-      Description: ${description}. 
-      Objective: ${objective}.
-      For each ad, provide:
-      1. Platform (e.g. Instagram Story, LinkedIn Feed)
-      2. Headline (Punchy title for the ad)
-      3. BodyCopy (The actual promotional text the user will read)
-      4. CTA (The button text)
-      5. VisualPrompt (Instruction for the AI image generator)`,
+      contents: `You are an expert event marketing strategist creating ad campaigns for EventNexus.
+
+EVENT DETAILS:
+- Name: "${name}"
+- Description: ${description}
+- Event Page: ${eventUrl || 'www.eventnexus.eu'}
+
+CAMPAIGN REQUIREMENTS:
+- Theme/Focus: ${campaignTheme}
+- Target Audience: ${audienceDescription}
+- Goal: Drive ticket sales by bringing users to the event page
+
+Generate 3 platform-specific marketing ads. Each ad should:
+1. Be tailored to the platform's format and audience behavior
+2. Highlight the campaign theme (${campaignTheme})
+3. Speak directly to ${audienceDescription}
+4. Include specific event details from the description
+5. Create urgency or exclusivity where appropriate
+6. Use the event name prominently
+
+For each ad provide:
+1. Platform (Instagram Story, Facebook Feed, LinkedIn Post, or Twitter/X)
+2. Headline (Attention-grabbing, max 60 chars)
+3. BodyCopy (Compelling description that matches the campaign theme, 150-200 chars)
+4. CTA (Action button text like "Get Tickets", "Reserve Spot", "Learn More")
+5. VisualPrompt (Detailed description for AI image generation based on event and theme)
+
+Make each ad unique and platform-appropriate. Focus on ${campaignTheme}.`,
       config: {
         responseMimeType: 'application/json',
         responseSchema: {

@@ -90,6 +90,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [broadcastingTo, setBroadcastingTo] = useState<string | null>(null);
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [campaignTheme, setCampaignTheme] = useState('');
+  const [campaignAudience, setCampaignAudience] = useState('general');
 
   // Check for Stripe Connect return and verify onboarding status
   useEffect(() => {
@@ -275,29 +277,59 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     }));
   };
 
-  const handleGenerateCampaign = async () => {
-    if (!selectedEvent) return;
-    setIsGeneratingAd(true);
-    setGenStage('Ingesting event demographics...');
+  const handleShareAd = async (ad: any) => {
+    if (!ad.eventUrl) {
+      alert('Event URL not available');
+      return;
+    }
     
     try {
+      await navigator.clipboard.writeText(ad.eventUrl);
+      alert('Event link copied to clipboard! Share it with your audience.');
+    } catch (error) {
+      console.error('Failed to copy URL:', error);
+      // Fallback: show the URL in an alert
+      prompt('Copy this event URL:', ad.eventUrl);
+    }
+  };
+
+  const handleGenerateCampaign = async () => {
+    if (!selectedEvent) return;
+    if (!campaignTheme.trim()) {
+      alert('Please describe your campaign theme and what you want to emphasize.');
+      return;
+    }
+    setIsGeneratingAd(true);
+    setGenStage('Analyzing event and campaign theme...');
+    
+    try {
+      // Build event URL for ticket purchases
+      const eventUrl = `${window.location.origin}/#/event/${selectedEvent.id}`;
+      
       const campaign = await generateAdCampaign(
         selectedEvent.name, 
         selectedEvent.description, 
-        "Create an elite, high-energy marketing campaign. Focus on VIP scarcity and premium branding."
+        campaignTheme,
+        campaignAudience,
+        eventUrl,
+        user.id,
+        user.subscription_tier
       );
       
-      setGenStage('Synthesizing platform-native flyers...');
+      setGenStage('Generating professional ad visuals...');
       const campaignWithImages = await Promise.all(campaign.map(async (ad: any) => {
         const platform = ad.platform || '';
         const ratio = platform.includes('Story') ? '9:16' : (platform.includes('Header') ? '16:9' : '1:1');
-        const imageUrl = await generateAdImage(ad.visualPrompt, ratio as any);
-        return { ...ad, imageUrl, deploying: false, deployed: false };
+        const imageUrl = await generateAdImage(ad.visualPrompt, ratio as any, false, user.id, user.subscription_tier);
+        return { ...ad, imageUrl, deploying: false, deployed: false, eventUrl };
       }));
       
       setAdCampaign(campaignWithImages);
     } catch (error) {
       console.error(error);
+      if (error instanceof Error && error.message.includes('Insufficient credits')) {
+        alert('Insufficient credits for AI generation. Please upgrade your plan.');
+      }
     } finally {
       setIsGeneratingAd(false);
       setGenStage('');
@@ -752,13 +784,44 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
 
       {activeTab === 'marketing' && (
         <div className="space-y-12 animate-in slide-in-from-bottom-4 duration-500">
+           {/* Free Tier Gate for Marketing Studio */}
+           {user.subscription_tier === 'free' ? (
+             <div className="max-w-4xl mx-auto text-center space-y-8">
+               <div className="w-32 h-32 bg-slate-900 rounded-[48px] flex items-center justify-center mx-auto border border-slate-800">
+                 <Megaphone size={48} className="text-indigo-400" />
+               </div>
+               <div className="space-y-4">
+                 <h2 className="text-5xl font-black tracking-tighter text-white">Marketing Studio</h2>
+                 <p className="text-xl text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">
+                   Let AI create platform-native ad campaigns for your events. Professional marketing materials generated in seconds.
+                 </p>
+               </div>
+               <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-12 max-w-2xl mx-auto space-y-6">
+                 <div className="flex items-start gap-4">
+                   <Lock className="w-6 h-6 text-orange-400 shrink-0 mt-1" />
+                   <div className="text-left space-y-2">
+                     <h3 className="text-xl font-black text-white">Premium Feature</h3>
+                     <p className="text-slate-400 leading-relaxed">
+                       Marketing Studio is available for Pro, Premium, and Enterprise organizers. Upgrade to unlock AI-powered ad generation, social media content, and targeted campaigns.
+                     </p>
+                   </div>
+                 </div>
+                 <Link 
+                   to="/pricing"
+                   className="inline-flex items-center gap-3 px-8 py-5 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20"
+                 >
+                   <Zap className="w-4 h-4" /> View Pricing Plans
+                 </Link>
+               </div>
+             </div>
+           ) : (
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
               <div className="lg:col-span-1 space-y-8">
                  <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-10 space-y-8 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-600/10 rounded-full blur-[80px] -mr-24 -mt-24 pointer-events-none" />
                     <div className="space-y-2">
                        <h3 className="text-2xl font-black tracking-tighter text-white flex items-center gap-3"><Sparkles className="text-indigo-400" /> Marketing Studio</h3>
-                       <p className="text-slate-400 font-medium text-sm leading-relaxed">Let AI create your platform-native ad campaigns. No prompt engineering needed.</p>
+                       <p className="text-slate-400 font-medium text-sm leading-relaxed">Let AI create your platform-native ad campaigns with specific targeting.</p>
                     </div>
 
                     <div className="space-y-6">
@@ -774,11 +837,29 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                        </div>
                        
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Objective</label>
-                          <select className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-bold">
-                             <option>Scarcity (Sold Out soon)</option>
-                             <option>Hype & Viral Growth</option>
-                             <option>Elite Experience awareness</option>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Campaign Theme</label>
+                          <textarea
+                            value={campaignTheme}
+                            onChange={(e) => setCampaignTheme(e.target.value)}
+                            placeholder="Describe what you want to emphasize: VIP experience, limited tickets, early bird pricing, exclusive lineup, etc."
+                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-medium resize-none"
+                            rows={4}
+                          />
+                       </div>
+                       
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Target Audience</label>
+                          <select 
+                            value={campaignAudience}
+                            onChange={(e) => setCampaignAudience(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-bold"
+                          >
+                             <option value="general">General Audience</option>
+                             <option value="young-adults">Young Adults (18-30)</option>
+                             <option value="professionals">Professionals (30-50)</option>
+                             <option value="families">Families</option>
+                             <option value="students">Students</option>
+                             <option value="luxury">Luxury/VIP Seekers</option>
                           </select>
                        </div>
 
@@ -828,7 +909,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                                  >
                                     {ad.deploying ? <Loader2 size={12} className="animate-spin" /> : ad.deployed ? <><CheckCircle size={12}/> Published</> : <><CloudUpload size={12}/> Deploy Ad</>}
                                  </button>
-                                 <button className="p-4 bg-slate-950 border border-slate-800 rounded-xl text-slate-500 hover:text-white transition-all"><Share2 size={14}/></button>
+                                 <button 
+                                   onClick={() => handleShareAd(ad)}
+                                   className="p-4 bg-slate-950 border border-slate-800 rounded-xl text-slate-500 hover:text-white transition-all"
+                                   title="Copy event link"
+                                 >
+                                   <Share2 size={14}/>
+                                 </button>
                               </div>
                            </div>
                         </div>
@@ -837,6 +924,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                  )}
               </div>
            </div>
+           )}
         </div>
       )}
 

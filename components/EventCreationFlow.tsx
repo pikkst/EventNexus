@@ -40,9 +40,10 @@ L.Icon.Default.mergeOptions({
 interface EventCreationFlowProps {
   user: User;
   onUpdateUser?: (updates: Partial<User>) => void;
+  onEventCreated?: () => void; // Callback to reload events in parent
 }
 
-const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUser }) => {
+const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUser, onEventCreated }) => {
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -585,6 +586,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       if (created) {
         console.log('✅ Event created successfully! Navigating to dashboard...');
         alert('Event created successfully!');
+        // Notify parent to reload events
+        if (onEventCreated) {
+          onEventCreated();
+        }
         navigate('/dashboard');
       } else {
         console.error('❌ Event creation failed');

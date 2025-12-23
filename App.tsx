@@ -376,6 +376,18 @@ const App: React.FC = () => {
     }
   };
 
+  const handleReloadEvents = async () => {
+    try {
+      console.log('🔄 Reloading events after event creation...');
+      const eventsData = await getEvents();
+      setEvents(eventsData);
+      cacheEvents(eventsData);
+      console.log(`✅ Events reloaded: ${eventsData.length} total`);
+    } catch (error) {
+      console.error('Error reloading events:', error);
+    }
+  };
+
   const handleMarkRead = async (id: string) => {
     const success = await markNotificationRead(id);
     if (success) {
@@ -460,8 +472,8 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/map" element={<HomeMap />} />
-            <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/event/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
