@@ -7,8 +7,8 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// Import Stripe library
-import Stripe from 'https://esm.sh/stripe@14.29.0?target=deno';
+// Import Stripe library (use broad 14.x version for compatibility)
+import Stripe from 'npm:stripe@14';
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: '2024-04-10',
