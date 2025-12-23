@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { supabase } from './supabase';
+// Removed supabase import - not used anymore after removing Storage upload code
 import { deductUserCredits, checkUserCredits } from './dbService';
 
 const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
