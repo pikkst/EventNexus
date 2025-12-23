@@ -6,6 +6,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Calendar, MapPin, Ticket as TicketIcon, CheckCircle, XCircle, Clock, Download, Share2, Maximize2 } from 'lucide-react';
 import { generateTicketQRImage } from '../services/ticketService';
 
@@ -150,9 +151,9 @@ export const TicketViewModal: React.FC<TicketViewModalProps> = ({ ticket, onClos
     };
   }, []);
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4"
       onClick={onClose}
     >
       <div 
@@ -325,6 +326,8 @@ export const TicketViewModal: React.FC<TicketViewModalProps> = ({ ticket, onClos
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default TicketViewModal;
