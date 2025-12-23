@@ -42,7 +42,7 @@ SELECT cron.schedule(
   SELECT net.http_post(
     url := 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/process-scheduled-payouts',
     headers := jsonb_build_object(
-      'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFubGl2dWpna2ptYWprY2diYXh3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTk5NjQ5NCwiZXhwIjoyMDgxNTcyNDk0fQ.ASENDA_SIIA_OMA_SERVICE_ROLE_KEY',
+      'Authorization', 'Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY_HERE',
       'Content-Type', 'application/json'
     ),
     body := '{}'::jsonb,
@@ -75,7 +75,7 @@ curl -X POST \
 SELECT net.http_post(
   url := 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/process-scheduled-payouts',
   headers := jsonb_build_object(
-    'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFubGl2dWpna2ptYWprY2diYXh3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTk5NjQ5NCwiZXhwIjoyMDgxNTcyNDk0fQ.ASENDA_OMA_SERVICE_ROLE_KEY',
+    'Authorization', 'Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY_HERE',
     'Content-Type', 'application/json'
   ),
   body := '{}'::jsonb,
