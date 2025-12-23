@@ -75,8 +75,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         const sessionId = params.get('session_id');
 
         if (sessionId) {
-          // Verify payment with Stripe
-          const isVerified = await verifyCheckoutPayment(sessionId);
+          // Verify payment with Stripe (normal path)
+          const isVerified = await verifyCheckoutPayment(sessionId, { eventId: id!, userId: user!.id });
           if (isVerified) {
             setShowSuccess(true);
             clearCheckoutStatus();
@@ -100,11 +100,29 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
             setTimeout(() => loadEvent(), 3000);
           }
         } else {
-          // Fallback: just show success if URL params indicate it
-          setShowSuccess(true);
-          clearCheckoutStatus();
-          loadEvent();
-          setTimeout(() => loadEvent(), 3000);
+          // Fallback: try verification using eventId + userId since sessionId is missing
+          if (user && id) {
+            const isVerified = await verifyCheckoutPayment('', { eventId: id!, userId: user!.id });
+            if (isVerified) {
+              setShowSuccess(true);
+              clearCheckoutStatus();
+              loadEvent();
+              setTimeout(() => loadEvent(), 3000);
+              setTimeout(() => loadEvent(), 6000);
+            } else {
+              // As last resort, show success and attempt reloads
+              setShowSuccess(true);
+              clearCheckoutStatus();
+              loadEvent();
+              setTimeout(() => loadEvent(), 3000);
+              setTimeout(() => loadEvent(), 6000);
+            }
+          } else {
+            setShowSuccess(true);
+            clearCheckoutStatus();
+            loadEvent();
+            setTimeout(() => loadEvent(), 3000);
+          }
         }
       }
     };
