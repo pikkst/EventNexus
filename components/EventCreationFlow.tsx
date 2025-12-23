@@ -16,7 +16,9 @@ import {
   Rocket,
   ShieldAlert,
   AlertTriangle,
-  Search
+  Search,
+  Upload,
+  X
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
