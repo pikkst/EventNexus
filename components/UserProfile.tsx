@@ -96,6 +96,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
     }
   }, [user.id, user.subscription_tier]);
 
+  useEffect(() => {
+    console.log('selectedTicket changed:', selectedTicket);
+  }, [selectedTicket]);
+
   const handleDeleteEvent = async (eventId: string, eventName: string, ticketsSold: number) => {
     // Only allow deletion if no tickets sold
     if (ticketsSold > 0) {
@@ -623,7 +627,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                       ticket={ticket}
                       onExpand={() => {
                         console.log('Expanding ticket:', ticket.id);
+                        console.log('Current selectedTicket before:', selectedTicket);
                         setSelectedTicket(ticket);
+                        console.log('setSelectedTicket called with:', ticket);
                       }}
                     />
                   ))}
@@ -1150,6 +1156,7 @@ const TicketItem = ({ name, date, location, qrValue, customBranding }: any) => {
       </div>
 
       {/* Ticket View Modal */}
+      {console.log('Checking modal render, selectedTicket:', selectedTicket)}
       {selectedTicket && (
         <>
           {console.log('Rendering TicketViewModal for ticket:', selectedTicket.id)}
