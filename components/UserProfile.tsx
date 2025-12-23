@@ -627,9 +627,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                       ticket={ticket}
                       onExpand={() => {
                         console.log('Expanding ticket:', ticket.id);
-                        console.log('Current selectedTicket before:', selectedTicket);
-                        setSelectedTicket(ticket);
-                        console.log('setSelectedTicket called with:', ticket);
+                        // Navigate to dedicated ticket page to ensure reliable display
+                        navigate('/ticket', { state: { ticket } });
                       }}
                     />
                   ))}
