@@ -231,7 +231,17 @@ serve(async (req: Request) => {
         status: 'valid'
       }));
 
-      await supabase.from('tickets').insert(tickets);
+      const { data: insertedTickets, error: ticketInsertError } = await supabase
+        .from('tickets')
+        .insert(tickets)
+        .select();
+
+      if (ticketInsertError) {
+        console.error('Failed to create pending tickets:', ticketInsertError);
+        throw new Error(`Failed to reserve tickets: ${ticketInsertError.message}`);
+      }
+
+      console.log(`✅ Created ${insertedTickets.length} pending tickets for session ${session.id}`);
     } else {
       console.error('Invalid checkout parameters:', { tier, priceId, eventId, ticketCount, pricePerTicket });
       throw new Error('Invalid checkout request: must provide either (tier + priceId) for subscription or (eventId + ticketCount + pricePerTicket) for tickets');
