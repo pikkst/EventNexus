@@ -183,9 +183,60 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Left: Image & IhandleLike}
+    <div className="min-h-screen bg-slate-950 text-white">
+      {/* Hero Image Section */}
+      {event.imageUrl && (
+        <div className="relative h-[500px] w-full overflow-hidden">
+          <img 
+            src={event.imageUrl} 
+            alt={event.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-transparent to-transparent" />
+          
+          {/* Event Title Overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-8 pb-12">
+            <div className="max-w-6xl mx-auto">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="px-4 py-2 bg-indigo-600/90 backdrop-blur-sm rounded-full text-sm font-bold uppercase tracking-wider">
+                  {event.category}
+                </span>
+                {event.isFeatured && (
+                  <span className="px-4 py-2 bg-amber-600/90 backdrop-blur-sm rounded-full text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                    <Star className="w-4 h-4 fill-current" />
+                    Premium
+                  </span>
+                )}
+              </div>
+              <h1 className="text-5xl md:text-6xl font-black text-white mb-4 leading-tight">{event.name}</h1>
+              <div className="flex flex-wrap items-center gap-6 text-white/90">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  <span className="font-semibold">{new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  <span className="font-semibold">{event.time}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  <span className="font-semibold">{event.location.city}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Left: Event Details */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2">
+                <button 
+                  onClick={handleLike}
                   disabled={isLiking}
                   className={`p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all shadow-xl disabled:opacity-50 ${
                     isLiked ? 'text-pink-500 bg-pink-500/10 border-pink-500/30' : 'text-pink-500'
@@ -212,35 +263,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                     }
                   }}
                   className="p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-indigo-400 shadow-xl"
-                  title="Share this event
-              <div className="flex gap-2 shrink-0">
-                <button 
-                  onClick={() => {
-                    // TODO: Implement like/favorite functionality
-                    alert('Like feature coming soon!');
-                  }}
-                  className="p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-pink-500 shadow-xl"
-                >
-                  <Heart className="w-6 h-6" />
-                </button>
-                <button 
-                  onClick={() => {
-                    const url = window.location.href;
-                    if (navigator.share) {
-                      navigator.share({
-                        title: event.name,
-                        text: event.description,
-                        url: url
-                      }).catch(() => {
-                        navigator.clipboard.writeText(url);
-                        alert('Event link copied to clipboard!');
-                      });
-                    } else {
-                      navigator.clipboard.writeText(url);
-                      alert('Event link copied to clipboard!');
-                    }
-                  }}
-                  className="p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-indigo-400 shadow-xl"
+                  title="Share this event"
                 >
                   <Share2 className="w-6 h-6" />
                 </button>
@@ -271,14 +294,36 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               </div>
             </div>
           </div>
-        </div>
 
         {/* Right: Booking Card & Stats */}
         <div className="lg:col-span-1 space-y-6">
           <div className="sticky top-24 space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-2xl relative overflow-hidden">
+            <div className={`border rounded-[40px] p-8 shadow-2xl relative overflow-hidden ${
+              event.isFeatured 
+                ? 'bg-gradient-to-br from-slate-900 via-slate-900 to-amber-500/5 border-amber-500/30' 
+                : 'bg-slate-900 border-slate-800'
+            }`}>
               <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-600/10 rounded-full blur-[80px] -mr-24 -mt-24 pointer-events-none" />
-              <div className="flex justify-between items-end mb-10">
+              
+              {/* Event Image Background in Card */}
+              {event.imageUrl && (
+                <div className="absolute top-0 right-0 bottom-0 w-40 opacity-10 overflow-hidden rounded-[40px]">
+                  <img 
+                    src={event.imageUrl} 
+                    alt={event.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              {/* Premium Badge */}
+              {event.isFeatured && (
+                <div className="mb-4 flex items-center gap-2 relative z-10">
+                  <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  <span className="text-xs font-bold text-amber-500 uppercase tracking-widest">Premium Event</span>
+                </div>
+              )}
+              <div className="flex justify-between items-end mb-10 relative z-10">
                 <div>
                   <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Price per seat</p>
                   <h2 className="text-5xl font-black tracking-tighter">{event.price === 0 ? 'Free' : `€${event.price}`}</h2>
@@ -292,8 +337,12 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div className="bg-slate-800/50 border border-slate-700/50 rounded-[24px] p-5 flex items-center justify-between shadow-inner">
+              <div className="space-y-6 relative z-10">
+                <div className={`border rounded-[24px] p-5 flex items-center justify-between shadow-inner ${
+                  event.isFeatured
+                    ? 'bg-gradient-to-r from-slate-800/50 to-amber-500/10 border-amber-500/20'
+                    : 'bg-slate-800/50 border-slate-700/50'
+                }`}>
                   <div className="flex items-center gap-4">
                     <button 
                       onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}
@@ -302,7 +351,11 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                     <span className="font-black text-xl w-6 text-center">{ticketCount}</span>
                     <button 
                       onClick={() => setTicketCount(Math.min(remaining, Math.min(10, ticketCount + 1)))}
-                      className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold"
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-all ${
+                        event.isFeatured
+                          ? 'bg-amber-600 hover:bg-amber-700'
+                          : 'bg-indigo-600 hover:bg-indigo-700'
+                      }`}
                     >+</button>
                   </div>
                 </div>
@@ -310,7 +363,11 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                 <button 
                   onClick={handlePurchase}
                   disabled={isPurchasing || remaining === 0}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 py-5 rounded-[24px] font-black text-xl transition-all shadow-2xl active:scale-95 disabled:opacity-50"
+                  className={`w-full py-5 rounded-[24px] font-black text-xl transition-all shadow-2xl active:scale-95 disabled:opacity-50 ${
+                    event.isFeatured
+                      ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600'
+                      : 'bg-indigo-600 hover:bg-indigo-700'
+                  }`}
                 >
                   {remaining === 0 ? 'Sold Out' : isPurchasing ? 'Processing...' : 'Secure Tickets Now'}
                 </button>
@@ -356,6 +413,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         </div>
       </div>
     </div>
+  </div>
   );
 };
 

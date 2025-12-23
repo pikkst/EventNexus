@@ -200,67 +200,69 @@ RETURNS TABLE(
 ) AS $$
 BEGIN
   RETURN QUERY
-  -- High traffic, low conversion (audience mismatch or landing page issue)
-  SELECT 
-    c.id,
-    'high_traffic_low_conversion'::TEXT,
-    'high'::TEXT,
-    format('Campaign "%s" has %s clicks but only %s%% conversion rate', c.title, cp.total_clicks, ROUND(cp.conversion_rate, 2)),
-    'Review targeting parameters and landing page experience. Consider A/B testing different audiences or CTAs.'::TEXT,
-    jsonb_build_object('conversion_rate_increase', 3.0, 'roi_increase', 1.5),
-    85.0::DECIMAL
-  FROM campaigns c
-  JOIN campaign_performance cp ON c.id = cp.campaign_id
-  WHERE (c.status = 'active' OR c.status = 'Active')
-    AND cp.total_clicks > 100
-    AND cp.conversion_rate < 2.0
-    AND cp.total_spend > 50
+  SELECT *
+  FROM (
+    -- High traffic, low conversion (audience mismatch or landing page issue)
+    SELECT 
+      c.id AS campaign_id,
+      'high_traffic_low_conversion'::TEXT AS opportunity_type,
+      'high'::TEXT AS severity,
+      format('Campaign "%s" has %s clicks but only %s%% conversion rate', c.title, cp.total_clicks, ROUND(cp.conversion_rate, 2)) AS description,
+      'Review targeting parameters and landing page experience. Consider A/B testing different audiences or CTAs.'::TEXT AS suggested_action,
+      jsonb_build_object('conversion_rate_increase', 3.0, 'roi_increase', 1.5) AS estimated_impact,
+      85.0::DECIMAL AS confidence_score
+    FROM campaigns c
+    JOIN campaign_performance cp ON c.id = cp.campaign_id
+    WHERE (c.status = 'active' OR c.status = 'Active')
+      AND cp.total_clicks > 100
+      AND cp.conversion_rate < 2.0
+      AND cp.total_spend > 50
 
-  UNION ALL
+    UNION ALL
 
-  -- Declining performance (creative fatigue)
-  SELECT 
-    c.id,
-    'declining_performance'::TEXT,
-    'medium'::TEXT,
-    format('Campaign "%s" CTR declined from %s%% to %s%% over past 7 days', c.title, 
-      COALESCE((SELECT AVG((clicks::DECIMAL / NULLIF(impressions, 0)) * 100) FROM campaign_analytics ca2 WHERE ca2.campaign_id = c.id AND ca2.recorded_at >= NOW() - INTERVAL '14 days' AND ca2.recorded_at < NOW() - INTERVAL '7 days'), 0),
-      COALESCE((SELECT AVG((clicks::DECIMAL / NULLIF(impressions, 0)) * 100) FROM campaign_analytics ca3 WHERE ca3.campaign_id = c.id AND ca3.recorded_at >= NOW() - INTERVAL '7 days'), 0)
-    ),
-    'Refresh creative assets. Test new images, headlines, or ad copy variations.'::TEXT,
-    jsonb_build_object('ctr_increase', 2.5, 'engagement_increase', 30.0),
-    75.0::DECIMAL
-  FROM campaigns c
-  JOIN campaign_performance cp ON c.id = cp.campaign_id
-  WHERE (c.status = 'active' OR c.status = 'Active')
-    AND EXISTS (
-      SELECT 1 FROM campaign_analytics ca 
-      WHERE ca.campaign_id = c.id 
-      AND ca.recorded_at >= NOW() - INTERVAL '14 days'
-      AND ca.impressions > 0
-      GROUP BY ca.campaign_id
-      HAVING AVG(CASE WHEN ca.recorded_at >= NOW() - INTERVAL '7 days' THEN (ca.clicks::DECIMAL / NULLIF(ca.impressions, 0)) * 100 ELSE NULL END) <
-             AVG(CASE WHEN ca.recorded_at < NOW() - INTERVAL '7 days' THEN (ca.clicks::DECIMAL / NULLIF(ca.impressions, 0)) * 100 ELSE NULL END) * 0.7
-    )
+    -- Declining performance (creative fatigue)
+    SELECT 
+      c.id AS campaign_id,
+      'declining_performance'::TEXT AS opportunity_type,
+      'medium'::TEXT AS severity,
+      format('Campaign "%s" CTR declined from %s%% to %s%% over past 7 days', c.title, 
+        COALESCE((SELECT AVG((clicks::DECIMAL / NULLIF(impressions, 0)) * 100) FROM campaign_analytics ca2 WHERE ca2.campaign_id = c.id AND ca2.recorded_at >= NOW() - INTERVAL '14 days' AND ca2.recorded_at < NOW() - INTERVAL '7 days'), 0),
+        COALESCE((SELECT AVG((clicks::DECIMAL / NULLIF(impressions, 0)) * 100) FROM campaign_analytics ca3 WHERE ca3.campaign_id = c.id AND ca3.recorded_at >= NOW() - INTERVAL '7 days'), 0)
+      ) AS description,
+      'Refresh creative assets. Test new images, headlines, or ad copy variations.'::TEXT AS suggested_action,
+      jsonb_build_object('ctr_increase', 2.5, 'engagement_increase', 30.0) AS estimated_impact,
+      75.0::DECIMAL AS confidence_score
+    FROM campaigns c
+    JOIN campaign_performance cp ON c.id = cp.campaign_id
+    WHERE (c.status = 'active' OR c.status = 'Active')
+      AND EXISTS (
+        SELECT 1 FROM campaign_analytics ca 
+        WHERE ca.campaign_id = c.id 
+        AND ca.recorded_at >= NOW() - INTERVAL '14 days'
+        AND ca.impressions > 0
+        GROUP BY ca.campaign_id
+        HAVING AVG(CASE WHEN ca.recorded_at >= NOW() - INTERVAL '7 days' THEN (ca.clicks::DECIMAL / NULLIF(ca.impressions, 0)) * 100 ELSE NULL END) <
+               AVG(CASE WHEN ca.recorded_at < NOW() - INTERVAL '7 days' THEN (ca.clicks::DECIMAL / NULLIF(ca.impressions, 0)) * 100 ELSE NULL END) * 0.7
+      )
 
-  UNION ALL
+    UNION ALL
 
-  -- Budget inefficiency (high spend, low ROI)
-  SELECT 
-    c.id,
-    'budget_inefficiency'::TEXT,
-    'critical'::TEXT,
-    format('Campaign "%s" spent $%s with only %sx ROI', c.title, ROUND(cp.total_spend, 2), ROUND(cp.roi, 2)),
-    'Consider pausing or drastically reducing budget until performance improves. Analyze winning campaigns for insights.'::TEXT,
-    jsonb_build_object('cost_savings', cp.total_spend * 0.5),
-    90.0::DECIMAL
-  FROM campaigns c
-  JOIN campaign_performance cp ON c.id = cp.campaign_id
-  WHERE (c.status = 'active' OR c.status = 'Active')
-    AND cp.total_spend > 100
-    AND cp.roi < 1.0
-
-  ORDER BY severity DESC, confidence_score DESC;
+    -- Budget inefficiency (high spend, low ROI)
+    SELECT 
+      c.id AS campaign_id,
+      'budget_inefficiency'::TEXT AS opportunity_type,
+      'critical'::TEXT AS severity,
+      format('Campaign "%s" spent $%s with only %sx ROI', c.title, ROUND(cp.total_spend, 2), ROUND(cp.roi, 2)) AS description,
+      'Consider pausing or drastically reducing budget until performance improves. Analyze winning campaigns for insights.'::TEXT AS suggested_action,
+      jsonb_build_object('cost_savings', cp.total_spend * 0.5) AS estimated_impact,
+      90.0::DECIMAL AS confidence_score
+    FROM campaigns c
+    JOIN campaign_performance cp ON c.id = cp.campaign_id
+    WHERE (c.status = 'active' OR c.status = 'Active')
+      AND cp.total_spend > 100
+      AND cp.roi < 1.0
+  ) t
+  ORDER BY t.severity DESC, t.confidence_score DESC;
 END;
 $$ LANGUAGE plpgsql;
 
