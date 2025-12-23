@@ -108,12 +108,13 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onExpand }) => {
         <button
           onClick={(e) => {
             e.stopPropagation();
+            console.log('Expand button clicked for ticket:', ticket.id);
             onExpand();
           }}
-          className="absolute top-3 left-3 z-10 p-2 bg-slate-900/90 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-lg transition-all opacity-0 group-hover:opacity-100 border border-slate-700 hover:border-indigo-500"
+          className="absolute top-3 left-3 z-20 p-2.5 bg-indigo-600/90 hover:bg-indigo-500 text-white rounded-lg transition-all shadow-lg border border-indigo-500"
           title="View full ticket"
         >
-          <Maximize2 className="w-4 h-4" />
+          <Maximize2 className="w-5 h-5" />
         </button>
       )}
       

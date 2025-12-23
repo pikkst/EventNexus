@@ -621,7 +621,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                     <TicketCard
                       key={ticket.id}
                       ticket={ticket}
-                      onExpand={() => setSelectedTicket(ticket)}
+                      onExpand={() => {
+                        console.log('Expanding ticket:', ticket.id);
+                        setSelectedTicket(ticket);
+                      }}
                     />
                   ))}
                 </div>
@@ -1148,10 +1151,16 @@ const TicketItem = ({ name, date, location, qrValue, customBranding }: any) => {
 
       {/* Ticket View Modal */}
       {selectedTicket && (
-        <TicketViewModal
-          ticket={selectedTicket}
-          onClose={() => setSelectedTicket(null)}
-        />
+        <>
+          {console.log('Rendering TicketViewModal for ticket:', selectedTicket.id)}
+          <TicketViewModal
+            ticket={selectedTicket}
+            onClose={() => {
+              console.log('Closing modal');
+              setSelectedTicket(null);
+            }}
+          />
+        </>
       )}
     </div>
   );
