@@ -29,6 +29,7 @@ import { generateAdCampaign, generateAdImage } from '../services/geminiService';
 import { supabase } from '../services/supabase';
 import PayoutsHistory from './PayoutsHistory';
 import EnterpriseSuccessManager from './EnterpriseSuccessManager';
+import { postToFacebook, postToInstagram, postToLinkedIn, postToTwitter } from '../services/socialMediaService';
 
 // Generate sales data from real revenue data (last 7 days)
 const generateSalesData = (revenueByEvent: RevenueByEvent[]) => {
@@ -92,6 +93,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [campaignTheme, setCampaignTheme] = useState('');
   const [campaignAudience, setCampaignAudience] = useState('general');
+  const [deployModalOpen, setDeployModalOpen] = useState(false);
+  const [selectedAdForDeploy, setSelectedAdForDeploy] = useState<any>(null);
+  const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
 
   // Check for Stripe Connect return and verify onboarding status
   useEffect(() => {
@@ -179,6 +184,28 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       }
     };
     loadRevenue();
+  }, [user.id]);
+
+  // Load connected social media accounts
+  useEffect(() => {
+    const loadConnectedAccounts = async () => {
+      setLoadingAccounts(true);
+      try {
+        const { data, error } = await supabase
+          .from('social_media_accounts')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_connected', true);
+        
+        if (error) throw error;
+        setConnectedAccounts(data || []);
+      } catch (error) {
+        console.error('Error loading connected accounts:', error);
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+    loadConnectedAccounts();
   }, [user.id]);
 
   // Edit State
@@ -338,14 +365,84 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   };
 
   const handleDeployAd = async (index: number) => {
+    const ad = adCampaign[index];
+    setSelectedAdForDeploy({ ...ad, index });
+    setDeployModalOpen(true);
+  };
+
+  const handleConfirmDeploy = async (platform: string) => {
+    if (!selectedAdForDeploy) return;
+    
+    const index = selectedAdForDeploy.index;
     setAdCampaign(prev => prev.map((ad, i) => i === index ? { ...ad, deploying: true } : ad));
+    setDeployModalOpen(false);
     
     try {
-      // TODO: Implement real ad deployment via marketing platform APIs
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setAdCampaign(prev => prev.map((ad, i) => i === index ? { ...ad, deploying: false, deployed: true } : ad));
+      const account = connectedAccounts.find(acc => acc.platform === platform);
+      if (!account) {
+        throw new Error(`No connected account found for ${platform}. Please connect your account in the Profile > Social Media Manager section.`);
+      }
+
+      const ad = selectedAdForDeploy;
+      let result;
+
+      // Map platform names to deployment functions
+      switch (platform) {
+        case 'facebook':
+          result = await postToFacebook(
+            account.access_token,
+            account.account_id,
+            `${ad.headline}\n\n${ad.bodyCopy}\n\n${ad.cta}`,
+            ad.imageUrl,
+            ad.eventUrl
+          );
+          break;
+        
+        case 'instagram':
+          if (!ad.imageUrl) {
+            throw new Error('Instagram requires an image');
+          }
+          result = await postToInstagram(
+            account.access_token,
+            account.account_id,
+            `${ad.headline}\n\n${ad.bodyCopy}\n\n${ad.cta}`,
+            ad.imageUrl
+          );
+          break;
+        
+        case 'linkedin':
+          result = await postToLinkedIn(
+            account.access_token,
+            account.account_id,
+            `${ad.headline}\n\n${ad.bodyCopy}\n\n${ad.cta}`,
+            ad.imageUrl
+          );
+          break;
+        
+        case 'twitter':
+          result = await postToTwitter(
+            account.access_token,
+            `${ad.headline}\n\n${ad.bodyCopy}\n\n${ad.cta}`,
+            ad.imageUrl
+          );
+          break;
+        
+        default:
+          throw new Error(`Platform ${platform} not supported`);
+      }
+
+      if (result.success) {
+        setAdCampaign(prev => prev.map((ad, i) => 
+          i === index ? { ...ad, deploying: false, deployed: true, deployedTo: platform } : ad
+        ));
+        alert(`✅ Successfully posted to ${platform.charAt(0).toUpperCase() + platform.slice(1)}!`);
+      } else {
+        throw new Error(result.error || 'Deployment failed');
+      }
     } catch (error) {
       console.error('Ad deployment failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`❌ Deployment failed: ${errorMessage}`);
       setAdCampaign(prev => prev.map((ad, i) => i === index ? { ...ad, deploying: false } : ad));
     }
   };
@@ -816,6 +913,69 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                </div>
              </div>
            ) : (
+           <div className="space-y-8">
+              {/* Social Media Connection Banner */}
+              {connectedAccounts.length === 0 && !loadingAccounts && (
+                <div className="bg-gradient-to-r from-indigo-600/10 via-violet-600/10 to-pink-600/10 border border-indigo-500/30 rounded-[40px] p-8 shadow-2xl">
+                  <div className="flex flex-col md:flex-row items-center gap-6">
+                    <div className="flex-shrink-0">
+                      <div className="w-16 h-16 bg-indigo-600 rounded-[24px] flex items-center justify-center shadow-lg shadow-indigo-600/40">
+                        <Settings2 className="w-8 h-8 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1 text-center md:text-left space-y-2">
+                      <h3 className="text-xl font-black text-white tracking-tight">Connect Your Social Media Accounts</h3>
+                      <p className="text-slate-300 font-medium leading-relaxed">
+                        To deploy AI-generated ads directly to Facebook, Instagram, LinkedIn, or Twitter, you need to connect your accounts first. Once connected, you can publish ads with a single click!
+                      </p>
+                    </div>
+                    <Link 
+                      to="/profile"
+                      className="flex-shrink-0 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all shadow-xl shadow-indigo-600/30 flex items-center gap-2"
+                    >
+                      <Link2 size={16} />
+                      Connect Now
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* Connected Accounts Summary */}
+              {connectedAccounts.length > 0 && (
+                <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-2xl">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-6 h-6 text-emerald-400" />
+                      <h3 className="text-xl font-black text-white">Connected Accounts</h3>
+                    </div>
+                    <Link 
+                      to="/profile"
+                      className="text-xs font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest flex items-center gap-2"
+                    >
+                      Manage
+                      <ExternalLink size={14} />
+                    </Link>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {connectedAccounts.map((account, i) => {
+                      const platformIcons: any = {
+                        facebook: <Facebook size={16} />,
+                        instagram: <Instagram size={16} />,
+                        linkedin: <Linkedin size={16} />,
+                        twitter: <Twitter size={16} />
+                      };
+                      return (
+                        <div key={i} className="flex items-center gap-2 px-4 py-2 bg-slate-950 border border-slate-800 rounded-full">
+                          <div className="text-indigo-400">{platformIcons[account.platform]}</div>
+                          <span className="text-sm font-bold text-white capitalize">{account.platform}</span>
+                          <span className="text-xs text-slate-500">• {account.account_name}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
               <div className="lg:col-span-1 space-y-8">
                  <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-10 space-y-8 shadow-2xl relative overflow-hidden">
@@ -899,13 +1059,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                               <div className="space-y-2">
                                  <h4 className="text-xl font-black text-white leading-tight tracking-tighter">{ad.headline}</h4>
                                  <p className="text-sm text-slate-400 font-medium leading-relaxed line-clamp-3">{ad.bodyCopy}</p>
+                                 {ad.deployed && ad.deployedTo && (
+                                   <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+                                     <CheckCircle size={14} />
+                                     <span>Published to {ad.deployedTo.charAt(0).toUpperCase() + ad.deployedTo.slice(1)}</span>
+                                   </div>
+                                 )}
                               </div>
                               <div className="flex gap-3 pt-4">
                                  <button 
                                    onClick={() => handleDeployAd(i)}
                                    disabled={ad.deployed || ad.deploying}
                                    className={`flex-1 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                                     ad.deployed ? 'bg-emerald-600 text-white' : ad.deploying ? 'bg-slate-800 text-slate-500' : 'bg-slate-800 hover:bg-slate-700 text-white'
+                                     ad.deployed ? 'bg-emerald-600 text-white cursor-not-allowed' : ad.deploying ? 'bg-slate-800 text-slate-500 cursor-wait' : 'bg-slate-800 hover:bg-slate-700 text-white'
                                    }`}
                                  >
                                     {ad.deploying ? <Loader2 size={12} className="animate-spin" /> : ad.deployed ? <><CheckCircle size={12}/> Published</> : <><CloudUpload size={12}/> Deploy Ad</>}
@@ -924,6 +1090,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                    </div>
                  )}
               </div>
+           </div>
            </div>
            )}
         </div>
@@ -1201,6 +1368,116 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
           isOpen={isSuccessManagerOpen}
           onClose={() => setIsSuccessManagerOpen(false)}
         />
+      )}
+
+      {/* Deploy Ad Modal */}
+      {deployModalOpen && selectedAdForDeploy && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-slate-900 border border-slate-800 rounded-[48px] max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div className="p-8 space-y-8">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-black text-white tracking-tighter">Deploy Ad</h2>
+                  <p className="text-slate-500 text-sm font-medium mt-1">Choose where to publish your ad</p>
+                </div>
+                <button 
+                  onClick={() => setDeployModalOpen(false)}
+                  className="p-3 bg-slate-950 rounded-xl text-slate-500 hover:text-white transition-all"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Ad Preview */}
+              <div className="bg-slate-950 border border-slate-800 rounded-[32px] overflow-hidden">
+                <div className="aspect-[16/9] relative">
+                  <img src={selectedAdForDeploy.imageUrl} className="w-full h-full object-cover opacity-60" alt="" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+                  <div className="absolute top-4 left-4 bg-slate-950/80 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest text-indigo-400 border border-slate-800">
+                    {selectedAdForDeploy.platform}
+                  </div>
+                </div>
+                <div className="p-6 space-y-2">
+                  <h4 className="text-lg font-black text-white">{selectedAdForDeploy.headline}</h4>
+                  <p className="text-sm text-slate-400 font-medium line-clamp-2">{selectedAdForDeploy.bodyCopy}</p>
+                </div>
+              </div>
+
+              {/* Connected Accounts Status */}
+              <div className="bg-slate-950 border border-slate-800 rounded-[32px] p-6 space-y-4">
+                <h3 className="text-sm font-black text-white uppercase tracking-widest">Connected Accounts</h3>
+                {loadingAccounts ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+                  </div>
+                ) : connectedAccounts.length === 0 ? (
+                  <div className="text-center py-8 space-y-3">
+                    <AlertCircle className="w-12 h-12 text-slate-700 mx-auto" />
+                    <p className="text-slate-500 font-medium">No social media accounts connected</p>
+                    <Link 
+                      to="/profile"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all"
+                    >
+                      <Settings2 size={14} />
+                      Connect Accounts
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {['facebook', 'instagram', 'linkedin', 'twitter'].map(platform => {
+                      const account = connectedAccounts.find(acc => acc.platform === platform);
+                      const platformIcons: any = {
+                        facebook: <Facebook size={20} />,
+                        instagram: <Instagram size={20} />,
+                        linkedin: <Linkedin size={20} />,
+                        twitter: <Twitter size={20} />
+                      };
+                      const platformColors: any = {
+                        facebook: 'from-blue-600 to-blue-700',
+                        instagram: 'from-pink-600 via-purple-600 to-orange-600',
+                        linkedin: 'from-blue-700 to-blue-800',
+                        twitter: 'from-sky-500 to-blue-600'
+                      };
+                      
+                      return (
+                        <button
+                          key={platform}
+                          onClick={() => account ? handleConfirmDeploy(platform) : null}
+                          disabled={!account}
+                          className={`p-4 rounded-2xl border transition-all flex items-center gap-3 ${
+                            account 
+                              ? `bg-gradient-to-br ${platformColors[platform]} border-transparent text-white hover:scale-105 shadow-lg cursor-pointer`
+                              : 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed opacity-50'
+                          }`}
+                        >
+                          {platformIcons[platform]}
+                          <div className="flex-1 text-left">
+                            <p className="font-black text-sm capitalize">{platform}</p>
+                            <p className="text-xs font-medium opacity-80">
+                              {account ? account.account_name : 'Not connected'}
+                            </p>
+                          </div>
+                          {account && <CloudUpload size={16} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeployModalOpen(false)}
+                  className="flex-1 py-4 bg-slate-950 border border-slate-800 rounded-xl font-black text-xs uppercase tracking-widest text-slate-400 hover:text-white transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
