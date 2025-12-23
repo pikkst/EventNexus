@@ -496,25 +496,41 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   };
 
   const handlePublish = async () => {
+    console.log('🚀 Publish button clicked');
+    console.log('📋 Form data:', formData);
+    console.log('🖼️ Image preview:', imagePreview ? 'exists' : 'none');
+    
     if (!formData.name || !formData.category || !formData.date || !formData.time) {
+      console.error('❌ Missing required fields:', {
+        name: !!formData.name,
+        category: !!formData.category,
+        date: !!formData.date,
+        time: !!formData.time
+      });
       alert('Please fill in all required fields');
       return;
     }
 
+    console.log('✅ Validation passed, creating event...');
     setIsCreating(true);
     try {
       // Use image preview if available (AI-generated or uploaded)
       // Skip Supabase storage upload for now to avoid "Upload is not defined" error
       let uploadedImageUrl = '';
       if (imagePreview) {
+        console.log('🖼️ Image preview found, checking type...');
         // If it's a base64 data URL (AI-generated), use it directly
         if (imagePreview.startsWith('data:')) {
           uploadedImageUrl = imagePreview;
+          console.log(`✅ Using base64 image (${imagePreview.length} chars)`);
         }
         // For uploaded files, we'll add storage upload in a future update
         // For now, just skip it - events can be created without images
+      } else {
+        console.log('ℹ️ No image preview, creating event without image');
       }
 
+      console.log('📦 Preparing event data...');
       const eventData: Omit<EventNexusEvent, 'id'> = {
         name: formData.name,
         category: formData.category,
@@ -540,17 +556,23 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         } : undefined
       };
 
+      console.log('📤 Calling createEvent()...');
       const created = await createEvent(eventData);
+      console.log('📥 createEvent() response:', created ? 'success' : 'failed');
+      
       if (created) {
+        console.log('✅ Event created successfully! Navigating to dashboard...');
         alert('Event created successfully!');
         navigate('/dashboard');
       } else {
+        console.error('❌ Event creation failed');
         alert('Failed to create event. Please try again.');
       }
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error('💥 Error creating event:', error);
       alert('Error creating event. Please try again.');
     } finally {
+      console.log('🏁 Event creation process finished');
       setIsCreating(false);
     }
   };
