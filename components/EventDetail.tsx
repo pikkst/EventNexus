@@ -281,7 +281,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               <div className="flex justify-between items-end mb-10">
                 <div>
                   <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Price per seat</p>
-                  <h2 className="text-5xl font-black tracking-tighter">{event.price === 0 ? 'Free' : `$${event.price}`}</h2>
+                  <h2 className="text-5xl font-black tracking-tighter">{event.price === 0 ? 'Free' : `€${event.price}`}</h2>
                 </div>
                 <div className="text-right">
                   <div className="flex items-center gap-1 text-orange-500 mb-1">
