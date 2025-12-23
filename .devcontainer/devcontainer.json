@@ -1,0 +1,13 @@
+{
+  "name": "EventNexus Dev",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "npm ci",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Vite Dev Server", "onAutoForward": "openBrowser" }
+  },
+  "remoteUser": "vscode"
+}
