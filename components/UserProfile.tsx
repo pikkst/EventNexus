@@ -38,6 +38,7 @@ import { User, EventNexusEvent } from '../types';
 import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, deleteEvent } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import TicketCard from './TicketCard';
+import TicketViewModal from './TicketViewModal';
 import { SimplifiedSocialMediaManager } from './SimplifiedSocialMediaManager';
 
 interface UserProfileProps {
@@ -53,6 +54,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [userTickets, setUserTickets] = useState<any[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
   const [organizedEvents, setOrganizedEvents] = useState<EventNexusEvent[]>([]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
@@ -619,6 +621,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                     <TicketCard
                       key={ticket.id}
                       ticket={ticket}
+                      onExpand={() => setSelectedTicket(ticket)}
                     />
                   ))}
                 </div>
@@ -1142,6 +1145,14 @@ const TicketItem = ({ name, date, location, qrValue, customBranding }: any) => {
             <Share2 className="w-5 h-5" />
          </button>
       </div>
+
+      {/* Ticket View Modal */}
+      {selectedTicket && (
+        <TicketViewModal
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+        />
+      )}
     </div>
   );
 };
