@@ -184,11 +184,15 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     console.log('🎨 AI Image generation started');
     console.log('📝 Event name:', formData.name);
     console.log('📝 Description:', formData.description);
+    console.log('📝 Tagline:', formData.tagline);
     console.log('🏷️ Category:', formData.category);
     
-    if (!formData.name || !formData.description) {
-      console.warn('⚠️ Missing name or description');
-      alert('Please fill in event name and description first');
+    // Use tagline as description if description is empty
+    const descriptionText = formData.description || formData.tagline || formData.name;
+    
+    if (!formData.name || !descriptionText) {
+      console.warn('⚠️ Missing name or description/tagline');
+      alert('Please fill in event name and tagline first (use AI Generate to create a tagline)');
       return;
     }
 
@@ -202,7 +206,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     console.log('✅ Validation passed, generating image...');
     setIsGeneratingImage(true);
     try {
-      const prompt = `${formData.name}: ${formData.description}. Category: ${formData.category}`;
+      const prompt = `${formData.name}: ${descriptionText}. Category: ${formData.category}`;
       console.log('🎯 Calling generateAdImage with prompt:', prompt.substring(0, 100) + '...');
       
       // Don't save to storage (avoid Upload error) - use base64 directly
