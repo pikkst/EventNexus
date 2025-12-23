@@ -491,7 +491,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     console.log('📋 Form data at step change:', formData);
     console.log('🖼️ Image preview exists:', !!imagePreview);
     console.log('📁 Image file exists:', !!imageFile);
-    setStep(s => Math.min(s + 1, 4));
+    setStep(s => Math.min(s + 1, 5));
   };
   
   const prevStep = () => {
