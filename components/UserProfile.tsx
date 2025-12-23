@@ -38,7 +38,7 @@ import { User, EventNexusEvent } from '../types';
 import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, deleteEvent } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import TicketCard from './TicketCard';
-import TicketViewModal from './TicketViewModal';
+// TicketViewModal removed; using dedicated TicketViewPage route
 import { SimplifiedSocialMediaManager } from './SimplifiedSocialMediaManager';
 
 interface UserProfileProps {
@@ -54,7 +54,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [userTickets, setUserTickets] = useState<any[]>([]);
-  const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
+  // selectedTicket state removed; using navigation to ticket page
   const [organizedEvents, setOrganizedEvents] = useState<EventNexusEvent[]>([]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
@@ -96,9 +96,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
     }
   }, [user.id, user.subscription_tier]);
 
-  useEffect(() => {
-    console.log('selectedTicket changed:', selectedTicket);
-  }, [selectedTicket]);
+  // Removed debug logging
 
   const handleDeleteEvent = async (eventId: string, eventName: string, ticketsSold: number) => {
     // Only allow deletion if no tickets sold
@@ -625,11 +623,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                     <TicketCard
                       key={ticket.id}
                       ticket={ticket}
-                      onExpand={() => {
-                        console.log('Expanding ticket:', ticket.id);
-                        // Navigate to dedicated ticket page to ensure reliable display
-                        navigate('/ticket', { state: { ticket } });
-                      }}
+                      onExpand={() => navigate('/ticket', { state: { ticket } })}
                     />
                   ))}
                 </div>
@@ -1100,20 +1094,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                   >
                     <Check className="w-4 h-4" /> Save Changes
 
-                        {/* Ticket View Modal */}
-                        {console.log('Checking modal render, selectedTicket:', selectedTicket)}
-                        {selectedTicket && (
-                          <>
-                            {console.log('Rendering TicketViewModal for ticket:', selectedTicket.id)}
-                            <TicketViewModal
-                              ticket={selectedTicket}
-                              onClose={() => {
-                                console.log('Closing modal');
-                                setSelectedTicket(null);
-                              }}
-                            />
-                          </>
-                        )}
+                        {/* Ticket modal removed; using dedicated route */}
                   </button>
                 </div>
               </div>

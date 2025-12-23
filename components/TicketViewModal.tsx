@@ -38,7 +38,7 @@ export const TicketViewModal: React.FC<TicketViewModalProps> = ({ ticket, onClos
   const [loading, setLoading] = useState(true);
   const [brightness, setBrightness] = useState(1);
 
-  console.log('TicketViewModal rendered for ticket:', ticket.id);
+  // Removed debug log
 
   useEffect(() => {
     // Generate QR code image

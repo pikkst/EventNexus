@@ -511,6 +511,7 @@ const App: React.FC = () => {
             <Route path="/events/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/scanner" element={user ? <TicketScanner user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/ticket" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/ticket/:id" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription_tier: t, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
             <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
