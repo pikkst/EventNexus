@@ -193,7 +193,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     setIsGeneratingImage(true);
     try {
       const prompt = `${formData.name}: ${formData.description}. Category: ${formData.category}`;
-      const imageData = await generateAdImage(prompt, '16:9');
+      // Don't save to storage (avoid Upload error) - use base64 directly
+      const imageData = await generateAdImage(prompt, '16:9', false);
       
       if (imageData) {
         // Just set the preview - no need to convert to File since we're not uploading
