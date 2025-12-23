@@ -85,12 +85,20 @@ const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade, onOpenAuth }
 
   // Check if returning from successful checkout
   useEffect(() => {
-    if (checkCheckoutSuccess()) {
-      setShowSuccess(true);
-      clearCheckoutStatus();
-      setTimeout(() => setShowSuccess(false), 5000);
-    }
-  }, []);
+    const checkSuccess = async () => {
+      if (checkCheckoutSuccess() && user) {
+        setShowSuccess(true);
+        clearCheckoutStatus();
+        
+        // Trigger parent to reload user data (App will handle the reload)
+        console.log('✅ Subscription checkout completed');
+        
+        setTimeout(() => setShowSuccess(false), 5000);
+      }
+    };
+    
+    checkSuccess();
+  }, [user]);
 
   const handleTierSwitch = async (tier: 'free' | 'pro' | 'premium' | 'enterprise') => {
     // Require authentication for any tier selection

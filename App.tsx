@@ -187,6 +187,36 @@ const App: React.FC = () => {
   useEffect(() => {
     let mounted = true;
     
+    // Check for successful subscription checkout and reload user data
+    const checkSubscriptionSuccess = async () => {
+      const params = new URLSearchParams(window.location.hash.split('?')[1]);
+      const checkoutSuccess = params.get('checkout') === 'success';
+      
+      if (checkoutSuccess && user) {
+        console.log('🔄 Subscription checkout successful, reloading user data...');
+        try {
+          // Wait a bit for webhook to complete
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          const updatedUser = await getUser(user.id);
+          if (updatedUser && mounted) {
+            setUser(updatedUser);
+            cacheUserData(updatedUser);
+            console.log('✅ User data reloaded after subscription:', updatedUser.subscription_tier);
+          }
+        } catch (error) {
+          console.error('Error reloading user after subscription:', error);
+        }
+      }
+    };
+    
+    checkSubscriptionSuccess();
+    
+    return () => { mounted = false; };
+  }, [user?.id]); // Only run when user ID changes or on mount
+
+  useEffect(() => {
+    let mounted = true;
+    
     const loadInitialData = async () => {
       // Prevent multiple restoration attempts
       if (sessionRestoreAttempted.current) return;
@@ -479,7 +509,7 @@ const App: React.FC = () => {
             <Route path="/event/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/events/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/scanner" element={user ? <TicketScanner user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription_tier: t, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
             <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
