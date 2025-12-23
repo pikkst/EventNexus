@@ -75,54 +75,21 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         const sessionId = params.get('session_id');
 
         if (sessionId) {
-          // Verify payment with Stripe (normal path)
-          const isVerified = await verifyCheckoutPayment(sessionId, { eventId: id!, userId: user!.id });
+          // Verify payment with Stripe
+          const isVerified = await verifyCheckoutPayment(sessionId);
           if (isVerified) {
             setShowSuccess(true);
             clearCheckoutStatus();
-            // Refresh event data multiple times with delays to wait for webhook
+            // Refresh event data to get updated attendee count
             loadEvent();
-            // Retry loading event after webhook processes (typically 2-5 seconds)
-            setTimeout(() => {
-              console.log('Reloading event data after Stripe webhook processing...');
-              loadEvent();
-            }, 3000);
-            setTimeout(() => {
-              console.log('Final event data reload...');
-              loadEvent();
-            }, 6000);
           } else {
             console.warn('Payment verification failed for session:', sessionId);
-            // Still show success and reload - webhook might still process
-            setShowSuccess(true);
-            clearCheckoutStatus();
-            loadEvent();
-            setTimeout(() => loadEvent(), 3000);
           }
         } else {
-          // Fallback: try verification using eventId + userId since sessionId is missing
-          if (user && id) {
-            const isVerified = await verifyCheckoutPayment('', { eventId: id!, userId: user!.id });
-            if (isVerified) {
-              setShowSuccess(true);
-              clearCheckoutStatus();
-              loadEvent();
-              setTimeout(() => loadEvent(), 3000);
-              setTimeout(() => loadEvent(), 6000);
-            } else {
-              // As last resort, show success and attempt reloads
-              setShowSuccess(true);
-              clearCheckoutStatus();
-              loadEvent();
-              setTimeout(() => loadEvent(), 3000);
-              setTimeout(() => loadEvent(), 6000);
-            }
-          } else {
-            setShowSuccess(true);
-            clearCheckoutStatus();
-            loadEvent();
-            setTimeout(() => loadEvent(), 3000);
-          }
+          // Fallback: just show success if URL params indicate it
+          setShowSuccess(true);
+          clearCheckoutStatus();
+          loadEvent();
         }
       }
     };
@@ -154,7 +121,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
 
   const remaining = event.maxAttendees - currentAttendees;
   const totalRevenue = currentAttendees * event.price;
-  const isFollowing = user?.followedOrganizers?.includes(event.organizerId) ?? false;
+  const isFollowing = user?.followedOrganizers.includes(event.organizerId) ?? false;
 
   const handleLike = async () => {
     if (!user) {
@@ -428,20 +395,11 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               </div>
 
               {showSuccess && (
-                <div className="mt-8 p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl space-y-4">
+                <div className="mt-8 p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl">
                   <p className="text-emerald-500 text-sm font-bold flex items-center gap-3">
                     <ShieldCheck className="w-6 h-6 shrink-0" /> 
                     <span>Booking confirmed!</span>
                   </p>
-                  <p className="text-emerald-400 text-xs leading-relaxed">Your tickets are being prepared. Check your profile to view your QR codes and entry details. You'll also receive an email confirmation shortly.</p>
-                  {user && (
-                    <button
-                      onClick={() => window.location.hash = '#/profile'}
-                      className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all"
-                    >
-                      View My Tickets →
-                    </button>
-                  )}
                 </div>
               )}
             </div>

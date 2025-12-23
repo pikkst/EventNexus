@@ -129,6 +129,8 @@ serve(async (req) => {
       )
     }
 
+    const isSelfScan = isTicketOwner && !isOrganizer && !isAdmin
+
     // Mark ticket as used
     const { data: updatedTicket, error: updateError } = await supabaseClient
       .from('tickets')
@@ -138,7 +140,8 @@ serve(async (req) => {
         metadata: {
           ...ticket.metadata,
           scanned_by: user.id,
-          scanned_at: new Date().toISOString()
+          scanned_at: new Date().toISOString(),
+          self_scanned: isSelfScan
         }
       })
       .eq('id', ticket.id)
@@ -159,7 +162,9 @@ serve(async (req) => {
       .insert([{
         user_id: ticket.user_id,
         title: 'Ticket Scanned',
-        message: `Your ticket for "${ticket.event.name}" has been successfully scanned. Enjoy the event!`,
+        message: isSelfScan
+          ? `You scanned your own ticket for "${ticket.event.name}".`
+          : `Your ticket for "${ticket.event.name}" has been successfully scanned. Enjoy the event!`,
         type: 'ticket_purchase',
         event_id: ticket.event_id,
         sender_name: 'EventNexus',
@@ -169,7 +174,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         valid: true,
-        message: 'Ticket validated successfully',
+        message: isSelfScan ? 'Self-scan recorded' : 'Ticket validated successfully',
+        selfScan: isSelfScan,
         ticket: updatedTicket
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }

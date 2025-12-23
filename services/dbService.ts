@@ -1524,6 +1524,57 @@ export const getOrganizerRevenueSummary = async (organizerId: string): Promise<R
   }
 };
 
+export interface AttendanceSummaryItem {
+  event_id: string;
+  name: string;
+  date?: string;
+  total_tickets: number;
+  checked_in: number;
+}
+
+export const getOrganizerAttendanceSummary = async (organizerId: string): Promise<AttendanceSummaryItem[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('tickets')
+      .select(`
+        event_id,
+        status,
+        event:events!inner(id, name, date, organizer_id)
+      `)
+      .eq('event.organizer_id', organizerId);
+
+    if (error) {
+      console.error('Error fetching attendance summary:', error);
+      return [];
+    }
+
+    const summaryMap: Record<string, AttendanceSummaryItem> = {};
+
+    (data || []).forEach((row: any) => {
+      const ev = row.event;
+      if (!ev) return;
+      if (!summaryMap[ev.id]) {
+        summaryMap[ev.id] = {
+          event_id: ev.id,
+          name: ev.name,
+          date: ev.date,
+          total_tickets: 0,
+          checked_in: 0,
+        };
+      }
+      summaryMap[ev.id].total_tickets += 1;
+      if (row.status === 'used') {
+        summaryMap[ev.id].checked_in += 1;
+      }
+    });
+
+    return Object.values(summaryMap).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  } catch (error) {
+    console.error('Error in getOrganizerAttendanceSummary:', error);
+    return [];
+  }
+};
+
 /**
  * Check if user has completed Stripe Connect onboarding
  */

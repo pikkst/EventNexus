@@ -172,19 +172,16 @@ export const checkCheckoutSuccess = (): boolean => {
  * Verify checkout payment by checking session status with Stripe
  * This is called AFTER user returns from Stripe checkout
  */
-export const verifyCheckoutPayment = async (sessionId: string, opts?: { eventId?: string; userId?: string }): Promise<boolean> => {
+export const verifyCheckoutPayment = async (sessionId: string): Promise<boolean> => {
   try {
     if (!sessionId) {
-      // If no sessionId, attempt fallback using eventId+userId
-      if (!opts?.eventId || !opts?.userId) {
-        console.warn('No session ID provided and missing eventId/userId fallback');
-        return false;
-      }
+      console.warn('No session ID provided to verify');
+      return false;
     }
 
     // Call Edge Function to verify session with Stripe
     const { data, error } = await supabase.functions.invoke('verify-checkout', {
-      body: { sessionId, eventId: opts?.eventId, userId: opts?.userId }
+      body: { sessionId }
     });
 
     if (error) {

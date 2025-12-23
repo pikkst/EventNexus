@@ -1,13 +1,13 @@
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import Stripe from 'npm:stripe@14';
+import Stripe from 'https://esm.sh/stripe@14.14.0?target=deno';
 
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY') || '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2024-04-10',
+  apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),
 });
 
@@ -231,17 +231,7 @@ serve(async (req: Request) => {
         status: 'valid'
       }));
 
-      const { data: insertedTickets, error: ticketInsertError } = await supabase
-        .from('tickets')
-        .insert(tickets)
-        .select();
-
-      if (ticketInsertError) {
-        console.error('Failed to create pending tickets:', ticketInsertError);
-        throw new Error(`Failed to reserve tickets: ${ticketInsertError.message}`);
-      }
-
-      console.log(`✅ Created ${insertedTickets.length} pending tickets for session ${session.id}`);
+      await supabase.from('tickets').insert(tickets);
     } else {
       console.error('Invalid checkout parameters:', { tier, priceId, eventId, ticketCount, pricePerTicket });
       throw new Error('Invalid checkout request: must provide either (tier + priceId) for subscription or (eventId + ticketCount + pricePerTicket) for tickets');

@@ -76,6 +76,7 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
             type: validation.ticket?.ticket_type || 'General',
             eventName: validation.ticket?.event?.name || 'Event',
             ref: validation.ticket?.id || '',
+            selfScan: validation.selfScan || false,
           }
         });
       } else {
@@ -225,6 +226,9 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
                     <div className="pt-2 border-t border-slate-700">
                       <p className="text-xs text-slate-500">Ticket Type</p>
                       <p className="text-sm font-bold text-white capitalize">{result.data.type}</p>
+                      {result.data.selfScan && (
+                        <p className="text-xs text-emerald-400 font-bold mt-1">Self-scan recorded</p>
+                      )}
                     </div>
                   )}
                 </div>
