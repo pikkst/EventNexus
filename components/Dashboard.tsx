@@ -19,6 +19,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { User, EventNexusEvent, Notification, AgencyService } from '../types';
 import { 
   getEvents, 
+  getOrganizerEvents,
   getOrganizerRevenue, 
   getOrganizerRevenueSummary,
   RevenueByEvent,
@@ -148,9 +149,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        const allEvents = await getEvents();
-        // Filter events by current user if they are organizer
-        const userEvents = allEvents.filter(event => event.organizerId === user.id);
+        const userEvents = await getOrganizerEvents(user.id);
         setEvents(userEvents);
         if (userEvents.length > 0 && !selectedEventId) {
           setSelectedEventId(userEvents[0].id);
