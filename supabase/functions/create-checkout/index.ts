@@ -218,14 +218,17 @@ serve(async (req: Request) => {
         },
       });
 
-      // Create pending ticket records
+      // Create pending ticket records with price and ticket type
       const tickets = Array.from({ length: ticketCount }, () => ({
         user_id: userId,
         event_id: eventId,
+        ticket_type: 'standard',
+        price: pricePerTicket,
         purchase_date: new Date().toISOString(),
         qr_code: crypto.randomUUID(), // Temporary QR code, will be updated on payment success
         payment_status: 'pending',
         stripe_session_id: session.id,
+        status: 'valid'
       }));
 
       await supabase.from('tickets').insert(tickets);
