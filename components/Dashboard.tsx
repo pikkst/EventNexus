@@ -22,9 +22,11 @@ import {
   getOrganizerEvents,
   getOrganizerRevenue, 
   getOrganizerRevenueSummary,
+  getOrganizerAttendanceSummary,
   RevenueByEvent,
   RevenueSummary,
-  verifyConnectOnboarding
+  verifyConnectOnboarding,
+  AttendanceSummaryItem
 } from '../services/dbService';
 import { generateAdCampaign, generateAdImage } from '../services/geminiService';
 import { supabase } from '../services/supabase';
@@ -168,12 +170,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     const loadRevenue = async () => {
       setIsLoadingRevenue(true);
       try {
-        const [summary, byEvent] = await Promise.all([
+        const [summary, byEvent, attendance] = await Promise.all([
           getOrganizerRevenueSummary(user.id),
-          getOrganizerRevenue(user.id)
+          getOrganizerRevenue(user.id),
+          getOrganizerAttendanceSummary(user.id)
         ]);
         setRevenueSummary(summary);
         setRevenueByEvent(byEvent);
+        setAttendanceSummary(attendance);
         // Generate sales chart data from real revenue
         setSalesData(generateSalesData(byEvent));
       } catch (error) {
@@ -230,12 +234,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [revenueSummary, setRevenueSummary] = useState<RevenueSummary | null>(null);
   const [revenueByEvent, setRevenueByEvent] = useState<RevenueByEvent[]>([]);
   const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
+  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummaryItem[]>([]);
 
-  const isGated = user.subscription_tier === 'free';
+  // Only gate free users when they have no events yet; free users with events unlocked via credits should have full access
+  const isGated = user.subscription_tier === 'free' && !isLoadingEvents && events.length === 0;
   const isEnterprise = user.subscription_tier === 'enterprise';
   const selectedEvent = events.find(e => e.id === selectedEventId);
   const totalRevenue = revenueSummary?.total_gross || 0;
   const totalSold = revenueSummary?.total_tickets_sold || 0;
+  const totalTickets = attendanceSummary.reduce((sum, a) => sum + a.total_tickets, 0);
+  const totalCheckedIn = attendanceSummary.reduce((sum, a) => sum + a.checked_in, 0);
+  const totalCheckInRate = totalTickets > 0 ? Math.round((totalCheckedIn / totalTickets) * 100) : 0;
 
   // Gate ONLY free users from Dashboard if they have NO events
   // Paid tier users (pro, premium, enterprise) always have access to Dashboard
@@ -596,8 +605,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard title="Gross Volume" value={`€${totalRevenue.toLocaleString()}`} change="+12.5%" icon={<DollarSign />} color="emerald" />
             <StatCard title="Active Tickets" value={totalSold.toLocaleString()} change="+18.2%" icon={<TicketIcon />} color="indigo" />
-            <StatCard title="API Traffic" value="1.4M" change="+40%" icon={<Cpu />} color="blue" />
-            <StatCard title="Backbone Node" value="Optimal" change="99.9%" icon={<Globe />} color="violet" />
+            <StatCard
+              title="Checked-in Attendees"
+              value={`${totalCheckedIn.toLocaleString()} / ${totalTickets.toLocaleString()}`}
+              change={`${totalCheckInRate}% checked in`}
+              icon={<Users />}
+              color="emerald"
+            />
+            <StatCard
+              title="Check-in Rate"
+              value={`${totalCheckInRate}%`}
+              change={totalTickets > 0 ? `${totalCheckedIn.toLocaleString()} attendees` : 'Awaiting scans'}
+              icon={<CheckCircle />}
+              color="blue"
+            />
           </div>
 
           {/* Revenue Breakdown Section */}
@@ -712,6 +733,70 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {attendanceSummary.length > 0 && (
+            <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 shadow-2xl space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                    <Users className="text-emerald-400" /> Attendance
+                  </h3>
+                  <p className="text-slate-400 font-medium text-sm mt-2">Check-ins versus purchased tickets across your events</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-full">
+                    {totalCheckedIn.toLocaleString()} checked-in
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-blue-400 bg-blue-500/10 px-4 py-2 rounded-full">
+                    {totalTickets.toLocaleString()} purchased
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-4 py-2 rounded-full">
+                    {totalCheckInRate}% rate
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-950 border-b border-slate-800">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Event</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Purchased</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Checked-in</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Rate</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {attendanceSummary.map((item) => {
+                        const rate = item.total_tickets > 0 ? Math.round((item.checked_in / item.total_tickets) * 100) : 0;
+                        return (
+                          <tr key={item.event_id} className="hover:bg-slate-800/30 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="font-bold text-white text-sm">{item.name}</div>
+                              <div className="text-xs text-slate-500">{item.date ? new Date(item.date).toLocaleDateString() : ''}</div>
+                            </td>
+                            <td className="px-6 py-4 text-right text-white font-bold">{item.total_tickets.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-right text-emerald-400 font-bold">{item.checked_in.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <div className="w-24 bg-slate-800 rounded-full h-2 overflow-hidden">
+                                  <div className="h-full bg-emerald-500" style={{ width: `${rate}%` }} />
+                                </div>
+                                <span className="text-white font-black text-sm">{rate}%</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-right text-slate-400 font-medium">{item.date ? new Date(item.date).toLocaleDateString() : '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
 
