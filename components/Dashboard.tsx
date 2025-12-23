@@ -209,8 +209,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const totalRevenue = revenueSummary?.total_gross || 0;
   const totalSold = revenueSummary?.total_tickets_sold || 0;
 
-  // Gate free users from Dashboard entirely
-  if (user.subscription_tier === 'free') {
+  // Gate free users from Dashboard ONLY if they have NO events
+  // Free users who created events can manage them here
+  if (user.subscription_tier === 'free' && !isLoadingEvents && events.length === 0) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20">
         <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-12 text-center space-y-8 shadow-2xl">
@@ -221,7 +222,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
           <div className="space-y-3">
             <h1 className="text-4xl font-black tracking-tighter text-white">Organizer Dashboard</h1>
             <p className="text-slate-400 max-w-md mx-auto leading-relaxed font-medium text-lg">
-              The Organizer Dashboard with analytics, marketing tools, and event management is available for <span className="text-indigo-400 font-bold">Pro tier and above</span>.
+              Create your first event to access the Dashboard! Free tier users can manage events they've created with <span className="text-orange-400 font-bold">15 credits</span> per event, or upgrade to <span className="text-indigo-400 font-bold">Pro</span> for unlimited creation and advanced tools.
             </p>
           </div>
 
@@ -242,10 +243,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
 
           <div className="pt-6 flex flex-col gap-4">
             <Link 
+              to="/create" 
+              className="w-full bg-orange-600 hover:bg-orange-700 py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-orange-600/30 active:scale-95 flex items-center justify-center gap-2"
+            >
+              <Zap className="w-5 h-5" /> Create Your First Event (15 Credits)
+            </Link>
+            <Link 
               to="/pricing" 
               className="w-full bg-indigo-600 hover:bg-indigo-700 py-5 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/30 active:scale-95"
             >
-              Upgrade to Pro
+              Or Upgrade to Pro for Unlimited
             </Link>
             <Link to="/map" className="text-slate-500 hover:text-white font-bold text-sm transition-colors">
               Continue Exploring Events
