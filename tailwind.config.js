@@ -2,7 +2,12 @@
 export default {
   content: [
     './index.html',
-    './**/*.{ts,tsx}',
+    './App.tsx',
+    './components/**/*.{ts,tsx}',
+    './services/**/*.{ts,tsx}',
+    './supabase/**/*.{ts,tsx}',
+    './constants.tsx',
+    './types.ts'
   ],
   theme: {
     extend: {},
