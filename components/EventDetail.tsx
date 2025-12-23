@@ -80,16 +80,31 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           if (isVerified) {
             setShowSuccess(true);
             clearCheckoutStatus();
-            // Refresh event data to get updated attendee count
+            // Refresh event data multiple times with delays to wait for webhook
             loadEvent();
+            // Retry loading event after webhook processes (typically 2-5 seconds)
+            setTimeout(() => {
+              console.log('Reloading event data after Stripe webhook processing...');
+              loadEvent();
+            }, 3000);
+            setTimeout(() => {
+              console.log('Final event data reload...');
+              loadEvent();
+            }, 6000);
           } else {
             console.warn('Payment verification failed for session:', sessionId);
+            // Still show success and reload - webhook might still process
+            setShowSuccess(true);
+            clearCheckoutStatus();
+            loadEvent();
+            setTimeout(() => loadEvent(), 3000);
           }
         } else {
           // Fallback: just show success if URL params indicate it
           setShowSuccess(true);
           clearCheckoutStatus();
           loadEvent();
+          setTimeout(() => loadEvent(), 3000);
         }
       }
     };
@@ -395,11 +410,20 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               </div>
 
               {showSuccess && (
-                <div className="mt-8 p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl">
+                <div className="mt-8 p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl space-y-4">
                   <p className="text-emerald-500 text-sm font-bold flex items-center gap-3">
                     <ShieldCheck className="w-6 h-6 shrink-0" /> 
                     <span>Booking confirmed!</span>
                   </p>
+                  <p className="text-emerald-400 text-xs leading-relaxed">Your tickets are being prepared. Check your profile to view your QR codes and entry details. You'll also receive an email confirmation shortly.</p>
+                  {user && (
+                    <button
+                      onClick={() => window.location.hash = '#/profile'}
+                      className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all"
+                    >
+                      View My Tickets →
+                    </button>
+                  )}
                 </div>
               )}
             </div>
