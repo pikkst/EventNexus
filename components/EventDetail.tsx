@@ -154,7 +154,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
 
   const remaining = event.maxAttendees - currentAttendees;
   const totalRevenue = currentAttendees * event.price;
-  const isFollowing = user?.followedOrganizers.includes(event.organizerId) ?? false;
+  const isFollowing = user?.followedOrganizers?.includes(event.organizerId) ?? false;
 
   const handleLike = async () => {
     if (!user) {
