@@ -9,7 +9,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Calendar, MapPin, Ticket as TicketIcon, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Calendar, MapPin, Ticket as TicketIcon, CheckCircle, XCircle, Clock, Maximize2 } from 'lucide-react';
 import { generateTicketQRImage } from '../services/ticketService';
 
 interface TicketCardProps {
@@ -102,10 +102,21 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onExpand }) => {
   };
 
   return (
-    <div 
-      className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-all cursor-pointer"
-      onClick={onExpand}
-    >
+    <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-all relative group">
+      {/* Expand Button */}
+      {onExpand && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onExpand();
+          }}
+          className="absolute top-3 left-3 z-10 p-2 bg-slate-900/90 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-lg transition-all opacity-0 group-hover:opacity-100 border border-slate-700 hover:border-indigo-500"
+          title="View full ticket"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
+      )}
+      
       {/* Event Header */}
       <div className="relative h-32 bg-gradient-to-br from-indigo-600 to-purple-600 overflow-hidden">
         {ticket.event.imageUrl && (
