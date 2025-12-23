@@ -195,7 +195,7 @@ export const generatePlatformGrowthCampaign = async (theme: string, target: stri
 export const generateAdImage = async (
   prompt: string, 
   aspectRatio: "1:1" | "9:16" | "16:9" = "1:1", 
-  saveToStorage = true, 
+  saveToStorage = false,  // Default to false to avoid Storage errors
   userId?: string,
   userTier?: string
 ) => {
@@ -226,48 +226,10 @@ export const generateAdImage = async (
           await deductUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_IMAGE);
         }
 
-        // If saveToStorage is true, upload to Supabase and return public URL
-        if (saveToStorage) {
-          try {
-            // Convert base64 to blob
-            const byteCharacters = atob(base64Data);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-              byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'image/png' });
-            
-            // Generate unique filename
-            const filename = `ai-generated/${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
-            
-            // Upload to Supabase Storage
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('event-images')
-              .upload(filename, blob, {
-                contentType: 'image/png',
-                cacheControl: '3600',
-                upsert: false
-              });
-            
-            if (uploadError) {
-              console.error('Failed to upload to Supabase Storage:', uploadError);
-              return inlineDataUrl;
-            }
-            
-            // Get public URL
-            const { data: { publicUrl } } = supabase.storage
-              .from('event-images')
-              .getPublicUrl(filename);
-            
-            console.log('AI image uploaded successfully:', publicUrl);
-            return publicUrl;
-            
-          } catch (storageError) {
-            console.error('Storage error:', storageError);
-            return inlineDataUrl;
-          }
-        }
+        // STORAGE UPLOAD TEMPORARILY DISABLED
+        // Causes "Upload is not defined" error in production
+        // TODO: Re-enable after fixing Storage initialization issue
+        // For now, always return base64 data URL (works perfectly in database)
         
         return inlineDataUrl;
       }
