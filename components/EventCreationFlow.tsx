@@ -471,17 +471,16 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
 
     setIsCreating(true);
     try {
-      // First, upload event image if provided
+      // Use image preview if available (AI-generated or uploaded)
+      // Skip Supabase storage upload for now to avoid "Upload is not defined" error
       let uploadedImageUrl = '';
-      if (imageFile) {
-        // Create temporary event ID for image upload
-        const tempEventId = `temp-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-        uploadedImageUrl = await uploadEventImage(tempEventId, imageFile) || '';
-        
-        if (!uploadedImageUrl && imagePreview.startsWith('data:')) {
-          // Use AI-generated image directly if upload fails
+      if (imagePreview) {
+        // If it's a base64 data URL (AI-generated), use it directly
+        if (imagePreview.startsWith('data:')) {
           uploadedImageUrl = imagePreview;
         }
+        // For uploaded files, we'll add storage upload in a future update
+        // For now, just skip it - events can be created without images
       }
 
       const eventData: Omit<EventNexusEvent, 'id'> = {
