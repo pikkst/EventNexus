@@ -120,7 +120,7 @@ serve(async (req: Request) => {
             quantity: 1,
           },
         ],
-        success_url: successUrl,
+        success_url: successUrl + (successUrl.includes('?') ? '&' : '?') + 'session_id={CHECKOUT_SESSION_ID}',
         cancel_url: cancelUrl,
         metadata: {
           user_id: userId,
@@ -202,7 +202,7 @@ serve(async (req: Request) => {
             quantity: ticketCount,
           },
         ],
-        success_url: successUrl,
+        success_url: successUrl + (successUrl.includes('?') ? '&' : '?') + 'session_id={CHECKOUT_SESSION_ID}',
         cancel_url: cancelUrl,
         metadata: {
           user_id: userId,

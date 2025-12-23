@@ -19,7 +19,7 @@ import {
   Star
 } from 'lucide-react';
 import { getEvents, likeEvent, unlikeEvent, checkIfUserLikedEvent } from '../services/dbService';
-import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus } from '../services/stripeService';
+import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent } from '../types';
 
 interface EventDetailProps {
@@ -66,14 +66,35 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
     loadEvent();
   }, [loadEvent]);
 
-  // Check for successful purchase on mount
+  // Check for successful purchase on mount and verify with Stripe
   useEffect(() => {
-    if (checkCheckoutSuccess()) {
-      setShowSuccess(true);
-      clearCheckoutStatus();
-      // Refresh event data to get updated attendee count
-      loadEvent();
-    }
+    const verifyPurchase = async () => {
+      if (checkCheckoutSuccess()) {
+        // Get session ID from URL
+        const params = new URLSearchParams(window.location.hash.split('?')[1]);
+        const sessionId = params.get('session_id');
+
+        if (sessionId) {
+          // Verify payment with Stripe
+          const isVerified = await verifyCheckoutPayment(sessionId);
+          if (isVerified) {
+            setShowSuccess(true);
+            clearCheckoutStatus();
+            // Refresh event data to get updated attendee count
+            loadEvent();
+          } else {
+            console.warn('Payment verification failed for session:', sessionId);
+          }
+        } else {
+          // Fallback: just show success if URL params indicate it
+          setShowSuccess(true);
+          clearCheckoutStatus();
+          loadEvent();
+        }
+      }
+    };
+
+    verifyPurchase();
   }, [loadEvent]);
 
   if (isLoading) {
