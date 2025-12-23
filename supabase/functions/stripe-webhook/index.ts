@@ -70,14 +70,24 @@ serve(async (req: Request) => {
         
         // Handle ticket purchase
         if (metadata.type === 'ticket' && metadata.event_id) {
+          console.log('Processing ticket purchase - Session ID:', session.id, 'Event ID:', metadata.event_id, 'User ID:', metadata.user_id);
+          
           // Get pending tickets for this session
-          const { data: pendingTickets } = await supabase
+          const { data: pendingTickets, error: ticketError } = await supabase
             .from('tickets')
             .select('id')
             .eq('stripe_session_id', session.id)
             .eq('payment_status', 'pending');
 
+          if (ticketError) {
+            console.error('Error fetching pending tickets:', ticketError);
+          }
+
+          console.log(`Found ${pendingTickets?.length || 0} pending tickets for session ${session.id}`);
+          
           if (pendingTickets && pendingTickets.length > 0) {
+            console.log(`Updating ${pendingTickets.length} tickets to paid status...`);
+            
             // Generate secure QR codes for each ticket using Edge Function
             for (const ticket of pendingTickets) {
               // Generate secure hash-based QR code data
@@ -88,7 +98,7 @@ serve(async (req: Request) => {
               );
 
               // Update ticket with proper QR code and payment status
-              await supabase
+              const { error: updateError } = await supabase
                 .from('tickets')
                 .update({ 
                   payment_status: 'paid',
@@ -97,9 +107,67 @@ serve(async (req: Request) => {
                   status: 'valid'
                 })
                 .eq('id', ticket.id);
+              
+              if (updateError) {
+                console.error(`Error updating ticket ${ticket.id}:`, updateError);
+              }
             }
             
-            console.log(`Generated secure QR codes for ${pendingTickets.length} tickets (session: ${session.id})`);
+            console.log(`✓ Generated secure QR codes for ${pendingTickets.length} tickets (session: ${session.id})`);
+          } else {
+            console.warn(`⚠️ No pending tickets found for session ${session.id}. This might indicate webhook arrived before tickets were created.`);
+            
+            // Fallback: Try to find tickets by user_id and event_id if session_id didn't match
+            const { data: fallbackTickets } = await supabase
+              .from('tickets')
+              .select('id')
+              .eq('user_id', metadata.user_id)
+              .eq('event_id', metadata.event_id)
+              .eq('payment_status', 'pending');
+            
+            if (fallbackTickets && fallbackTickets.length > 0) {
+              console.log(`Found ${fallbackTickets.length} tickets via fallback (user+event), updating them...`);
+              for (const ticket of fallbackTickets) {
+                const qrData = await generateSecureQRCode(
+                  ticket.id,
+                  metadata.event_id,
+                  metadata.user_id
+                );
+                
+                await supabase
+                  .from('tickets')
+                  .update({ 
+                    payment_status: 'paid',
+                    stripe_payment_id: session.payment_intent,
+                    stripe_session_id: session.id,
+                    qr_code: qrData,
+                    status: 'valid'
+                  })
+                  .eq('id', ticket.id);
+              }
+              console.log(`✓ Updated ${fallbackTickets.length} tickets via fallback`);
+            }
+          }
+          
+          // Update event's attendees_count to reflect paid tickets
+          const { data: allPaidTickets } = await supabase
+            .from('tickets')
+            .select('id', { count: 'exact' })
+            .eq('event_id', metadata.event_id)
+            .eq('payment_status', 'paid');
+          
+          const paidTicketCount = allPaidTickets?.length || 0;
+          
+          // Update event with new attendee count
+          const { error: eventUpdateError } = await supabase
+            .from('events')
+            .update({ attendees_count: paidTicketCount })
+            .eq('id', metadata.event_id);
+          
+          if (eventUpdateError) {
+            console.error('Error updating event attendee count:', eventUpdateError);
+          } else {
+            console.log(`✓ Updated event ${metadata.event_id} attendees count to ${paidTicketCount}`);
           }
           
           // NOTE: DO NOT transfer money immediately to organizer

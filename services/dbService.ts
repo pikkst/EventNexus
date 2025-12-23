@@ -657,6 +657,7 @@ export const getUserTickets = async (userId: string) => {
       )
     `)
     .eq('user_id', userId)
+    .eq('payment_status', 'paid')  // Only return paid/confirmed tickets
     .order('purchase_date', { ascending: false });
   
   if (error) {
