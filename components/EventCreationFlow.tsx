@@ -518,18 +518,36 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     console.log('✅ Validation passed, creating event...');
     setIsCreating(true);
     try {
-      // Use image preview if available (AI-generated or uploaded)
-      // Skip Supabase storage upload for now to avoid "Upload is not defined" error
+      // Upload image to Storage if available (AI-generated or user uploaded)
       let uploadedImageUrl = '';
       if (imagePreview) {
-        console.log('🖼️ Image preview found, checking type...');
-        // If it's a base64 data URL (AI-generated), use it directly
-        if (imagePreview.startsWith('data:')) {
-          uploadedImageUrl = imagePreview;
-          console.log(`✅ Using base64 image (${imagePreview.length} chars)`);
+        console.log('🖼️ Image preview found, uploading to Storage...');
+        setIsUploadingImage(true);
+        
+        try {
+          // Convert base64 data URL to Blob
+          if (imagePreview.startsWith('data:')) {
+            console.log(`📦 Converting base64 image (${imagePreview.length} chars) to Blob...`);
+            const response = await fetch(imagePreview);
+            const blob = await response.blob();
+            console.log(`✅ Blob created: ${blob.size} bytes, type: ${blob.type}`);
+            
+            // Create File from Blob for upload
+            const tempEventId = crypto.randomUUID();
+            const file = new File([blob], `${tempEventId}.png`, { type: blob.type || 'image/png' });
+            console.log(`📤 Uploading to Storage as ${file.name}...`);
+            
+            // Upload to Supabase Storage
+            uploadedImageUrl = await uploadEventImage(tempEventId, file) || '';
+            console.log(`✅ Image uploaded to Storage: ${uploadedImageUrl ? 'success' : 'failed'}`);
+          }
+        } catch (uploadError) {
+          console.error('❌ Image upload failed:', uploadError);
+          // Continue without image if upload fails
+          uploadedImageUrl = '';
+        } finally {
+          setIsUploadingImage(false);
         }
-        // For uploaded files, we'll add storage upload in a future update
-        // For now, just skip it - events can be created without images
       } else {
         console.log('ℹ️ No image preview, creating event without image');
       }
