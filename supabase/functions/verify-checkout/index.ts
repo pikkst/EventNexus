@@ -27,23 +27,23 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { sessionId } = await req.json();
+    const body = await req.json();
+    const sessionId: string | null = body.sessionId || body.session_id || null;
+    const reqEventId: string | null = body.eventId || body.event_id || null;
+    const reqUserId: string | null = body.userId || body.user_id || null;
 
-    if (!sessionId) {
+    if (!sessionId && (!reqEventId || !reqUserId)) {
       return new Response(
-        JSON.stringify({ error: 'Missing sessionId' }),
+        JSON.stringify({ error: 'Missing sessionId and no fallback (eventId,userId) provided' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('Verifying checkout session/payment:', sessionId ?? '(none provided)');
 
-
-
-    console.log('Verifying checkout session:', sessionId);
-
-    let session;
-    let paymentStatus = 'unknown';
-    let metadata = {};
+    let session: Stripe.Checkout.Session | null = null;
+    let paymentStatus: string = 'unknown';
+    let metadata: Record<string, string> = {};
     
     try {
       // Try to retrieve as checkout session first
@@ -53,7 +53,7 @@ serve(async (req: Request) => {
       console.log('✓ Found checkout session, payment_status:', session.payment_status);
       console.log('Session metadata:', metadata);
     } catch (sessionError) {
-      console.warn('Could not retrieve as checkout session:', sessionError.message);
+      console.warn('Could not retrieve as checkout session:', (sessionError as Error).message);
       // Fallback: sessionId might actually be a payment_intent ID
       try {
         const paymentIntent = await stripe.paymentIntents.retrieve(sessionId);
@@ -61,7 +61,7 @@ serve(async (req: Request) => {
         metadata = paymentIntent.metadata || {};
         console.log('✓ Retrieved as payment_intent, status:', paymentIntent.status);
       } catch (piError) {
-        console.error('Failed to retrieve as payment_intent:', piError.message);
+        console.error('Failed to retrieve as payment_intent:', (piError as Error).message);
         return new Response(
           JSON.stringify({ 
             error: 'Payment not found. Please contact support.',
@@ -74,6 +74,9 @@ serve(async (req: Request) => {
       
     // Check if payment was successful
     if (paymentStatus === 'paid' || paymentStatus === 'succeeded') {
+      // Fallback fill metadata from request if missing
+      if (!metadata.user_id && reqUserId) metadata.user_id = reqUserId;
+      if (!metadata.event_id && reqEventId) metadata.event_id = reqEventId;
       console.log('✓ Payment confirmed - processing tickets for user:', metadata.user_id);
 
       // Handle ticket purchase
@@ -107,7 +110,7 @@ serve(async (req: Request) => {
             const qrData = `ENX-${ticket.id}-${hash}`;
 
             // Update ticket status
-            const paymentId = session?.payment_intent || sessionId;
+            const paymentId = (session && session.payment_intent) ? session.payment_intent as string : (sessionId ?? '');
             const { error: updateError } = await supabase
               .from('tickets')
               .update({
@@ -132,7 +135,7 @@ serve(async (req: Request) => {
             .eq('event_id', metadata.event_id)
             .eq('payment_status', 'paid');
 
-          const paidTicketCount = allPaidTickets?.length || 0;
+          const paidTicketCount = (allPaidTickets && Array.isArray(allPaidTickets)) ? allPaidTickets.length : 0;
 
           await supabase
             .from('events')
@@ -181,13 +184,13 @@ serve(async (req: Request) => {
                 const hash = hashHex.substring(0, 12);
                 const qrData = `ENX-${ticket.id}-${hash}`;
 
-                const paymentId = session?.payment_intent || sessionId;
+                const paymentId = (session && session.payment_intent) ? session.payment_intent as string : (sessionId ?? '');
                 const { error: updateError } = await supabase
                   .from('tickets')
                   .update({
                     payment_status: 'paid',
                     stripe_payment_id: paymentId,
-                    stripe_session_id: sessionId,
+                    stripe_session_id: sessionId ?? null,
                     qr_code: qrData,
                     status: 'valid'
                   })
@@ -205,7 +208,7 @@ serve(async (req: Request) => {
                 .eq('event_id', metadata.event_id)
                 .eq('payment_status', 'paid');
 
-              const paidTicketCount = allPaidTickets?.length || 0;
+              const paidTicketCount = (allPaidTickets && Array.isArray(allPaidTickets)) ? allPaidTickets.length : 0;
 
               await supabase
                 .from('events')
@@ -234,12 +237,12 @@ serve(async (req: Request) => {
         JSON.stringify({
           verified: true,
           paid: true,
-          status: session.payment_status,
+          status: paymentStatus,
           message: 'Payment verified and tickets confirmed'
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    } else if (session.payment_status === 'unpaid') {
+    } else if (paymentStatus === 'unpaid') {
       console.log('Payment not yet completed for session:', sessionId);
       return new Response(
         JSON.stringify({
@@ -251,12 +254,12 @@ serve(async (req: Request) => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } else {
-      console.log('Unknown payment status:', session.payment_status);
+      console.log('Unknown payment status:', paymentStatus);
       return new Response(
         JSON.stringify({
           verified: false,
           paid: false,
-          status: session.payment_status
+          status: paymentStatus
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -264,7 +267,7 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error('Verification error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Verification failed' }),
+      JSON.stringify({ error: (error as Error).message || 'Verification failed' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
