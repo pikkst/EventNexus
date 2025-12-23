@@ -1100,6 +1100,21 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                     className="flex-1 py-4 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2"
                   >
                     <Check className="w-4 h-4" /> Save Changes
+
+                        {/* Ticket View Modal */}
+                        {console.log('Checking modal render, selectedTicket:', selectedTicket)}
+                        {selectedTicket && (
+                          <>
+                            {console.log('Rendering TicketViewModal for ticket:', selectedTicket.id)}
+                            <TicketViewModal
+                              ticket={selectedTicket}
+                              onClose={() => {
+                                console.log('Closing modal');
+                                setSelectedTicket(null);
+                              }}
+                            />
+                          </>
+                        )}
                   </button>
                 </div>
               </div>
@@ -1154,21 +1169,6 @@ const TicketItem = ({ name, date, location, qrValue, customBranding }: any) => {
             <Share2 className="w-5 h-5" />
          </button>
       </div>
-
-      {/* Ticket View Modal */}
-      {console.log('Checking modal render, selectedTicket:', selectedTicket)}
-      {selectedTicket && (
-        <>
-          {console.log('Rendering TicketViewModal for ticket:', selectedTicket.id)}
-          <TicketViewModal
-            ticket={selectedTicket}
-            onClose={() => {
-              console.log('Closing modal');
-              setSelectedTicket(null);
-            }}
-          />
-        </>
-      )}
     </div>
   );
 };
