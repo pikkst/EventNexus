@@ -184,6 +184,12 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       return;
     }
 
+    // AI features included in the 15 credit event unlock for free tier
+    if (user.subscription_tier === 'free' && !isEventUnlocked) {
+      alert('AI image generation is included when you unlock event creation (15 credits). Unlock to use AI features!');
+      return;
+    }
+
     setIsGeneratingImage(true);
     try {
       const prompt = `${formData.name}: ${formData.description}. Category: ${formData.category}`;
@@ -320,7 +326,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           <div className="space-y-3">
             <h1 className="text-4xl font-black tracking-tighter">Become a Creator</h1>
             <p className="text-slate-400 max-w-md mx-auto leading-relaxed font-medium text-lg">
-              Free tier users can create events using <span className="text-orange-400 font-bold">credits</span>, or upgrade to <span className="text-indigo-400 font-bold">Pro</span> for unlimited creation.
+              Free tier users can create events using <span className="text-orange-400 font-bold">credits</span>. Unlock includes <span className="text-green-400 font-bold">all AI features</span> for that event, or upgrade to <span className="text-indigo-400 font-bold">Pro</span> for unlimited creation.
             </p>
           </div>
 
@@ -448,9 +454,9 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   const handleGeminiTagline = async () => {
     if (!formData.name || !formData.category) return;
     
-    // Gate AI features for free users
-    if (user.subscription_tier === 'free') {
-      alert('AI-powered tagline generation is available for Pro tier and above. Upgrade to unlock this feature.');
+    // AI features included in the 15 credit event unlock for free tier
+    if (user.subscription_tier === 'free' && !isEventUnlocked) {
+      alert('AI features are included when you unlock event creation (15 credits). Unlock to use AI tagline generation!');
       return;
     }
     
@@ -743,8 +749,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                         ? 'Fill name & category first'
                         : 'Powered by Gemini AI'}
                     </p>
-                    {user.subscription_tier === 'free' && (
-                      <p className="text-xs text-orange-400 mt-1">20 credits per image</p>
+                    {user.subscription_tier === 'free' && !isEventUnlocked && (
+                      <p className="text-xs text-orange-400 mt-1">Included with event unlock</p>
+                    )}
+                    {user.subscription_tier === 'free' && isEventUnlocked && (
+                      <p className="text-xs text-green-400 mt-1">✓ Unlocked & Ready</p>
                     )}
                   </div>
                 </button>
