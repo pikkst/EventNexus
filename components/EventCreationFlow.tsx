@@ -259,7 +259,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   // Get tier limits
   const tierLimits = SUBSCRIPTION_TIERS[user.subscription_tier];
   const eventLimit = tierLimits.maxEvents;
-  const hasReachedLimit = eventLimit !== Infinity && userEvents.length >= eventLimit;
+  // Free tier users bypass limit check if they've unlocked with credits
+  const hasReachedLimit = (user.subscription_tier === 'free' && isEventUnlocked) 
+    ? false 
+    : (eventLimit !== Infinity && userEvents.length >= eventLimit);
 
   // Subscription Gate - Free users
   if (user.subscription_tier === 'free' && !isEventUnlocked) {
