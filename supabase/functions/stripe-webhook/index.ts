@@ -155,9 +155,11 @@ serve(async (req: Request) => {
           // Send notification to user
           await supabase.from('notifications').insert({
             user_id: metadata.user_id,
-            type: 'subscription',
-            message: `✓ Welcome to ${metadata.tier.toUpperCase()} tier! Your subscription is now active.`,
-            read: false,
+            type: 'update',
+            title: `Welcome to ${metadata.tier.charAt(0).toUpperCase() + metadata.tier.slice(1)}!`,
+            message: `Your subscription is now active. Enjoy unlimited event creation${metadata.tier === 'premium' || metadata.tier === 'enterprise' ? ', advanced analytics, and premium features' : ' and advanced tools'}!`,
+            sender_name: 'EventNexus',
+            isRead: false,
           });
         }
         break;

@@ -205,14 +205,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [revenueByEvent, setRevenueByEvent] = useState<RevenueByEvent[]>([]);
   const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
 
-  const isGated = user.subscription === 'free';
-  const isEnterprise = user.subscription === 'enterprise';
+  const isGated = user.subscription_tier === 'free';
+  const isEnterprise = user.subscription_tier === 'enterprise';
   const selectedEvent = events.find(e => e.id === selectedEventId);
   const totalRevenue = revenueSummary?.total_gross || 0;
   const totalSold = revenueSummary?.total_tickets_sold || 0;
 
-  // Gate free users from Dashboard ONLY if they have NO events
-  // Free users who created events can manage them here
+  // Gate ONLY free users from Dashboard if they have NO events
+  // Paid tier users (pro, premium, enterprise) always have access to Dashboard
+  // Free users who created events with credits can also manage them here
   if (user.subscription_tier === 'free' && !isLoadingEvents && events.length === 0) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20">
@@ -224,7 +225,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
           <div className="space-y-3">
             <h1 className="text-4xl font-black tracking-tighter text-white">Organizer Dashboard</h1>
             <p className="text-slate-400 max-w-md mx-auto leading-relaxed font-medium text-lg">
-              Create your first event to access the Dashboard! Free tier users can manage events they've created with <span className="text-orange-400 font-bold">15 credits</span> per event, or upgrade to <span className="text-indigo-400 font-bold">Pro</span> for unlimited creation and advanced tools.
+              Create your first event to access the Dashboard! Free tier users can create events using <span className="text-orange-400 font-bold">15 credits</span> per event, or upgrade to <span className="text-indigo-400 font-bold">Pro</span> (€19.99/mo) for up to 20 events, analytics, and advanced tools.
             </p>
           </div>
 

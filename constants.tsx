@@ -14,16 +14,17 @@ export const SUBSCRIPTION_TIERS = {
     support: 'community',
     price: 0,
     commissionRate: 0.05, // 5% platform fee
-    description: 'Perfect for trying out EventNexus'
+    description: 'Perfect for exploring and attending events',
+    welcomeCredits: 100 // 100 welcome credits (€50 value)
   },
   pro: { 
     maxEvents: 20, 
     analytics: true, 
-    customBranding: true, 
+    customBranding: false, 
     support: 'email',
     price: 19.99,
     commissionRate: 0.03, // 3% platform fee
-    description: 'For professional event organizers'
+    description: 'The standard for creators and promoters'
   },
   premium: { 
     maxEvents: 100, 
@@ -32,7 +33,7 @@ export const SUBSCRIPTION_TIERS = {
     support: 'priority',
     price: 49.99,
     commissionRate: 0.025, // 2.5% platform fee
-    description: 'For agencies and large organizers',
+    description: 'Ultimate power for professional agencies',
     featuredPlacement: true, // Featured on map
     affiliateTools: true, // Affiliate marketing
     advancedAnalytics: true // Advanced metrics
@@ -44,7 +45,7 @@ export const SUBSCRIPTION_TIERS = {
     support: 'dedicated',
     price: 149.99,
     commissionRate: 0.015, // 1.5% platform fee
-    description: 'Custom solutions for enterprises',
+    description: 'White-labeling & Global Infrastructure',
     featuredPlacement: true,
     affiliateTools: true,
     advancedAnalytics: true,
