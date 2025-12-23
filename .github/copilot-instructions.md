@@ -79,7 +79,7 @@ These instructions help AI coding agents work productively in this repo.
   - **Never modify `index.html` script paths** - `<script type="module" src="/index.tsx">` must remain absolute. Vite transforms this during build.
   - **Never change `vite.config.ts` base path** - `base: '/EventNexus/'` is required for GitHub Pages deployment.
   - **Environment variables must be in `define` block** - Any `import.meta.env.*` values used at runtime must be explicitly defined in `vite.config.ts` define section for build-time injection.
-  - **Test in production** - Changes are tested on deployed GitHub Pages version at `https://pikkst.github.io/EventNexus/` after GitHub Actions build completes.
+  - **Test in production** - Changes are tested on production at `https://www.eventnexus.eu` after deployment.
 ## Troubleshooting (Supabase Auth)
 - **Email not confirmed:** Run `confirm-admin-user.sql` in Supabase SQL Editor to confirm admin user email and create profile.
 - **Missing user profile:** The SQL script also ensures the user profile exists in `public.users` table with admin role.
@@ -178,10 +178,6 @@ These instructions help AI coding agents work productively in this repo.
 - **Data usage:** Only access and process data required for EventNexus functionality. Do not export, replicate, or reuse production data outside approved workflows.
 - **Secrets:** Never commit or print secrets. Keep `.env.local` local; use `VITE_*` envs for client-side configuration.
 - **Privacy:** Avoid logging PII. Respect service boundaries (`services/`) for external calls.
-
-## Maintainer Contact
-- Primary email: `huntersest@gmail.com` (incidents/security/ops).
-- Production URL: `https://www.eventnexus.eu`
 
 ## Maintainer Contact
 - Primary email: `huntersest@gmail.com` (incidents/security/ops).
