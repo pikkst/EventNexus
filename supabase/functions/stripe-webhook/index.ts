@@ -72,10 +72,13 @@ serve(async (req: Request) => {
         if (metadata.type === 'ticket' && metadata.event_id) {
           console.log('Processing ticket purchase - Session ID:', session.id, 'Event ID:', metadata.event_id, 'User ID:', metadata.user_id);
           
+          // Wait a brief moment to ensure tickets were created in create-checkout
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
           // Get pending tickets for this session
           const { data: pendingTickets, error: ticketError } = await supabase
             .from('tickets')
-            .select('id')
+            .select('id, stripe_session_id, payment_status')
             .eq('stripe_session_id', session.id)
             .eq('payment_status', 'pending');
 
@@ -84,6 +87,9 @@ serve(async (req: Request) => {
           }
 
           console.log(`Found ${pendingTickets?.length || 0} pending tickets for session ${session.id}`);
+          if (pendingTickets && pendingTickets.length > 0) {
+            console.log('Pending tickets:', pendingTickets);
+          }
           
           if (pendingTickets && pendingTickets.length > 0) {
             console.log(`Updating ${pendingTickets.length} tickets to paid status...`);
