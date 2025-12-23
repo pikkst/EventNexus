@@ -179,33 +179,48 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   };
 
   const handleGenerateAIImage = async () => {
+    console.log('🎨 AI Image generation started');
+    console.log('📝 Event name:', formData.name);
+    console.log('📝 Description:', formData.description);
+    console.log('🏷️ Category:', formData.category);
+    
     if (!formData.name || !formData.description) {
+      console.warn('⚠️ Missing name or description');
       alert('Please fill in event name and description first');
       return;
     }
 
     // AI features included in the 15 credit event unlock for free tier
     if (user.subscription_tier === 'free' && !isEventUnlocked) {
+      console.warn('🔒 Event not unlocked for free tier user');
       alert('AI image generation is included when you unlock event creation (15 credits). Unlock to use AI features!');
       return;
     }
 
+    console.log('✅ Validation passed, generating image...');
     setIsGeneratingImage(true);
     try {
       const prompt = `${formData.name}: ${formData.description}. Category: ${formData.category}`;
+      console.log('🎯 Calling generateAdImage with prompt:', prompt.substring(0, 100) + '...');
+      
       // Don't save to storage (avoid Upload error) - use base64 directly
       const imageData = await generateAdImage(prompt, '16:9', false);
       
+      console.log('📦 Image data received:', imageData ? `${imageData.substring(0, 50)}... (${imageData.length} chars)` : 'null');
+      
       if (imageData) {
+        console.log('✅ Setting image preview');
         // Just set the preview - no need to convert to File since we're not uploading
         setImagePreview(imageData);
         // Clear any previously uploaded file
         setImageFile(null);
+        console.log('✅ AI image generation complete!');
       } else {
+        console.error('❌ No image data returned');
         alert('Failed to generate AI image. Please try again or upload manually.');
       }
     } catch (error) {
-      console.error('Error generating AI image:', error);
+      console.error('💥 Error generating AI image:', error);
       alert('AI image generation failed. Please try again or upload manually.');
     } finally {
       setIsGeneratingImage(false);
@@ -465,8 +480,18 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     setIsGenerating(false);
   };
 
-  const nextStep = () => setStep(s => Math.min(s + 1, 4));
-  const prevStep = () => setStep(s => Math.max(s - 1, 1));
+  const nextStep = () => {
+    console.log(`📍 Moving from step ${step} to step ${step + 1}`);
+    console.log('📋 Form data at step change:', formData);
+    console.log('🖼️ Image preview exists:', !!imagePreview);
+    console.log('📁 Image file exists:', !!imageFile);
+    setStep(s => Math.min(s + 1, 4));
+  };
+  
+  const prevStep = () => {
+    console.log(`📍 Moving back from step ${step} to step ${step - 1}`);
+    setStep(s => Math.max(s - 1, 1));
+  };
 
   const handlePublish = async () => {
     if (!formData.name || !formData.category || !formData.date || !formData.time) {
