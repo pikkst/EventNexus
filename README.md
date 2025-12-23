@@ -538,7 +538,7 @@ For issues, feature requests, or collaboration:
 
 **Built with** ❤️ **using React, Supabase, and Google Gemini**
 
-[View Live Demo](https://pikkst.github.io/EventNexus/) • [Documentation](docs/) • [Report Bug](https://github.com/pikkst/EventNexus/issues)
+[View Live Demo](https://www.eventnexus.eu) • [Documentation](docs/) • [Report Bug](https://github.com/pikkst/EventNexus/issues)
 
 Original AI Studio App: https://ai.studio/apps/drive/17KMoj3ueRhvdwmTUY8gPyW72wexD5tHG
 
