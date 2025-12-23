@@ -196,18 +196,16 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       const imageData = await generateAdImage(prompt, '16:9');
       
       if (imageData) {
+        // Just set the preview - no need to convert to File since we're not uploading
         setImagePreview(imageData);
-        // Convert base64 to File
-        const base64Response = await fetch(imageData);
-        const blob = await base64Response.blob();
-        const file = new File([blob], `ai-generated-${Date.now()}.png`, { type: 'image/png' });
-        setImageFile(file);
+        // Clear any previously uploaded file
+        setImageFile(null);
       } else {
-        alert('Failed to generate AI image. Please try uploading manually.');
+        alert('Failed to generate AI image. Please try again or upload manually.');
       }
     } catch (error) {
       console.error('Error generating AI image:', error);
-      alert('AI image generation failed. Please upload an image manually.');
+      alert('AI image generation failed. Please try again or upload manually.');
     } finally {
       setIsGeneratingImage(false);
     }
