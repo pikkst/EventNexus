@@ -108,8 +108,7 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onExpand }) => {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            console.log('Expand button clicked for ticket:', ticket.id);
-            onExpand();
+            onExpand && onExpand();
           }}
           className="absolute top-3 left-3 z-20 p-2.5 bg-indigo-600/90 hover:bg-indigo-500 text-white rounded-lg transition-all shadow-lg border border-indigo-500"
           title="View full ticket"

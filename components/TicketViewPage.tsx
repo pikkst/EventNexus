@@ -1,14 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { X, Calendar, MapPin, Ticket as TicketIcon, CheckCircle, XCircle, Clock, Download, Share2, ArrowLeft } from 'lucide-react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { X, Calendar, MapPin, Ticket as TicketIcon, CheckCircle, XCircle, Clock, Download, Share2, ArrowLeft, Printer } from 'lucide-react';
 import { generateTicketQRImage } from '../services/ticketService';
+import { getTicketById } from '../services/dbService';
 
 const TicketViewPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const ticket = (location.state as any)?.ticket;
+  const params = useParams();
+  const [ticket, setTicket] = useState<any | null>((location.state as any)?.ticket || null);
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Load ticket if coming from deep link
+    if (!ticket && params.id) {
+      (async () => {
+        const t = await getTicketById(params.id!);
+        if (t) setTicket(t);
+      })();
+    }
+  }, [params.id, ticket]);
 
   useEffect(() => {
     if (!ticket) return;
@@ -27,6 +39,15 @@ const TicketViewPage: React.FC = () => {
     document.body.style.filter = 'brightness(1.1)';
     return () => { document.body.style.filter = '' };
   }, [ticket]);
+
+  // ESC key closes page (navigates back)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') navigate('/profile');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navigate]);
 
   const getStatusColor = () => {
     switch (ticket?.status) {
@@ -77,7 +98,7 @@ const TicketViewPage: React.FC = () => {
 
   if (!ticket) {
     // If opened directly without state, go back to profile
-    useEffect(() => { navigate('/profile'); }, []);
+    useEffect(() => { navigate('/profile'); }, [navigate]);
     return (
       <div className="max-w-3xl mx-auto px-4 py-12">
         <button onClick={() => navigate('/profile')} className="flex items-center gap-2 text-slate-400 hover:text-white">
@@ -181,6 +202,10 @@ const TicketViewPage: React.FC = () => {
 
           {ticket.status === 'valid' && qrImage && (
             <div className="flex gap-3 pt-2">
+              <button onClick={() => window.print()} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-colors border border-slate-700">
+                <Printer className="w-5 h-5" />
+                Print
+              </button>
               <button onClick={handleDownload} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-colors border border-slate-700">
                 <Download className="w-5 h-5" />
                 Download

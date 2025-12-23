@@ -668,6 +668,32 @@ export const getUserTickets = async (userId: string) => {
   return data || [];
 };
 
+export const getTicketById = async (ticketId: string) => {
+  const { data, error } = await supabase
+    .from('tickets')
+    .select(`
+      *,
+      event:events!tickets_event_id_fkey(
+        id,
+        name,
+        date,
+        time,
+        location,
+        image
+      )
+    `)
+    .eq('id', ticketId)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching ticket by id:', error);
+    return null;
+  }
+
+  return data || null;
+};
+
 export const validateTicket = async (qrCodeData: string) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
