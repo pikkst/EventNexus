@@ -116,13 +116,14 @@ serve(async (req) => {
 
     const isOrganizer = ticket.event.organizer_id === user.id
     const isAdmin = userProfile?.role === 'admin'
+    const isTicketOwner = ticket.user_id === user.id
 
-    if (!isOrganizer && !isAdmin) {
+    if (!isOrganizer && !isAdmin && !isTicketOwner) {
       return new Response(
         JSON.stringify({ 
           valid: false, 
           error: 'Unauthorized',
-          message: 'You do not have permission to scan tickets for this event'
+          message: 'You do not have permission to scan this ticket'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
       )
