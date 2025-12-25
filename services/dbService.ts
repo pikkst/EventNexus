@@ -1645,3 +1645,178 @@ export const verifyConnectOnboarding = async (userId: string): Promise<{
     return null;
   }
 };
+
+// ============================================
+// Beta Invitations
+// ============================================
+
+export interface BetaInvitation {
+  id: string;
+  code: string;
+  email?: string;
+  used_by?: string;
+  redeemed_at?: string;
+  status: 'active' | 'used' | 'expired';
+  created_at: string;
+  expires_at: string;
+}
+
+/**
+ * Generate a batch of beta invitation codes
+ */
+export const generateBetaInvitations = async (count: number, expiryDays: number = 30): Promise<string[]> => {
+  try {
+    const codes: string[] = [];
+    const now = new Date();
+    const expiryDate = new Date(now.getTime() + expiryDays * 24 * 60 * 60 * 1000);
+
+    for (let i = 0; i < count; i++) {
+      const code = `BETA-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+      codes.push(code);
+    }
+
+    const invitations = codes.map(code => ({
+      code,
+      status: 'active',
+      created_at: now.toISOString(),
+      expires_at: expiryDate.toISOString()
+    }));
+
+    const { error } = await supabase
+      .from('beta_invitations')
+      .insert(invitations);
+
+    if (error) throw error;
+
+    console.log(`✅ Generated ${count} beta invitation codes`);
+    return codes;
+  } catch (error) {
+    console.error('Error generating beta invitations:', error);
+    return [];
+  }
+};
+
+/**
+ * Redeem a beta invitation code and give user credits
+ */
+export const redeemBetaInvitation = async (userId: string, code: string, creditsAmount: number = 1000): Promise<{ success: boolean; message: string }> => {
+  try {
+    // Check if code exists and is valid
+    const { data: invitation, error: fetchError } = await supabase
+      .from('beta_invitations')
+      .select('*')
+      .eq('code', code)
+      .single();
+
+    if (fetchError || !invitation) {
+      return { success: false, message: 'Invalid invitation code' };
+    }
+
+    if (invitation.status !== 'active') {
+      return { success: false, message: 'This invitation code has already been used or expired' };
+    }
+
+    const now = new Date();
+    if (new Date(invitation.expires_at) < now) {
+      return { success: false, message: 'This invitation code has expired' };
+    }
+
+    // Mark invitation as used
+    const { error: updateError } = await supabase
+      .from('beta_invitations')
+      .update({
+        status: 'used',
+        used_by: userId,
+        redeemed_at: now.toISOString()
+      })
+      .eq('id', invitation.id);
+
+    if (updateError) throw updateError;
+
+    // Add credits to user
+    const success = await addUserCredits(userId, creditsAmount);
+
+    if (success) {
+      return { 
+        success: true, 
+        message: `🎉 Welcome to the beta! You've received ${creditsAmount} credits!` 
+      };
+    } else {
+      return { 
+        success: false, 
+        message: 'Code validated but failed to add credits. Please contact support.' 
+      };
+    }
+  } catch (error) {
+    console.error('Error redeeming beta invitation:', error);
+    return { success: false, message: 'An error occurred while redeeming the code' };
+  }
+};
+
+/**
+ * Get all beta invitations for admin
+ */
+export const getBetaInvitations = async (): Promise<BetaInvitation[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('beta_invitations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching beta invitations:', error);
+    return [];
+  }
+};
+
+/**
+ * Get beta invitation stats for admin
+ */
+export const getBetaStats = async (): Promise<{
+  total: number;
+  active: number;
+  used: number;
+  expired: number;
+  creditsDistributed: number;
+}> => {
+  try {
+    const { data, error } = await supabase
+      .from('beta_invitations')
+      .select('status');
+
+    if (error) throw error;
+
+    const stats = {
+      total: data?.length || 0,
+      active: data?.filter(d => d.status === 'active').length || 0,
+      used: data?.filter(d => d.status === 'used').length || 0,
+      expired: data?.filter(d => d.status === 'expired').length || 0,
+      creditsDistributed: (data?.filter(d => d.status === 'used').length || 0) * 1000
+    };
+
+    return stats;
+  } catch (error) {
+    console.error('Error fetching beta stats:', error);
+    return { total: 0, active: 0, used: 0, expired: 0, creditsDistributed: 0 };
+  }
+};
+
+/**
+ * Revoke/Cancel a beta invitation
+ */
+export const revokeBetaInvitation = async (invitationId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('beta_invitations')
+      .update({ status: 'expired' })
+      .eq('id', invitationId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error revoking beta invitation:', error);
+    return false;
+  }
+};

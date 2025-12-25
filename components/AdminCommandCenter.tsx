@@ -29,6 +29,7 @@ import CampaignScheduler from './CampaignScheduler';
 import CampaignLearning from './CampaignLearning';
 import AutonomousOperations from './AutonomousOperations';
 import { SimplifiedSocialMediaManager } from './SimplifiedSocialMediaManager';
+import BetaInvitationManager from './BetaInvitationManager';
 import { 
   getEvents, 
   getAllUsers, 
@@ -461,6 +462,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     { id: 'autonomous', label: 'Autonomous Ops', icon: <Bot /> },
     { id: 'social-media', label: 'Social Media Hub', icon: <Share2 /> },
     { id: 'brand-protection', label: 'Brand Protection', icon: <Shield /> },
+    { id: 'beta-invitations', label: 'Beta Invitations', icon: <Gift /> },
     { id: 'financials', label: 'Nexus Economy', icon: <DollarSign /> },
     { id: 'settings', label: 'System Matrix', icon: <Settings /> },
     { id: 'infrastructure', label: 'System Health', icon: <Database /> },
@@ -991,6 +993,12 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         {activeTab === 'inbox' && (
           <div className="animate-in fade-in duration-500">
             <AdminInbox />
+          </div>
+        )}
+
+        {activeTab === 'beta-invitations' && (
+          <div className="animate-in fade-in duration-500">
+            <BetaInvitationManager />
           </div>
         )}
 

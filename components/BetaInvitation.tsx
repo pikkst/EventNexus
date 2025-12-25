@@ -1,10 +1,140 @@
-import React from 'react';
-import { Heart, Users, Zap, CheckCircle, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Heart, Users, Zap, CheckCircle, ArrowRight, Loader, AlertCircle } from 'lucide-react';
+import { redeemBetaInvitation, signUpUser, createUser } from '../services/dbService';
+import { getCurrentUser } from '../services/supabase';
 
 const BetaInvitation: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'info' | 'signup'>('info');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [betaCode, setBetaCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      // Validate inputs
+      if (!email || !password || !confirmPassword || !betaCode) {
+        setMessage({ type: 'error', text: 'Please fill in all fields' });
+        setLoading(false);
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setMessage({ type: 'error', text: 'Passwords do not match' });
+        setLoading(false);
+        return;
+      }
+
+      if (password.length < 6) {
+        setMessage({ type: 'error', text: 'Password must be at least 6 characters' });
+        setLoading(false);
+        return;
+      }
+
+      // First, redeem the beta code to validate it
+      const redemptionResult = await redeemBetaInvitation('temp-user-id', betaCode);
+      
+      if (!redemptionResult.success) {
+        setMessage({ type: 'error', text: redemptionResult.message });
+        setLoading(false);
+        return;
+      }
+
+      // Sign up user
+      const signupResult = await signUpUser(email, password);
+
+      if (signupResult.error) {
+        setMessage({ type: 'error', text: signupResult.error.message || 'Signup failed' });
+        setLoading(false);
+        return;
+      }
+
+      if (!signupResult.user) {
+        setMessage({ type: 'error', text: 'Signup failed. Please try again.' });
+        setLoading(false);
+        return;
+      }
+
+      // Create user profile with beta credits
+      const newUser = await createUser({
+        id: signupResult.user.id,
+        email: signupResult.user.email || '',
+        name: '',
+        role: 'attendee',
+        subscription_tier: 'free',
+        subscription: 'free',
+        credits: 1000,
+        credits_balance: 1000,
+        bio: '',
+        avatar_url: '',
+        agency_name: '',
+        agency_slug: '',
+        follow_count: 0,
+        followers: [],
+        following: [],
+        followed_events: []
+      });
+
+      if (newUser) {
+        setMessage({ 
+          type: 'success', 
+          text: '🎉 Welcome to the beta! Check your email to confirm your account. You have 1000 credits ready to use!' 
+        });
+        
+        // Clear form
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setBetaCode('');
+        
+        // Redirect after 3 seconds
+        setTimeout(() => {
+          window.location.href = '/#/';
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      setMessage({ type: 'error', text: 'An error occurred. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white pt-20 pb-12">
-      {/* Hero Section */}
+      {/* Tab Navigation */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+        <div className="flex gap-4 border-b border-slate-700">
+          <button
+            onClick={() => setActiveTab('info')}
+            className={`px-6 py-3 font-semibold transition-all ${
+              activeTab === 'info'
+                ? 'text-indigo-400 border-b-2 border-indigo-400'
+                : 'text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            About Beta
+          </button>
+          <button
+            onClick={() => setActiveTab('signup')}
+            className={`px-6 py-3 font-semibold transition-all ${
+              activeTab === 'signup'
+                ? 'text-indigo-400 border-b-2 border-indigo-400'
+                : 'text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            Join Now
+          </button>
+        </div>
+      </div>
+
+      {/* Info Tab */}
+      {activeTab === 'info' && (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-16">
         <div className="inline-block mb-6 px-4 py-2 bg-indigo-500/20 border border-indigo-500/50 rounded-full">
           <span className="text-sm font-semibold text-indigo-300">🚀 Limited Beta Access</span>
@@ -18,7 +148,10 @@ const BetaInvitation: React.FC = () => {
           EventNexus is transforming how people discover and experience events. We're looking for passionate beta testers to shape the future of event discovery.
         </p>
         
-        <button className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105">
+        <button 
+          onClick={() => setActiveTab('signup')}
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105"
+        >
           Join Our Beta Program <ArrowRight size={20} />
         </button>
       </div>
@@ -174,23 +307,123 @@ const BetaInvitation: React.FC = () => {
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border border-indigo-500/30 rounded-lg p-12">
-          <h2 className="text-3xl font-bold mb-6">Ready to Shape the Future of Events?</h2>
-          <p className="text-lg text-slate-300 mb-8">
-            Limited beta slots available. Join now and be part of something special.
-          </p>
-          <a 
-            href="https://www.eventnexus.eu/#/beta-signup"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 px-10 py-4 rounded-lg font-bold text-lg transition-all transform hover:scale-105"
-          >
-            Apply for Beta Access <ArrowRight size={20} />
-          </a>
+      )}
+
+      {/* Signup Tab */}
+      {activeTab === 'signup' && (
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700 rounded-lg p-8 backdrop-blur">
+            <h2 className="text-3xl font-bold mb-2 text-center">Join the Beta</h2>
+            <p className="text-center text-slate-300 mb-8">Create your account and get 1000 credits instantly!</p>
+
+            {message && (
+              <div className={`mb-6 p-4 rounded-lg flex gap-3 ${
+                message.type === 'error' 
+                  ? 'bg-red-500/20 border border-red-500/50 text-red-300' 
+                  : 'bg-green-500/20 border border-green-500/50 text-green-300'
+              }`}>
+                <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
+                <p>{message.text}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSignup} className="space-y-4">
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">Email Address</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                  required
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                  required
+                />
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm your password"
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                  required
+                />
+              </div>
+
+              {/* Beta Invitation Code */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">Beta Invitation Code</label>
+                <input
+                  type="text"
+                  value={betaCode}
+                  onChange={(e) => setBetaCode(e.target.value.toUpperCase())}
+                  placeholder="BETA-XXXXXXXXXXXX"
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-mono"
+                  required
+                />
+                <p className="text-xs text-slate-400 mt-1">You'll receive this code via email or Facebook</p>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-slate-600 disabled:to-slate-600 px-6 py-3 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 mt-6"
+              >
+                {loading ? (
+                  <>
+                    <Loader size={20} className="animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    Claim My 1000 Credits <CheckCircle size={20} />
+                  </>
+                )}
+              </button>
+
+              {/* Terms */}
+              <p className="text-xs text-slate-400 text-center mt-4">
+                By signing up, you agree to our{' '}
+                <a href="/#/terms" className="text-indigo-400 hover:text-indigo-300">Terms of Service</a>
+                {' '}and{' '}
+                <a href="/#/privacy" className="text-indigo-400 hover:text-indigo-300">Privacy Policy</a>
+              </p>
+            </form>
+
+            {/* Info Box */}
+            <div className="mt-8 p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
+              <h3 className="font-semibold text-indigo-300 mb-2">🎁 What You Get:</h3>
+              <ul className="text-sm text-slate-300 space-y-1">
+                <li>✓ 1000 credits to spend on events</li>
+                <li>✓ Early access to beta features</li>
+                <li>✓ Direct support from our team</li>
+                <li>✓ Lifetime founder status</li>
+              </ul>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
 export default BetaInvitation;
+
