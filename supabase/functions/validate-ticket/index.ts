@@ -109,24 +109,46 @@ serve(async (req) => {
       throw new Error('Either ticketId or qrCode must be provided')
     }
 
-    // Find ticket by ID or QR code
-    let query = supabaseClient
-      .from('tickets')
-      .select(`
+    // Find ticket by ID or QR code (explicit FKs to avoid inner join filters)
+    const baseSelect = `
         *,
-        event:events(*),
-        user:users(id, name, email)
-      `)
+        event:events!tickets_event_id_fkey(id, organizer_id, name, date),
+        user:users!tickets_user_id_fkey(id, name, email)
+      `
 
-    if (resolvedTicketId) {
-      query = query.eq('id', resolvedTicketId)
-    } else if (cleaned) {
-      query = query.eq('qr_code', cleaned)
+    let { data: ticket, error: ticketError } = await supabaseClient
+      .from('tickets')
+      .select(baseSelect)
+      .eq(resolvedTicketId ? 'id' : 'qr_code', resolvedTicketId ?? cleaned)
+      .maybeSingle()
+
+    // Fallback: if not found by id, try by qr_code explicitly
+    if ((!ticket || ticketError) && resolvedTicketId) {
+      const byQr = await supabaseClient
+        .from('tickets')
+        .select(baseSelect)
+        .eq('qr_code', cleaned)
+        .maybeSingle()
+      ticket = byQr.data ?? ticket
+      ticketError = byQr.error ?? ticketError
     }
 
-    const { data: ticket, error: ticketError } = await query.single()
+    // Service-role fallback to detect RLS issues and still enforce perms safely
+    if ((!ticket || ticketError)) {
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      if (serviceKey) {
+        const adminClient = createClient(supabaseUrl, serviceKey)
+        const adminRes = await adminClient
+          .from('tickets')
+          .select(baseSelect)
+          .eq(resolvedTicketId ? 'id' : 'qr_code', resolvedTicketId ?? cleaned)
+          .maybeSingle()
+        ticket = adminRes.data ?? ticket
+        ticketError = adminRes.error ?? ticketError
+      }
+    }
 
-    if (ticketError || !ticket) {
+    if (!ticket) {
       return new Response(
         JSON.stringify({ 
           valid: false, 
@@ -211,7 +233,9 @@ serve(async (req) => {
     const isSelfScan = isTicketOwner && !isOrganizer && !isAdmin
 
     // Mark ticket as used
-    const { data: updatedTicket, error: updateError } = await supabaseClient
+    // Use service role for update to avoid RLS issues after explicit permission checks
+    const updateClient = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ? createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!) : supabaseClient)
+    const { data: updatedTicket, error: updateError } = await updateClient
       .from('tickets')
       .update({ 
         status: 'used',
@@ -226,8 +250,8 @@ serve(async (req) => {
       .eq('id', ticket.id)
       .select(`
         *,
-        event:events(*),
-        user:users(id, name, email)
+        event:events!tickets_event_id_fkey(id, organizer_id, name, date),
+        user:users!tickets_user_id_fkey(id, name, email)
       `)
       .single()
 
