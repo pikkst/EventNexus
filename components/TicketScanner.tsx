@@ -4,7 +4,8 @@ import { Camera, X, CheckCircle, AlertCircle, RefreshCw, ShieldCheck, User as Us
 import { useNavigate } from 'react-router-dom';
 import QrScanner from 'qr-scanner';
 import { User as UserType } from '../types';
-import { validateTicket } from '../services/dbService';
+import { validateTicket, getTicketById } from '../services/dbService';
+import { parseQRCodeData } from '../services/ticketService';
 
 interface TicketScannerProps {
   user?: UserType;
@@ -15,6 +16,8 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
   const [result, setResult] = useState<null | { success: boolean; message: string; data?: any }>(null);
   const [hasCamera, setHasCamera] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [pendingScan, setPendingScan] = useState<null | { qrData: string; preview?: { name?: string; email?: string; eventName?: string } }>(null);
+  const lastScanRef = useRef<{ data: string; ts: number } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const qrScannerRef = useRef<QrScanner | null>(null);
   const navigate = useNavigate();
@@ -58,14 +61,46 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
   };
 
   const handleQRCodeScanned = async (qrData: string) => {
-    if (processing || !user) return;
+    if (!user) return;
+    // Throttle duplicate scans of same code within 3s
+    const now = Date.now();
+    if (lastScanRef.current && lastScanRef.current.data === qrData && (now - lastScanRef.current.ts) < 3000) {
+      return;
+    }
+    lastScanRef.current = { data: qrData, ts: now };
 
+    if (processing || pendingScan) return;
+
+    // Pause camera and ask for confirmation
+    stopCamera();
+    setPendingScan({ qrData });
+
+    // Try to load a preview for confirmation
+    const parsed = parseQRCodeData(qrData);
+    if (parsed?.ticketId) {
+      try {
+        const ticket = await getTicketById(parsed.ticketId);
+        if (ticket) {
+          setPendingScan({
+            qrData,
+            preview: {
+              name: ticket.user?.name || 'Attendee',
+              email: ticket.user?.email || '',
+              eventName: ticket.event?.name || 'Event'
+            }
+          });
+        }
+      } catch (e) {
+        // Ignore preview errors
+      }
+    }
+  };
+
+  const confirmCheckIn = async () => {
+    if (!pendingScan) return;
     setProcessing(true);
-    
     try {
-      // Validate ticket via backend
-      const validation = await validateTicket(qrData);
-      
+      const validation = await validateTicket(pendingScan.qrData);
       if (validation && validation.valid) {
         setResult({
           success: true,
@@ -89,24 +124,24 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
           } : null
         });
       }
-      
-      // Auto-clear result after 5 seconds
-      setTimeout(() => {
-        setResult(null);
-        setProcessing(false);
-      }, 5000);
     } catch (error) {
       console.error('Ticket validation failed:', error);
-      setResult({
-        success: false,
-        message: 'Validation Error',
-        data: null
-      });
+      setResult({ success: false, message: 'Validation Error', data: null });
+    } finally {
+      setPendingScan(null);
+      // Auto-clear result after 4 seconds, then resume camera
       setTimeout(() => {
         setResult(null);
         setProcessing(false);
-      }, 3000);
+        startCamera();
+      }, 4000);
     }
+  };
+
+  const cancelCheckIn = () => {
+    setPendingScan(null);
+    // Small delay to avoid immediate re-trigger
+    setTimeout(() => startCamera(), 300);
   };
 
   useEffect(() => {
@@ -192,6 +227,45 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
             Align {isEnterprise ? user?.name : 'Nexus'} Ticket
           </p>
         </div>
+
+        {/* Confirmation Overlay */}
+        {pendingScan && !result && (
+          <div className="absolute inset-0 flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
+            <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-[32px] p-8 shadow-2xl space-y-6">
+              <div className="flex flex-col items-center text-center">
+                <Camera className="w-14 h-14 text-indigo-400 mb-3" />
+                <h2 className="text-2xl font-black tracking-tight text-white">Confirm Check-in</h2>
+                <p className="text-slate-400 text-sm mt-1">Review attendee before marking ticket as used</p>
+              </div>
+              {pendingScan.preview && (
+                <div className="bg-slate-800/50 rounded-2xl p-4 space-y-3 border border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: brandColor }}>
+                      <UserIcon className="w-5 h-5" />
+                    </div>
+                    <div className="text-left flex-1">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Attendee</p>
+                      <p className="font-bold text-white">{pendingScan.preview.name}</p>
+                      {pendingScan.preview.email && (
+                        <p className="text-xs text-slate-400">{pendingScan.preview.email}</p>
+                      )}
+                    </div>
+                  </div>
+                  {pendingScan.preview.eventName && (
+                    <div className="text-left">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Event</p>
+                      <p className="font-bold text-indigo-400">{pendingScan.preview.eventName}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button onClick={confirmCheckIn} className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold">Confirm Check-in</button>
+                <button onClick={cancelCheckIn} className="flex-1 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold">Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Result Overlay */}
         {result && (
