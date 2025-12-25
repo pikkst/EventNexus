@@ -37,16 +37,7 @@ const BetaInvitation: React.FC = () => {
         return;
       }
 
-      // First, redeem the beta code to validate it
-      const redemptionResult = await redeemBetaInvitation('temp-user-id', betaCode);
-      
-      if (!redemptionResult.success) {
-        setMessage({ type: 'error', text: redemptionResult.message });
-        setLoading(false);
-        return;
-      }
-
-      // Sign up user
+      // Sign up user first
       const signupResult = await signUpUser(email, password);
 
       if (signupResult.error) {
@@ -61,7 +52,7 @@ const BetaInvitation: React.FC = () => {
         return;
       }
 
-      // Create user profile with beta credits
+      // Create user profile
       const newUser = await createUser({
         id: signupResult.user.id,
         email: signupResult.user.email || '',
@@ -70,7 +61,7 @@ const BetaInvitation: React.FC = () => {
         subscription_tier: 'free',
         subscription: 'free',
         credits: 1000,
-        credits_balance: 1000,
+        credits_balance: 0, // Will be updated after redeeming beta code
         bio: '',
         avatar_url: '',
         agency_name: '',
@@ -81,7 +72,24 @@ const BetaInvitation: React.FC = () => {
         followed_events: []
       });
 
-      if (newUser) {
+      if (!newUser) {
+        setMessage({ type: 'error', text: 'Account created but profile failed. Please contact support.' });
+        setLoading(false);
+        return;
+      }
+
+      // Now redeem the beta code with the actual user ID
+      const redemptionResult = await redeemBetaInvitation(signupResult.user.id, betaCode);
+      // Now redeem the beta code with the actual user ID
+      const redemptionResult = await redeemBetaInvitation(signupResult.user.id, betaCode);
+      
+      if (!redemptionResult.success) {
+        setMessage({ type: 'error', text: redemptionResult.message });
+        setLoading(false);
+        return;
+      }
+
+      if (redemptionResult.success) {
         setMessage({ 
           type: 'success', 
           text: '🎉 Welcome to the beta! Check your email to confirm your account. You have 1000 credits ready to use!' 
