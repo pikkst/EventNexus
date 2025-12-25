@@ -74,7 +74,7 @@ const AnalyticsTracker: React.FC = () => {
   useEffect(() => {
     const gtag = (window as any).gtag;
     if (!gtag) {
-      console.warn('GA not ready');
+      console.warn('GA not ready (AnalyticsTracker)');
       return;
     }
 
@@ -83,6 +83,7 @@ const AnalyticsTracker: React.FC = () => {
 
     gtag('config', 'G-JD7P5ZKF4L', { page_path, page_location });
     gtag('event', 'page_view', { page_path, page_location });
+    console.log('GA page_view sent', { page_path, page_location });
   }, [location]);
 
   return null;
@@ -167,6 +168,7 @@ const App: React.FC = () => {
       script.async = true;
       script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
       document.head.appendChild(script);
+      console.log('GA fallback: injected gtag.js script');
     }
 
     (window as any).dataLayer = (window as any).dataLayer || [];
