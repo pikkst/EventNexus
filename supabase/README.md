@@ -1,6 +1,6 @@
 # EventNexus - Supabase Backend
 
-Backend assets live here: migrations, Edge Functions, and project config. Apply migrations in timestamp order and deploy functions after updating secrets.
+Backend assets live here: migrations, Edge Functions, and project config. Apply migrations in timestamp order and deploy functions after updating secrets. For a concise map, see [CATALOG.md](CATALOG.md).
 
 ## Directory Layout
 

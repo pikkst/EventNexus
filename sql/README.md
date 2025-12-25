@@ -1,6 +1,6 @@
 # EventNexus Database Scripts
 
-SQL scripts for managing the EventNexus Supabase database schema. See [INDEX.md](INDEX.md) for a categorized list.
+SQL scripts for managing the EventNexus Supabase database schema. See [INDEX.md](INDEX.md) for a categorized list and [CATALOG.md](CATALOG.md) for a quick-glance map of folders and high-touch scripts.
 
 ## Directory Layout
 - `manual-checks/` - One-off validation scripts that inspect current state.
