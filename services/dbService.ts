@@ -702,11 +702,6 @@ export const validateTicket = async (qrCodeData: string) => {
       throw new Error('Not authenticated - please sign in again');
     }
 
-    console.log('Validating ticket with session:', {
-      hasToken: !!session.access_token,
-      tokenPrefix: session.access_token.substring(0, 20) + '...'
-    });
-
     const { data, error } = await supabase.functions.invoke('validate-ticket', {
       body: { qrCode: qrCodeData },
       headers: {
@@ -718,8 +713,6 @@ export const validateTicket = async (qrCodeData: string) => {
       console.error('Edge function error:', error);
       throw error;
     }
-    
-    console.log('Validation response:', data);
     return data;
   } catch (error) {
     console.error('Error validating ticket:', error);
