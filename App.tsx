@@ -65,6 +65,27 @@ import {
   signOutUser
 } from './services/dbService';
 
+// Track page views for HashRouter routes in Google Analytics
+const AnalyticsTracker: React.FC = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const gtag = (window as any).gtag;
+    if (!gtag) {
+      console.warn('GA not ready');
+      return;
+    }
+
+    const page_path = `${location.pathname}${location.search}${location.hash}`;
+    const page_location = window.location.href;
+
+    gtag('config', 'G-JD7P5ZKF4L', { page_path, page_location });
+    gtag('event', 'page_view', { page_path, page_location });
+  }, [location]);
+
+  return null;
+};
+
 // Real user data will be loaded from Supabase
 
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -478,6 +499,7 @@ const App: React.FC = () => {
 
   return (
     <Router>
+      <AnalyticsTracker />
       <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
         {/* Loading overlay for initial authentication */}
         {isLoading && (
