@@ -36,30 +36,42 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
     
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ 
+          valid: false,
+          error: 'Missing authorization header',
+          message: 'Please sign in to scan tickets'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
     console.log('Edge function config:', {
       url: supabaseUrl,
       hasKey: !!supabaseKey,
-      hasAuth: !!authHeader,
-      authPrefix: authHeader ? authHeader.substring(0, 30) + '...' : 'MISSING'
+      hasAuth: !!authHeader
     });
 
+    // Create client with user's JWT for RLS
     const supabaseClient = createClient(
       supabaseUrl,
       supabaseKey,
       {
         global: {
-          headers: { Authorization: authHeader || '' },
+          headers: { Authorization: authHeader },
         },
       }
     )
 
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    // Verify JWT and extract user
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
+    
     console.log('Auth result:', { 
       hasUser: !!user, 
       userId: user?.id,
-      error: authError?.message,
-      errorDetails: JSON.stringify(authError)
+      error: authError?.message
     });
     
     if (authError || !user) {
@@ -68,7 +80,7 @@ serve(async (req) => {
         JSON.stringify({ 
           valid: false,
           error: 'Authentication failed',
-          message: authError?.message || 'Not authenticated',
+          message: authError?.message || 'Invalid or expired token',
           details: authError
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
