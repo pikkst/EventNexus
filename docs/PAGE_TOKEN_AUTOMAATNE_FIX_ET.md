@@ -1,166 +1,36 @@
-# Facebook Page Token Automaatne Hankimine - Parandus
+# Facebook Page Token Auto-Retrieval Fix (English)
 
-## Probleem
-OAuth voog salvestas USER tokeni, kuid Facebook vajab PAGE tokeni postitamiseks. Kui admin valis lehekülgi autoriseerimise ajal, ei saanud rakendus lehekülgede ID-sid ja tokeneid kätte.
+This replaces the previous Estonian note. Use this guide to ensure Facebook Page tokens are captured and stored.
 
-## Lahendus
+## Problem
+The OAuth flow saved only the user token. Posting to Pages requires a Page token, but page IDs/tokens were not fetched when authorizing pages.
 
-### 1. OAuth Scope Uuendus
-**Fail:** `services/socialAuthHelper.ts`
+## Fix Summary
+1. **Add OAuth scope** in `services/socialAuthHelper.ts` to include `pages_show_list` so `/me/accounts` returns pages.
+2. **Exchange tokens**:
+   - Short-lived user token → long-lived user token (60 days) via `/oauth/access_token`.
+   - Long-lived user token → Page token list via `/me/accounts?fields=id,name,access_token,category,instagram_business_account`.
+   - Select a Page token (Page tokens do not expire) and store it.
+3. **Improved errors and logging** to guide admins when no pages or no Instagram business accounts are present.
 
-Lisatud `pages_show_list` Facebook OAuth scope'i:
-```typescript
-facebook: 'pages_manage_posts,pages_read_engagement,pages_show_list,instagram_basic,instagram_content_publish'
-```
+## Steps to Apply
+1. Ensure the code includes `pages_show_list` in the Facebook scopes.
+2. Run the scope update SQL if needed: [sql/tokens/update_oauth_scope_with_pages_list.sql](../sql/tokens/update_oauth_scope_with_pages_list.sql).
+3. Disconnect and reconnect Facebook in the Social Media Manager, selecting the target Pages and granting all permissions.
+4. Watch console logs for the three-step exchange and Page verification.
 
-See tagab, et `/me/accounts` tagastab lehekülgede nimekirja.
+## Testing
+1. Reconnect Facebook via the admin Social Media Manager and choose a Page.
+2. Post a campaign to Facebook and confirm logs show long-lived token retrieval, page listing, and page token verification.
+3. Confirm database updates by posting and checking SocialMediaManager console logs for success and DB update messages.
 
-### 2. Pikaajaliste Tokenite Vahetus
-**Uus funktsioon:** 3-astmeline protsess nii Facebooki kui Instagrami jaoks
+## Notes
+- Page posting requires a Facebook Page (not just a profile) and admin access to that Page.
+- Instagram posting requires an Instagram Business Account linked to a Facebook Page with admin rights.
 
-#### Facebook Voog:
-```
-1. Lühiajaline USER token → Pikaajaline USER token (60 päeva)
-   GET /oauth/access_token?grant_type=fb_exchange_token&...
-   
-2. Pikaajaline USER token → PAGE tokenite nimekiri
-   GET /me/accounts?fields=id,name,access_token,category
-   
-3. Valitakse esimene lehekülje token (PAGE tokenid ei aegu kunagi)
-   Salvestatakse andmebaasi
-```
+## Related Files
+- `services/socialAuthHelper.ts` – OAuth scopes and token exchange
+- [sql/tokens/update_oauth_scope_with_pages_list.sql](../sql/tokens/update_oauth_scope_with_pages_list.sql) – database scope update
 
-#### Instagram Voog:
-```
-1. Lühiajaline USER token → Pikaajaline USER token (60 päeva)
-   
-2. Pikaajaline USER token → Lehekülgede nimekiri koos Instagram Business Account ID-dega
-   GET /me/accounts?fields=id,name,access_token,instagram_business_account
-   
-3. Leitakse leheküljed, millel on Instagram Business Account
-   
-4. Kasutatakse PAGE tokenit Instagram API kutsete jaoks
-```
-
-### 3. Parandatud Veakäsitlus
-
-**Kui `/me/accounts` tagastab tühja massiivi:**
-```typescript
-throw new Error(
-  'No Facebook Pages found. To post to Facebook, you need:\n' +
-  '1. A Facebook Page (not just personal profile)\n' +
-  '2. Admin access to that Page\n' +
-  '3. Select the Page during authorization\n' +
-  '4. Grant all requested permissions\n\n' +
-  'Create a Page at: https://www.facebook.com/pages/create'
-);
-```
-
-**Kui lehekülgedel puudub Instagram Business Account:**
-```typescript
-throw new Error(
-  'None of your Facebook Pages have an Instagram Business Account connected.\n' +
-  'Connect your Instagram at: https://www.facebook.com/settings?tab=business_tools'
-);
-```
-
-### 4. Üksikasjalik Logimine
-
-Iga samm logitakse:
-```javascript
-console.log('🔄 Step 1: Exchanging for long-lived user token...');
-console.log('✅ Got long-lived user token (expires in X seconds)');
-console.log('🔄 Step 2: Fetching Facebook Pages...');
-console.log('📄 Facebook Pages response:', { pageCount, pagesWithIG, error });
-console.log('✅ Using Facebook Page:', { id, name, category });
-console.log('🔄 Step 3: Verifying Page token...');
-console.log('✅ Page token verified successfully');
-```
-
-## Testimiseks
-
-### 1. Uuenda OAuth Scope Andmebaasis
-```bash
-# Käivita Supabase SQL Editoris
-cat sql/update_oauth_scope_with_pages_list.sql
-```
-
-### 2. Katkesta ja Ühenda Uuesti Facebook
-1. Admin paneelil → Social Media Manager
-2. Katkesta Facebook ühendus
-3. Klikka "Connect Facebook"
-4. **OLULINE:** OAuth dialoogis **vali konkreetne Facebook leheküljed**, mida soovid kasutada
-5. Anna kõik küsitud õigused
-
-### 3. Kontrolli Konsoolilogid
-Peaksid nägema:
-```
-🔄 Step 1: Exchanging for long-lived user token...
-✅ Got long-lived user token (expires in 5183999 seconds)
-🔄 Step 2: Fetching Facebook Pages...
-📄 Facebook Pages response: { hasData: true, pageCount: 1, error: undefined }
-✅ Using Facebook Page: { id: '864504226754704', name: 'EventNexus', category: 'Event' }
-🔄 Step 3: Verifying Page token...
-✅ Page token verified successfully
-```
-
-### 4. Testi Postitamist
-1. Loo või vali kampaania
-2. Klikka "Post to Facebook"
-3. Peaksid nägema:
-```
-📘 Starting Facebook post...
-✅ Posted to Facebook: 123456789_987654321
-✅ Database updated successfully
-```
-
-## Tehnilised Detailid
-
-### Token Tüübid
-- **USER Token:** Isiklik juurdepääs, EI SAA postitada lehtedele
-- **PAGE Token:** Lehekülge-spetsiifiline, SAAB postitada
-- **Lühiajaline:** 1-2 tundi
-- **Pikaajaline:** 60 päeva (USER tokenid) või kunagi ei aegu (PAGE tokenid)
-
-### Miks `/me/accounts` Tagastas Varem Tühja?
-Võimalikud põhjused:
-1. ❌ Puudus `pages_show_list` scope
-2. ❌ Admin ei valinud lehekülge OAuth dialoogis
-3. ❌ Admin pole lehekülge admin
-4. ❌ Lühiajaline token aegus enne `/me/accounts` kutsumist
-
-### Parandus
-✅ Lisatud `pages_show_list` scope  
-✅ Vahetatakse kohe pikaajalise tokeni vastu  
-✅ Selged juhised, kui lehekülgi ei leita  
-✅ Logitakse iga samm debugimiseks  
-
-## Kasutaja Nõuded
-
-### Facebook Postitamiseks:
-- Facebook leheküljed (mitte ainult isiklik profiil)
-- Admin õigused lehel
-- Lehekülg valitud OAuth ajal
-
-### Instagram Postitamiseks:
-- Instagram Business Account
-- Ühendatud Facebook lehega
-- Leheküljel admin õigused
-
-## Failid Muudetud
-- `services/socialAuthHelper.ts` - OAuth voog ja tokeni vahetus
-- `sql/update_oauth_scope_with_pages_list.sql` - Andmebaasi scope uuendus
-
-## Järgmised Sammud
-1. Käivita SQL uuendus
-2. Katkesta olemasolevad ühendused
-3. Ühenda uuesti kõik kontod
-4. Testi postitamist
-5. Kontrolli `user_campaigns` ja `social_media_posts` tabeleid
-
-## Tugi
-Kui `/me/accounts` endiselt tagastab tühja:
-1. Kontrolli Facebook lehekülge olemust
-2. Kinnita admin rolli
-3. Kontrolli OAuth õiguste andmist
-4. Vaata konsoolilogisid üksikasjalike vigade jaoks
+## Support
+If `/me/accounts` still returns empty, verify the Page exists, you are an admin, and all requested permissions were granted. For help: huntersest@gmail.com

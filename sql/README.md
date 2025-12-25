@@ -1,6 +1,11 @@
 # EventNexus Database Scripts
 
-SQL scripts for managing the EventNexus Supabase database schema.
+SQL scripts for managing the EventNexus Supabase database schema. See [INDEX.md](INDEX.md) for a categorized list.
+
+## Directory Layout
+- `manual-checks/` - One-off validation scripts that inspect current state.
+- `hotfixes/` - Targeted fixes and recovery scripts captured from incidents.
+- `stripe/` - Stripe-specific policies and verification queries.
 
 ## 📋 Available Scripts
 

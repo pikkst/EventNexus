@@ -7,7 +7,7 @@
 ### 1. ✅ RLS Policy Blocking stripe_public_key (406 Error)
 **Problem:** Users couldn't read `stripe_public_key` from `system_config` table
 **Solution:** Created new RLS policy allowing anyone to read `stripe_public_key`
-**File:** `FIX_STRIPE_PUBLIC_KEY_RLS.sql` (executed in Supabase SQL Editor)
+**File:** `sql/stripe/FIX_STRIPE_PUBLIC_KEY_RLS.sql` (executed in Supabase SQL Editor)
 
 ### 2. ✅ Missing STRIPE_SECRET_KEY (400 Error)
 **Problem:** Edge Function had no secret key, couldn't create Stripe sessions
@@ -84,8 +84,8 @@ https://www.eventnexus.eu/#/pricing
 ## Files Created/Modified
 
 ### SQL Scripts
-- `FIX_STRIPE_PUBLIC_KEY_RLS.sql` - RLS policy fix (EXECUTED)
-- `CHECK_STRIPE_CONFIG.sql` - Verification queries
+- `sql/stripe/FIX_STRIPE_PUBLIC_KEY_RLS.sql` - RLS policy fix (EXECUTED)
+- `sql/stripe/CHECK_STRIPE_CONFIG.sql` - Verification queries
 - `sql/check_and_update_stripe_key.sql` - Update utilities
 
 ### Migrations
@@ -93,8 +93,8 @@ https://www.eventnexus.eu/#/pricing
 
 ### Documentation
 - `STRIPE_SUBSCRIPTION_ERROR_FIX.md` - Full troubleshooting guide
-- `STRIPE_SECRET_KEY_SETUP.txt` - Quick reference
-- `QUICK_FIX_STRIPE.txt` - 2-minute guide
+- `STRIPE_SECRET_KEY_SETUP.md` - Quick reference
+- `QUICK_FIX_STRIPE.md` - 2-minute guide
 - `STRIPE_FIX_COMPLETED.md` - This file
 
 ### Scripts

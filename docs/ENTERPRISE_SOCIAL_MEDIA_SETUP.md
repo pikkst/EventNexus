@@ -17,7 +17,7 @@ Enterprise and Premium users now have their own social media management capabili
 ## Setup Instructions
 
 ### 1. Create User Campaigns Table
-Open Supabase SQL Editor and run: `/workspaces/EventNexus/sql/create_user_campaigns.sql`
+Open Supabase SQL Editor and run: `/workspaces/EventNexus/sql/hotfixes/create_user_campaigns.sql`
 
 This creates:
 - ✅ `user_campaigns` table with user_id column
@@ -146,7 +146,7 @@ SELECT * FROM user_campaigns; -- Should only see own campaigns
 ## Troubleshooting
 
 ### "relation user_campaigns does not exist"
-- Run `create_user_campaigns.sql` in Supabase SQL Editor
+- Run `sql/hotfixes/create_user_campaigns.sql` in Supabase SQL Editor
 
 ### "permission denied for table user_campaigns"
 - Check RLS policies are created

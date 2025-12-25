@@ -96,7 +96,7 @@ WHERE config_key = 'instagram_oauth_scope';
 
 Or use the file:
 ```bash
-# Copy content from sql/update_oauth_scope_with_pages_list.sql
+# Copy content from sql/tokens/update_oauth_scope_with_pages_list.sql
 # Paste into Supabase SQL Editor
 # Run the query
 ```
@@ -165,7 +165,7 @@ Possible reasons:
 
 ## Files Modified
 - `services/socialAuthHelper.ts` - OAuth flow and token exchange
-- `sql/update_oauth_scope_with_pages_list.sql` - Database scope update
+- `sql/tokens/update_oauth_scope_with_pages_list.sql` - Database scope update
 - `docs/PAGE_TOKEN_AUTOMAATNE_FIX_ET.md` - Estonian documentation
 
 ## Next Steps

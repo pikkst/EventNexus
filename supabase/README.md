@@ -1,249 +1,66 @@
-# EventNexus - Supabase Backend Setup
+# EventNexus - Supabase Backend
 
-This directory contains all backend infrastructure for EventNexus:
-- SQL database migrations
-- Edge Functions (serverless functions)
+Backend assets live here: migrations, Edge Functions, and project config. Apply migrations in timestamp order and deploy functions after updating secrets.
 
-## 📁 Directory Structure
+## Directory Layout
 
 ```
 supabase/
-├── migrations/          # SQL migration files
-│   ├── 20250101000001_complete_schema.sql
-│   ├── 20250101000002_realtime_setup.sql
-│   └── 20250101000003_analytics_functions.sql
-├── functions/           # Edge Functions
-│   ├── proximity-radar/
-│   ├── platform-stats/
-│   ├── infrastructure-stats/
-│   └── validate-ticket/
-└── deploy-functions.sh  # Deployment script
+├── README.md
+├── config.toml                  # Supabase CLI project config
+├── deploy-functions.sh          # Deploy all Edge Functions
+├── test-functions.sh            # Smoke tests for functions
+├── migrations/                  # Ordered SQL migrations (timestamped)
+├── functions/                   # Edge Functions source
+├── supabase/                    # Supabase CLI metadata
+└── .temp/                       # Supabase CLI scratch (keep in repo root)
 ```
 
-## 🚀 Setup Instructions
+## Migrations (run in timestamp order)
 
-### 1. Apply SQL Migrations
+- Guardrails: `00000000000000_check_database_state.sql`, `00000000000001_safe_migration.sql`.
+- Core platform: `20250101000001_complete_schema.sql`, `20250101000002_realtime_setup.sql`, `20250101000003_analytics_functions.sql`.
+- Social + AI: `20250120000001_social_media_integration.sql`, `20250122000000_add_social_tracking_to_user_campaigns.sql`.
+- Payments & subscriptions: `20251219160500_add_stripe_subscription_id.sql`, `20251219162600_fix_subscription_status_constraint.sql`, `20251219163000_subscription_payments_table.sql`, `20251219163200_fix_revenue_by_tier_subscriptions.sql`, `20251223000002_fix_stripe_public_key_access.sql`.
+- Engagement & content: `20251220000001_add_followed_organizers.sql`, `20251222000001_add_event_likes.sql`, `20251222000002_free_tier_credit_system.sql`, `20251222000003_event_image_storage.sql`.
+- Ticketing: `20250220000000_ticket_system_enhancement.sql`, `20251225000001_allow_ticket_scan_updates.sql`.
+- Infrastructure fixes: `20241221000003_fix_system_config_rls.sql`, `20241221000004_system_config_complete.sql`, `20250119000005_setup_avatars_storage.sql`.
 
-Open Supabase SQL Editor and run migrations in order:
+> Apply all migrations sequentially; do not skip earlier files. For RLS or key fixes, re-run the specific migration if policies drift.
 
-1. **Complete Schema** (`20250101000001_complete_schema.sql`)
-   - Creates all tables (users, events, notifications, tickets, etc.)
-   - Sets up indexes and relationships
-   - Implements Row Level Security (RLS) policies
-   - Creates utility functions (distance calculation, nearby events, etc.)
-   - Sets up triggers for automatic updates
+## Edge Functions (functions/)
 
-2. **Realtime Setup** (`20250101000002_realtime_setup.sql`)
-   - Enables real-time subscriptions for notifications
-   - Sets up event broadcasting
+- Payments & subscriptions: `create-checkout`, `verify-checkout`, `cancel-subscription`, `stripe-webhook`, `verify-connect-onboarding`, `create-connect-account`, `get-connect-dashboard-link`, `process-scheduled-payouts`, `request-refund`.
+- Campaigns & social: `campaign-auto-poster`, `autonomous-operations`, `facebook-data-deletion`, `facebook-deauthorize`, `facebook-webhook`, `instagram-data-deletion`, `instagram-deauthorize`, `instagram-webhook`.
+- Events, tickets, notifications: `proximity-radar`, `validate-ticket`, `receive-email`, `send-email-reply`, `brand-monitoring`.
+- Ops & analytics: `platform-stats`, `infrastructure-stats`, `diagnostic-scan`.
 
-3. **Analytics Functions** (`20250101000003_analytics_functions.sql`)
-   - Creates analytics and statistics functions
-   - Sets up platform metrics calculation
-
-### 2. Deploy Edge Functions
-
-Edge Functions are deployed automatically via the deployment script:
+Deploy everything with the helper script:
 
 ```bash
-# Make script executable
 chmod +x supabase/deploy-functions.sh
-
-# Run deployment
 ./supabase/deploy-functions.sh
 ```
 
-Or manually deploy each function:
+Or deploy an individual function:
 
 ```bash
-# Login to Supabase
-supabase login
-
-# Deploy each function
 supabase functions deploy proximity-radar --project-ref anlivujgkjmajkcgbaxw
-supabase functions deploy platform-stats --project-ref anlivujgkjmajkcgbaxw
-supabase functions deploy infrastructure-stats --project-ref anlivujgkjmajkcgbaxw
-supabase functions deploy validate-ticket --project-ref anlivujgkjmajkcgbaxw
 ```
 
-## 📊 Database Schema
+## Secrets & Configuration
 
-### Tables
+- Stripe: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_PREMIUM`, `STRIPE_PRICE_ENTERPRISE`.
+- Connect onboarding: `STRIPE_ACCOUNT_LINK_RETURN_URL`, `STRIPE_ACCOUNT_LINK_REFRESH_URL` (if configured).
+- Email (if used): service credentials for `receive-email` / `send-email-reply`.
+- Ensure PostGIS and realtime are enabled in the project before running proximity features.
 
-- **users** - User accounts with roles and preferences
-- **events** - Events with geospatial location support (PostGIS)
-- **notifications** - User notifications with types (proximity, updates, etc.)
-- **tickets** - Event tickets with QR codes and status tracking
-- **event_analytics** - Daily analytics per event
-- **platform_metrics** - Platform-wide statistics
-- **user_sessions** - Session tracking for monitoring
+## Testing & Verification
 
-### Key Features
+- Quick smoke: `./supabase/test-functions.sh` (adjust executable bit if needed).
+- Logs: `supabase functions logs <function> --project-ref anlivujgkjmajkcgbaxw`.
+- Policy checks: use the SQL in `sql/stripe/CHECK_STRIPE_CONFIG.sql` and other `sql/manual-checks/*` scripts for targeted verification.
 
-- **Geospatial Queries**: PostGIS extension for location-based features
-- **Row Level Security**: All tables protected with RLS policies
-- **Real-time Subscriptions**: Live updates for notifications and events
-- **Automatic Triggers**: Updated_at timestamps, location point calculations
-- **Analytics Functions**: Pre-built functions for statistics and metrics
+## Support
 
-## 🔧 Edge Functions
-
-### 1. proximity-radar
-
-**Purpose**: Checks for nearby events based on user location
-
-**Input**:
-```json
-{
-  "userId": "uuid",
-  "latitude": 40.7128,
-  "longitude": -74.0060
-}
-```
-
-**Output**:
-```json
-{
-  "success": true,
-  "nearbyEvents": [...],
-  "newNotifications": [...],
-  "totalNearby": 5,
-  "notificationsSent": 2
-}
-```
-
-### 2. platform-stats
-
-**Purpose**: Returns comprehensive platform statistics (admin only)
-
-**Input**: None (uses authentication token)
-
-**Output**:
-```json
-{
-  "totalEvents": 150,
-  "totalUsers": 5000,
-  "totalRevenue": 125000,
-  "revenueByTier": [...],
-  ...
-}
-```
-
-### 3. infrastructure-stats
-
-**Purpose**: Returns infrastructure monitoring data (admin only)
-
-**Output**:
-```json
-{
-  "clusterUptime": 99.97,
-  "apiLatency": 12,
-  "dbConnections": 245,
-  "systemLogs": [...],
-  ...
-}
-```
-
-### 4. validate-ticket
-
-**Purpose**: Validates and marks tickets as used
-
-**Input**:
-```json
-{
-  "ticketId": "uuid",
-  // OR
-  "qrCode": "EVNX-ABC123"
-}
-```
-
-**Output**:
-```json
-{
-  "valid": true,
-  "message": "Ticket validated successfully",
-  "ticket": {...}
-}
-```
-
-## 🔐 Security
-
-- All Edge Functions require authentication
-- RLS policies enforce data access control
-- Admin-only functions verify user role
-- QR code validation checks organizer permissions
-- All sensitive operations are logged
-
-## 📝 Database Functions
-
-### get_nearby_events(lat, lon, radius)
-Returns events within specified radius of a location.
-
-### calculate_distance(lat1, lon1, lat2, lon2)
-Calculates distance between two geographic points in km.
-
-### update_event_analytics(event_id, views, sales, revenue)
-Updates or inserts daily analytics for an event.
-
-### get_platform_statistics()
-Returns comprehensive platform statistics.
-
-### get_infrastructure_statistics()
-Returns infrastructure monitoring data.
-
-### get_event_performance(event_id)
-Returns detailed performance metrics for an event.
-
-### get_user_activity_summary(user_id)
-Returns activity summary for a user.
-
-## 🧪 Testing
-
-After deployment, test functions using curl:
-
-```bash
-# Test proximity radar
-curl -X POST \
-  'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/proximity-radar' \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"userId":"uuid","latitude":40.7128,"longitude":-74.0060}'
-
-# Test platform stats
-curl -X POST \
-  'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/platform-stats' \
-  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
-```
-
-## 🐛 Troubleshooting
-
-### Edge Function Errors
-
-Check function logs:
-```bash
-supabase functions logs proximity-radar --project-ref anlivujgkjmajkcgbaxw
-```
-
-### Database Connection Issues
-
-Verify connection in SQL Editor:
-```sql
-SELECT current_database(), current_user;
-```
-
-### RLS Policy Issues
-
-Temporarily disable for testing (don't use in production):
-```sql
-ALTER TABLE users DISABLE ROW LEVEL SECURITY;
-```
-
-## 📚 Additional Resources
-
-- [Supabase Edge Functions Docs](https://supabase.com/docs/guides/functions)
-- [PostGIS Documentation](https://postgis.net/docs/)
-- [Row Level Security Guide](https://supabase.com/docs/guides/auth/row-level-security)
-
-## 📧 Support
-
-For issues or questions, contact: huntersest@gmail.com
+For operational issues email: huntersest@gmail.com
