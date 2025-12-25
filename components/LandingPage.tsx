@@ -85,9 +85,30 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
   return (
     <div className="space-y-24 pb-24">
+      {/* Beta Testing Banner */}
+      <section className="px-4 pt-10">
+        <a href="/#/beta" className="block">
+          <div className="max-w-7xl mx-auto bg-gradient-to-r from-purple-900/50 to-indigo-900/50 border border-purple-500/50 rounded-[32px] p-6 md:p-8 hover:border-purple-400 transition-all shadow-2xl">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex-1">
+                <div className="inline-flex items-center gap-2 bg-purple-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white mb-3">
+                  🚀 Join the Beta
+                </div>
+                <h3 className="text-2xl md:text-3xl font-bold mb-2">Become a Beta Tester</h3>
+                <p className="text-slate-300">Get 1000 credits, early access to features, and help shape EventNexus</p>
+              </div>
+              <div className="flex items-center gap-3 whitespace-nowrap">
+                <span className="text-sm font-semibold text-purple-300">Limited spots available</span>
+                <ArrowRight size={20} className="text-purple-400" />
+              </div>
+            </div>
+          </div>
+        </a>
+      </section>
+
       {/* Active Growth Campaign Banner */}
       {activeBanner && !user && (
-        <section className="px-4 pt-10">
+        <section className="px-4">
           <div className="max-w-7xl mx-auto bg-slate-900 border border-slate-800 rounded-[32px] overflow-hidden flex flex-col md:flex-row relative group cursor-pointer hover:border-orange-500/50 transition-all shadow-2xl" onClick={handleCampaignClick}>
              <div className="md:w-1/2 p-10 md:p-14 space-y-6 relative z-10">
                 <div className="inline-flex items-center gap-2 bg-orange-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-600/20">
