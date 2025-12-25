@@ -65,6 +65,8 @@ import {
   signOutUser
 } from './services/dbService';
 
+const GA_MEASUREMENT_ID = 'G-JD7P5ZKF4L';
+
 // Track page views for HashRouter routes in Google Analytics
 const AnalyticsTracker: React.FC = () => {
   const location = useLocation();
@@ -151,6 +153,28 @@ const App: React.FC = () => {
     return [];
   });
   const [isLoading, setIsLoading] = useState(true);
+ 
+  // Ensure GA script is present even if index.html is cached/stripped
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // If gtag already exists, don't re-initialize
+    if ((window as any).gtag) return;
+
+    const existingScript = document.querySelector(`script[src="https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}"]`);
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+      document.head.appendChild(script);
+    }
+
+    (window as any).dataLayer = (window as any).dataLayer || [];
+    (window as any).gtag = function gtag(){ (window as any).dataLayer.push(arguments); };
+    (window as any).gtag('js', new Date());
+    (window as any).gtag('config', GA_MEASUREMENT_ID, { page_path: window.location.pathname + window.location.search + window.location.hash });
+    console.log(`✅ GA fallback initialized with ${GA_MEASUREMENT_ID}`);
+  }, []);
 
   // Helper to cache user data
   const cacheUserData = (userData: User | null) => {
