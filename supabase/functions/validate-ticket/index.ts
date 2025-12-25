@@ -17,10 +17,16 @@ interface ValidationRequest {
 const parseQrPayload = (raw?: string) => {
   if (!raw) return { cleaned: '', ticketId: null }
   const cleaned = raw.trim()
+  // Expected format: ENX-{ticketId}-{hash}
   if (cleaned.startsWith('ENX-')) {
-    const parts = cleaned.split('-')
-    if (parts.length >= 3 && parts[1]) {
-      return { cleaned, ticketId: parts[1] }
+    const payload = cleaned.substring(4) // remove ENX-
+    const lastDash = payload.lastIndexOf('-')
+    if (lastDash > 0) {
+      const id = payload.substring(0, lastDash) // full UUID with dashes
+      const hash = payload.substring(lastDash + 1)
+      if (id && hash) {
+        return { cleaned, ticketId: id }
+      }
     }
   }
   return { cleaned, ticketId: null }
@@ -90,6 +96,14 @@ serve(async (req) => {
     const { ticketId, qrCode }: ValidationRequest = await req.json()
     const { cleaned, ticketId: parsedFromQr } = parseQrPayload(qrCode)
     const resolvedTicketId = ticketId || parsedFromQr
+
+    console.log('Ticket lookup:', {
+      rawQrCode: qrCode,
+      cleaned,
+      parsedFromQr,
+      resolvedTicketId,
+      willLookupBy: resolvedTicketId ? 'ticket_id' : 'qr_code'
+    });
 
     if (!resolvedTicketId && !cleaned) {
       throw new Error('Either ticketId or qrCode must be provided')
