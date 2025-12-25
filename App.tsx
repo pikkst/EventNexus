@@ -47,6 +47,7 @@ import CookieSettings from './components/CookieSettings';
 import GDPRCompliance from './components/GDPRCompliance';
 import NotificationSettings from './components/NotificationSettings';
 import AuthModal from './components/AuthModal';
+import BetaInvitation from './components/BetaInvitation';
 import { User, Notification, EventNexusEvent } from './types';
 import { CATEGORIES } from './constants';
 import { supabase } from './services/supabase';
@@ -513,6 +514,8 @@ const App: React.FC = () => {
             <Route path="/ticket" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/ticket/:id" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription_tier: t, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            <Route path="/beta" element={<BetaInvitation />} />
+            <Route path="/beta-signup" element={<BetaInvitation />} />
             <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
             <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
             <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
