@@ -26,7 +26,7 @@ ADMIN (Platform Growth)          ENTERPRISE/PREMIUM (Event Promotion)
 ```
 
 #### Created Files
-1. **SQL Schema**: `sql/create_user_campaigns.sql`
+1. **SQL Schema**: `sql/hotfixes/create_user_campaigns.sql`
    - user_campaigns table with user_id foreign key
    - 5 RLS policies (SELECT/INSERT/UPDATE/DELETE + Admin view all)
    - 4 indexes (user_id, event_id, status, created_at)
@@ -130,7 +130,7 @@ CREATE TABLE user_campaigns (
 ### 1. Execute SQL Script
 ```bash
 # In Supabase SQL Editor, run:
-/workspaces/EventNexus/sql/create_user_campaigns.sql
+/workspaces/EventNexus/sql/hotfixes/create_user_campaigns.sql
 ```
 
 ### 2. Verify Setup
@@ -183,7 +183,7 @@ ORDER BY created_at DESC;
 ## 🔍 Troubleshooting
 
 ### Error: "relation user_campaigns does not exist"
-**Solution**: Run `sql/create_user_campaigns.sql` in Supabase SQL Editor
+**Solution**: Run `sql/hotfixes/create_user_campaigns.sql` in Supabase SQL Editor
 
 ### Error: "permission denied for table user_campaigns"
 **Solution**: 
@@ -277,6 +277,6 @@ Commit: 548e32d
 ## 📚 Documentation Files
 
 1. `docs/ENTERPRISE_SOCIAL_MEDIA_SETUP.md` - Complete setup guide
-2. `sql/create_user_campaigns.sql` - Table creation script
+2. `sql/hotfixes/create_user_campaigns.sql` - Table creation script
 3. `sql/verify_user_campaigns.sql` - Verification queries
 4. This file: `docs/ENTERPRISE_SOCIAL_IMPLEMENTATION_SUMMARY.md` - Implementation summary

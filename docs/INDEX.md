@@ -1,5 +1,7 @@
 # EventNexus Documentation Index
 
+For a curated topic-based list, see [CATALOG.md](CATALOG.md). This file remains the full index.
+
 Comprehensive guide to all EventNexus documentation organized by category.
 
 ## 📚 Quick Navigation
@@ -150,6 +152,44 @@ Complete guides for Stripe integration and payment processing.
 - Signature verification
 - Testing webhooks
 
+### Troubleshooting & Operations
+
+#### [stripe/STRIPE_SUBSCRIPTION_ERROR_FIX.md](stripe/STRIPE_SUBSCRIPTION_ERROR_FIX.md)
+**Fix 406 errors when fetching Stripe public key**
+- RLS policy repair
+- Configuration verification
+- Required secrets checklist
+
+#### [stripe/SUBSCRIPTION_CHECKOUT_FIX.md](stripe/SUBSCRIPTION_CHECKOUT_FIX.md)
+**Replace placeholder price IDs**
+- Correct Stripe price configuration
+- Edge Function secret setup
+- Redirect and webhook validation
+
+#### [stripe/STRIPE_SECRET_KEY_SETUP.md](stripe/STRIPE_SECRET_KEY_SETUP.md)
+**Missing secret key fix**
+- Supabase secret configuration
+- Function redeploy steps
+- Verification commands
+
+#### [stripe/QUICK_FIX_STRIPE.md](stripe/QUICK_FIX_STRIPE.md)
+**Two-minute Stripe upgrade checklist**
+- Run the RLS fix script
+- Update publishable key
+- Smoke test the pricing page
+
+#### [stripe/STRIPE_FIX_COMPLETED.md](stripe/STRIPE_FIX_COMPLETED.md)
+**Completed Stripe fixes summary**
+- Applied configuration
+- Deployed functions
+- Verification commands
+
+#### [stripe/STRIPE_TEST_DATA.md](stripe/STRIPE_TEST_DATA.md)
+**Test-mode onboarding data**
+- Identity and address values
+- Bank account placeholders
+- Debug tips
+
 ---
 
 ## 🤖 AI Features
@@ -246,6 +286,12 @@ Detailed implementation documentation for specific features.
 - Image upload
 - Location handling
 - Database integration
+
+### [SOCIAL_MEDIA_POST_FIX_SUMMARY.md](SOCIAL_MEDIA_POST_FIX_SUMMARY.md)
+**Social media posting fix overview**
+- Campaign logging columns and function
+- Frontend logging improvements
+- Diagnostic script for social posting
 
 ### [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)
 **Complete implementation summary**
@@ -363,6 +409,14 @@ docs/
 │   ├── STRIPE_PRODUCTS_SETUP.md
 │   └── STRIPE_WEBHOOK_SETUP.md
 │
+├── stripe/
+│   ├── QUICK_FIX_STRIPE.md
+│   ├── STRIPE_FIX_COMPLETED.md
+│   ├── STRIPE_SECRET_KEY_SETUP.md
+│   ├── STRIPE_SUBSCRIPTION_ERROR_FIX.md
+│   ├── STRIPE_TEST_DATA.md
+│   └── SUBSCRIPTION_CHECKOUT_FIX.md
+│
 ├── AI Features/
 │   ├── AI_PROMOTION_TOOLS_IMPLEMENTATION.md
 │   ├── CAMPAIGN_IMPLEMENTATION_SUMMARY.md
@@ -379,6 +433,7 @@ docs/
 │   ├── ADMIN_IMPLEMENTATION.md
 │   ├── AGENCY_PROFILE_MOCK_REMOVAL.md
 │   ├── EVENT_CREATION_FIXES.md
+│   ├── SOCIAL_MEDIA_POST_FIX_SUMMARY.md
 │   ├── IMPLEMENTATION_COMPLETE.md
 │   ├── IMPLEMENTATION_SUMMARY.md
 │   └── MOCK_REMOVAL_SUMMARY.md

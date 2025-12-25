@@ -17,7 +17,7 @@ The `system_config` table has **overly restrictive RLS policies** that block non
 ## Solution
 
 ### Step 1: Fix RLS Policies
-Run this in **Supabase SQL Editor**: [FIX_STRIPE_PUBLIC_KEY_RLS.sql](FIX_STRIPE_PUBLIC_KEY_RLS.sql)
+Run this in **Supabase SQL Editor**: [FIX_STRIPE_PUBLIC_KEY_RLS.sql](../../sql/stripe/FIX_STRIPE_PUBLIC_KEY_RLS.sql)
 
 Or go to: https://supabase.com/dashboard/project/anlivujgkjmajkcgbaxw/sql/new
 
@@ -28,7 +28,7 @@ The fix creates these policies:
 4. ✅ **Service role full access** - For migrations
 
 ### Step 2: Verify Configuration
-Run [CHECK_STRIPE_CONFIG.sql](CHECK_STRIPE_CONFIG.sql) to see current Stripe setup:
+Run [CHECK_STRIPE_CONFIG.sql](../../sql/stripe/CHECK_STRIPE_CONFIG.sql) to see current Stripe setup:
 
 ```sql
 SELECT key, value, updated_at
@@ -97,7 +97,7 @@ npx supabase secrets set STRIPE_SECRET_KEY="sk_test_..." --project-ref anlivujgk
 ## Common Issues
 
 ### Issue: Still getting 406 error
-**Fix:** RLS policy didn't apply. Re-run [FIX_STRIPE_PUBLIC_KEY_RLS.sql](FIX_STRIPE_PUBLIC_KEY_RLS.sql)
+**Fix:** RLS policy didn't apply. Re-run [FIX_STRIPE_PUBLIC_KEY_RLS.sql](../../sql/stripe/FIX_STRIPE_PUBLIC_KEY_RLS.sql)
 
 ### Issue: "Stripe public key not configured"
 **Fix:** Key is missing or placeholder. Update with real key (Step 3 above)
@@ -113,8 +113,8 @@ bash fix-subscription-checkout.sh
 
 ## Files Created
 - ✅ `supabase/migrations/20251223000002_fix_stripe_public_key_access.sql` - Migration file
-- ✅ `FIX_STRIPE_PUBLIC_KEY_RLS.sql` - Manual SQL script (use this)
-- ✅ `CHECK_STRIPE_CONFIG.sql` - Verification script
+- ✅ `sql/stripe/FIX_STRIPE_PUBLIC_KEY_RLS.sql` - Manual SQL script (use this)
+- ✅ `sql/stripe/CHECK_STRIPE_CONFIG.sql` - Verification script
 - ✅ `STRIPE_SUBSCRIPTION_ERROR_FIX.md` - This file
 
 ## Technical Details
@@ -149,9 +149,9 @@ USING (key = 'stripe_public_key');  -- ✅ Public read for this key only
 ```
 
 ## Related Documentation
-- [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md) - Full Stripe integration guide
+- [../STRIPE_SETUP.md](../STRIPE_SETUP.md) - Full Stripe integration guide
 - [SUBSCRIPTION_CHECKOUT_FIX.md](SUBSCRIPTION_CHECKOUT_FIX.md) - Previous checkout fix
-- [docs/STRIPE_WEBHOOK_SETUP.md](docs/STRIPE_WEBHOOK_SETUP.md) - Webhook configuration
+- [../STRIPE_WEBHOOK_SETUP.md](../STRIPE_WEBHOOK_SETUP.md) - Webhook configuration
 
 ## Status
 - ✅ RLS policies fixed
