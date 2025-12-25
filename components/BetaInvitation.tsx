@@ -315,6 +315,21 @@ const BetaInvitation: React.FC = () => {
         </div>
       </div>
 
+      {/* CTA Section */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border border-indigo-500/30 rounded-lg p-12">
+          <h2 className="text-3xl font-bold mb-6">Ready to Shape the Future of Events?</h2>
+          <p className="text-lg text-slate-300 mb-8">
+            Limited beta slots available. Join now and be part of something special.
+          </p>
+          <button 
+            onClick={() => setActiveTab('signup')}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 px-10 py-4 rounded-lg font-bold text-lg transition-all transform hover:scale-105"
+          >
+            Apply for Beta Access <ArrowRight size={20} />
+          </button>
+        </div>
+      </div>
       )}
 
       {/* Signup Tab */}
