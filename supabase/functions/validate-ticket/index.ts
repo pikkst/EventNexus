@@ -33,11 +33,19 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization');
-    console.log('Auth header received:', authHeader ? authHeader.substring(0, 30) + '...' : 'MISSING');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    
+    console.log('Edge function config:', {
+      url: supabaseUrl,
+      hasKey: !!supabaseKey,
+      hasAuth: !!authHeader,
+      authPrefix: authHeader ? authHeader.substring(0, 30) + '...' : 'MISSING'
+    });
 
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      supabaseUrl,
+      supabaseKey,
       {
         global: {
           headers: { Authorization: authHeader || '' },
@@ -47,7 +55,12 @@ serve(async (req) => {
 
     // Verify user is authenticated
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
-    console.log('Auth result:', { hasUser: !!user, error: authError?.message });
+    console.log('Auth result:', { 
+      hasUser: !!user, 
+      userId: user?.id,
+      error: authError?.message,
+      errorDetails: JSON.stringify(authError)
+    });
     
     if (authError || !user) {
       console.error('Authentication failed:', authError)
