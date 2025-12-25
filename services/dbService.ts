@@ -697,9 +697,15 @@ export const getTicketById = async (ticketId: string) => {
 export const validateTicket = async (qrCodeData: string) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw new Error('Not authenticated');
+    if (!session?.access_token) {
+      console.error('No active session found');
+      throw new Error('Not authenticated - please sign in again');
     }
+
+    console.log('Validating ticket with session:', {
+      hasToken: !!session.access_token,
+      tokenPrefix: session.access_token.substring(0, 20) + '...'
+    });
 
     const { data, error } = await supabase.functions.invoke('validate-ticket', {
       body: { qrCode: qrCodeData },
@@ -708,11 +714,16 @@ export const validateTicket = async (qrCodeData: string) => {
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Edge function error:', error);
+      throw error;
+    }
+    
+    console.log('Validation response:', data);
     return data;
   } catch (error) {
     console.error('Error validating ticket:', error);
-    return null;
+    return { valid: false, error: error.message || 'Validation failed' };
   }
 };
 

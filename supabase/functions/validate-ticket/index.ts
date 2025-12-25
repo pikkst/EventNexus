@@ -14,31 +14,59 @@ interface ValidationRequest {
   qrCode?: string
 }
 
+const parseQrPayload = (raw?: string) => {
+  if (!raw) return { cleaned: '', ticketId: null }
+  const cleaned = raw.trim()
+  if (cleaned.startsWith('ENX-')) {
+    const parts = cleaned.split('-')
+    if (parts.length >= 3 && parts[1]) {
+      return { cleaned, ticketId: parts[1] }
+    }
+  }
+  return { cleaned, ticketId: null }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    const authHeader = req.headers.get('Authorization');
+    console.log('Auth header received:', authHeader ? authHeader.substring(0, 30) + '...' : 'MISSING');
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader || '' },
         },
       }
     )
 
     // Verify user is authenticated
-    const { data: { user } } = await supabaseClient.auth.getUser()
-    if (!user) {
-      throw new Error('Unauthorized')
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    console.log('Auth result:', { hasUser: !!user, error: authError?.message });
+    
+    if (authError || !user) {
+      console.error('Authentication failed:', authError)
+      return new Response(
+        JSON.stringify({ 
+          valid: false,
+          error: 'Authentication failed',
+          message: authError?.message || 'Not authenticated',
+          details: authError
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
     }
 
     const { ticketId, qrCode }: ValidationRequest = await req.json()
+    const { cleaned, ticketId: parsedFromQr } = parseQrPayload(qrCode)
+    const resolvedTicketId = ticketId || parsedFromQr
 
-    if (!ticketId && !qrCode) {
+    if (!resolvedTicketId && !cleaned) {
       throw new Error('Either ticketId or qrCode must be provided')
     }
 
@@ -51,10 +79,10 @@ serve(async (req) => {
         user:users(id, name, email)
       `)
 
-    if (ticketId) {
-      query = query.eq('id', ticketId)
-    } else {
-      query = query.eq('qr_code', qrCode)
+    if (resolvedTicketId) {
+      query = query.eq('id', resolvedTicketId)
+    } else if (cleaned) {
+      query = query.eq('qr_code', cleaned)
     }
 
     const { data: ticket, error: ticketError } = await query.single()
@@ -68,6 +96,18 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
       )
+    }
+
+    // Ensure organizer relation is loaded even if policies trimmed nested data
+    if (!ticket.event?.organizer_id) {
+      const { data: eventRow } = await supabaseClient
+        .from('events')
+        .select('id, organizer_id')
+        .eq('id', ticket.event_id)
+        .maybeSingle()
+      if (eventRow) {
+        ticket.event = { ...ticket.event, ...eventRow }
+      }
     }
 
     // Check if ticket is valid
@@ -114,7 +154,7 @@ serve(async (req) => {
       .eq('id', user.id)
       .single()
 
-    const isOrganizer = ticket.event.organizer_id === user.id
+    const isOrganizer = ticket.event?.organizer_id === user.id
     const isAdmin = userProfile?.role === 'admin'
     const isTicketOwner = ticket.user_id === user.id
 
@@ -138,7 +178,7 @@ serve(async (req) => {
         status: 'used',
         used_at: new Date().toISOString(),
         metadata: {
-          ...ticket.metadata,
+          ...(ticket.metadata || {}),
           scanned_by: user.id,
           scanned_at: new Date().toISOString(),
           self_scanned: isSelfScan
