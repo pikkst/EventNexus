@@ -80,8 +80,6 @@ const BetaInvitation: React.FC = () => {
 
       // Now redeem the beta code with the actual user ID
       const redemptionResult = await redeemBetaInvitation(signupResult.user.id, betaCode);
-      // Now redeem the beta code with the actual user ID
-      const redemptionResult = await redeemBetaInvitation(signupResult.user.id, betaCode);
       
       if (!redemptionResult.success) {
         setMessage({ type: 'error', text: redemptionResult.message });
@@ -143,6 +141,7 @@ const BetaInvitation: React.FC = () => {
 
       {/* Info Tab */}
       {activeTab === 'info' && (
+      <>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-16">
         <div className="inline-block mb-6 px-4 py-2 bg-indigo-500/20 border border-indigo-500/50 rounded-full">
           <span className="text-sm font-semibold text-indigo-300">🚀 Limited Beta Access</span>
@@ -330,6 +329,7 @@ const BetaInvitation: React.FC = () => {
           </button>
         </div>
       </div>
+      </>
       )}
 
       {/* Signup Tab */}
