@@ -7,13 +7,13 @@ create table if not exists public.beta_invitations (
   redeemed_at timestamp,
   status text not null default 'active' check (status in ('active', 'used', 'expired')),
   created_at timestamp default now(),
-  expires_at timestamp not null,
-  
-  -- Indexes for common queries
-  created_index_code idx on code,
-  created_index_status idx on status,
-  created_index_used_by idx on used_by
+  expires_at timestamp not null
 );
+
+-- Create indexes for common queries
+create index idx_beta_invitations_code on public.beta_invitations(code);
+create index idx_beta_invitations_status on public.beta_invitations(status);
+create index idx_beta_invitations_used_by on public.beta_invitations(used_by);
 
 -- Enable RLS
 alter table public.beta_invitations enable row level security;
