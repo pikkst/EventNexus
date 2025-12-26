@@ -1831,3 +1831,114 @@ export const revokeBetaInvitation = async (invitationId: string): Promise<boolea
     return false;
   }
 };
+
+/**
+ * Referral System Functions
+ */
+
+/**
+ * Generate or get user's referral code
+ */
+export const generateReferralCode = async (userId: string): Promise<string> => {
+  try {
+    // Check if user already has a referral code
+    const { data: existing } = await supabase
+      .from('users')
+      .select('referral_code')
+      .eq('id', userId)
+      .single();
+
+    if (existing?.referral_code) {
+      return existing.referral_code;
+    }
+
+    // Generate unique 8-character code
+    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+    // Update user with referral code
+    const { error } = await supabase
+      .from('users')
+      .update({ referral_code: code })
+      .eq('id', userId);
+
+    if (error) throw error;
+
+    return code;
+  } catch (error) {
+    console.error('Error generating referral code:', error);
+    return '';
+  }
+};
+
+/**
+ * Get user's referral statistics
+ */
+export const getUserReferralStats = async (userId: string): Promise<{
+  code: string;
+  totalReferrals: number;
+  creditsEarned: number;
+  pendingReferrals: number;
+}> => {
+  try {
+    // Get or generate referral code
+    const code = await generateReferralCode(userId);
+
+    // Get total referrals
+    const { data: referrals } = await supabase
+      .from('users')
+      .select('id, created_at')
+      .eq('referred_by', userId);
+
+    // Get credits earned from referrals
+    const { data: creditTransactions } = await supabase
+      .from('credit_transactions')
+      .select('amount')
+      .eq('user_id', userId)
+      .eq('reason', 'referral_reward');
+
+    const creditsEarned = creditTransactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
+
+    // Pending referrals (signed up but no first action yet)
+    const { data: pending } = await supabase
+      .from('users')
+      .select('id')
+      .eq('referred_by', userId)
+      .is('first_action_at', null);
+
+    return {
+      code,
+      totalReferrals: referrals?.length || 0,
+      creditsEarned,
+      pendingReferrals: pending?.length || 0
+    };
+  } catch (error) {
+    console.error('Error getting referral stats:', error);
+    return {
+      code: '',
+      totalReferrals: 0,
+      creditsEarned: 0,
+      pendingReferrals: 0
+    };
+  }
+};
+
+/**
+ * Award first action bonus
+ */
+export const awardFirstActionBonus = async (
+  userId: string,
+  action: string,
+  eventId?: string
+): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('award-first-action-bonus', {
+      body: { userId, action, eventId }
+    });
+
+    if (error) throw error;
+    return data?.success || false;
+  } catch (error) {
+    console.error('Error awarding first action bonus:', error);
+    return false;
+  }
+};
