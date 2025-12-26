@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Facebook, Instagram, RefreshCw, CheckCircle2, AlertCircle, Settings } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, RefreshCw, CheckCircle2, AlertCircle, Settings } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import type { User } from '../types';
 
@@ -205,6 +205,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
 
   const fbAccount = accounts.find(a => a.platform === 'facebook');
   const igAccount = accounts.find(a => a.platform === 'instagram');
+  const liAccount = accounts.find(a => a.platform === 'linkedin');
 
   return (
     <div className="space-y-6">
@@ -212,7 +213,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white">Social Media Connections</h2>
-          <p className="text-sm text-slate-400">Connect Facebook & Instagram to enable automatic post publishing from Marketing Studio</p>
+          <p className="text-sm text-slate-400">Connect Facebook, Instagram & LinkedIn to enable automatic post publishing from Marketing Studio</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -257,7 +258,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
       {!loadingAccounts && accounts.length === 0 && !loadError && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <p className="text-yellow-800 text-sm">
-            📱 <strong>No connected accounts yet.</strong> Click "Setup Tokens" above to connect your Facebook and Instagram accounts for automated posting.
+            📱 <strong>No connected accounts yet.</strong> Click "Setup Tokens" above to connect your Facebook, Instagram and LinkedIn accounts for automated posting.
           </p>
         </div>
       )}
@@ -344,7 +345,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
       )}
 
       {/* Connected Accounts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Facebook */}
         <div className={`p-6 rounded-xl border-2 ${fbAccount ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
           <div className="flex items-start justify-between mb-4">
@@ -427,6 +428,61 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
               >
                 Disconnect
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* LinkedIn */}
+        <div className={`p-6 rounded-xl border-2 ${liAccount ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-3 rounded-lg ${liAccount ? 'bg-blue-700' : 'bg-gray-400'}`}>
+                <Linkedin className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">LinkedIn</h3>
+                <p className="text-sm text-gray-600">
+                  {liAccount ? liAccount.account_name : 'Not Connected'}
+                </p>
+              </div>
+            </div>
+            {liAccount ? (
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-gray-400" />
+            )}
+          </div>
+
+          {liAccount ? (
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Account ID:</span>
+                <span className="font-mono text-gray-900">{liAccount.account_id}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Expires:</span>
+                <span className="text-gray-900">
+                  {new Date(liAccount.expires_at).toLocaleDateString()}
+                </span>
+              </div>
+              <button
+                onClick={() => handleDisconnect('linkedin')}
+                className="w-full mt-3 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"
+              >
+                Disconnect
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3 text-sm">
+              <p className="text-gray-600">LinkedIn integration coming soon. For now, you can post directly on LinkedIn.</p>
+              <a
+                href="https://www.linkedin.com/company/eventnexus-eu"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full inline-block text-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              >
+                Visit LinkedIn Page
+              </a>
             </div>
           )}
         </div>
