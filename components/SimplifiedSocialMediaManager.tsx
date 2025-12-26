@@ -264,32 +264,32 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
 
       {/* Setup Panel */}
       {showSetup && (
-        <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6">
+        <div className="bg-gradient-to-br from-purple-100 to-blue-100 border-2 border-purple-300 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">🔐 Manual Token Setup</h3>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-800 mb-1">
                 Facebook App ID
               </label>
               <input
                 type="text"
                 value={appId}
                 onChange={(e) => setAppId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                 placeholder="Enter your App ID (e.g., 1527493881796179)"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-800 mb-1">
                 App Secret
               </label>
               <input
                 type="password"
                 value={appSecret}
                 onChange={(e) => setAppSecret(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                 placeholder="Enter your Facebook App Secret"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -298,14 +298,14 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-800 mb-1">
                 User Access Token
               </label>
               <textarea
                 value={userToken}
                 onChange={(e) => setUserToken(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm text-gray-900"
                 placeholder="EAAVtP2I4llM..."
               />
               <p className="text-xs text-gray-500 mt-1">
