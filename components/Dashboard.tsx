@@ -33,7 +33,8 @@ import { generatePrintablePoster, PosterDesign } from '../services/posterService
 import { supabase } from '../services/supabase';
 import PayoutsHistory from './PayoutsHistory';
 import EnterpriseSuccessManager from './EnterpriseSuccessManager';
-import { postToFacebook, postToInstagram, postToLinkedIn, postToTwitter } from '../services/socialMediaService';
+// Lazy-load heavy social media SDK helpers when needed to reduce main bundle size
+const loadSocialMediaService = () => import('../services/socialMediaService');
 
 // Generate sales data from real revenue data (last 7 days)
 const generateSalesData = (revenueByEvent: RevenueByEvent[]) => {
@@ -454,6 +455,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       }
 
       const ad = selectedAdForDeploy;
+      const { postToFacebook, postToInstagram, postToTwitter, postToLinkedIn } = await loadSocialMediaService();
       let result;
 
       // Map platform names to deployment functions
