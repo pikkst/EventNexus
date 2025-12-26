@@ -161,13 +161,13 @@ export async function fetchMetaInsights(
 
     if (!response.ok) {
       console.error('Meta API error:', response.status, await response.text());
-      return generateMockMetaInsights(platform);
+      return [];
     }
 
     return await response.json();
   } catch (error) {
     console.error('Failed to fetch Meta insights:', error);
-    return generateMockMetaInsights(platform);
+    return [];
   }
 }
 
@@ -196,13 +196,13 @@ export async function fetchSEOMetrics(
 
     if (!response.ok) {
       console.error('SEO API error:', response.status, await response.text());
-      return generateMockSEOMetrics();
+      return [];
     }
 
     return await response.json();
   } catch (error) {
     console.error('Failed to fetch SEO metrics:', error);
-    return generateMockSEOMetrics();
+    return [];
   }
 }
 
