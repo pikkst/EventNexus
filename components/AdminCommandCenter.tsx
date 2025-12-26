@@ -1783,7 +1783,17 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       <SchedulerModal />
 
       {/* Production Transition Modal */}
-      <ProductionTransitionModal />
+      <ProductionTransitionModal
+        open={showProductionModal}
+        onClose={() => {
+          setShowProductionModal(false);
+          setTransitionConfirmation('');
+        }}
+        onConfirm={handleTransitionToProduction}
+        isProcessing={isTransitioningToProduction}
+        transitionConfirmation={transitionConfirmation}
+        setTransitionConfirmation={setTransitionConfirmation}
+      />
     </div>
   );
 };
@@ -1973,8 +1983,15 @@ const DiagnosticModal: React.FC<{
 );
 
   // Production Transition Modal
-  const ProductionTransitionModal = () => {
-    if (!showProductionModal) return null;
+  const ProductionTransitionModal: React.FC<{
+    open: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    isProcessing: boolean;
+    transitionConfirmation: string;
+    setTransitionConfirmation: (val: string) => void;
+  }> = ({ open, onClose, onConfirm, isProcessing, transitionConfirmation, setTransitionConfirmation }) => {
+    if (!open) return null;
 
     return (
       <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in">
@@ -1990,7 +2007,7 @@ const DiagnosticModal: React.FC<{
               </div>
               <button
                 onClick={() => {
-                  setShowProductionModal(false);
+                  onClose();
                   setTransitionConfirmation('');
                 }}
                 className="p-2 hover:bg-slate-800 rounded-xl transition-all"
@@ -2066,7 +2083,7 @@ const DiagnosticModal: React.FC<{
           <div className="p-8 border-t border-red-500/20 bg-red-500/5 flex gap-4">
             <button
               onClick={() => {
-                setShowProductionModal(false);
+                onClose();
                 setTransitionConfirmation('');
               }}
               className="flex-1 px-6 py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all"
@@ -2074,14 +2091,14 @@ const DiagnosticModal: React.FC<{
               Cancel
             </button>
             <button
-              onClick={handleTransitionToProduction}
+              onClick={onConfirm}
               disabled={
-                isTransitioningToProduction ||
+                isProcessing ||
                 transitionConfirmation !== 'TRANSITION_TO_PRODUCTION'
               }
               className="flex-1 px-6 py-4 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 shadow-xl shadow-red-600/20"
             >
-              {isTransitioningToProduction ? (
+              {isProcessing ? (
                 <><Loader2 size={16} className="animate-spin" /> Processing...</>
               ) : (
                 <><Rocket size={16} /> Go Live Now</>
