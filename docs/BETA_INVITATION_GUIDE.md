@@ -6,6 +6,9 @@ Complete beta testing program with:
 - Admin panel to manage invitation codes
 - Public signup page with code redemption
 - Automatic credit distribution
+- Beta tester flag on users for targeting and support (`users.is_beta_tester`)
+- Direct bug/feedback channel routed to Admin Inbox
+- Beta testers keep all standard user/organizer capabilities (no admin rights)
 
 ## Features Added
 
@@ -37,6 +40,11 @@ Table: `public.beta_invitations`
 - expires_at (TIMESTAMP)
 ```
 
+Additional column in `public.users`:
+```sql
+- is_beta_tester BOOLEAN DEFAULT false
+```
+
 ## How to Use
 
 ### For Admins: Generate Invitation Codes
@@ -56,6 +64,15 @@ Table: `public.beta_invitations`
 4. Submit form
 5. Confirm email address
 6. Receive 1000 credits instantly!
+7. Your account is tagged as a beta tester and unlocks the in-app "Beta Tester Report" tool (Profile → right column)
+
+### For Beta Testers: Send Bug Reports / Feedback
+
+1. Go to Profile (must be logged in)
+2. In the right column, open "Report a bug or idea"
+3. Fill type (Bug/Feedback/Feature), priority, subject, description
+4. Add optional repro steps, console logs/errors, and screenshot/recording URL (all included for admins)
+5. Submit → Message is inserted into `admin_inbox` with beta tag and details
 
 ### For Marketing: Facebook Posts
 
@@ -112,16 +129,20 @@ User goes to /beta → fills form → gets 1000 credits
 
 - **1000 credits per beta tester** (configurable in `redeemBetaInvitation()`)
 - Credits stored in `users.credits_balance` column
+- Beta tester flag stored in `users.is_beta_tester` (set automatically on redemption)
 - Automatically added when code is redeemed
 - Works with existing credit system
 
 ## Important Notes
 
 ⚠️ **Before Going Live:**
-1. Run SQL migration: `20251225_create_beta_invitations.sql`
+1. Run SQL migrations:
+	- `20251225_create_beta_invitations.sql`
+	- `20251226000001_add_beta_tester_flag.sql`
 2. Update `redeemBetaInvitation()` if changing credit amount
 3. Test signup flow end-to-end
 4. Confirm emails work
+5. Send a test bug report from a beta tester account and verify it appears in Admin Inbox
 
 📱 **URLs:**
 - Beta page: `https://www.eventnexus.eu/#/beta`
