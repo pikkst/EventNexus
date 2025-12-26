@@ -93,8 +93,6 @@ serve(async (req) => {
 
     // Fetch metrics from GA4
     const metrics = await fetchGA4Metrics(propertyId, metricType, days);
-    // Fetch metrics from GA4
-    const metrics = await fetchGA4Metrics(propertyId, metricType, days);
 
     return new Response(JSON.stringify(metrics), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -102,7 +100,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error fetching GA metrics:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

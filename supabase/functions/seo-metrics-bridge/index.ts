@@ -58,10 +58,14 @@ async function createJWT(serviceAccountEmail: string, privateKey: string): Promi
   const signatureInput = `${encodedHeader}.${encodedPayload}`;
   
   // Import private key
-  const pemKey = privateKey.replace(/\\n/g, '\n');
+  const pemKey = privateKey
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r');
   const pemContents = pemKey.replace('-----BEGIN PRIVATE KEY-----', '')
     .replace('-----END PRIVATE KEY-----', '')
-    .replace(/\s/g, '');
+    .replace(/\n/g, '')
+    .replace(/\r/g, '')
+    .trim();
   
   const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
   
