@@ -39,6 +39,7 @@ import {
   updateCampaign,
   deleteCampaign,
   broadcastNotification,
+  createNotification,
   suspendUser,
   banUser,
   updateUserCredits,
@@ -103,6 +104,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
 
   // User Actions State
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [directMsgTitle, setDirectMsgTitle] = useState('');
+  const [directMsgBody, setDirectMsgBody] = useState('');
+  const [isSendingDirectMsg, setIsSendingDirectMsg] = useState(false);
   const [broadcastTarget, setBroadcastTarget] = useState<'all' | 'organizers' | 'attendees'>('all');
   const [broadcastMsg, setBroadcastMsg] = useState('');
   const [platformUsers, setPlatformUsers] = useState<User[]>([]);
@@ -499,6 +503,40 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         prev.map(u => u.id === userId ? { ...u, status: 'banned' } : u)
       );
       alert('User banned successfully');
+    }
+  };
+
+  const handleSendDirectMessage = async () => {
+    if (!selectedUser) return;
+    if (!directMsgBody.trim()) {
+      alert('Please enter a message.');
+      return;
+    }
+    try {
+      setIsSendingDirectMsg(true);
+      const now = new Date().toISOString();
+      const created = await createNotification({
+        user_id: selectedUser.id,
+        title: directMsgTitle.trim() || 'Message from Admin',
+        message: directMsgBody.trim(),
+        type: 'announcement' as any,
+        senderName: 'EventNexus Admin',
+        isRead: false,
+        timestamp: now
+      });
+      if (created) {
+        alert('✅ Message sent successfully');
+        setSelectedUser(null);
+        setDirectMsgTitle('');
+        setDirectMsgBody('');
+      } else {
+        alert('❌ Failed to send message');
+      }
+    } catch (err) {
+      console.error('Error sending direct message:', err);
+      alert('❌ Error sending message');
+    } finally {
+      setIsSendingDirectMsg(false);
     }
   };
 
@@ -1459,6 +1497,54 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       {/* Diagnostic Results Modal */}
       {showDiagnosticModal && diagnosticResults && (
         <DiagnosticModal results={diagnosticResults} onClose={() => setShowDiagnosticModal(false)} />
+      )}
+
+      {/* Direct Message Modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4" onClick={() => setSelectedUser(null)}>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-[32px] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-black tracking-tight">Message User</h3>
+                <p className="text-xs text-slate-500 font-medium">{selectedUser.name} · {selectedUser.email}</p>
+              </div>
+              <button className="p-2 bg-slate-800 rounded-xl hover:bg-slate-700" onClick={() => setSelectedUser(null)}>
+                <X size={18} className="text-slate-400" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="Title (optional)"
+                value={directMsgTitle}
+                onChange={(e) => setDirectMsgTitle(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500"
+              />
+              <textarea
+                placeholder="Write your message..."
+                value={directMsgBody}
+                onChange={(e) => setDirectMsgBody(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500 min-h-[120px] resize-none"
+              />
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setSelectedUser(null)}
+                  className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendDirectMessage}
+                  disabled={isSendingDirectMsg || !directMsgBody.trim()}
+                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-[10px] font-black uppercase tracking-widest text-white flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/20"
+                >
+                  {isSendingDirectMsg ? (<><Loader2 size={14} className="animate-spin" /> Sending...</>) : (<><Send size={14} /> Send Message</>)}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Security Verification Modal */}

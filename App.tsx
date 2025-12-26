@@ -74,17 +74,30 @@ const AnalyticsTracker: React.FC = () => {
 
   useEffect(() => {
     const gtag = (window as any).gtag;
-    if (!gtag) {
-      console.warn('GA not ready (AnalyticsTracker)');
-      return;
-    }
+    const fbq = (window as any).fbq;
 
     const page_path = `${location.pathname}${location.search}${location.hash}`;
     const page_location = window.location.href;
 
-    gtag('config', 'G-JD7P5ZKF4L', { page_path, page_location });
-    gtag('event', 'page_view', { page_path, page_location });
-    console.log('GA page_view sent', { page_path, page_location });
+    if (gtag) {
+      gtag('config', 'G-JD7P5ZKF4L', { page_path, page_location });
+      gtag('event', 'page_view', { page_path, page_location });
+      console.log('GA page_view sent', { page_path, page_location });
+    } else {
+      console.warn('GA not ready (AnalyticsTracker)');
+    }
+
+    // Track Meta Pixel SPA PageView on route changes
+    if (typeof fbq === 'function') {
+      fbq('track', 'PageView');
+      console.log('Meta Pixel PageView tracked');
+    } else {
+      // If base code hasn't defined fbq yet, queue a call defensively
+      (window as any).fbq = function(){
+        (window as any).fbq.callMethod ? (window as any).fbq.callMethod.apply((window as any).fbq, arguments) : ((window as any).fbq.queue = (window as any).fbq.queue || []).push(arguments)
+      };
+      (window as any).fbq('track', 'PageView');
+    }
   }, [location]);
 
   return null;
@@ -156,6 +169,7 @@ const App: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [toast, setToast] = useState<null | { message: string; variant: 'success' | 'info' | 'error' }>(null);
  
   // Ensure GA script is present even if index.html is cached/stripped
   useEffect(() => {
@@ -203,6 +217,11 @@ const App: React.FC = () => {
     } catch (e) {
       console.warn('Failed to cache notifications:', e);
     }
+  };
+
+  const showToast = (message: string, variant: 'success' | 'info' | 'error' = 'success') => {
+    setToast({ message, variant });
+    setTimeout(() => setToast(null), 3000);
   };
 
   // Helper to cache events
@@ -511,8 +530,40 @@ const App: React.FC = () => {
     
     if (newNotif) {
       setNotifications(prev => [newNotif, ...prev]);
+      // Show success toast for Admin-origin notifications
+      if (newNotif.senderName === 'EventNexus Admin') {
+        showToast(`New message from Admin: ${newNotif.title}`, 'success');
+      }
     }
   };
+
+  // Real-time notifications subscription (Admin and system messages)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase.channel(`realtime:notifications:${user.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`
+      }, async (payload: any) => {
+        try {
+          // Refresh notifications to ensure consistent client shape
+          const latest = await getNotifications(user.id);
+          setNotifications(latest);
+          cacheNotifications(latest);
+          const sender = payload?.new?.sender_name as string | undefined;
+          const title = payload?.new?.title as string | undefined;
+          if (sender === 'EventNexus Admin' && title) {
+            showToast(`New message from Admin: ${title}`, 'success');
+          }
+        } catch (err) {
+          console.error('Realtime notifications update error:', err);
+        }
+      });
+    channel.subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [user?.id]);
 
   const handleToggleFollow = (organizerId: string) => {
     if (!user) {
@@ -597,6 +648,19 @@ const App: React.FC = () => {
           onClose={() => setIsAuthModalOpen(false)} 
           onLogin={handleLogin} 
         />
+
+        {/* Toast Notification */}
+        {toast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[1200]">
+            <div className={`px-4 py-3 rounded-xl shadow-2xl border text-sm font-bold animate-in fade-in zoom-in-95 ${
+              toast.variant === 'success' ? 'bg-emerald-600 text-white border-emerald-500/40' :
+              toast.variant === 'error' ? 'bg-red-600 text-white border-red-500/40' :
+              'bg-slate-800 text-white border-slate-700'
+            }`}>
+              {toast.message}
+            </div>
+          </div>
+        )}
 
         {showOnboarding && user && (
           <OnboardingTutorial
