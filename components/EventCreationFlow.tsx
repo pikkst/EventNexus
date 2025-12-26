@@ -347,7 +347,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           <div className="space-y-3">
             <h1 className="text-4xl font-black tracking-tighter">Become a Creator</h1>
             <p className="text-slate-400 max-w-md mx-auto leading-relaxed font-medium text-lg">
-              Free tier users can create events using <span className="text-orange-400 font-bold">credits</span>. Unlock includes <span className="text-green-400 font-bold">all AI features</span> for that event, or upgrade to <span className="text-indigo-400 font-bold">Pro</span> for unlimited creation.
+              Free tier users can create events using <span className="text-orange-400 font-bold">credits</span>. Unlock includes <span className="text-green-400 font-bold">all AI features</span> (image generation, translations, taglines) for that event, or upgrade to <span className="text-indigo-400 font-bold">Pro</span> for unlimited creation.
             </p>
           </div>
 
@@ -644,6 +644,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                     onClick={handleGeminiTagline}
                     disabled={isGenerating || !formData.name || !formData.category}
                     className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 disabled:opacity-50"
+                    title="AI will generate a catchy tagline based on your event name and category"
                   >
                     <Sparkles className="w-3 h-3" /> AI Generate
                   </button>
@@ -651,10 +652,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 <input 
                   type="text" 
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 transition-all outline-none" 
-                  placeholder="Generated tagline will appear here..."
+                  placeholder="Let AI create an engaging tagline for your event..."
                   value={isGenerating ? "Gemini is thinking..." : formData.tagline}
                   readOnly
                 />
+                <p className="text-xs text-slate-500 mt-1.5">A short, memorable phrase that captures the essence of your event</p>
               </div>
             </div>
           </div>
@@ -822,7 +824,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                     <p className="text-xs text-slate-500 mt-1">
                       {!formData.name || !formData.category 
                         ? 'Fill name & category first'
-                        : 'Powered by Gemini AI'}
+                        : 'Create unique artwork instantly'}
                     </p>
                     {user.subscription_tier === 'free' && !isEventUnlocked && (
                       <p className="text-xs text-orange-400 mt-1">Included with event unlock</p>

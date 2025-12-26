@@ -11,11 +11,11 @@ const PLANS = [
     description: 'Perfect for exploring and attending events.',
     features: [
       '100 welcome credits (€50 value)',
-      'Browse events worldwide',
+      'Browse and attend events worldwide',
       'Purchase tickets securely',
-      'Unlock features with credits',
-      'Basic profile',
-      'Mobile check-in'
+      'Unlock event creation with credits',
+      'Basic attendee profile',
+      'Mobile ticket check-in'
     ],
     cta: 'Current Plan',
     highlight: false,
@@ -26,12 +26,12 @@ const PLANS = [
     price: '19.99',
     description: 'The standard for creators and promoters.',
     features: [
-      'Create up to 20 events',
-      'Organizer Analytics dashboard',
-      'AI-Powered auto-translation',
-      'Public organizer profile',
-      'Social media promotion tools',
-      'Reduced service fees (3%)'
+      'Create up to 20 events per month',
+      'Revenue & attendance analytics',
+      'AI-powered event translations',
+      'Public organizer profile page',
+      'Social media auto-posting tools',
+      'Reduced platform fees (3%)'
     ],
     cta: 'Get Started with Pro',
     highlight: false,
@@ -42,13 +42,13 @@ const PLANS = [
     price: '49.99',
     description: 'Ultimate power for professional agencies.',
     features: [
-      'Create up to 100 events',
-      'Featured map placement',
-      'Custom branding on tickets',
-      'Advanced attendee analytics',
-      'Priority organizer support',
-      'Reduced platform fees (2.5%)',
-      'Affiliate marketing tools'
+      'Create up to 100 events per month',
+      'Featured placement on event map',
+      'Custom branded tickets & logos',
+      'Deep analytics & insights',
+      'Priority email support (24h)',
+      'Lowest platform fees (2.5%)',
+      'Affiliate program & referrals'
     ],
     cta: 'Go Premium Elite',
     highlight: true,
@@ -59,13 +59,13 @@ const PLANS = [
     price: '149.99',
     description: 'White-labeling & Global Infrastructure.',
     features: [
-      'Unlimited events',
-      'White-label branded dashboard',
-      'Dedicated success manager',
-      'Massive scale API access',
-      'Custom branded landing page',
-      'Personalized public platform URL',
-      'Lowest platform fees (1.5%)'
+      'Unlimited events & capacity',
+      'Fully white-labeled dashboard',
+      'Dedicated 24/7 success manager',
+      'Full REST API access',
+      'Custom public agency page',
+      'Your own branded domain URL',
+      'Best platform fees (1.5%)'
     ],
     cta: 'Launch Agency',
     highlight: false,
