@@ -1,9 +1,20 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { execSync } from 'child_process';
+
+// Get git commit hash for build tracking
+const getGitCommit = () => {
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim();
+  } catch (error) {
+    return 'unknown';
+  }
+};
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    const gitCommit = getGitCommit();
     
     // CI/CD environments set these via process.env, local dev uses .env files
     // Priority: process.env first (for GitHub Actions), then loadEnv (for local .env)
@@ -27,6 +38,7 @@ export default defineConfig(({ mode }) => {
         'process.env.API_KEY': JSON.stringify(geminiApiKey),
         'process.env.GEMINI_API_KEY': JSON.stringify(geminiApiKey),
         'process.env.TICKET_HASH_SECRET': JSON.stringify(ticketHashSecret),
+        'import.meta.env.VITE_GIT_COMMIT': JSON.stringify(gitCommit),
       },
       resolve: {
         alias: {
