@@ -154,7 +154,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
       {/* Visual Manifesto (Hero) */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 
             src={organizer.branding?.bannerUrl} 
@@ -164,15 +164,15 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950/20 via-slate-950/60 to-slate-950" />
         </div>
 
-        <div className="relative z-10 max-w-6xl mx-auto px-4 text-center space-y-10">
+        <div className="relative z-10 max-w-6xl mx-auto px-4 text-center space-y-6 sm:space-y-8 md:space-y-10">
            <div className="inline-flex items-center gap-3 bg-white/5 backdrop-blur-2xl border border-white/10 px-6 py-2 rounded-full mb-4 animate-in fade-in slide-in-from-top-4 duration-700">
               <ShieldCheck className="w-5 h-5 text-emerald-400" />
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white">Verified Agency Shard</span>
            </div>
-           <h1 className="text-8xl md:text-[12rem] font-black tracking-tighter leading-none animate-in fade-in slide-in-from-bottom-8 duration-1000 text-white">
+           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-[12rem] font-black tracking-tighter leading-none animate-in fade-in slide-in-from-bottom-8 duration-1000 text-white">
              {organizer.name}
            </h1>
-           <p className="text-2xl md:text-3xl text-slate-300 font-bold max-w-3xl mx-auto leading-tight opacity-80">
+           <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-slate-300 font-bold max-w-3xl mx-auto leading-tight opacity-80">
              {organizer.branding?.tagline}
            </p>
            <div className="flex flex-wrap items-center justify-center gap-6 pt-12">

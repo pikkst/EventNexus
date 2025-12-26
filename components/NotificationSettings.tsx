@@ -35,9 +35,9 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user, onUpd
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
+    <div className="max-w-4xl mx-auto px-4 py-8 md:py-12 space-y-8 md:space-y-12 animate-in fade-in duration-700">
       <div className="space-y-2">
-        <h1 className="text-5xl font-black tracking-tighter text-white">Notification <span className="text-indigo-500">Settings</span></h1>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-white">Notification <span className="text-indigo-500">Settings</span></h1>
         <p className="text-slate-400 font-medium">Manage your Nexus Radar preferences and app notifications.</p>
       </div>
 

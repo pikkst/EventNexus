@@ -204,10 +204,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-slate-950 text-white pb-32">
       {/* Hero Image Section */}
       {event.imageUrl && (
-        <div className="relative h-[500px] w-full overflow-hidden">
+        <div className="relative h-[300px] sm:h-[400px] md:h-[500px] w-full overflow-hidden">
           <img 
             src={event.imageUrl} 
             alt={event.name}
@@ -217,31 +217,31 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-transparent to-transparent" />
           
           {/* Event Title Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-8 pb-12">
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8 pb-6 sm:pb-8 md:pb-12">
             <div className="max-w-6xl mx-auto">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="px-4 py-2 bg-indigo-600/90 backdrop-blur-sm rounded-full text-sm font-bold uppercase tracking-wider">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <span className="px-3 sm:px-4 py-1.5 sm:py-2 bg-indigo-600/90 backdrop-blur-sm rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider">
                   {event.category}
                 </span>
                 {event.isFeatured && (
-                  <span className="px-4 py-2 bg-amber-600/90 backdrop-blur-sm rounded-full text-sm font-bold uppercase tracking-wider flex items-center gap-2">
-                    <Star className="w-4 h-4 fill-current" />
+                  <span className="px-3 sm:px-4 py-1.5 sm:py-2 bg-amber-600/90 backdrop-blur-sm rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+                    <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
                     Premium
                   </span>
                 )}
               </div>
-              <h1 className="text-5xl md:text-6xl font-black text-white mb-4 leading-tight">{event.name}</h1>
-              <div className="flex flex-wrap items-center gap-6 text-white/90">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  <span className="font-semibold">{new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-3 sm:mb-4 leading-tight">{event.name}</h1>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 md:gap-6 text-sm sm:text-base text-white/90">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="font-semibold">{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="font-semibold">{event.time}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="font-semibold">{event.location.city}</span>
                 </div>
               </div>
@@ -250,21 +250,21 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-12">
           {/* Left: Event Details */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
                 <button 
                   onClick={handleLike}
                   disabled={isLiking}
-                  className={`p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all shadow-xl disabled:opacity-50 ${
+                  className={`p-3 sm:p-4 bg-slate-900 border border-slate-800 rounded-xl sm:rounded-2xl hover:bg-slate-800 transition-all shadow-xl disabled:opacity-50 ${
                     isLiked ? 'text-pink-500 bg-pink-500/10 border-pink-500/30' : 'text-pink-500'
                   }`}
                   title={isLiked ? 'Unlike this event' : 'Like this event'}
                 >
-                  <Heart className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`} />
+                  <Heart className={`w-5 h-5 sm:w-6 sm:h-6 ${isLiked ? 'fill-current' : ''}`} />
                 </button>
                 <button 
                   onClick={() => {
@@ -283,17 +283,17 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                       alert('Event link copied to clipboard!');
                     }
                   }}
-                  className="p-4 bg-slate-900 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-indigo-400 shadow-xl"
+                  className="p-3 sm:p-4 bg-slate-900 border border-slate-800 rounded-xl sm:rounded-2xl hover:bg-slate-800 transition-all text-indigo-400 shadow-xl"
                   title="Share this event"
                 >
-                  <Share2 className="w-6 h-6" />
+                  <Share2 className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-[32px] p-8 space-y-6 shadow-xl">
-              <h3 className="text-2xl font-bold">About this event</h3>
-              <p className="text-slate-400 leading-relaxed text-lg">{event.description}</p>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl md:rounded-[32px] p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-xl">
+              <h3 className="text-xl sm:text-2xl font-bold">About this event</h3>
+              <p className="text-slate-400 leading-relaxed text-sm sm:text-base md:text-lg">{event.description}</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-slate-800">
                 <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50 flex items-center gap-4">
@@ -317,9 +317,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           </div>
 
         {/* Right: Booking Card & Stats */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="sticky top-24 space-y-6">
-            <div className={`border rounded-[40px] p-8 shadow-2xl relative overflow-hidden ${
+        <div className="lg:col-span-1 space-y-4 sm:space-y-6">
+          <div className="lg:sticky lg:top-24 space-y-4 sm:space-y-6">
+            <div className={`border rounded-3xl md:rounded-[40px] p-4 sm:p-6 md:p-8 shadow-2xl relative overflow-hidden ${
               event.isFeatured 
                 ? 'bg-gradient-to-br from-slate-900 via-slate-900 to-amber-500/5 border-amber-500/30' 
                 : 'bg-slate-900 border-slate-800'
@@ -344,10 +344,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                   <span className="text-xs font-bold text-amber-500 uppercase tracking-widest">Premium Event</span>
                 </div>
               )}
-              <div className="flex justify-between items-end mb-10 relative z-10">
+              <div className="flex justify-between items-end mb-6 sm:mb-8 md:mb-10 relative z-10">
                 <div>
-                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Price per seat</p>
-                  <h2 className="text-5xl font-black tracking-tighter">{event.price === 0 ? 'Free' : `€${event.price}`}</h2>
+                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1 sm:mb-2">Price per seat</p>
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter">{event.price === 0 ? 'Free' : `€${event.price}`}</h2>
                 </div>
                 <div className="text-right">
                   <div className="flex items-center gap-1 text-orange-500 mb-1">

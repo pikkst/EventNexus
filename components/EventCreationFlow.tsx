@@ -331,8 +331,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     };
 
     return (
-      <div className="max-w-3xl mx-auto px-4 py-20 animate-in fade-in duration-700">
-        <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-12 text-center space-y-8 shadow-2xl relative overflow-hidden">
+      <div className="max-w-3xl mx-auto px-4 py-12 md:py-20 animate-in fade-in duration-700">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl md:rounded-[48px] p-6 md:p-12 text-center space-y-6 md:space-y-8 shadow-2xl relative overflow-hidden">
           {/* Decorative blobs */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-[80px] -mr-32 -mt-32" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-[80px] -ml-32 -mb-32" />

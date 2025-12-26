@@ -496,21 +496,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
         </div>
       )}
 
-      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 ${isGated ? 'opacity-20 pointer-events-none' : ''}`}>
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 md:gap-6 ${isGated ? 'opacity-20 pointer-events-none' : ''}`}>
         <div className="space-y-2">
-          <h1 className="text-5xl font-black tracking-tighter text-white flex items-center gap-4">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter text-white flex items-center gap-3 md:gap-4">
              {isEnterprise ? <Rocket className="w-10 h-10" style={{ color: primaryColor }} /> : <LayoutDashboard className="w-10 h-10 text-indigo-500" />}
              {isEnterprise ? 'Nexus Global Agency' : 'Organizer Studio'}
              {user.subscription_tier === 'premium' && <span className="text-xs font-black uppercase tracking-widest bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-full">Premium</span>}
           </h1>
           <p className="text-slate-400 font-medium text-lg">Managing <strong className="text-white">{events.length}</strong> active nodes across the global backbone.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 md:gap-4">
           {/* Enterprise Success Manager Button */}
           {isEnterprise && (
             <button 
               onClick={() => setIsSuccessManagerOpen(true)} 
-              className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 active:scale-95 relative overflow-hidden group"
+              className="flex items-center justify-center gap-2 px-4 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 active:scale-95 relative overflow-hidden group"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
               <Sparkles className="w-4 h-4 relative z-10" /> 

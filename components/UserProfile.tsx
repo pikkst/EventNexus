@@ -452,8 +452,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
             </div>
           </div>
           <div className="mb-4 space-y-1">
-            <h1 className="text-4xl font-black tracking-tighter">{user.name}</h1>
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter">{user.name}</h1>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 md:gap-4">
               <div className={`px-4 py-2 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 border ${
                 user.subscription_tier === 'enterprise' 
                   ? 'bg-orange-600/10 border-orange-500/30 text-orange-400' 
