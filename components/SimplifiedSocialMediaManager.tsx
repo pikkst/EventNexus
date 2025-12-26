@@ -28,7 +28,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
   const [loadError, setLoadError] = useState<string | null>(null);
   
   // Setup form state
-  const [appId, setAppId] = useState('1527493881796179');
+  const [appId, setAppId] = useState('');
   const [appSecret, setAppSecret] = useState('');
   const [userToken, setUserToken] = useState('');
   const [setupStatus, setSetupStatus] = useState('');
@@ -277,7 +277,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
                 value={appId}
                 onChange={(e) => setAppId(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="1527493881796179"
+                placeholder="Enter your App ID (e.g., 1527493881796179)"
               />
             </div>
 
