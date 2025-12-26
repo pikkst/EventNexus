@@ -29,6 +29,7 @@ import CampaignLearning from './CampaignLearning';
 import AutonomousOperations from './AutonomousOperations';
 import { SimplifiedSocialMediaManager } from './SimplifiedSocialMediaManager';
 import BetaInvitationManager from './BetaInvitationManager';
+import AnalyticsDashboard from './AnalyticsDashboard';
 import { 
   getEvents, 
   getAllUsers, 
@@ -582,6 +583,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
 
   const navItems = [
     { id: 'analytics', label: 'Global Insights', icon: <PieChart /> },
+    { id: 'analytics-dashboard', label: 'GA & Meta Analytics', icon: <TrendingUp /> },
     { id: 'users', label: 'User Governance', icon: <Users /> },
     { id: 'inbox', label: 'Email Inbox', icon: <Mail /> },
     { id: 'marketing', label: 'Campaign Engine', icon: <Rocket /> },
@@ -1142,6 +1144,12 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         {activeTab === 'beta-invitations' && (
           <div className="animate-in fade-in duration-500">
             <BetaInvitationManager />
+          </div>
+        )}
+
+        {activeTab === 'analytics-dashboard' && (
+          <div className="animate-in fade-in duration-500">
+            <AnalyticsDashboard />
           </div>
         )}
 
