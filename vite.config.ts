@@ -46,13 +46,17 @@ export default defineConfig(({ mode }) => {
         }
       },
       build: {
+        chunkSizeWarningLimit: 2500,
         rollupOptions: {
           output: {
             manualChunks: {
               'social-media': [
                 './services/socialMediaService.ts',
                 './services/socialAuthHelper.ts'
-              ]
+              ],
+              charts: ['recharts'],
+              maps: ['react-leaflet', 'leaflet'],
+              ui: ['lucide-react']
             }
           }
         }

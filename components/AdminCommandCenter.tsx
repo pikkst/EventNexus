@@ -20,7 +20,6 @@ import {
 } from 'recharts';
 import { User, Notification } from '../types';
 import { generatePlatformGrowthCampaign, generateAdImage } from '../services/geminiService';
-import { generateSocialMediaContentWithImages } from '../services/socialMediaService';
 import { supabase } from '../services/supabase';
 import BrandProtectionMonitor from './BrandProtectionMonitor';
 import AdminInbox from './AdminInbox';
