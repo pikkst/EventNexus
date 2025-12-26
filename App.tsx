@@ -281,12 +281,12 @@ const App: React.FC = () => {
       }
       
       try {
-        // Initialize campaign tracking
+        // Check for existing session FIRST (avoid TDZ on session variable)
+        const { data: { session } } = await supabase.auth.getSession();
+
+        // Initialize campaign tracking with known session info
         const { initializeTracking } = await import('./services/campaignTrackingService');
         await initializeTracking(session?.user?.id);
-        
-        // Check for existing session FIRST
-        const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user && mounted && !user) {
           console.log('🔄 Restoring session on mount...');
@@ -444,7 +444,7 @@ const App: React.FC = () => {
     }, (err) => console.error(err), { enableHighAccuracy: true });
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [user, notifiedEventIds]);
+  }, [user, notifiedEventIds, events]);
 
   const handleLogout = async () => {
     await signOutUser();
@@ -497,16 +497,17 @@ const App: React.FC = () => {
   const handleAddNotification = async (notif: Partial<Notification>) => {
     if (!user) return;
     
-    const newNotif = await createNotification({
-      user_id: user.id,
-      title: notif.title || 'Nexus Alert',
-      message: notif.message || '',
-      type: notif.type || 'update',
-      senderName: notif.senderName || 'Nexus System',
-      timestamp: new Date().toISOString(),
-      isRead: false,
-      eventId: notif.eventId
-    });
+      const newNotif = await createNotification({
+        user_id: user.id,
+        title: notif.title || 'Nexus Alert',
+        message: notif.message || '',
+        // Use allowed DB types; fall back to system to avoid constraint failures
+        type: notif.type || 'system',
+        senderName: notif.senderName || 'Nexus System',
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        eventId: notif.eventId
+      });
     
     if (newNotif) {
       setNotifications(prev => [newNotif, ...prev]);

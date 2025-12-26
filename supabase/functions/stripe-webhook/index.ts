@@ -1,12 +1,20 @@
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import Stripe from 'https://esm.sh/stripe@12.17.0?dts';
 
 const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET') || '';
+const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY') || '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const TICKET_HASH_SECRET = Deno.env.get('TICKET_HASH_SECRET') || 'eventnexus-production-secret-2025';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const stripe = STRIPE_SECRET_KEY
+  ? new Stripe(STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+      httpClient: Stripe.createFetchHttpClient()
+    })
+  : null;
 
 /**
  * Generate secure QR code data for ticket
@@ -54,9 +62,23 @@ serve(async (req: Request) => {
       method: req.method
     });
 
-    // TODO: Verify webhook signature with Stripe
-    // For now, parse the event (signature verification disabled for testing)
-    const event = JSON.parse(body);
+    if (!stripe || !STRIPE_WEBHOOK_SECRET) {
+      console.error('Stripe webhook not configured: missing secret key or signing secret');
+      return new Response('Stripe webhook not configured', { status: 500, headers: corsHeaders });
+    }
+
+    if (!signature) {
+      console.error('Missing Stripe signature');
+      return new Response('Signature required', { status: 400, headers: corsHeaders });
+    }
+
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+      console.error('Stripe webhook verification failed:', err instanceof Error ? err.message : err);
+      return new Response('Invalid signature', { status: 400, headers: corsHeaders });
+    }
 
     console.log('Received Stripe event:', event.type);
 
@@ -184,7 +206,7 @@ serve(async (req: Request) => {
           // Send notification to customer
           await supabase.from('notifications').insert({
             user_id: metadata.user_id,
-            type: 'update',
+            type: 'event_update',
             title: 'Tickets Ready!',
             message: `✓ Payment confirmed! Your tickets are ready with QR codes. View them in your profile.`,
             sender_name: 'EventNexus',
@@ -229,7 +251,7 @@ serve(async (req: Request) => {
           // Send notification to user
           await supabase.from('notifications').insert({
             user_id: metadata.user_id,
-            type: 'update',
+            type: 'system',
             title: `Welcome to ${metadata.tier.charAt(0).toUpperCase() + metadata.tier.slice(1)}!`,
             message: `Your subscription is now active. Enjoy unlimited event creation${metadata.tier === 'premium' || metadata.tier === 'enterprise' ? ', advanced analytics, and premium features' : ' and advanced tools'}!`,
             sender_name: 'EventNexus',
