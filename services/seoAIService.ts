@@ -99,7 +99,7 @@ For each recommendation, provide in JSON format:
 Return as a valid JSON array.`
     });
 
-    const responseText = response.response.text();
+    const responseText = response.text();
     // Extract JSON from response
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
@@ -145,7 +145,7 @@ For each keyword, provide in JSON format:
 Return as a valid JSON array.`
     });
 
-    const responseText = response.response.text();
+    const responseText = response.text();
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       return [];
@@ -205,7 +205,7 @@ For each page, provide JSON with:
 Return as valid JSON array.`
     });
 
-    const responseText = response.response.text();
+    const responseText = response.text();
 
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
@@ -261,7 +261,7 @@ Strategy to move to top 3:
 Return as valid JSON.`
     });
 
-    const responseText = response.response.text();
+    const responseText = response.text();
 
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -317,7 +317,7 @@ Include:
 Return as valid JSON with phase1, phase2, phase3, quickWins, monthlyGoals fields.`
     });
 
-    const responseText = response.response.text();
+    const responseText = response.text();
 
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
