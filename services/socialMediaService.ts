@@ -356,6 +356,11 @@ export const postToInstagram = async (
       throw new Error('Instagram Business Account ID is required');
     }
 
+    // Instagram requires a publicly accessible image URL
+    if (!imageUrl || imageUrl.startsWith('data:')) {
+      throw new Error('Instagram requires a publicly accessible image URL. Base64 images are not supported. Please use an image hosted online.');
+    }
+
     // Step 1: Create media container
     const containerResponse = await fetch(
       `https://graph.facebook.com/v18.0/${accountId}/media`,
