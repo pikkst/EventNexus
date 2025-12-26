@@ -52,6 +52,11 @@ import {
 } from '../services/dbService';
 import MasterAuthModal from './MasterAuthModal';
 
+// Get version from package.json
+const APP_VERSION = '1.0.0'; // Synced with package.json
+const BUILD_ENV = import.meta.env.MODE === 'production' ? 'stable' : 'dev';
+const BUILD_DATE = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
 const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [activeTab, setActiveTab] = useState('analytics');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -588,8 +593,15 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
               <RefreshCw className={isRefreshing ? 'animate-spin' : ''} size={14} /> 
               {isRefreshing ? 'Syncing...' : 'Sync Cluster'}
            </button>
-           <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800">
-              <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2">Build: v4.2.0-stable</p>
+           <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Build Info</p>
+                <span className={`text-[8px] font-black px-2 py-0.5 rounded-full ${BUILD_ENV === 'stable' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-orange-500/10 text-orange-500'}`}>
+                  {BUILD_ENV}
+                </span>
+              </div>
+              <p className="text-[10px] font-bold text-slate-400">v{APP_VERSION}</p>
+              <p className="text-[8px] text-slate-600">{BUILD_DATE}</p>
               <div className="w-full h-1 bg-slate-900 rounded-full overflow-hidden">
                  <div className="h-full bg-emerald-500 w-[94%]" />
               </div>
