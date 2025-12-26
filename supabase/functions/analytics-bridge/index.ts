@@ -33,6 +33,16 @@ interface GAMetric {
 }
 
 /**
+ * Base64URL encode helper
+ */
+function base64UrlEncode(str: string): string {
+  return btoa(str)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+/**
  * Create JWT token for Service Account authentication
  */
 async function createJWT(serviceAccountEmail: string, privateKey: string): Promise<string> {
@@ -46,14 +56,16 @@ async function createJWT(serviceAccountEmail: string, privateKey: string): Promi
     iat: now,
   };
 
-  const encodedHeader = btoa(JSON.stringify(header));
-  const encodedPayload = btoa(JSON.stringify(payload));
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   const signatureInput = `${encodedHeader}.${encodedPayload}`;
 
   // Import key for signing
   const keyData = privateKey
-    .replace(/-----BEGIN PRIVATE KEY-----/, "")
-    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+    .replace(/-----END PRIVATE KEY-----/g, "")
+    .replace(/\\n/g, "")
+    .replace(/\n/g, "")
     .replace(/\s/g, "");
   
   const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
@@ -71,7 +83,7 @@ async function createJWT(serviceAccountEmail: string, privateKey: string): Promi
     new TextEncoder().encode(signatureInput)
   );
 
-  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)));
+  const encodedSignature = base64UrlEncode(String.fromCharCode(...new Uint8Array(signature)));
   return `${signatureInput}.${encodedSignature}`;
 }
 
@@ -150,8 +162,10 @@ async function fetchGA4Metrics(
     };
 
     // Fetch both periods
+    const apiUrl = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+    
     const [currentResponse, comparisonResponse] = await Promise.all([
-      fetch('https://analyticsdata.googleapis.com/v1beta/properties/' + propertyId + ':runReport', {
+      fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -159,7 +173,7 @@ async function fetchGA4Metrics(
         },
         body: JSON.stringify(currentPeriodBody),
       }),
-      fetch('https://analyticsdata.googleapis.com/v1beta/properties/' + propertyId + ':runReport', {
+      fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -170,8 +184,8 @@ async function fetchGA4Metrics(
     ]);
 
     if (!currentResponse.ok) {
-      const error = await currentResponse.text();
-      console.error('GA4 API error:', error);
+      const errorText = await currentResponse.text();
+      console.error('GA4 API error:', currentResponse.status, errorText);
       return [];
     }
 
