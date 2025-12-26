@@ -174,25 +174,71 @@ export const postToFacebook = async (
 
     // If we have an image, use /photos endpoint to upload image with clickable link
     if (imageUrl) {
-      const photoData: any = {
-        url: imageUrl,  // Facebook fetches image from this URL
-        message: content,
-        access_token: accessToken
-      };
+      // Convert base64 data URL to blob for upload
+      let imageBlob: Blob;
+      if (imageUrl.startsWith('data:')) {
+        // Base64 data URL - convert to blob
+        const base64Data = imageUrl.split(',')[1];
+        const binaryData = atob(base64Data);
+        const bytes = new Uint8Array(binaryData.length);
+        for (let i = 0; i < binaryData.length; i++) {
+          bytes[i] = binaryData.charCodeAt(i);
+        }
+        imageBlob = new Blob([bytes], { type: 'image/png' });
+        console.log('📦 Converted base64 image to blob:', imageBlob.size, 'bytes');
+      } else {
+        // HTTP URL - let Facebook fetch it
+        const photoData: any = {
+          url: imageUrl,
+          message: content,
+          access_token: accessToken
+        };
 
-      // Add tracking link if provided (makes image clickable)
+        if (eventUrl) {
+          photoData.link = eventUrl;
+          console.log('🔗 Adding clickable tracking link to photo:', eventUrl);
+        }
+
+        console.log('📤 Posting photo URL to Facebook...');
+        const response = await fetch(
+          `https://graph.facebook.com/v18.0/${pageId}/photos`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(photoData)
+          }
+        );
+        const result = await response.json();
+        
+        if (result.error) {
+          console.error('❌ Facebook API error:', result.error);
+          if (result.error.code === 190) {
+            throw new Error('Facebook access token has expired. Please reconnect your Facebook account.');
+          }
+          throw new Error(result.error.message || 'Facebook photo posting failed');
+        }
+
+        console.log('✅ Posted photo to Facebook with tracking link:', result.id);
+        return { success: true, postId: result.id, error: undefined };
+      }
+
+      // Upload blob using multipart/form-data
+      const formData = new FormData();
+      formData.append('source', imageBlob, 'ad-image.png');
+      formData.append('message', content);
+      formData.append('access_token', accessToken);
+      
       if (eventUrl) {
-        photoData.link = eventUrl;
+        formData.append('link', eventUrl);
         console.log('🔗 Adding clickable tracking link to photo:', eventUrl);
       }
 
-      console.log('📤 Posting photo to Facebook with clickable link...');
+      console.log('📤 Uploading photo to Facebook with clickable link...');
       const response = await fetch(
         `https://graph.facebook.com/v18.0/${pageId}/photos`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(photoData)
+          body: formData
         }
       );
 
