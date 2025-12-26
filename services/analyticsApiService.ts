@@ -128,8 +128,32 @@ export async function fetchSEOMetrics(
   query: string = '',
   limit: number = 50
 ): Promise<SEOMetric[]> {
-  // TODO: Google Search Console integration - using mock data for now
-  return generateMockSEOMetrics();
+  try {
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endDate = new Date().toISOString().split('T')[0];
+    
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/seo-metrics-bridge`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ query, limit, startDate, endDate })
+    });
+
+    if (!response.ok) {
+      console.error('SEO API error:', response.status, await response.text());
+      return generateMockSEOMetrics();
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch SEO metrics:', error);
+    return generateMockSEOMetrics();
+  }
 }
 
 /**
