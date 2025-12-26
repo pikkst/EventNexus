@@ -14,7 +14,13 @@ const FooterLink = ({ to, children }: React.PropsWithChildren<{ to: string }>) =
 );
 
 const SocialLink = ({ icon, href }: { icon: React.ReactNode, href: string }) => (
-  <a href={href} className="w-10 h-10 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-slate-500 hover:text-white hover:bg-slate-800 transition-all">
+  <a 
+    href={href} 
+    target="_blank" 
+    rel="noopener noreferrer" 
+    className="w-10 h-10 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-slate-500 hover:text-white hover:bg-slate-800 transition-all"
+    aria-label={`Visit EventNexus on ${href.includes('facebook') ? 'Facebook' : href.includes('instagram') ? 'Instagram' : href.includes('linkedin') ? 'LinkedIn' : 'social media'}`}
+  >
     {React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}
   </a>
 );
@@ -36,10 +42,9 @@ const Footer: React.FC = () => {
               Discover, Create, and Experience Events — Anywhere, Anytime. The world's first map-first discovery engine.
             </p>
             <div className="flex items-center gap-4">
-              <SocialLink icon={<Twitter />} href="#" />
-              <SocialLink icon={<Instagram />} href="#" />
-              <SocialLink icon={<Linkedin />} href="#" />
-              <SocialLink icon={<Facebook />} href="#" />
+              <SocialLink icon={<Facebook />} href="https://www.facebook.com/profile.php?id=61585668350154" />
+              <SocialLink icon={<Instagram />} href="https://www.instagram.com/blogpieesti/" />
+              <SocialLink icon={<Linkedin />} href="https://www.linkedin.com/company/eventnexus-eu" />
             </div>
           </div>
 
