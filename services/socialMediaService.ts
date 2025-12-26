@@ -6,6 +6,41 @@
 import { supabase } from './supabase';
 import { generateAdImage } from './geminiService';
 
+const makeId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+// Upload base64 data URL to Supabase Storage to obtain a public URL (used for Instagram)
+const uploadDataUrlToSupabase = async (dataUrl: string): Promise<string | null> => {
+  try {
+    const [, base64] = dataUrl.split(',');
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    const file = new Blob([bytes], { type: 'image/png' });
+    const filePath = `instagram/${makeId()}.png`;
+    const { error: uploadError } = await supabase.storage
+      .from('social-media')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: 'image/png'
+      });
+
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError);
+      return null;
+    }
+
+    const { data } = supabase.storage.from('social-media').getPublicUrl(filePath);
+    return data?.publicUrl || null;
+  } catch (error) {
+    console.error('Failed to upload image to Supabase:', error);
+    return null;
+  }
+};
+
 export interface SocialMediaPost {
   platform: 'facebook' | 'instagram' | 'twitter' | 'linkedin';
   content: string;
@@ -356,9 +391,19 @@ export const postToInstagram = async (
       throw new Error('Instagram Business Account ID is required');
     }
 
-    // Instagram requires a publicly accessible image URL
-    if (!imageUrl || imageUrl.startsWith('data:')) {
-      throw new Error('Instagram requires a publicly accessible image URL. Base64 images are not supported. Please use an image hosted online.');
+    // Instagram requires a publicly accessible image URL; upload base64 images to storage
+    let finalImageUrl = imageUrl;
+    if (!finalImageUrl) {
+      throw new Error('Instagram requires an image');
+    }
+
+    if (finalImageUrl.startsWith('data:')) {
+      const publicUrl = await uploadDataUrlToSupabase(finalImageUrl);
+      if (!publicUrl) {
+        throw new Error('Failed to upload image for Instagram. Please retry.');
+      }
+      finalImageUrl = publicUrl;
+      console.log('🌐 Uploaded image for Instagram, public URL:', finalImageUrl);
     }
 
     // Step 1: Create media container
@@ -368,7 +413,7 @@ export const postToInstagram = async (
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          image_url: imageUrl,
+          image_url: finalImageUrl,
           caption: caption,
           access_token: accessToken
         })
