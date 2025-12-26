@@ -516,3 +516,110 @@ Use professional but clear language. Be specific about URLs and repositories. Ac
     };
   }
 };
+
+/**
+ * Generate printable poster design with AI
+ * Includes poster layout description, image prompt, and color scheme
+ * Free tier: costs credits | Paid tiers: included
+ */
+export const generatePosterDesign = async (
+  eventName: string,
+  eventDescription: string,
+  eventCategory: string,
+  campaignTheme: string,
+  userId?: string,
+  userTier?: string
+) => {
+  // Check if user needs to pay with credits (Free tier only)
+  if (userId && userTier === 'free') {
+    const hasCredits = await checkUserCredits(userId, 25); // 25 credits for poster design
+    if (!hasCredits) {
+      throw new Error(`Insufficient credits. Need 25 credits for poster design`);
+    }
+  }
+
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: `You are an expert poster designer creating a professional, eye-catching event poster for printing.
+
+EVENT DETAILS:
+- Name: "${eventName}"
+- Category: ${eventCategory}
+- Description: ${eventDescription}
+- Campaign Focus: ${campaignTheme}
+
+POSTER DESIGN REQUIREMENTS:
+1. Create a visually striking, high-impact design suitable for:
+   - Physical printing on A4/A3 paper
+   - Digital display on screens
+   - Wall mounting in public spaces
+
+2. Design Characteristics:
+   - Bold, readable typography (event name must be prominent from 2-3 meters away)
+   - Strong color contrast for visibility
+   - Clear visual hierarchy
+   - Professional and engaging aesthetic
+   - Balanced composition with event image on left, details+QR code on right
+
+3. Visual Elements:
+   - Main event imagery: Vivid, relevant to category and theme
+   - Color scheme: 3 colors (primary, secondary, accent) that work well together
+   - Must include space for QR code (bottom right corner, white background)
+   - Date, time, location clearly visible
+   - Call-to-action: "Scan QR Code to Book Tickets"
+
+4. Technical Requirements:
+   - Image resolution: High quality (300 DPI ready)
+   - Text: Sans-serif font, clean and modern
+   - Avoid excessive text - focus on event name and key details
+   - Include event price prominently
+
+Respond in JSON format with ONLY this structure:
+{
+  "title": "Poster design headline",
+  "description": "Detailed visual description of the poster layout and design elements",
+  "imageUrl": "A detailed description for AI image generation covering the main visual (left side)",
+  "colorScheme": {
+    "primary": "#HEX_COLOR (dominant background/gradient start)",
+    "secondary": "#HEX_COLOR (gradient end or secondary areas)",
+    "accent": "#HEX_COLOR (highlights and text emphasis)"
+  }
+}`,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            description: { type: Type.STRING },
+            imageUrl: { type: Type.STRING },
+            colorScheme: {
+              type: Type.OBJECT,
+              properties: {
+                primary: { type: Type.STRING },
+                secondary: { type: Type.STRING },
+                accent: { type: Type.STRING }
+              },
+              required: ['primary', 'secondary', 'accent']
+            }
+          },
+          required: ['title', 'description', 'imageUrl', 'colorScheme']
+        }
+      }
+    });
+
+    const result = JSON.parse(response.text || '{}');
+
+    // Deduct credits after successful generation (Free tier only)
+    if (userId && userTier === 'free' && result.title) {
+      await deductUserCredits(userId, 25);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Poster design generation failed:", error);
+    throw error;
+  }
+};

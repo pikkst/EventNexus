@@ -28,7 +28,8 @@ import {
   verifyConnectOnboarding,
   AttendanceSummaryItem
 } from '../services/dbService';
-import { generateAdCampaign, generateAdImage } from '../services/geminiService';
+import { generateAdCampaign, generateAdImage, generatePosterDesign } from '../services/geminiService';
+import { generatePrintablePoster, PosterDesign } from '../services/posterService';
 import { supabase } from '../services/supabase';
 import PayoutsHistory from './PayoutsHistory';
 import EnterpriseSuccessManager from './EnterpriseSuccessManager';
@@ -100,6 +101,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [selectedAdForDeploy, setSelectedAdForDeploy] = useState<any>(null);
   const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
+  
+  // Poster generation state
+  const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
+  const [posterDesign, setPosterDesign] = useState<PosterDesign | null>(null);
+  const [selectedAdForPoster, setSelectedAdForPoster] = useState<any>(null);
 
   // Check for Stripe Connect return and verify onboarding status
   useEffect(() => {
@@ -369,6 +375,62 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     } finally {
       setIsGeneratingAd(false);
       setGenStage('');
+    }
+  };
+
+  const handleGeneratePoster = async (ad: any) => {
+    if (!selectedEvent) {
+      alert('No event selected');
+      return;
+    }
+    
+    setIsGeneratingPoster(true);
+    setSelectedAdForPoster(ad);
+    
+    try {
+      // Generate poster design using AI
+      const design = await generatePosterDesign(
+        selectedEvent.name,
+        selectedEvent.description,
+        selectedEvent.category,
+        campaignTheme || 'Professional event promotion',
+        user.id,
+        user.subscription_tier
+      );
+
+      if (design && design.colorScheme) {
+        // Generate poster image based on design
+        const posterImageUrl = await generateAdImage(
+          design.imageUrl,
+          '16:9',
+          false,
+          user.id,
+          user.subscription_tier
+        );
+
+        const finalDesign: PosterDesign = {
+          ...design,
+          imageUrl: posterImageUrl || design.imageUrl
+        };
+
+        setPosterDesign(finalDesign);
+
+        // Generate and download PDF
+        await generatePrintablePoster(selectedEvent, finalDesign, true);
+        
+        alert('✅ Poster generated and downloaded! Ready to print and display.');
+      } else {
+        alert('Failed to generate poster design. Please try again.');
+      }
+    } catch (error) {
+      console.error('Poster generation error:', error);
+      if (error instanceof Error && error.message.includes('Insufficient credits')) {
+        alert('Insufficient credits for poster generation. Please upgrade your plan.');
+      } else {
+        alert('Failed to generate poster. Please try again.');
+      }
+    } finally {
+      setIsGeneratingPoster(false);
     }
   };
 
@@ -1159,6 +1221,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                                    }`}
                                  >
                                     {ad.deploying ? <Loader2 size={12} className="animate-spin" /> : ad.deployed ? <><CheckCircle size={12}/> Published</> : <><CloudUpload size={12}/> Deploy Ad</>}
+                                 </button>
+                                 <button 
+                                   onClick={() => handleGeneratePoster(ad)}
+                                   disabled={isGeneratingPoster}
+                                   className="p-4 bg-slate-950 border border-slate-800 hover:border-orange-600 rounded-xl text-slate-500 hover:text-orange-400 transition-all"
+                                   title="Generate printable poster with QR code"
+                                 >
+                                   {isGeneratingPoster ? <Loader2 size={14} className="animate-spin" /> : <Download size={14}/>}
                                  </button>
                                  <button 
                                    onClick={() => handleShareAd(ad)}
