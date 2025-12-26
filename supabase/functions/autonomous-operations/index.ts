@@ -30,8 +30,8 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Run autonomous operations
-    const { data: result, error } = await supabase.rpc('run_autonomous_operations');
+    // Run enhanced autonomous operations (includes auto-posting)
+    const { data: result, error } = await supabase.rpc('run_autonomous_operations_with_posting');
 
     if (error) {
       console.error('❌ Error running autonomous operations:', error);
@@ -42,6 +42,7 @@ serve(async (req) => {
     console.log(`  📊 Campaigns paused: ${result.actions_taken.campaigns_paused}`);
     console.log(`  📈 Campaigns scaled: ${result.actions_taken.campaigns_scaled}`);
     console.log(`  💡 Opportunities detected: ${result.actions_taken.opportunities_detected}`);
+    console.log(`  📱 Campaigns posted: ${result.actions_taken.campaigns_posted || 0}`);
 
     // If any actions were taken, log summary
     if (result.actions_taken.campaigns_paused > 0 || 

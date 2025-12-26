@@ -250,12 +250,17 @@ export async function storeOptimizationOpportunity(
 }
 
 /**
- * Run full autonomous operations cycle
- * Analyzes all campaigns and takes actions automatically
+ * Run full autonomous operations cycle including auto-posting
+ * Analyzes all campaigns and takes actions automatically:
+ * - Auto-pauses underperforming campaigns
+ * - Auto-scales high-ROI campaigns
+ * - Detects optimization opportunities
+ * - Auto-posts high-performing campaigns to social media
  */
 export async function runAutonomousOperations(): Promise<AutonomousOperationsResult | null> {
   try {
-    const { data, error } = await supabase.rpc('run_autonomous_operations');
+    // Use the enhanced function that includes social media posting
+    const { data, error } = await supabase.rpc('run_autonomous_operations_with_posting');
 
     if (error) throw error;
     return data;
