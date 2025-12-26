@@ -85,8 +85,42 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
   return (
     <div className="space-y-24 pb-24">
+      {/* Testing Phase Notice Banner */}
+      <section className="px-4 pt-6">
+        <div className="max-w-7xl mx-auto bg-gradient-to-r from-amber-900/40 via-yellow-900/40 to-amber-900/40 border-2 border-amber-500/60 rounded-2xl p-5 md:p-6 shadow-2xl">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                <Shield className="w-6 h-6 text-amber-400" />
+              </div>
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl md:text-2xl font-bold text-amber-50">Testing Phase Active</h3>
+                <span className="bg-amber-500 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-amber-950">Beta</span>
+              </div>
+              <p className="text-amber-100/90 text-sm md:text-base leading-relaxed">
+                EventNexus is currently in <strong>testing phase</strong>. All payments are processed through a <strong>secure sandbox environment</strong> — no real money is charged. 
+                <span className="hidden md:inline"> You can explore all features risk-free and help us improve the platform.</span>
+              </p>
+              <div className="bg-amber-950/30 border border-amber-600/40 rounded-xl p-4 mt-3">
+                <div className="flex items-start gap-3">
+                  <Star className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-amber-50 font-semibold text-sm md:text-base">Early Adopter Benefit</p>
+                    <p className="text-amber-100/80 text-xs md:text-sm mt-1">
+                      The first <strong>100 users</strong> will receive <strong>1 month of Pro access absolutely free</strong> when EventNexus officially launches. No credit card required during testing.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Beta Testing Banner */}
-      <section className="px-4 pt-10">
+      <section className="px-4">
         <a href="/#/beta" className="block">
           <div className="max-w-7xl mx-auto bg-gradient-to-r from-purple-900/50 to-indigo-900/50 border border-purple-500/50 rounded-[32px] p-6 md:p-8 hover:border-purple-400 transition-all shadow-2xl">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
