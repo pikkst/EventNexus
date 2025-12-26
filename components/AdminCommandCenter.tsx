@@ -523,15 +523,15 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       )}
       
       {/* Sidebar Navigation */}
-      <aside className={`fixed inset-y-0 left-0 z-[100] w-72 bg-slate-900 border-r border-slate-800 transition-transform lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-8 border-b border-slate-800/50 flex items-center gap-3">
+      <aside className={`fixed inset-y-0 left-0 z-[100] w-72 bg-slate-900 border-r border-slate-800 transition-transform lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col`}>
+        <div className="p-8 border-b border-slate-800/50 flex items-center gap-3 flex-shrink-0">
           <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-600/20"><ShieldAlert className="text-white" size={20} /></div>
           <div>
             <h1 className="font-black text-xl tracking-tighter">Nexus Core</h1>
             <p className="text-[8px] font-black uppercase text-slate-500 tracking-[0.2em]">Platform Management</p>
           </div>
         </div>
-        <nav className="p-4 space-y-1 mt-4">
+        <nav className="p-4 space-y-1 mt-4 flex-1 overflow-y-auto scrollbar-hide">
           {navItems.map((item) => (
             <button 
               key={item.id} 
@@ -546,7 +546,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
             </button>
           ))}
         </nav>
-        <div className="absolute bottom-8 left-0 right-0 px-6 space-y-3">
+        <div className="p-6 space-y-3 border-t border-slate-800/50 flex-shrink-0">
            <button onClick={() => setIsRefreshing(true)} className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 text-white transition-all">
               <RefreshCw className={isRefreshing ? 'animate-spin' : ''} size={14} /> Sync Cluster
            </button>
