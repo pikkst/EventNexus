@@ -103,8 +103,16 @@ const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade, onOpenAuth }
   const handleTierSwitch = async (tier: 'free' | 'pro' | 'premium' | 'enterprise') => {
     // Require authentication for any tier selection
     if (!user) {
+      alert('Please sign in to manage your subscription');
       onOpenAuth?.();
       return;
+    }
+
+    // Prevent downgrade without confirmation
+    if (tier === 'free' && user.subscription_tier !== 'free') {
+      if (!confirm('Downgrading to Free will remove access to premium features. Continue?')) {
+        return;
+      }
     }
 
     // Free tier can be selected directly without payment

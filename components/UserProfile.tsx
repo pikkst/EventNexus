@@ -424,6 +424,34 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
   };
 
   const isPro = (user.subscription_tier || user.subscription) !== 'free';
+  
+  // Helper to show what features user would get with upgrade
+  const getUpgradeFeatures = (currentTier: string) => {
+    const features: Record<string, string[]> = {
+      'free': [
+        'Create up to 20 events per month',
+        'Revenue & attendance analytics',
+        'Public organizer profile',
+        'AI-powered marketing tools',
+        'Social media integrations'
+      ],
+      'pro': [
+        'Create up to 100 events',
+        'Featured map placement',
+        'Custom branding & logos',
+        'Advanced analytics',
+        'Affiliate program access'
+      ],
+      'premium': [
+        'Unlimited events',
+        'White-labeled dashboard',
+        'Dedicated success manager',
+        'Full API access',
+        'Custom domain support'
+      ]
+    };
+    return features[currentTier] || [];
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">

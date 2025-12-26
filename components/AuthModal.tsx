@@ -44,7 +44,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
         
         if (authError) {
           clearTimeout(timeoutId);
-          setError(authError.message || 'Login failed. Please check your credentials.');
+          const friendlyError = authError.message.includes('Invalid') 
+            ? 'Incorrect email or password. Please check your credentials and try again.'
+            : authError.message.includes('not confirmed')
+            ? 'Please confirm your email address before signing in. Check your inbox for a confirmation link.'
+            : authError.message || 'Sign in failed. Please try again.';
+          setError(friendlyError);
           setIsLoading(false);
           return;
         }
@@ -90,7 +95,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
         
         if (authError) {
           clearTimeout(timeoutId);
-          setError(authError.message || 'Registration failed');
+          const friendlyError = authError.message.includes('already registered')
+            ? 'This email is already registered. Please sign in instead.'
+            : authError.message.includes('Password')
+            ? 'Password must be at least 6 characters long.'
+            : authError.message || 'Registration failed. Please try again.';
+          setError(friendlyError);
           setIsLoading(false);
           return;
         }
