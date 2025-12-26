@@ -211,8 +211,8 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Social Media Connections</h2>
-          <p className="text-sm text-gray-600">Connect Facebook & Instagram for automated posting</p>
+          <h2 className="text-2xl font-bold text-white">Social Media Connections</h2>
+          <p className="text-sm text-slate-400">Connect Facebook & Instagram to enable automatic post publishing from Marketing Studio</p>
         </div>
         <div className="flex items-center gap-2">
           <button

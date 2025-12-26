@@ -534,7 +534,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
             <div className="flex-1">
               <h3 className="text-xl font-bold text-white mb-2">Connect Your Bank Account</h3>
               <p className="text-gray-300 mb-4">
-                To receive payouts from ticket sales, complete your Stripe Connect setup. It only takes 5 minutes!
+                To receive payouts from ticket sales, complete your Stripe Connect setup. It only takes 5 minutes! Funds are automatically transferred to your bank account 2 days after each event concludes.
               </p>
               <div className="flex flex-wrap gap-3 mb-4">
                 <div className="flex items-center text-sm text-gray-200">
@@ -592,12 +592,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       )}
 
       <div className={`flex gap-4 overflow-x-auto pb-2 border-b border-slate-800 scrollbar-hide ${isGated ? 'opacity-20 pointer-events-none' : ''}`}>
-         <TabBtn label="Insights" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<BarChart3 />} />
-         <TabBtn label="Payouts" active={activeTab === 'payouts'} onClick={() => setActiveTab('payouts')} icon={<DollarSign />} />
-         <TabBtn label="Marketing Studio" active={activeTab === 'marketing'} onClick={() => setActiveTab('marketing')} icon={<Megaphone />} />
-         {(user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && <TabBtn label="Affiliate Tools" active={activeTab === 'affiliate'} onClick={() => setActiveTab('affiliate')} icon={<Users />} />}
-         {isEnterprise && <TabBtn label="Service Hub" active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} icon={<Link2 />} />}
-         {isEnterprise && <TabBtn label="White-Labeling" active={activeTab === 'branding'} onClick={() => setActiveTab('branding')} icon={<Palette />} />}
+         <TabBtn label="Insights" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<BarChart3 />} title="View revenue, attendance, and event performance metrics" />
+         <TabBtn label="Payouts" active={activeTab === 'payouts'} onClick={() => setActiveTab('payouts')} icon={<DollarSign />} title="Track earnings and bank transfers from ticket sales" />
+         <TabBtn label="Marketing Studio" active={activeTab === 'marketing'} onClick={() => setActiveTab('marketing')} icon={<Megaphone />} title="AI-powered campaign creation and social media automation" />
+         {(user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && <TabBtn label="Affiliate Tools" active={activeTab === 'affiliate'} onClick={() => setActiveTab('affiliate')} icon={<Users />} title="Create referral links and track partner commissions" />}
+         {isEnterprise && <TabBtn label="Service Hub" active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} icon={<Link2 />} title="Manage social media integrations and API connections" />}
+         {isEnterprise && <TabBtn label="White-Labeling" active={activeTab === 'branding'} onClick={() => setActiveTab('branding')} icon={<Palette />} title="Customize your dashboard appearance and public profile" />}
       </div>
 
       {activeTab === 'overview' && (
@@ -1567,8 +1567,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   );
 };
 
-const TabBtn = ({ label, active, onClick, icon }: any) => (
-  <button onClick={onClick} className={`flex items-center gap-3 px-6 py-4 border-b-2 transition-all shrink-0 ${active ? 'border-indigo-600 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
+const TabBtn = ({ label, active, onClick, icon, title }: any) => (
+  <button onClick={onClick} title={title} className={`flex items-center gap-3 px-6 py-4 border-b-2 transition-all shrink-0 ${active ? 'border-indigo-600 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
     {React.cloneElement(icon, { className: 'w-4 h-4' })}
     <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">{label}</span>
   </button>

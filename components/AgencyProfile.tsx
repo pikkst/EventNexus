@@ -134,7 +134,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
           <div className="space-y-4">
             <h1 className="text-5xl font-black tracking-tighter text-white">Profile Not Available</h1>
             <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-lg mx-auto">
-              Public organizer profiles are available for <span className="text-indigo-400 font-bold">Pro tier and above</span>. This organizer needs to upgrade to showcase their events and brand.
+              Public organizer profiles are available for <span className="text-indigo-400 font-bold">Pro tier and above</span>. Upgrading enables custom branding, event showcases, follower growth, and professional credibility.
             </p>
           </div>
 
