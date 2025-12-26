@@ -48,6 +48,9 @@ import {
   updateSystemConfig,
   Campaign,
   getFinancialLedger,
+  transitionToproduction,
+  getCurrentEnvironment,
+  getProductionTransitionHistory,
   FinancialTransaction
 } from '../services/dbService';
 import MasterAuthModal from './MasterAuthModal';
@@ -118,6 +121,13 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [isDiagnosticRunning, setIsDiagnosticRunning] = useState(false);
   const [diagnosticResults, setDiagnosticResults] = useState<any>(null);
   const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
+
+  // Production Transition State
+  const [showProductionModal, setShowProductionModal] = useState(false);
+  const [isTransitioningToProduction, setIsTransitioningToProduction] = useState(false);
+  const [transitionConfirmation, setTransitionConfirmation] = useState('');
+  const [currentEnvironment, setCurrentEnvironment] = useState<any>(null);
+  const [transitionHistory, setTransitionHistory] = useState<any[]>([]);
 
   const filteredUsers = useMemo(() => {
     return platformUsers.filter(u => {
@@ -298,6 +308,48 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       console.error('Error refreshing infrastructure stats:', error);
     } finally {
       setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
+
+  const handleTransitionToProduction = async () => {
+    if (transitionConfirmation !== 'TRANSITION_TO_PRODUCTION') {
+      alert('⚠️ Please type the exact confirmation message');
+      return;
+    }
+
+    if (!isMasterLocked) {
+      alert('⚠️ Master controls must be locked before proceeding');
+      return;
+    }
+
+    setIsTransitioningToProduction(true);
+    try {
+      const result = await transitionToproduction(
+        undefined, // Uses authenticated user from Edge Function
+        undefined, // Stripe key optional
+        'Admin-initiated production transition',
+      );
+
+      if (result?.success) {
+        alert('✅ Platform successfully transitioned to production mode!\n\n' +
+              '🔴 All sandbox and beta features are now disabled.\n' +
+              '🔴 Stripe is now in LIVE mode.\n' +
+              '🔴 All beta testers have been deactivated.');
+        setShowProductionModal(false);
+        setTransitionConfirmation('');
+        // Refresh environment
+        const env = await getCurrentEnvironment();
+        setCurrentEnvironment(env);
+        const history = await getProductionTransitionHistory();
+        setTransitionHistory(history);
+      } else {
+        alert('❌ Transition failed: ' + (result?.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error transitioning to production:', error);
+      alert('❌ Error: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsTransitioningToProduction(false);
     }
   };
 
@@ -1287,6 +1339,13 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                             'Run Diagnostic Scan'
                           )}
                        </button>
+                       <button 
+                         onClick={() => requestMasterAuth('transition_to_production')}
+                         disabled={isMasterLocked}
+                         className="w-full py-4 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-[10px] font-black uppercase tracking-widest text-red-500 transition-all flex items-center justify-center gap-2 border border-red-500/30"
+                       >
+                          <Rocket size={14} /> Go Live Production
+                       </button>
                     </div>
                   </div>
                 </>
@@ -1711,12 +1770,20 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       <MasterAuthModal
         isOpen={showMasterAuthModal}
         onClose={() => setShowMasterAuthModal(false)}
-        onAuthenticate={handleMasterAuth}
+        onAuthenticate={(success) => {
+          if (success && pendingOperation === 'transition_to_production') {
+            setShowProductionModal(true);
+          }
+          handleMasterAuth(success);
+        }}
         operationName={pendingOperation}
       />
 
       {/* Campaign Scheduler Modal */}
       <SchedulerModal />
+
+      {/* Production Transition Modal */}
+      <ProductionTransitionModal />
     </div>
   );
 };
@@ -1905,6 +1972,126 @@ const DiagnosticModal: React.FC<{
   </div>
 );
 
+  // Production Transition Modal
+  const ProductionTransitionModal = () => {
+    if (!showProductionModal) return null;
+
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in">
+        <div className="bg-slate-950 border-2 border-red-500/30 rounded-[40px] w-full max-w-2xl shadow-2xl shadow-red-600/20">
+          {/* Header */}
+          <div className="p-8 border-b border-red-500/20 bg-red-500/5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h2 className="text-3xl font-black tracking-tight text-red-500 flex items-center gap-2">
+                  <Rocket size={28} /> Transition to Production
+                </h2>
+                <p className="text-sm text-slate-400 mt-2">This action will permanently switch the platform from development to production mode. This cannot be easily reversed.</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowProductionModal(false);
+                  setTransitionConfirmation('');
+                }}
+                className="p-2 hover:bg-slate-800 rounded-xl transition-all"
+              >
+                <X size={24} className="text-slate-400" />
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-8 space-y-6 max-h-[calc(90vh-300px)] overflow-y-auto">
+            {/* Warning Box */}
+            <div className="bg-red-500/10 border-2 border-red-500/30 rounded-2xl p-6 space-y-3">
+              <h3 className="font-black text-red-500 text-sm uppercase tracking-widest flex items-center gap-2">
+                <AlertOctagon size={18} /> Critical Changes
+              </h3>
+              <ul className="space-y-2 text-sm text-slate-300">
+                <li className="flex gap-2"><span className="text-red-500 font-black">⚠️</span> <span>Stripe will switch from <strong>SANDBOX</strong> to <strong>LIVE</strong> mode</span></li>
+                <li className="flex gap-2"><span className="text-red-500 font-black">⚠️</span> <span>All <strong>beta tester features</strong> will be permanently disabled</span></li>
+                <li className="flex gap-2"><span className="text-red-500 font-black">⚠️</span> <span><strong>Development APIs</strong> will be replaced with production endpoints</span></li>
+                <li className="flex gap-2"><span className="text-red-500 font-black">⚠️</span> <span><strong>All active beta invitations</strong> will be archived</span></li>
+                <li className="flex gap-2"><span className="text-red-500 font-black">⚠️</span> <span>Production <strong>safeguards</strong> will be activated (2FA, audit logging, backups)</span></li>
+              </ul>
+            </div>
+
+            {/* Confirmation Input */}
+            <div className="space-y-3">
+              <label className="block text-sm font-black text-slate-400 uppercase tracking-widest">
+                Type to confirm transition:
+              </label>
+              <input
+                type="text"
+                value={transitionConfirmation}
+                onChange={(e) => setTransitionConfirmation(e.target.value.toUpperCase())}
+                placeholder="TRANSITION_TO_PRODUCTION"
+                className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-50 font-mono text-sm placeholder-slate-600 focus:outline-none focus:border-red-500/50"
+              />
+              <p className="text-[10px] text-slate-500 font-mono">
+                Match case-sensitive text exactly: <span className="text-red-500 font-black">TRANSITION_TO_PRODUCTION</span>
+              </p>
+            </div>
+
+            {/* Environment Info */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <h3 className="font-black text-slate-300 text-sm uppercase tracking-widest">Current Configuration</h3>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <p className="text-slate-500 font-bold mb-1">Environment</p>
+                  <p className="text-slate-300 font-mono bg-slate-950 px-3 py-2 rounded">Development</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 font-bold mb-1">Stripe Mode</p>
+                  <p className="text-amber-500 font-mono font-black bg-slate-950 px-3 py-2 rounded">TEST (Sandbox)</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 font-bold mb-1">Beta Features</p>
+                  <p className="text-emerald-500 font-mono font-black bg-slate-950 px-3 py-2 rounded">ENABLED</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 font-bold mb-1">API Base URL</p>
+                  <p className="text-cyan-500 font-mono text-[9px] bg-slate-950 px-3 py-2 rounded truncate">localhost:3000</p>
+                </div>
+              </div>
+              <div className="border-t border-slate-800 pt-4">
+                <p className="text-[10px] text-slate-500 font-mono">
+                  Post-transition, all these values will update to production configuration. This action is audit-logged and cannot be undone.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="p-8 border-t border-red-500/20 bg-red-500/5 flex gap-4">
+            <button
+              onClick={() => {
+                setShowProductionModal(false);
+                setTransitionConfirmation('');
+              }}
+              className="flex-1 px-6 py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleTransitionToProduction}
+              disabled={
+                isTransitioningToProduction ||
+                transitionConfirmation !== 'TRANSITION_TO_PRODUCTION'
+              }
+              className="flex-1 px-6 py-4 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 shadow-xl shadow-red-600/20"
+            >
+              {isTransitioningToProduction ? (
+                <><Loader2 size={16} className="animate-spin" /> Processing...</>
+              ) : (
+                <><Rocket size={16} /> Go Live Now</>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   {/* Campaign Scheduler Modal */}
 export default AdminCommandCenter;
