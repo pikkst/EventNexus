@@ -49,15 +49,20 @@ export async function fetchGAMetrics(
   metricType: 'traffic' | 'conversions' | 'users' | 'engagement',
   days: number = 30
 ): Promise<GAMetric[]> {
+  // TODO: Backend not ready yet - using mock data
+  // When ready, uncomment the API call below
+  return generateMockGAMetrics(metricType);
+  
+  /* BACKEND INTEGRATION (uncomment when ready):
   try {
-    const response = await fetch('/api/analytics/ga', {
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/analytics-bridge`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        metricType,
-        days,
-        timezone: 'UTC'
-      })
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ metricType, days, timezone: 'UTC' })
     });
 
     if (!response.ok) {
@@ -70,50 +75,23 @@ export async function fetchGAMetrics(
     console.error('Failed to fetch GA metrics:', error);
     return generateMockGAMetrics(metricType);
   }
+  */
 }
 
 /**
  * Fetch traffic data for charts
  */
 export async function fetchTrafficData(days: number = 30): Promise<TrafficData[]> {
-  try {
-    const response = await fetch('/api/analytics/traffic', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ days, timezone: 'UTC' })
-    });
-
-    if (!response.ok) {
-      return generateMockTrafficData(days);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch traffic data:', error);
-    return generateMockTrafficData(days);
-  }
+  // TODO: Google Analytics integration - using mock data for now
+  return generateMockTrafficData(days);
 }
 
 /**
  * Fetch conversion funnel data
  */
 export async function fetchConversionFunnel(days: number = 30): Promise<ConversionFunnel[]> {
-  try {
-    const response = await fetch('/api/analytics/funnel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ days })
-    });
-
-    if (!response.ok) {
-      return generateMockFunnelData();
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch funnel data:', error);
-    return generateMockFunnelData();
-  }
+  // TODO: Google Analytics funnel tracking - using mock data for now
+  return generateMockFunnelData();
 }
 
 /**
@@ -123,13 +101,20 @@ export async function fetchMetaInsights(
   platform: 'facebook' | 'instagram' = 'facebook'
 ): Promise<MetaInsight[]> {
   try {
-    const response = await fetch('/api/meta/insights', {
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/meta-insights-bridge`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
       body: JSON.stringify({ platform, period: 'day' })
     });
 
     if (!response.ok) {
+      console.error('Meta API error:', response.status, await response.text());
       return generateMockMetaInsights(platform);
     }
 
@@ -147,27 +132,8 @@ export async function fetchSEOMetrics(
   query: string = '',
   limit: number = 50
 ): Promise<SEOMetric[]> {
-  try {
-    const response = await fetch('/api/seo/metrics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query,
-        limit,
-        startDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0]
-      })
-    });
-
-    if (!response.ok) {
-      return generateMockSEOMetrics();
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch SEO metrics:', error);
-    return generateMockSEOMetrics();
-  }
+  // TODO: Google Search Console integration - using mock data for now
+  return generateMockSEOMetrics();
 }
 
 /**
