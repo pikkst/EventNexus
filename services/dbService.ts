@@ -302,6 +302,7 @@ export const getUser = async (id: string): Promise<User | null> => {
             role: 'attendee',
             subscription_tier: 'free',
             credits: 0,
+            credits_balance: 0,
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.id}`,
             notification_prefs: {
               interestedCategories: [],
@@ -358,9 +359,16 @@ export const getUser = async (id: string): Promise<User | null> => {
 export const createUser = async (user: User): Promise<User | null> => {
   console.log('Creating user profile:', user.email);
   
+  // Ensure both legacy and new credit fields are populated
+  const payload = {
+    ...user,
+    credits_balance: user.credits_balance ?? user.credits ?? 0,
+    credits: user.credits ?? user.credits_balance ?? 0
+  };
+
   const { data, error } = await supabase
     .from('users')
-    .insert([user])
+    .insert([payload])
     .select()
     .single();
   
@@ -504,6 +512,17 @@ export const getUserBySlug = async (slug: string): Promise<User | null> => {
 };
 
 // Notifications
+const transformNotificationFromDB = (dbNotif: any): Notification => ({
+  id: dbNotif.id,
+  title: dbNotif.title,
+  message: dbNotif.message,
+  type: dbNotif.type,
+  eventId: dbNotif.event_id,
+  senderName: dbNotif.sender_name,
+  timestamp: dbNotif.timestamp,
+  isRead: dbNotif.isRead
+});
+
 export const getNotifications = async (userId: string): Promise<Notification[]> => {
   const { data, error } = await supabase
     .from('notifications')
@@ -516,13 +535,26 @@ export const getNotifications = async (userId: string): Promise<Notification[]> 
     return [];
   }
   
-  return data || [];
+  return (data || []).map(transformNotificationFromDB);
 };
 
 export const createNotification = async (notification: Omit<Notification, 'id'> & { user_id: string }): Promise<Notification | null> => {
+  const allowedTypes = new Set(['proximity_radar', 'event_update', 'ticket_purchase', 'system', 'admin']);
+  const safeType = allowedTypes.has(notification.type) ? notification.type : 'system';
+  const payload = {
+    user_id: notification.user_id,
+    title: notification.title,
+    message: notification.message,
+    type: safeType,
+    event_id: notification.eventId,
+    sender_name: notification.senderName,
+    isRead: notification.isRead,
+    timestamp: notification.timestamp
+  };
+
   const { data, error } = await supabase
     .from('notifications')
-    .insert([notification])
+    .insert([payload])
     .select()
     .single();
   
@@ -531,7 +563,7 @@ export const createNotification = async (notification: Omit<Notification, 'id'> 
     return null;
   }
   
-  return data;
+  return transformNotificationFromDB(data);
 };
 
 export const markNotificationRead = async (id: string): Promise<boolean> => {
@@ -892,7 +924,7 @@ export const updateUserCredits = async (userId: string, credits: number): Promis
   try {
     const { error } = await supabase
       .from('users')
-      .update({ credits })
+      .update({ credits, credits_balance: credits })
       .eq('id', userId);
     
     if (error) throw error;
@@ -1000,12 +1032,13 @@ export const getUserCredits = async (userId: string): Promise<number> => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('credits')
+      .select('credits, credits_balance')
       .eq('id', userId)
       .single();
     
     if (error) throw error;
-    return user?.credits || 0;
+    // Prefer credits_balance, fallback to legacy credits
+    return user?.credits_balance ?? user?.credits ?? 0;
   } catch (error) {
     console.error('Error getting user credits:', error);
     return 0;

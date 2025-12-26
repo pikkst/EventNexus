@@ -321,7 +321,7 @@ export const validateAndScanTicket = async (
       user_id: ticket.user.id,
       title: 'Ticket Scanned',
       message: `Your ticket for "${ticket.event.name}" was scanned successfully. Enjoy the event!`,
-      type: 'update',
+      type: 'event_update',
       event_id: ticket.event.id,
       sender_name: 'EventNexus',
       isRead: false,

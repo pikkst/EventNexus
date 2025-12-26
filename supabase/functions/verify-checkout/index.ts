@@ -117,7 +117,7 @@ serve(async (req: Request) => {
           // Send notification to user
           await supabase.from('notifications').insert({
             user_id: metadata.user_id,
-            type: 'update',
+            type: 'event_update',
             title: 'Tickets Ready!',
             message: `✓ Payment confirmed! Your ${pendingTickets.length} tickets are ready with QR codes. View them in your profile.`,
             sender_name: 'EventNexus',
