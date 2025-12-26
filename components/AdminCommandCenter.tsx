@@ -250,6 +250,39 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     setPendingOperation('');
   };
 
+  const handleRefreshAll = async () => {
+    setIsRefreshing(true);
+    try {
+      // Reload all platform data
+      const [users, stats, infra, campaignsData, config, ledger] = await Promise.all([
+        getAllUsers(),
+        getPlatformStats(),
+        getInfrastructureStats(),
+        getCampaigns(),
+        getSystemConfig(),
+        getFinancialLedger()
+      ]);
+      
+      setPlatformUsers(users);
+      setPlatformStats(stats);
+      setInfrastructureStats(infra);
+      setCampaigns(campaignsData);
+      setFinancialLedger(ledger);
+      
+      // Update system config
+      if (config.global_ticket_fee) setGlobalTicketFee(parseFloat(config.global_ticket_fee));
+      if (config.credit_value) setCreditValue(parseFloat(config.credit_value));
+      if (config.maintenance_mode) setIsMaintenanceMode(config.maintenance_mode === 'true');
+      
+      console.log('✅ Cluster sync completed - all data refreshed');
+    } catch (error) {
+      console.error('❌ Cluster sync failed:', error);
+      alert('Failed to sync cluster data. Please try again.');
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
+
   const handleRefreshInfra = async () => {
     setIsRefreshing(true);
     try {
@@ -547,8 +580,13 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
           ))}
         </nav>
         <div className="p-6 space-y-3 border-t border-slate-800/50 flex-shrink-0">
-           <button onClick={() => setIsRefreshing(true)} className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 text-white transition-all">
-              <RefreshCw className={isRefreshing ? 'animate-spin' : ''} size={14} /> Sync Cluster
+           <button 
+             onClick={handleRefreshAll}
+             disabled={isRefreshing}
+             className="w-full py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 text-white transition-all"
+           >
+              <RefreshCw className={isRefreshing ? 'animate-spin' : ''} size={14} /> 
+              {isRefreshing ? 'Syncing...' : 'Sync Cluster'}
            </button>
            <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800">
               <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2">Build: v4.2.0-stable</p>
