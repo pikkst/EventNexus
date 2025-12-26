@@ -183,11 +183,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           <div className="inline-flex items-center gap-2 bg-indigo-600/10 border border-indigo-500/20 px-4 py-2 rounded-full text-indigo-400 text-sm font-bold animate-bounce">
             <Zap className="w-4 h-4 fill-current" /> New: AI Auto-Translation for Events
           </div>
-          <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-[0.9]">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight leading-[0.9]">
             Discover, Create, <br />
             <span className="text-indigo-500">Experience.</span>
           </h1>
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed px-4">
             The world's first map-first event platform. From massive festivals to secret living room concerts — find your next vibe instantly.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">

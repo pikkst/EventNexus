@@ -146,10 +146,10 @@ const HomeMap: React.FC = () => {
 
       {/* Vibe Radar - Mobile Floating Navigator */}
       {nearestEvent && !selectedEvent && (
-        <div className="absolute left-6 bottom-10 z-[500] animate-in slide-in-from-left duration-700">
+        <div className="absolute left-4 md:left-6 bottom-6 md:bottom-10 z-[500] animate-in slide-in-from-left duration-700">
            <button 
              onClick={() => setSelectedEvent(nearestEvent)}
-             className="bg-slate-900 border border-slate-800 p-4 rounded-[32px] shadow-2xl flex items-center gap-4 group hover:border-indigo-500 transition-all"
+             className="bg-slate-900 border border-slate-800 p-3 md:p-4 rounded-2xl md:rounded-[32px] shadow-2xl flex items-center gap-3 md:gap-4 group hover:border-indigo-500 transition-all"
            >
               <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white relative">
                  <Radar className="w-6 h-6 animate-pulse" />
@@ -164,8 +164,8 @@ const HomeMap: React.FC = () => {
       )}
 
       {/* Overlays */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 z-[400] space-y-4">
-        <div className="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-[24px] shadow-2xl p-2 flex flex-col md:flex-row items-center gap-2">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-2 sm:px-4 z-[400] space-y-3">
+        <div className="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-2xl md:rounded-[24px] shadow-2xl p-2 flex flex-col md:flex-row items-center gap-2">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input type="text" placeholder="Explore events..." className="w-full bg-slate-800/50 md:bg-transparent pl-12 pr-4 py-3 text-sm focus:outline-none rounded-xl text-white" />
@@ -185,9 +185,9 @@ const HomeMap: React.FC = () => {
         </div>
       </div>
 
-      <div className="absolute right-6 bottom-10 flex flex-col gap-3 z-[400]">
-        <button onClick={() => setIsFollowingUser(!isFollowingUser)} className={`p-4 rounded-2xl shadow-2xl transition-all border ${isFollowingUser ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
-          <LocateFixed className="w-6 h-6" />
+      <div className="absolute right-4 md:right-6 bottom-6 md:bottom-10 flex flex-col gap-2 md:gap-3 z-[400]">
+        <button onClick={() => setIsFollowingUser(!isFollowingUser)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${isFollowingUser ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
+          <LocateFixed className="w-5 h-5 md:w-6 md:h-6" />
         </button>
         <div className="bg-slate-900/90 border border-slate-800 backdrop-blur-md p-4 rounded-3xl flex flex-col items-center gap-3">
           <input type="range" min="5" max="100" step="5" value={searchRadius} onChange={(e) => setSearchRadius(Number(e.target.value))} className="appearance-none w-1 h-32 bg-slate-800 rounded-lg accent-indigo-500 vertical-range cursor-pointer" />
@@ -195,8 +195,8 @@ const HomeMap: React.FC = () => {
       </div>
 
       {selectedEvent && (
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-lg px-4 z-[400] animate-in slide-in-from-bottom-10 duration-500">
-          <div className="bg-slate-900 border border-slate-800 rounded-[40px] shadow-2xl overflow-hidden flex flex-col sm:flex-row p-2 gap-2">
+        <div className="absolute bottom-4 md:bottom-10 left-1/2 -translate-x-1/2 w-full max-w-lg px-2 sm:px-4 z-[400] animate-in slide-in-from-bottom-10 duration-500">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col sm:flex-row p-2 gap-2">
             <div className="w-full sm:w-1/3 h-32 sm:h-auto relative shrink-0">
               <img src={selectedEvent.imageUrl} className="w-full h-full object-cover rounded-[32px]" alt="" />
             </div>

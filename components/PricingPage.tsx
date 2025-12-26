@@ -166,11 +166,11 @@ const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade, onOpenAuth }
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 items-start">
           {PLANS.map((plan) => (
             <div 
               key={plan.name}
-              className={`relative bg-slate-900 border ${plan.highlight ? 'border-indigo-500 shadow-2xl shadow-indigo-500/10 scale-105 z-10' : 'border-slate-800'} rounded-[40px] p-8 transition-all hover:border-indigo-500/50 group`}
+              className={`relative bg-slate-900 border ${plan.highlight ? 'border-indigo-500 shadow-2xl shadow-indigo-500/10 md:scale-105 z-10' : 'border-slate-800'} rounded-3xl md:rounded-[40px] p-6 md:p-8 transition-all hover:border-indigo-500/50 group`}
             >
               <div className="space-y-6">
                 <div>
