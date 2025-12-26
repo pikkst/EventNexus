@@ -48,6 +48,7 @@ import GDPRCompliance from './components/GDPRCompliance';
 import NotificationSettings from './components/NotificationSettings';
 import AuthModal from './components/AuthModal';
 import BetaInvitation from './components/BetaInvitation';
+import OnboardingTutorial from './components/OnboardingTutorial';
 import { User, Notification, EventNexusEvent } from './types';
 import { CATEGORIES } from './constants';
 import { supabase } from './services/supabase';
@@ -154,6 +155,7 @@ const App: React.FC = () => {
     return [];
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
  
   // Ensure GA script is present even if index.html is cached/stripped
   useEffect(() => {
@@ -398,6 +400,17 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // Trigger onboarding for new users
+  useEffect(() => {
+    if (user && !localStorage.getItem('onboarding_completed')) {
+      // Wait 2 seconds after user loads to show onboarding
+      const timer = setTimeout(() => {
+        setShowOnboarding(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!user || !user.notification_prefs?.proximityAlerts || !("geolocation" in navigator)) return;
 
@@ -583,6 +596,17 @@ const App: React.FC = () => {
           onClose={() => setIsAuthModalOpen(false)} 
           onLogin={handleLogin} 
         />
+
+        {showOnboarding && user && (
+          <OnboardingTutorial
+            user={user}
+            onComplete={() => {
+              localStorage.setItem('onboarding_completed', 'true');
+              setShowOnboarding(false);
+            }}
+            onSkip={() => setShowOnboarding(false)}
+          />
+        )}
       </div>
     </Router>
   );

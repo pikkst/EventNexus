@@ -42,6 +42,7 @@ import TicketCard from './TicketCard';
 // TicketViewModal removed; using dedicated TicketViewPage route
 import { SimplifiedSocialMediaManager } from './SimplifiedSocialMediaManager';
 import BetaTesterReport from './BetaTesterReport';
+import ReferralSystem from './ReferralSystem';
 
 interface UserProfileProps {
   user: User;
@@ -536,6 +537,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                {user.bio || "No biography provided yet. Tell the Nexus network about yourself!"}
              </p>
           </div>
+
+          {/* Referral System */}
+          <ReferralSystem user={user} />
 
           {/* Organized Events Section - Only show for paid users */}
           {isPro && (
