@@ -35,6 +35,16 @@ interface SEOMetric {
 }
 
 /**
+ * Base64URL encode helper
+ */
+function base64UrlEncode(str: string): string {
+  return btoa(str)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+/**
  * Create JWT for Google API authentication
  */
 async function createJWT(serviceAccountEmail: string, privateKey: string): Promise<string> {
@@ -52,22 +62,20 @@ async function createJWT(serviceAccountEmail: string, privateKey: string): Promi
     iat: now
   };
 
-  const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-  const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
   
   const signatureInput = `${encodedHeader}.${encodedPayload}`;
   
   // Import private key
-  const pemKey = privateKey
-    .replace(/\\n/g, '\n')
-    .replace(/\\r/g, '\r');
-  const pemContents = pemKey.replace('-----BEGIN PRIVATE KEY-----', '')
-    .replace('-----END PRIVATE KEY-----', '')
-    .replace(/\n/g, '')
-    .replace(/\r/g, '')
-    .trim();
+  const keyData = privateKey
+    .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+    .replace(/-----END PRIVATE KEY-----/g, "")
+    .replace(/\\n/g, "")
+    .replace(/\n/g, "")
+    .replace(/\s/g, "");
   
-  const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+  const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
   
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
@@ -83,8 +91,7 @@ async function createJWT(serviceAccountEmail: string, privateKey: string): Promi
     new TextEncoder().encode(signatureInput)
   );
 
-  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const encodedSignature = base64UrlEncode(String.fromCharCode(...new Uint8Array(signature)));
 
   return `${signatureInput}.${encodedSignature}`;
 }
@@ -136,13 +143,17 @@ async function fetchRealSEOMetrics(
   });
 
   if (!response.ok) {
-    console.error('Search Console API error:', await response.text());
-    throw new Error(`Search Console API returned ${response.status}`);
+    const errorText = await response.text();
+    console.error('Search Console API error:', response.status, errorText);
+    throw new Error(`Search Console API returned ${response.status}: ${errorText}`);
   }
 
   const data = await response.json();
   
+  console.log('Search Console API response:', JSON.stringify(data).slice(0, 500));
+  
   if (!data.rows || data.rows.length === 0) {
+    console.warn('No SEO data rows returned from Search Console');
     return [];
   }
 
