@@ -152,13 +152,20 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   };
 
   const handlePurchase = async () => {
-    // Require authentication before purchase
+    // Require authentication before purchase with clear message
     if (!user) {
+      alert('Please sign in to purchase tickets. It only takes a moment!');
       onOpenAuth?.();
       return;
     }
 
-    if (remaining < ticketCount || event.price === 0) {
+    if (remaining < ticketCount) {
+      alert(`Only ${remaining} tickets remaining. Please reduce your quantity.`);
+      return;
+    }
+
+    // Handle free events differently
+    if (event.price === 0) {
       // Free event - handle directly
       if (event.price === 0) {
         setIsPurchasing(true);

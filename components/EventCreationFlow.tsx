@@ -298,11 +298,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
 
     const handleUnlockEvent = async () => {
       if (!canAfford) {
-        alert(`You need ${eventCost} credits to create an event. You have ${userCredits} credits.\\n\\nUpgrade to Pro for unlimited event creation, or purchase more credits!`);
+        alert(`You need ${eventCost} credits to create an event. You currently have ${userCredits} credits.\n\nOptions:\n✓ Upgrade to Pro for unlimited event creation\n✓ Complete platform actions to earn more credits`);
         return;
       }
 
-      if (!confirm(`Use ${eventCost} credits (€${(eventCost * 0.5).toFixed(2)} value) to unlock event creation?\\n\\nYou have ${userCredits} credits.`)) {
+      if (!confirm(`Unlock event creation for ${eventCost} credits?\n\nIncludes:\n✓ Event creation with full features\n✓ AI image generation\n✓ Multilingual translations\n✓ Marketing taglines\n\nCurrent balance: ${userCredits} credits\nNew balance: ${userCredits - eventCost} credits`)) {
         return;
       }
 
@@ -320,13 +320,13 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           // Mark event as unlocked so gate disappears
           setIsEventUnlocked(true);
           
-          alert('Event creation unlocked! You can now create 1 event.');
+          alert('🎉 Event creation unlocked!\n\nYou can now create 1 event with all AI features included. Fill in your event details below to get started.');
         } else {
-          alert('Failed to unlock. Please try again.');
+          alert('Failed to unlock feature. Please check your connection and try again.');
         }
       } catch (error) {
         console.error('Unlock error:', error);
-        alert('Error unlocking feature. Please try again.');
+        alert('Error unlocking feature. Please refresh the page and try again.');
       }
     };
 

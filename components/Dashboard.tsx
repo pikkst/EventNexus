@@ -253,8 +253,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     return (
       <div className="max-w-4xl mx-auto px-4 py-20">
         <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-12 text-center space-y-8 shadow-2xl">
-          <div className="w-24 h-24 bg-indigo-600 rounded-[32px] flex items-center justify-center mx-auto shadow-2xl shadow-indigo-600/40">
-            <Lock className="w-12 h-12 text-white" />
+          <div className="w-24 h-24 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-[32px] flex items-center justify-center mx-auto shadow-2xl shadow-indigo-600/40">
+            <LayoutDashboard className="w-12 h-12 text-white" />
           </div>
           
           <div className="space-y-3">
