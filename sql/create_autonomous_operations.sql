@@ -507,6 +507,154 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================================
+-- FUNCTION: auto_post_campaign_to_social
+-- Automatically schedules campaign posts to connected social accounts
+-- ============================================================
+CREATE OR REPLACE FUNCTION auto_post_campaign_to_social(
+  p_campaign_id UUID,
+  p_platforms TEXT[] DEFAULT ARRAY['instagram', 'facebook', 'twitter']
+)
+RETURNS JSONB AS $$
+DECLARE
+  v_campaign RECORD;
+  v_schedule_id UUID;
+  v_post_count INTEGER := 0;
+  v_result JSONB;
+BEGIN
+  -- Get campaign details
+  SELECT * INTO v_campaign FROM campaigns 
+  WHERE id = p_campaign_id AND status = 'Active'
+  LIMIT 1;
+  
+  IF v_campaign IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Campaign not found or inactive');
+  END IF;
+  
+  -- Check if user has connected social accounts
+  IF NOT EXISTS (
+    SELECT 1 FROM social_media_accounts 
+    WHERE user_id = v_campaign.user_id 
+      AND is_connected = true 
+      AND platform = ANY(p_platforms)
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error', 'No connected social media accounts');
+  END IF;
+  
+  -- Create schedule for immediate posting or optimal time
+  INSERT INTO campaign_schedules (
+    campaign_id,
+    scheduled_for,
+    timezone,
+    platforms,
+    status,
+    created_at
+  ) VALUES (
+    p_campaign_id,
+    NOW() + INTERVAL '5 minutes', -- Schedule for 5 minutes from now (allow time to process)
+    'UTC',
+    p_platforms,
+    'pending',
+    NOW()
+  )
+  RETURNING id INTO v_schedule_id;
+  
+  v_post_count := 1;
+  
+  -- Log this autonomous action
+  INSERT INTO autonomous_actions (
+    campaign_id,
+    action_type,
+    reason,
+    previous_state,
+    new_state,
+    confidence_score,
+    expected_impact,
+    status
+  ) VALUES (
+    p_campaign_id,
+    'creative_refreshed',
+    'Autonomous social media publishing scheduled for active campaign',
+    jsonb_build_object('platforms_scheduled', 0),
+    jsonb_build_object('platforms_scheduled', array_length(p_platforms, 1)),
+    85.0,
+    'Campaign visibility increased across social channels',
+    'executed'
+  );
+  
+  v_result := jsonb_build_object(
+    'success', true,
+    'campaign_id', p_campaign_id,
+    'schedule_id', v_schedule_id,
+    'platforms', p_platforms,
+    'posts_scheduled', v_post_count,
+    'scheduled_for', (NOW() + INTERVAL '5 minutes')::TEXT
+  );
+  
+  RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================
+-- FUNCTION: run_autonomous_operations_with_posting
+-- Enhanced autonomous operations that also auto-posts campaigns
+-- ============================================================
+CREATE OR REPLACE FUNCTION run_autonomous_operations_with_posting()
+RETURNS JSONB AS $$
+DECLARE
+  v_paused_count INTEGER := 0;
+  v_scaled_count INTEGER := 0;
+  v_opportunities_count INTEGER := 0;
+  v_posted_count INTEGER := 0;
+  v_campaign RECORD;
+  v_result JSONB;
+  v_post_result JSONB;
+BEGIN
+  -- Run standard autonomous operations
+  SELECT * INTO v_result FROM run_autonomous_operations();
+  
+  v_paused_count := (v_result->>'actions_taken')::JSONB->>'campaigns_paused';
+  v_scaled_count := (v_result->>'actions_taken')::JSONB->>'campaigns_scaled';
+  v_opportunities_count := (v_result->>'actions_taken')::JSONB->>'opportunities_detected';
+  
+  -- Now auto-post high-performing campaigns
+  FOR v_campaign IN
+    SELECT c.id, c.user_id, c.title, c.copy 
+    FROM campaigns c
+    WHERE c.status = 'Active'
+      AND c.metrics->>'views' > 0
+      AND CAST(c.metrics->>'clicks' AS NUMERIC) / CAST(c.metrics->>'views' AS NUMERIC) > 0.02
+      AND c.updated_at > NOW() - INTERVAL '7 days'
+      AND NOT EXISTS (
+        SELECT 1 FROM campaign_schedules 
+        WHERE campaign_id = c.id 
+          AND created_at > NOW() - INTERVAL '24 hours'
+      )
+    LIMIT 10
+  LOOP
+    v_post_result := auto_post_campaign_to_social(v_campaign.id, ARRAY['instagram', 'facebook']);
+    
+    IF (v_post_result->>'success')::BOOLEAN THEN
+      v_posted_count := v_posted_count + 1;
+      RAISE NOTICE '✅ Posted campaign % to social media', v_campaign.id;
+    END IF;
+  END LOOP;
+  
+  -- Return enhanced summary
+  RETURN jsonb_build_object(
+    'success', true,
+    'timestamp', NOW(),
+    'actions_taken', jsonb_build_object(
+      'campaigns_paused', v_paused_count,
+      'campaigns_scaled', v_scaled_count,
+      'opportunities_detected', v_opportunities_count,
+      'campaigns_posted', v_posted_count
+    ),
+    'total_actions', v_paused_count + v_scaled_count + v_posted_count
+  );
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================
 -- Default autonomous rules
 -- ============================================================
 INSERT INTO autonomous_rules (rule_name, rule_type, condition, action, priority, is_active)
