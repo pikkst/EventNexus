@@ -1054,6 +1054,7 @@ export const broadcastNotification = async (
       title,
       message,
       type: 'system',
+      sender_name: 'EventNexus Admin',
       isRead: false,
       timestamp: new Date().toISOString()
     }));
