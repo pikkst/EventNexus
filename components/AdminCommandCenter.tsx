@@ -56,6 +56,7 @@ import MasterAuthModal from './MasterAuthModal';
 const APP_VERSION = '1.0.0'; // Synced with package.json
 const BUILD_ENV = import.meta.env.MODE === 'production' ? 'stable' : 'dev';
 const BUILD_DATE = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+const GIT_COMMIT = import.meta.env.VITE_GIT_COMMIT || 'unknown'; // Git commit hash
 
 const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [activeTab, setActiveTab] = useState('analytics');
@@ -600,7 +601,10 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                   {BUILD_ENV}
                 </span>
               </div>
-              <p className="text-[10px] font-bold text-slate-400">v{APP_VERSION}</p>
+              <div className="flex items-baseline justify-between">
+                <p className="text-[10px] font-bold text-slate-400">v{APP_VERSION}</p>
+                <p className="text-[8px] text-slate-600 font-mono">#{GIT_COMMIT.substring(0, 7)}</p>
+              </div>
               <p className="text-[8px] text-slate-600">{BUILD_DATE}</p>
               <div className="w-full h-1 bg-slate-900 rounded-full overflow-hidden">
                  <div className="h-full bg-emerald-500 w-[94%]" />
