@@ -9,5 +9,5 @@
   "portsAttributes": {
     "3000": { "label": "Vite Dev Server", "onAutoForward": "openBrowser" }
   },
-  "remoteUser": "vscode"
+  "remoteUser": "root"
 }
