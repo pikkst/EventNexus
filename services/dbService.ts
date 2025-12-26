@@ -1942,3 +1942,65 @@ export const awardFirstActionBonus = async (
     return false;
   }
 };
+
+// Production Transition
+export const transitionToproduction = async (
+  stripePublicKey?: string,
+  apiBaseUrl?: string,
+  notes?: string
+): Promise<any> => {
+  try {
+    const { data, error } = await supabase.functions.invoke(
+      'production-transition',
+      {
+        body: {
+          stripe_public_key: stripePublicKey,
+          api_base_url: apiBaseUrl || 'https://www.eventnexus.eu',
+          notes: notes || 'Admin-initiated production transition'
+        }
+      }
+    );
+
+    if (error) {
+      console.error('Production transition error:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error transitioning to production:', error);
+    return null;
+  }
+};
+
+export const getCurrentEnvironment = async (): Promise<Record<string, any>> => {
+  try {
+    const { data, error } = await supabase
+      .from('environment_config')
+      .select('*')
+      .eq('is_active', true)
+      .single();
+
+    if (error) throw error;
+
+    return data || {};
+  } catch (error) {
+    console.error('Error fetching current environment:', error);
+    return {};
+  }
+};
+
+export const getProductionTransitionHistory = async (): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase.rpc(
+      'get_production_transition_history'
+    );
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching production transition history:', error);
+    return [];
+  }
+};
