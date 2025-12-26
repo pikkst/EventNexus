@@ -49,24 +49,21 @@ export async function fetchGAMetrics(
   metricType: 'traffic' | 'conversions' | 'users' | 'engagement',
   days: number = 30
 ): Promise<GAMetric[]> {
-  // TODO: Backend not ready yet - using mock data
-  // When ready, uncomment the API call below
-  return generateMockGAMetrics(metricType);
-  
-  /* BACKEND INTEGRATION (uncomment when ready):
   try {
     const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
     const response = await fetch(`${SUPABASE_URL}/functions/v1/analytics-bridge`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
       },
       body: JSON.stringify({ metricType, days, timezone: 'UTC' })
     });
 
     if (!response.ok) {
-      console.error('GA API error:', response.statusText);
+      console.error('GA API error:', response.status, await response.text());
       return generateMockGAMetrics(metricType);
     }
 
@@ -75,7 +72,6 @@ export async function fetchGAMetrics(
     console.error('Failed to fetch GA metrics:', error);
     return generateMockGAMetrics(metricType);
   }
-  */
 }
 
 /**
