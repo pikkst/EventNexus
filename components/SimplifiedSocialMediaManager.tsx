@@ -24,6 +24,8 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   
   // Setup form state
   const [appId, setAppId] = useState('1527493881796179');
@@ -32,21 +34,38 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
   const [setupStatus, setSetupStatus] = useState('');
 
   useEffect(() => {
+    console.log('👤 User changed, loading accounts...', { userId: user.id, userEmail: user.email });
     loadAccounts();
   }, [user.id]);
 
   const loadAccounts = async () => {
     try {
+      setLoadingAccounts(true);
+      setLoadError(null);
+      console.log('📱 Loading social media accounts for user:', user.id);
+      
       const { data, error } = await supabase
         .from('social_media_accounts')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('is_connected', true);
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase error:', error);
+        setLoadError(`Error loading accounts: ${error.message}`);
+        throw error;
+      }
+      
+      console.log('✅ Loaded accounts:', data?.length || 0, 'records');
+      data?.forEach(acc => {
+        console.log(`  - ${acc.platform}: ${acc.account_name} (expires: ${acc.expires_at})`);
+      });
       setAccounts(data || []);
     } catch (error) {
-      console.error('Failed to load accounts:', error);
+      console.error('❌ Failed to load accounts:', error);
+      setLoadError(`Failed to load accounts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setAccounts([]);
+    } finally {
+      setLoadingAccounts(false);
     }
   };
 
@@ -109,7 +128,11 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
           is_connected: true
         });
 
-      if (fbError) throw fbError;
+      if (fbError) {
+        console.error('❌ Facebook insert error:', fbError);
+        throw new Error(`Failed to save Facebook account: ${fbError.message}`);
+      }
+      console.log('✅ Facebook account saved successfully');
 
       // Step 5: Insert Instagram (if found)
       if (instagramAccountId) {
@@ -132,14 +155,21 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
             is_connected: true
           });
 
-        if (igError) throw igError;
+        if (igError) {
+          console.error('❌ Instagram insert error:', igError);
+          throw new Error(`Failed to save Instagram account: ${igError.message}`);
+        }
+        console.log('✅ Instagram account saved successfully');
         setSetupStatus('✅ Instagram connected!');
       } else {
+        console.log('⚠️ No Instagram Business Account found on this page');
         setSetupStatus('✅ Facebook connected!\n⚠️ No Instagram Business Account found on this page.');
       }
 
       // Reload accounts
+      console.log('🔄 Reloading accounts...');
       await loadAccounts();
+      console.log('✅ Accounts reloaded successfully');
       
       setTimeout(() => {
         setSetupStatus('');
@@ -184,14 +214,53 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
           <h2 className="text-2xl font-bold text-gray-900">Social Media Connections</h2>
           <p className="text-sm text-gray-600">Connect Facebook & Instagram for automated posting</p>
         </div>
-        <button
-          onClick={() => setShowSetup(!showSetup)}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-        >
-          <Settings className="w-4 h-4" />
-          {showSetup ? 'Hide Setup' : 'Setup Tokens'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => loadAccounts()}
+            disabled={loadingAccounts}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+            title="Refresh accounts"
+          >
+            <RefreshCw className={`w-4 h-4 ${loadingAccounts ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={() => setShowSetup(!showSetup)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
+            <Settings className="w-4 h-4" />
+            {showSetup ? 'Hide Setup' : 'Setup Tokens'}
+          </button>
+        </div>
       </div>
+
+      {/* Error Message */}
+      {loadError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800 text-sm"><strong>⚠️ Error:</strong> {loadError}</p>
+          <button
+            onClick={() => loadAccounts()}
+            className="mt-2 text-sm px-3 py-1 bg-red-200 text-red-900 rounded hover:bg-red-300"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loadingAccounts && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-blue-800 text-sm">🔄 Loading social media accounts...</p>
+        </div>
+      )}
+
+      {/* No Accounts State */}
+      {!loadingAccounts && accounts.length === 0 && !loadError && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800 text-sm">
+            📱 <strong>No connected accounts yet.</strong> Click "Setup Tokens" above to connect your Facebook and Instagram accounts for automated posting.
+          </p>
+        </div>
+      )}
 
       {/* Setup Panel */}
       {showSetup && (
