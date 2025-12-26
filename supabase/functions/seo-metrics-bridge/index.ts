@@ -156,29 +156,6 @@ async function fetchRealSEOMetrics(
   }));
 }
 
-function generateMockSEOMetrics(limit: number): SEOMetric[] {
-  const keywords = [
-    { keyword: 'event management platform', position: 8, impressions: 2340, clicks: 187 },
-    { keyword: 'online event ticket booking', position: 12, impressions: 1890, clicks: 156 },
-    { keyword: 'event promotion tools', position: 5, impressions: 3450, clicks: 412 },
-    { keyword: 'AI event marketing', position: 15, impressions: 890, clicks: 67 },
-    { keyword: 'social media event management', position: 7, impressions: 2120, clicks: 198 },
-    { keyword: 'event analytics platform', position: 9, impressions: 1560, clicks: 143 },
-    { keyword: 'ticket sales software', position: 11, impressions: 1340, clicks: 98 },
-    { keyword: 'event SEO optimization', position: 4, impressions: 4120, clicks: 589 },
-    { keyword: 'event organizer tools', position: 13, impressions: 1200, clicks: 72 },
-    { keyword: 'venue booking platform', position: 6, impressions: 2890, clicks: 267 },
-    { keyword: 'event creation software', position: 10, impressions: 1670, clicks: 119 },
-    { keyword: 'attendee management system', position: 14, impressions: 980, clicks: 58 }
-  ];
-
-  return keywords.slice(0, limit).map(k => ({
-    ...k,
-    ctr: (k.clicks / k.impressions) * 100,
-    url: 'https://www.eventnexus.eu/events'
-  }));
-}
-
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -188,14 +165,14 @@ serve(async (req) => {
   try {
     const { query, limit, startDate, endDate } = (await req.json()) as SEORequest;
 
-    const serviceAccountEmail = Deno.env.get("GSC_SERVICE_ACCOUNT_EMAIL");
-    const privateKey = Deno.env.get("GSC_PRIVATE_KEY");
+    const serviceAccountEmail = Deno.env.get("GSC_SERVICE_ACCOUNT_EMAIL") || Deno.env.get("GA_SERVICE_ACCOUNT_EMAIL");
+    const privateKey = Deno.env.get("GSC_PRIVATE_KEY") || Deno.env.get("GA_PRIVATE_KEY");
     const siteUrl = Deno.env.get("GSC_SITE_URL") || "https://www.eventnexus.eu";
 
-    // If credentials not configured, return mock data
+    // If credentials not configured, return empty array
     if (!serviceAccountEmail || !privateKey) {
-      console.log('GSC credentials not configured, returning mock data');
-      return new Response(JSON.stringify(generateMockSEOMetrics(limit)), {
+      console.warn('GSC credentials not configured - returning empty array');
+      return new Response(JSON.stringify([]), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
@@ -213,8 +190,8 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error fetching SEO metrics:', error);
-    // Fallback to mock data on error
-    return new Response(JSON.stringify(generateMockSEOMetrics(50)), {
+    // Return empty array on error (NO MOCK DATA)
+    return new Response(JSON.stringify([]), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
