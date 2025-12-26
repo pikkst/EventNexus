@@ -32,7 +32,8 @@ import {
   RefreshCw,
   Image as ImageIcon,
   ExternalLink,
-  DollarSign
+  DollarSign,
+  Bug
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
 import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, deleteEvent } from '../services/dbService';
@@ -40,6 +41,7 @@ import { supabase } from '../services/supabase';
 import TicketCard from './TicketCard';
 // TicketViewModal removed; using dedicated TicketViewPage route
 import { SimplifiedSocialMediaManager } from './SimplifiedSocialMediaManager';
+import BetaTesterReport from './BetaTesterReport';
 
 interface UserProfileProps {
   user: User;
@@ -58,6 +60,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
   const [organizedEvents, setOrganizedEvents] = useState<EventNexusEvent[]>([]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [showBetaReport, setShowBetaReport] = useState(false);
   const [isDeletingEvent, setIsDeletingEvent] = useState<string | null>(null);
   const [connectStatus, setConnectStatus] = useState<{
     hasAccount: boolean;
@@ -639,6 +642,37 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
         </div>
 
         <div className="space-y-6">
+          {user.is_beta_tester && (
+            <div className="bg-gradient-to-br from-indigo-900/70 via-slate-900 to-slate-950 border border-indigo-500/30 rounded-[40px] p-8 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 text-indigo-300">
+                    <Bug className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-300">Beta Tester</p>
+                    <h3 className="text-lg font-black text-white">Report a bug or idea</h3>
+                  </div>
+                </div>
+                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-indigo-500/20 text-indigo-200 border border-indigo-500/30">
+                  Priority channel
+                </span>
+              </div>
+
+              <p className="text-sm text-slate-300 leading-relaxed mb-4">
+                Send issues, feedback, or feature ideas directly to the admin inbox. Responses within 24 hours for beta testers.
+              </p>
+
+              <button
+                onClick={() => setShowBetaReport(true)}
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 px-5 py-3 rounded-2xl font-bold text-white text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+              >
+                <Bug className="w-4 h-4" />
+                Open Beta Report Form
+              </button>
+            </div>
+          )}
+
           <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-xl">
             <h3 className="font-black text-lg mb-6 uppercase tracking-widest text-slate-500 text-xs">Radar Status</h3>
             <div 
@@ -893,6 +927,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Beta Tester Report Modal */}
+      {showBetaReport && (
+        <div className="fixed inset-0 z-[2150] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" onClick={() => setShowBetaReport(false)} />
+          <div className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-[48px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto scrollbar-hide">
+            <div className="p-8">
+              <BetaTesterReport user={user} onClose={() => setShowBetaReport(false)} />
             </div>
           </div>
         </div>

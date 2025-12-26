@@ -1697,7 +1697,7 @@ export const generateBetaInvitations = async (count: number, expiryDays: number 
 };
 
 /**
- * Redeem a beta invitation code and give user credits
+ * Redeem a beta invitation code and give user credits + mark as beta tester
  */
 export const redeemBetaInvitation = async (userId: string, code: string, creditsAmount: number = 1000): Promise<{ success: boolean; message: string }> => {
   try {
@@ -1734,12 +1734,22 @@ export const redeemBetaInvitation = async (userId: string, code: string, credits
     if (updateError) throw updateError;
 
     // Add credits to user
-    const success = await addUserCredits(userId, creditsAmount);
+    const creditsSuccess = await addUserCredits(userId, creditsAmount);
 
-    if (success) {
+    // Mark user as beta tester
+    const { error: betaError } = await supabase
+      .from('users')
+      .update({ is_beta_tester: true })
+      .eq('id', userId);
+
+    if (betaError) {
+      console.error('Error marking user as beta tester:', betaError);
+    }
+
+    if (creditsSuccess) {
       return { 
         success: true, 
-        message: `🎉 Welcome to the beta! You've received ${creditsAmount} credits!` 
+        message: `🎉 Welcome to the beta! You've received ${creditsAmount} credits and beta tester status!` 
       };
     } else {
       return { 

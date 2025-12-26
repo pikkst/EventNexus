@@ -114,6 +114,7 @@ export interface User {
   avatar: string;
   credits: number; 
   credits_balance?: number; // User's credit balance (same as credits, for clarity)
+  is_beta_tester?: boolean; // True if user signed up via beta invite code
   agencySlug?: string;
   followedOrganizers: string[];
   branding?: UserBranding;
