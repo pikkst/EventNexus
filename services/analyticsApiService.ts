@@ -3,6 +3,14 @@
  * Fetches real platform traffic and conversion metrics
  */
 
+import {
+  generateSEORecommendations,
+  generateKeywordOptimization,
+  generateMetaTagSuggestions,
+  analyzeContentOptimization,
+  generateSEOStrategy,
+} from './seoAIService';
+
 export interface GAMetric {
   label: string;
   value: number;
@@ -321,4 +329,84 @@ function generateMockSEOMetrics(): SEOMetric[] {
     ctr: (k.clicks / k.impressions) * 100,
     url: 'https://www.eventnexus.eu/events'
   }));
+}
+
+/**
+ * Generate AI-powered SEO recommendations
+ */
+export async function fetchSEORecommendations(seoMetrics?: SEOMetric[]) {
+  try {
+    const metrics = seoMetrics || (await fetchSEOMetrics('', 10));
+    if (!Array.isArray(metrics) || metrics.length === 0) {
+      return [];
+    }
+    return await generateSEORecommendations(metrics);
+  } catch (error) {
+    console.error('Error fetching SEO recommendations:', error);
+    return [];
+  }
+}
+
+/**
+ * Generate keyword optimization opportunities
+ */
+export async function fetchKeywordOptimization(seoMetrics?: SEOMetric[]) {
+  try {
+    const metrics = seoMetrics || (await fetchSEOMetrics('', 20));
+    if (!Array.isArray(metrics) || metrics.length === 0) {
+      return [];
+    }
+    return await generateKeywordOptimization(metrics);
+  } catch (error) {
+    console.error('Error fetching keyword optimization:', error);
+    return [];
+  }
+}
+
+/**
+ * Generate meta tag suggestions
+ */
+export async function fetchMetaTagSuggestions(seoMetrics?: SEOMetric[]) {
+  try {
+    const metrics = seoMetrics || (await fetchSEOMetrics('', 30));
+    if (!Array.isArray(metrics) || metrics.length === 0) {
+      return [];
+    }
+    return await generateMetaTagSuggestions(metrics);
+  } catch (error) {
+    console.error('Error fetching meta tag suggestions:', error);
+    return [];
+  }
+}
+
+/**
+ * Analyze content optimization for a specific keyword
+ */
+export async function fetchContentOptimization(keyword: string, position: number, seoMetrics?: SEOMetric[]) {
+  try {
+    const metrics = seoMetrics || (await fetchSEOMetrics('', 30));
+    if (!Array.isArray(metrics)) {
+      return null;
+    }
+    return await analyzeContentOptimization(keyword, position, metrics);
+  } catch (error) {
+    console.error('Error analyzing content optimization:', error);
+    return null;
+  }
+}
+
+/**
+ * Generate 90-day SEO strategy
+ */
+export async function fetchSEOStrategy(seoMetrics?: SEOMetric[]) {
+  try {
+    const metrics = seoMetrics || (await fetchSEOMetrics('', 30));
+    if (!Array.isArray(metrics) || metrics.length === 0) {
+      return null;
+    }
+    return await generateSEOStrategy(metrics);
+  } catch (error) {
+    console.error('Error generating SEO strategy:', error);
+    return null;
+  }
 }

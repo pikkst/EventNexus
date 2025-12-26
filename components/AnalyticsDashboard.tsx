@@ -11,13 +11,14 @@ import {
   BarChart3, LineChart as LineChartIcon, PieChart as PieChartIcon,
   Settings, Share2, Maximize2, Plus, Trash2, Edit,
   Calendar, MapPin, Users, Smartphone, Chrome, Firefox, Safari,
-  Chrome as ChromeIcon, Flag, Home, FileText, ExternalLink
+  Chrome as ChromeIcon, Flag, Home, FileText, ExternalLink, Lightbulb
 } from 'lucide-react';
 import {
   fetchGAMetrics, fetchTrafficData, fetchConversionFunnel,
   fetchMetaInsights, fetchSEOMetrics, getSEORecommendations,
   monitorKeywordRankings, GAMetric, TrafficData, SEOMetric, MetaInsight
 } from '../services/analyticsApiService';
+import SEOImprovementTools from './SEOImprovementTools';
 
 const COLORS = ['#0ea5e9', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -56,7 +57,8 @@ const AnalyticsDashboard: React.FC = () => {
     { id: 'traffic', label: 'Traffic', icon: <LineChartIcon className="w-4 h-4" /> },
     { id: 'conversions', label: 'Conversions', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'meta', label: 'Meta Ads', icon: <Target className="w-4 h-4" /> },
-    { id: 'seo', label: 'SEO Tools', icon: <Globe className="w-4 h-4" /> }
+    { id: 'seo', label: 'SEO Tools', icon: <Globe className="w-4 h-4" /> },
+    { id: 'seo-improve', label: 'AI SEO Optimizer', icon: <Lightbulb className="w-4 h-4" /> }
   ];
 
   // Load metrics on mount and when dateRange changes
@@ -455,6 +457,13 @@ const AnalyticsDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* AI SEO Optimizer Tab */}
+          {activeTab === 'seo-improve' && (
+            <div className="animate-in fade-in duration-500">
+              <SEOImprovementTools />
             </div>
           )}
         </>
