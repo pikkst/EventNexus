@@ -34,7 +34,8 @@ import {
   ExternalLink,
   DollarSign,
   Bug,
-  Copy
+  Copy,
+  Sparkles
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
 import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, deleteEvent } from '../services/dbService';
