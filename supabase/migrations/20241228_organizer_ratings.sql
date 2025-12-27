@@ -126,7 +126,7 @@ CREATE POLICY "Users can rate organizers after attending events"
       SELECT 1 FROM public.tickets t
       WHERE t.event_id = organizer_ratings.event_id
         AND t.user_id = auth.uid()
-        AND t.checked_in_at IS NOT NULL
+        AND t.used_at IS NOT NULL
     )
   );
 
