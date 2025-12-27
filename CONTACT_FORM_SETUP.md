@@ -5,13 +5,23 @@ Sinu avaliku agentuuri lehel on nüüd töötavad kontaktivormid! Külastajad sa
 - **Contact Form**: Saata sulle üldisi sõnumeid
 - **Partnership Inquiry**: Teha koostööpakkumisi
 
-**Kõik päringud saadetakse sulle emaili teel läbi Resend!**
+**Kõik päringud saadetakse sulle emaili teel läbi Resend Edge Function!**
 
-## 🚀 Quick Setup (Required)
+## ✅ What's Already Done
 
-### 1. Create Contact Inquiries Table
+- ✅ **Edge Function deployed**: `send-contact-email` is live on Supabase
+- ✅ **RESEND_API_KEY**: Already configured in Supabase secrets
+- ✅ **Frontend**: AgencyProfile uses Edge Function (no API key in browser)
+- ✅ **Email templates**: Beautiful HTML emails ready
 
-Go to Supabase Dashboard → SQL Editor and run this:
+## 🚀 Final Setup Step (Required)
+
+### Create Contact Inquiries Table
+
+Go to: **Supabase Dashboard → SQL Editor**  
+https://supabase.com/dashboard/project/anlivujgkjmajkcgbaxw/sql/new
+
+**Run this SQL:**
 
 ```sql
 -- Contact Inquiries Table
@@ -54,14 +64,24 @@ GRANT SELECT, INSERT, UPDATE ON public.contact_inquiries TO anon;
 GRANT SELECT, INSERT, UPDATE ON public.contact_inquiries TO authenticated;
 ```
 
-### 2. Verify Resend API Key
+**That's it!** No other configuration needed.
 
-Check `.env.local` has:
-```
-RESEND_API_KEY=re_xxxxxxxxxxxx
-```
+## 🔧 How It Works (Technical)
 
-## 📧 How It Works
+### Architecture Flow
+1. **Browser**: User fills contact form on public agency page
+2. **Frontend**: AgencyProfile calls `supabase.functions.invoke('send-contact-email')`
+3. **Edge Function**: Runs server-side (Deno) with access to RESEND_API_KEY from Supabase secrets
+4. **Resend API**: Sends beautiful HTML email to organizer's email
+5. **Database**: Stores inquiry in `contact_inquiries` table for tracking
+
+### Security ✅
+- API keys never exposed to browser (runs server-side only)
+- Edge Function has access to Supabase secrets
+- RLS policies protect organizer data
+- Public can submit, only organizers view their inquiries
+
+## 📧 User Experience
 
 ### Contact Form (Enterprise)
 1. Visitor clicks "Contact Us" button on your public page
