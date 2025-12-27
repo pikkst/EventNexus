@@ -492,28 +492,35 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                     if (!message) return;
                     
                     try {
+                      const payload = {
+                        organizerId: organizer.id,
+                        organizerName: organizer.name,
+                        organizerEmail: organizer.email,
+                        fromName: name,
+                        fromEmail: email,
+                        subject: 'Partnership Inquiry',
+                        message: message,
+                        type: 'partnership'
+                      };
+                      
+                      console.log('🤝 Submitting partnership inquiry:', payload);
+                      
                       const { data, error } = await supabase.functions.invoke('send-contact-email', {
-                        body: {
-                          organizerId: organizer.id,
-                          organizerName: organizer.name,
-                          organizerEmail: organizer.email,
-                          fromName: name,
-                          fromEmail: email,
-                          subject: 'Partnership Inquiry',
-                          message: message,
-                          type: 'partnership'
-                        }
+                        body: payload
                       });
                       
+                      console.log('📨 Edge Function response:', { data, error });
+                      
                       if (error || !data?.success) {
-                        console.error('Error sending partnership inquiry:', error);
-                        alert('⚠️ Failed to send inquiry. Please try again.');
+                        console.error('❌ Error sending partnership inquiry:', error);
+                        alert(`⚠️ Failed to send inquiry: ${error?.message || 'Unknown error'}. Please try again.`);
                       } else {
+                        console.log('✅ Partnership email sent! ID:', data.emailId);
                         alert('✓ Partnership inquiry sent! The organizer will contact you soon.');
                       }
                     } catch (error) {
-                      console.error('Error:', error);
-                      alert('⚠️ Failed to send inquiry. Please try again.');
+                      console.error('❌ Exception:', error);
+                      alert(`⚠️ Failed to send inquiry: ${error instanceof Error ? error.message : 'Unknown error'}.`);
                     }
                   }}
                   className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors cursor-pointer"
@@ -777,33 +784,40 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                 
                 try {
                   const formData = new FormData(e.currentTarget);
+                  const payload = {
+                    organizerId: organizer.id,
+                    organizerName: organizer.name,
+                    organizerEmail: organizer.email,
+                    fromName: formData.get('name') as string,
+                    fromEmail: formData.get('email') as string,
+                    subject: formData.get('subject') as string,
+                    message: formData.get('message') as string,
+                    type: 'contact'
+                  };
+                  
+                  console.log('📧 Submitting contact form:', payload);
                   
                   // Call Supabase Edge Function
                   const { data, error } = await supabase.functions.invoke('send-contact-email', {
-                    body: {
-                      organizerId: organizer.id,
-                      organizerName: organizer.name,
-                      organizerEmail: organizer.email,
-                      fromName: formData.get('name') as string,
-                      fromEmail: formData.get('email') as string,
-                      subject: formData.get('subject') as string,
-                      message: formData.get('message') as string,
-                      type: 'contact'
-                    }
+                    body: payload
                   });
                   
+                  console.log('📨 Edge Function response:', { data, error });
+                  
                   if (error) {
-                    console.error('Error sending contact form:', error);
-                    alert('⚠️ Failed to send message. Please try again or contact the organizer directly.');
+                    console.error('❌ Error sending contact form:', error);
+                    alert(`⚠️ Failed to send message: ${error.message || 'Unknown error'}. Please try again or contact the organizer directly.`);
                   } else if (data?.success) {
+                    console.log('✅ Email sent successfully! ID:', data.emailId);
                     alert('✓ Message sent successfully! The organizer will receive your inquiry via email.');
                     setShowContactForm(false);
                   } else {
+                    console.warn('⚠️ Unexpected response:', data);
                     alert('⚠️ Failed to send message. Please try again.');
                   }
                 } catch (error) {
-                  console.error('Error sending contact form:', error);
-                  alert('⚠️ An error occurred. Please try again later.');
+                  console.error('❌ Exception sending contact form:', error);
+                  alert(`⚠️ An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again later.`);
                 } finally {
                   setIsSubmittingForm(false);
                 }
