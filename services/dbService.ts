@@ -493,6 +493,8 @@ export const updateUser = async (id: string, updates: Partial<User>): Promise<Us
 
 export const getUserBySlug = async (slug: string): Promise<User | null> => {
   try {
+    console.log('🔍 getUserBySlug: Searching for agency_slug:', slug);
+    
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -500,9 +502,17 @@ export const getUserBySlug = async (slug: string): Promise<User | null> => {
       .single();
     
     if (error) {
-      console.error('Error fetching user by slug:', error);
+      console.error('❌ getUserBySlug: Error fetching user:', error.message, error.code);
       return null;
     }
+    
+    console.log('✅ getUserBySlug: Found user:', data ? {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      agency_slug: data.agency_slug,
+      subscription_tier: data.subscription_tier
+    } : 'NULL');
     
     return data;
   } catch (err) {
