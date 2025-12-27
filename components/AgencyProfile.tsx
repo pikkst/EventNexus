@@ -224,6 +224,19 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
+      {/* Custom Domain Notice (if configured) */}
+      {isEnterprise && organizer.branding?.customDomain && (
+        <div className="bg-gradient-to-r from-purple-600/10 to-pink-600/10 border-b border-purple-500/20 py-3 px-4">
+          <div className="max-w-7xl mx-auto text-center">
+            <p className="text-sm text-purple-300">
+              <span className="font-black">🌐 Custom Domain:</span> This page can also be accessed via{' '}
+              <code className="font-mono bg-purple-900/30 px-2 py-1 rounded">{organizer.branding.customDomain}</code>
+              {' '}(DNS configuration required)
+            </p>
+          </div>
+        </div>
+      )}
+      
       {/* Visual Manifesto (Hero) - Enhanced for Enterprise */}
       <section className="relative min-h-screen h-screen flex items-center justify-center overflow-hidden">
         {isEnterprise && organizer.branding?.pageConfig?.heroType === 'video' ? (
@@ -235,11 +248,11 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
               playsInline
               className="w-full h-full object-cover opacity-60"
             >
-              <source src={organizer.branding.videoReel || organizer.branding.pageConfig.heroMedia as string} type="video/mp4" />
+              <source src={(organizer.branding.pageConfig.heroMedia as string) || organizer.branding.videoReel || organizer.branding.bannerUrl} type="video/mp4" />
             </video>
             <div className="absolute inset-0 bg-gradient-to-b from-slate-950/20 via-slate-950/60 to-slate-950" />
           </div>
-        ) : isEnterprise && organizer.branding?.pageConfig?.heroType === 'slideshow' && Array.isArray(organizer.branding.pageConfig.heroMedia) ? (
+        ) : isEnterprise && organizer.branding?.pageConfig?.heroType === 'slideshow' && Array.isArray(organizer.branding.pageConfig.heroMedia) && organizer.branding.pageConfig.heroMedia.length > 0 ? (
           <div className="absolute inset-0 z-0">
             {organizer.branding.pageConfig.heroMedia.map((img, idx) => (
               <img 
@@ -256,7 +269,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
         ) : (
           <div className="absolute inset-0 z-0">
             <img 
-              src={organizer.branding?.bannerUrl} 
+              src={(typeof organizer.branding?.pageConfig?.heroMedia === 'string' && organizer.branding.pageConfig.heroMedia) || organizer.branding?.bannerUrl || `https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1920&h=1080&fit=crop`} 
               className="w-full h-full object-cover opacity-50 scale-105 animate-ken-burns" 
               alt="Hero"
             />
@@ -275,11 +288,11 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
              {organizer.name}
            </h1>
            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-slate-300 font-bold max-w-3xl mx-auto leading-tight opacity-80">
-             {organizer.branding?.tagline || 'Creating memorable experiences for communities worldwide'}
+             {organizer.branding?.tagline || organizer.bio || 'Creating memorable experiences for communities worldwide'}
            </p>
            
            {/* Enterprise Stats Bar */}
-           {isEnterprise && organizer.branding?.stats && organizer.branding.pageConfig?.showStats && (
+           {isEnterprise && organizer.branding?.stats && organizer.branding.pageConfig?.showStats !== false && (
              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto pt-8">
                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6">
                  <div className="text-4xl font-black text-white">{organizer.branding.stats.totalEvents}+</div>
@@ -329,8 +342,8 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
            </div>
            
            {/* Social Share Buttons */}
-           {isEnterprise && organizer.branding?.pageConfig?.enableSocialSharing && (
-             <div className="flex items-center gap-4">
+           {((isEnterprise && organizer.branding?.pageConfig?.enableSocialSharing !== false) || (!isEnterprise && organizer.branding?.pageConfig?.enableSocialSharing)) && (
+             <div className="flex items-center gap-4 justify-center">
                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Share:</span>
                <div className="flex gap-3">
                  <button
@@ -380,7 +393,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
       </section>
 
       {/* Enterprise Event Highlights Section */}
-      {isEnterprise && organizer.branding?.eventHighlights && organizer.branding.pageConfig?.showEventHighlights && (
+      {isEnterprise && organizer.branding?.eventHighlights && organizer.branding.eventHighlights.length > 0 && organizer.branding.pageConfig?.showEventHighlights !== false && (
         <section className="max-w-7xl mx-auto px-4 py-32">
           <div className="text-center mb-16">
             <h2 className="text-5xl font-black tracking-tighter text-white mb-4">Event Highlights.</h2>
@@ -435,11 +448,18 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
            <div className="space-y-8">
               <h2 className="text-5xl font-black tracking-tighter text-white">The Experience Architecture.</h2>
-              <p className="text-2xl text-slate-400 leading-relaxed font-medium">
-                {isEnterprise && organizer.branding?.about 
-                  ? organizer.branding.about 
-                  : (organizer.bio || 'Creating unforgettable experiences and bringing people together through exceptional events.')}
-              </p>
+              <div className="space-y-6">
+                <p className="text-2xl text-slate-400 leading-relaxed font-medium">
+                  {organizer.bio || 'Creating unforgettable experiences and bringing people together through exceptional events.'}
+                </p>
+                {isEnterprise && organizer.branding?.about && organizer.branding.about !== organizer.bio && (
+                  <div className="pt-4 border-t border-slate-800">
+                    <p className="text-lg text-slate-300 leading-relaxed whitespace-pre-wrap">
+                      {organizer.branding.about}
+                    </p>
+                  </div>
+                )}
+              </div>
               <div className="pt-6 flex flex-wrap gap-4">
                 {organizer.branding?.socialLinks && (
                   <>
@@ -465,21 +485,23 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                 </button>
               </div>
            </div>
-           <div className="grid grid-cols-2 gap-6">
-              {organizer.branding?.services?.map((s, i) => (
-                <div key={i} className="p-8 bg-slate-900 border border-slate-800 rounded-[40px] space-y-4 hover:border-indigo-500/50 transition-all group">
-                   <div className="w-12 h-12 bg-indigo-600/10 rounded-2xl flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
-                      {IconMap[s.icon] || <Zap />}
-                   </div>
-                   <h4 className="font-black text-white uppercase text-xs tracking-widest">{s.name}</h4>
-                   <p className="text-sm text-slate-500 font-medium leading-relaxed">{s.desc}</p>
-                </div>
-              ))}
-           </div>
+           {organizer.branding?.services && organizer.branding.services.length > 0 && (
+             <div className="grid grid-cols-2 gap-6">
+                {organizer.branding.services.map((s, i) => (
+                  <div key={i} className="p-8 bg-slate-900 border border-slate-800 rounded-[40px] space-y-4 hover:border-indigo-500/50 transition-all group">
+                     <div className="w-12 h-12 bg-indigo-600/10 rounded-2xl flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                        {IconMap[s.icon] || <Zap />}
+                     </div>
+                     <h4 className="font-black text-white uppercase text-xs tracking-widest">{s.name}</h4>
+                     <p className="text-sm text-slate-500 font-medium leading-relaxed">{s.desc}</p>
+                  </div>
+                ))}
+             </div>
+           )}
         </div>
 
         {/* Enterprise Team Section */}
-        {isEnterprise && organizer.branding?.team && organizer.branding.pageConfig?.showTeam && (
+        {isEnterprise && organizer.branding?.team && organizer.branding.team.length > 0 && organizer.branding.pageConfig?.showTeam !== false && (
           <div className="space-y-16">
             <div className="text-center">
               <h2 className="text-5xl font-black tracking-tighter text-white mb-4">Our Team.</h2>
@@ -549,7 +571,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
       </section>
 
       {/* Enterprise Testimonials Section */}
-      {isEnterprise && organizer.branding?.testimonials && organizer.branding.pageConfig?.showTestimonials && organizer.branding.testimonials.length > 0 && (
+      {isEnterprise && organizer.branding?.testimonials && organizer.branding.testimonials.length > 0 && organizer.branding.pageConfig?.showTestimonials !== false && (
         <section className="bg-slate-900/50 py-32">
           <div className="max-w-5xl mx-auto px-4">
             <div className="text-center mb-16">
@@ -596,7 +618,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
       )}
 
       {/* Enterprise Partners Section */}
-      {isEnterprise && organizer.branding?.partners && organizer.branding.pageConfig?.showPartners && (
+      {isEnterprise && organizer.branding?.partners && organizer.branding.partners.length > 0 && organizer.branding.pageConfig?.showPartners !== false && (
         <section className="max-w-7xl mx-auto px-4 py-32">
           <div className="text-center mb-16">
             <h2 className="text-5xl font-black tracking-tighter text-white mb-4">Trusted Partners.</h2>
@@ -620,7 +642,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
       )}
 
       {/* Enterprise Media Coverage Section */}
-      {isEnterprise && organizer.branding?.mediaCoverage && organizer.branding.pageConfig?.showMediaCoverage && (
+      {isEnterprise && organizer.branding?.mediaCoverage && organizer.branding.mediaCoverage.length > 0 && organizer.branding.pageConfig?.showMediaCoverage !== false && (
         <section className="max-w-7xl mx-auto px-4 py-32">
           <div className="text-center mb-16">
             <h2 className="text-5xl font-black tracking-tighter text-white mb-4">In The Press.</h2>
