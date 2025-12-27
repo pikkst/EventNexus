@@ -214,7 +214,8 @@ export interface User {
   credits: number; 
   credits_balance?: number; // User's credit balance (same as credits, for clarity)
   is_beta_tester?: boolean; // True if user signed up via beta invite code
-  agencySlug?: string;
+  agencySlug?: string; // camelCase for frontend
+  agency_slug?: string; // snake_case from database - both supported
   followedOrganizers: string[];
   branding?: UserBranding;
   notification_prefs: NotificationPreferences;
