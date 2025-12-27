@@ -34,14 +34,23 @@ serve(async (req) => {
     // Parse request body
     const inquiry: ContactInquiryRequest = await req.json();
 
-    console.log('📧 Sending contact email:', {
+    console.log('📧 Received contact email request:', {
       type: inquiry.type,
-      to: inquiry.organizerEmail,
-      from: inquiry.fromEmail,
+      organizerId: inquiry.organizerId,
+      organizerEmail: inquiry.organizerEmail,
+      fromName: inquiry.fromName,
+      fromEmail: inquiry.fromEmail,
     });
 
     // Validate required fields
     if (!inquiry.organizerId || !inquiry.organizerEmail || !inquiry.fromEmail || !inquiry.fromName || !inquiry.message) {
+      console.error('❌ Missing required fields:', {
+        hasOrganizerId: !!inquiry.organizerId,
+        hasOrganizerEmail: !!inquiry.organizerEmail,
+        hasFromEmail: !!inquiry.fromEmail,
+        hasFromName: !!inquiry.fromName,
+        hasMessage: !!inquiry.message,
+      });
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
@@ -62,6 +71,8 @@ serve(async (req) => {
       ? `🤝 New Partnership Inquiry for ${inquiry.organizerName}`
       : `✉️ New Contact Message for ${inquiry.organizerName}`;
 
+    console.log('📨 Sending email via Resend...', { to: inquiry.organizerEmail, subject: emailSubject });
+
     // Send email via Resend
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -80,7 +91,7 @@ serve(async (req) => {
 
     if (!resendResponse.ok) {
       const error = await resendResponse.text();
-      console.error('❌ Resend API error:', error);
+      console.error('❌ Resend API error:', { status: resendResponse.status, error });
       return new Response(
         JSON.stringify({ error: 'Failed to send email', details: error }),
         { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
@@ -88,9 +99,10 @@ serve(async (req) => {
     }
 
     const resendData = await resendResponse.json();
-    console.log('✅ Email sent successfully:', resendData.id);
+    console.log('✅ Email sent successfully via Resend! ID:', resendData.id);
 
     // Store inquiry in database
+    console.log('💾 Storing inquiry in database...');
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -111,7 +123,9 @@ serve(async (req) => {
       });
 
     if (dbError) {
-      console.warn('⚠️ Failed to store inquiry in database:', dbError);
+      console.warn('⚠️ Failed to store inquiry in database (email was still sent):', dbError);
+    } else {
+      console.log('✅ Inquiry stored in database successfully');
     }
 
     return new Response(
