@@ -358,7 +358,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 </div>
                 <h3 className="text-2xl font-bold mb-3">Get Your Ticket</h3>
                 <p className="text-slate-400 leading-relaxed">
-                  Secure checkout with Stripe or PayPal. Receive a fraud-proof QR code instantly via email. No paper needed.
+                  Secure checkout with Stripe. Receive a fraud-proof QR code instantly via email. No paper needed.
                 </p>
               </div>
             </div>
@@ -747,7 +747,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         <FeatureCard 
           icon={<Shield className="w-8 h-8" />} 
           title="Secure Ticketing" 
-          description="Fraud-proof QR codes and instant validation. Secure payments via Stripe and PayPal." 
+          description="Fraud-proof QR codes and instant validation. Secure payments via Stripe." 
         />
       </section>
 
@@ -772,7 +772,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             },
             {
               question: 'How does ticketing work?',
-              answer: 'Purchase tickets with Stripe or PayPal. You will receive a unique QR code via email instantly. Show it at the event entrance for instant validation. No printing needed!'
+              answer: 'Purchase tickets securely with Stripe. You will receive a unique QR code via email instantly. Show it at the event entrance for instant validation. No printing needed!'
             },
             {
               question: 'What happens during the testing phase?',
@@ -792,7 +792,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             },
             {
               question: 'Is my data secure?',
-              answer: 'Yes! We use Supabase with PostgreSQL for database security, Stripe/PayPal for payment processing, and implement Row Level Security (RLS) policies. All data is encrypted and GDPR-compliant.'
+              answer: 'Yes! We use Supabase with PostgreSQL for database security, Stripe for secure payment processing, and implement Row Level Security (RLS) policies. All data is encrypted and GDPR-compliant.'
             },
             {
               question: 'Can I use EventNexus for private events?',
