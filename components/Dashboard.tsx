@@ -1315,7 +1315,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                                value={user.agencySlug || user.agency_slug || ''}
                                onChange={(e) => {
                                  const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
-                                 onUpdateUser({agencySlug: slug});
+                                 onUpdateUser({agency_slug: slug}); // Use snake_case for database
                                }}
                                className="flex-1 px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-mono outline-none focus:border-indigo-500"
                                placeholder="your-agency-name"
@@ -1375,6 +1375,142 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                                    />
                                 </div>
                              ))}
+                          </div>
+                       </div>
+
+                       {/* Additional Enterprise Settings */}
+                       <div className="pt-4 space-y-6 border-t border-slate-800">
+                          <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Extended About (Public Page)</h4>
+                          <textarea 
+                            value={tempBranding.about || ''}
+                            onChange={(e) => setTempBranding({...tempBranding, about: e.target.value})} 
+                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-medium min-h-[120px]"
+                            placeholder="Tell your story... What makes your events special? What's your mission? This will be displayed on your public landing page."
+                          />
+                          <p className="text-[10px] text-slate-500 ml-1">Rich description for public "About" section (defaults to bio if empty)</p>
+                       </div>
+
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Video Reel URL</label>
+                          <input 
+                            type="text" 
+                            value={tempBranding.videoReel || ''}
+                            onChange={(e) => setTempBranding({...tempBranding, videoReel: e.target.value})} 
+                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-mono" 
+                            placeholder="https://example.com/video.mp4"
+                          />
+                          <p className="text-[10px] text-slate-500 ml-1">Video URL for your agency showcase</p>
+                       </div>
+
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Custom Domain</label>
+                          <input 
+                            type="text" 
+                            value={tempBranding.customDomain || ''}
+                            onChange={(e) => setTempBranding({...tempBranding, customDomain: e.target.value})} 
+                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-mono" 
+                            placeholder="events.yourbrand.com"
+                          />
+                          <p className="text-[10px] text-slate-500 ml-1">Point your own domain to your landing page</p>
+                       </div>
+
+                       {/* Hero Type Selection */}
+                       <div className="pt-4 space-y-3 border-t border-slate-800">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hero Section Type</label>
+                          <div className="grid grid-cols-3 gap-3">
+                            {['image', 'video', 'slideshow'].map((type) => (
+                              <button
+                                key={type}
+                                onClick={() => setTempBranding({
+                                  ...tempBranding,
+                                  pageConfig: {
+                                    ...tempBranding.pageConfig,
+                                    heroType: type as 'image' | 'video' | 'slideshow'
+                                  }
+                                })}
+                                className={`px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                                  (tempBranding.pageConfig?.heroType || 'image') === type
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
+                                }`}
+                              >
+                                {type}
+                              </button>
+                            ))}
+                          </div>
+                       </div>
+
+                       {/* Page Sections Toggles */}
+                       <div className="pt-4 space-y-3 border-t border-slate-800">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Page Sections</label>
+                          <div className="grid grid-cols-2 gap-3">
+                            {[
+                              { key: 'showStats', label: 'Statistics Bar' },
+                              { key: 'showEventHighlights', label: 'Event Highlights' },
+                              { key: 'showTestimonials', label: 'Testimonials' },
+                              { key: 'showTeam', label: 'Team Section' },
+                              { key: 'showPartners', label: 'Partners Grid' },
+                              { key: 'showMediaCoverage', label: 'Media Coverage' }
+                            ].map(({ key, label }) => (
+                              <button
+                                key={key}
+                                onClick={() => setTempBranding({
+                                  ...tempBranding,
+                                  pageConfig: {
+                                    ...tempBranding.pageConfig,
+                                    [key]: !tempBranding.pageConfig?.[key as keyof typeof tempBranding.pageConfig]
+                                  }
+                                })}
+                                className={`px-4 py-3 rounded-xl text-xs font-bold transition-all ${
+                                  tempBranding.pageConfig?.[key as keyof typeof tempBranding.pageConfig]
+                                    ? 'bg-emerald-600 text-white'
+                                    : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                       </div>
+
+                       {/* Interactive Features */}
+                       <div className="pt-4 space-y-3 border-t border-slate-800">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Interactive Features</label>
+                          <div className="space-y-2">
+                            <button
+                              onClick={() => setTempBranding({
+                                ...tempBranding,
+                                pageConfig: {
+                                  ...tempBranding.pageConfig,
+                                  enableContactForm: !tempBranding.pageConfig?.enableContactForm
+                                }
+                              })}
+                              className={`w-full px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                                tempBranding.pageConfig?.enableContactForm
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
+                              }`}
+                            >
+                              <span>Contact Form</span>
+                              <span className="text-[10px]">Allow visitors to send direct inquiries</span>
+                            </button>
+                            <button
+                              onClick={() => setTempBranding({
+                                ...tempBranding,
+                                pageConfig: {
+                                  ...tempBranding.pageConfig,
+                                  enableNewsletter: !tempBranding.pageConfig?.enableNewsletter
+                                }
+                              })}
+                              className={`w-full px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                                tempBranding.pageConfig?.enableNewsletter
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
+                              }`}
+                            >
+                              <span>Newsletter Signup</span>
+                              <span className="text-[10px]">Inner Circle email collection</span>
+                            </button>
                           </div>
                        </div>
                     </div>
