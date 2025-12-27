@@ -225,9 +225,27 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     tagline: '',
     customDomain: '',
     bannerUrl: '',
-    services: []
+    services: [],
+    pageConfig: {
+      heroType: 'image',
+      heroMedia: '',
+      showStats: true,
+      showTestimonials: true,
+      showTeam: true,
+      showPartners: true,
+      showMediaCoverage: true,
+      showEventHighlights: true,
+      enableContactForm: true,
+      enableNewsletter: true,
+      enableSocialSharing: true,
+      enableVIPAccess: false,
+      customSections: [],
+      layout: 'modern',
+      theme: 'dark'
+    }
   });
   const [tempBio, setTempBio] = useState(user.bio || '');
+  const [tempSlug, setTempSlug] = useState(user.agency_slug || user.agencySlug || '');
 
   // Enterprise Integration State
   const [integrations, setIntegrations] = useState({
@@ -309,7 +327,33 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   }
 
   const handleCommitBranding = () => {
-    onUpdateUser({ branding: tempBranding, bio: tempBio });
+    // Ensure pageConfig has all necessary defaults
+    const finalBranding = {
+      ...tempBranding,
+      pageConfig: {
+        heroType: tempBranding.pageConfig?.heroType || 'image',
+        heroMedia: tempBranding.pageConfig?.heroMedia || '',
+        showStats: tempBranding.pageConfig?.showStats !== false,
+        showTestimonials: tempBranding.pageConfig?.showTestimonials !== false,
+        showTeam: tempBranding.pageConfig?.showTeam !== false,
+        showPartners: tempBranding.pageConfig?.showPartners !== false,
+        showMediaCoverage: tempBranding.pageConfig?.showMediaCoverage !== false,
+        showEventHighlights: tempBranding.pageConfig?.showEventHighlights !== false,
+        enableContactForm: tempBranding.pageConfig?.enableContactForm !== false,
+        enableNewsletter: tempBranding.pageConfig?.enableNewsletter !== false,
+        enableSocialSharing: tempBranding.pageConfig?.enableSocialSharing !== false,
+        enableVIPAccess: tempBranding.pageConfig?.enableVIPAccess || false,
+        customSections: tempBranding.pageConfig?.customSections || [],
+        layout: tempBranding.pageConfig?.layout || 'modern',
+        theme: tempBranding.pageConfig?.theme || 'dark'
+      }
+    };
+    
+    onUpdateUser({ 
+      branding: finalBranding, 
+      bio: tempBio,
+      agency_slug: tempSlug || undefined
+    });
     alert("Agency Shard Updated Successfully.");
   };
 
@@ -1312,10 +1356,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                              <span className="text-slate-500 text-sm">eventnexus.eu/#/agency/</span>
                              <input 
                                type="text" 
-                               value={user.agencySlug || user.agency_slug || ''}
+                               value={tempSlug}
                                onChange={(e) => {
                                  const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
-                                 onUpdateUser({agency_slug: slug}); // Use snake_case for database
+                                 setTempSlug(slug);
                                }}
                                className="flex-1 px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-mono outline-none focus:border-indigo-500"
                                placeholder="your-agency-name"
@@ -1451,25 +1495,39 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                               { key: 'showTeam', label: 'Team Section' },
                               { key: 'showPartners', label: 'Partners Grid' },
                               { key: 'showMediaCoverage', label: 'Media Coverage' }
-                            ].map(({ key, label }) => (
-                              <button
-                                key={key}
-                                onClick={() => setTempBranding({
-                                  ...tempBranding,
-                                  pageConfig: {
-                                    ...tempBranding.pageConfig,
-                                    [key]: !tempBranding.pageConfig?.[key as keyof typeof tempBranding.pageConfig]
-                                  }
-                                })}
-                                className={`px-4 py-3 rounded-xl text-xs font-bold transition-all ${
-                                  tempBranding.pageConfig?.[key as keyof typeof tempBranding.pageConfig]
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
-                                }`}
-                              >
-                                {label}
-                              </button>
-                            ))}
+                            ].map(({ key, label }) => {
+                              const isEnabled = tempBranding.pageConfig?.[key as keyof typeof tempBranding.pageConfig] !== false;
+                              return (
+                                <button
+                                  key={key}
+                                  onClick={() => {
+                                    setTempBranding({
+                                      ...tempBranding,
+                                      pageConfig: {
+                                        ...tempBranding.pageConfig,
+                                        heroType: tempBranding.pageConfig?.heroType || 'image',
+                                        heroMedia: tempBranding.pageConfig?.heroMedia || '',
+                                        [key]: !isEnabled,
+                                        enableContactForm: tempBranding.pageConfig?.enableContactForm !== false,
+                                        enableNewsletter: tempBranding.pageConfig?.enableNewsletter !== false,
+                                        enableSocialSharing: tempBranding.pageConfig?.enableSocialSharing !== false,
+                                        enableVIPAccess: tempBranding.pageConfig?.enableVIPAccess || false,
+                                        customSections: tempBranding.pageConfig?.customSections || [],
+                                        layout: tempBranding.pageConfig?.layout || 'modern',
+                                        theme: tempBranding.pageConfig?.theme || 'dark'
+                                      }
+                                    });
+                                  }}
+                                  className={`px-4 py-3 rounded-xl text-xs font-bold transition-all ${
+                                    isEnabled
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              );
+                            })}
                           </div>
                        </div>
 
