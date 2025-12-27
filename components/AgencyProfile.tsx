@@ -47,10 +47,21 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
       setIsLoading(true);
       setError(null);
       try {
+        console.log('🔍 AgencyProfile: Loading organizer with slug:', slug);
+        
         // First, try to get organizer by slug
         const fetchedOrganizer = await getUserBySlug(slug!);
         
+        console.log('📦 AgencyProfile: Fetched organizer:', fetchedOrganizer ? {
+          id: fetchedOrganizer.id,
+          name: fetchedOrganizer.name,
+          tier: fetchedOrganizer.subscription_tier,
+          agencySlug: fetchedOrganizer.agencySlug,
+          agency_slug: fetchedOrganizer.agency_slug
+        } : 'NULL');
+        
         if (!fetchedOrganizer) {
+          console.error('❌ AgencyProfile: Organizer not found for slug:', slug);
           setError('Organizer not found');
           setIsLoading(false);
           return;
@@ -61,6 +72,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
         // Then load all events
         const allEvents = await getEvents();
         setEvents(allEvents);
+        console.log(`✅ AgencyProfile: Loaded ${allEvents.length} events`);
       } catch (error) {
         console.error('Error loading data:', error);
         setError('Failed to load organizer data');
