@@ -172,7 +172,7 @@ const HomeMap: React.FC = () => {
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto">
             <div className="px-6 py-3 bg-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg shadow-indigo-600/30">
-              {filteredEvents.length} Nodes Found
+              {filteredEvents.length} Events Found
             </div>
           </div>
         </div>

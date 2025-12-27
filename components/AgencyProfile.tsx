@@ -8,7 +8,8 @@ import {
   Star, Play, Layout, Sparkles, Headphones, Camera, Music, 
   Volume2, Lightbulb, Briefcase, Globe2, Loader2, TrendingUp,
   DollarSign, UserCheck, Target, MessageCircle, Quote, Image,
-  Video, ChevronLeft, ChevronRight, Building2, Newspaper, BarChart3
+  Video, ChevronLeft, ChevronRight, Building2, Newspaper, BarChart3,
+  Facebook, Linkedin
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
 import { getEvents, getUserBySlug } from '../services/dbService';
@@ -40,6 +41,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
   const [showContactForm, setShowContactForm] = useState(false);
+  const [showVideoReel, setShowVideoReel] = useState(false);
   
   // Load events and organizer from database
   useEffect(() => {
@@ -301,11 +303,14 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                 {isFollowing ? <><UserMinus size={20} /> Leave Movement</> : <><UserPlus size={20} /> Join Movement</>}
               </button>
               {organizer.branding?.videoReel && (
-                <button className="px-12 py-6 rounded-3xl bg-slate-900/60 backdrop-blur-md border border-slate-800 font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-3 text-white">
+                <button 
+                  onClick={() => setShowVideoReel(true)}
+                  className="px-12 py-6 rounded-3xl bg-slate-900/60 backdrop-blur-md border border-slate-800 font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-3 text-white"
+                >
                    <Play size={20} /> Agency Reel
                 </button>
               )}
-              {isEnterprise && organizer.branding?.pageConfig?.enableChat && (
+              {isEnterprise && organizer.branding?.pageConfig?.enableContactForm && (
                 <button 
                   onClick={() => setShowContactForm(true)}
                   className="px-12 py-6 rounded-3xl bg-slate-900/60 backdrop-blur-md border border-slate-800 font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-3 text-white"
@@ -314,6 +319,55 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                 </button>
               )}
            </div>
+           
+           {/* Social Share Buttons */}
+           {isEnterprise && organizer.branding?.pageConfig?.enableSocialSharing && (
+             <div className="flex items-center gap-4">
+               <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Share:</span>
+               <div className="flex gap-3">
+                 <button
+                   onClick={() => {
+                     const url = window.location.href;
+                     window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(`Check out ${organizer.name}!`)}`, '_blank', 'width=550,height=420');
+                   }}
+                   className="w-10 h-10 rounded-full bg-slate-900/60 backdrop-blur-md border border-slate-800 flex items-center justify-center hover:bg-sky-500 hover:border-sky-500 transition-all group"
+                   title="Share on X (Twitter)"
+                 >
+                   <Twitter size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+                 </button>
+                 <button
+                   onClick={() => {
+                     const url = window.location.href;
+                     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'width=550,height=420');
+                   }}
+                   className="w-10 h-10 rounded-full bg-slate-900/60 backdrop-blur-md border border-slate-800 flex items-center justify-center hover:bg-blue-600 hover:border-blue-600 transition-all group"
+                   title="Share on Facebook"
+                 >
+                   <Facebook size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+                 </button>
+                 <button
+                   onClick={() => {
+                     const url = window.location.href;
+                     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank', 'width=550,height=420');
+                   }}
+                   className="w-10 h-10 rounded-full bg-slate-900/60 backdrop-blur-md border border-slate-800 flex items-center justify-center hover:bg-blue-700 hover:border-blue-700 transition-all group"
+                   title="Share on LinkedIn"
+                 >
+                   <Linkedin size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+                 </button>
+                 <button
+                   onClick={() => {
+                     navigator.clipboard.writeText(window.location.href);
+                     alert('✓ Link copied to clipboard!');
+                   }}
+                   className="w-10 h-10 rounded-full bg-slate-900/60 backdrop-blur-md border border-slate-800 flex items-center justify-center hover:bg-indigo-600 hover:border-indigo-600 transition-all group"
+                   title="Copy Link"
+                 >
+                   <LinkIcon size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+                 </button>
+               </div>
+             </div>
+           )}
         </div>
       </section>
 
@@ -599,7 +653,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                  Inner Circle.
               </h2>
               <p className="text-indigo-100 text-xl font-medium max-w-2xl mx-auto opacity-80">
-                 Direct pipeline for secret location drops and private pre-sale keys for {organizer.name} nodes.
+                 Direct pipeline for secret location drops and private pre-sale keys for {organizer.name} events.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                  <input 
@@ -615,6 +669,28 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
         </section>
       )}
 
+      {/* Video Reel Modal */}
+      {showVideoReel && organizer.branding?.videoReel && (
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowVideoReel(false)}>
+          <div className="relative max-w-6xl w-full aspect-video" onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowVideoReel(false)}
+              className="absolute -top-12 right-0 text-white hover:text-slate-300 transition-colors z-10"
+            >
+              <span className="text-4xl">×</span>
+            </button>
+            <video 
+              src={organizer.branding.videoReel}
+              controls
+              autoPlay
+              className="w-full h-full rounded-2xl"
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      )}
+
       {/* Enterprise Contact Form Modal */}
       {showContactForm && isEnterprise && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -626,32 +702,57 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
               <span className="text-3xl">×</span>
             </button>
             <h3 className="text-4xl font-black text-white mb-8">Get In Touch.</h3>
-            <form className="space-y-6">
+            <form 
+              className="space-y-6"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const data = {
+                  name: formData.get('name'),
+                  email: formData.get('email'),
+                  subject: formData.get('subject'),
+                  message: formData.get('message'),
+                  organizerId: organizer.id
+                };
+                // Here you would send to your backend/email service
+                console.log('Contact form submitted:', data);
+                alert('✓ Message sent! We\'ll get back to you soon.');
+                setShowContactForm(false);
+              }}
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <input 
                   type="text" 
+                  name="name"
                   placeholder="Your Name" 
+                  required
                   className="bg-slate-800 border border-slate-700 rounded-2xl px-6 py-4 text-white placeholder:text-slate-500 outline-none focus:border-indigo-500 transition-colors"
                 />
                 <input 
                   type="email" 
+                  name="email"
                   placeholder="Your Email" 
+                  required
                   className="bg-slate-800 border border-slate-700 rounded-2xl px-6 py-4 text-white placeholder:text-slate-500 outline-none focus:border-indigo-500 transition-colors"
                 />
               </div>
               <input 
                 type="text" 
+                name="subject"
                 placeholder="Subject" 
+                required
                 className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-6 py-4 text-white placeholder:text-slate-500 outline-none focus:border-indigo-500 transition-colors"
               />
               <textarea 
+                name="message"
                 placeholder="Your Message" 
                 rows={6}
+                required
                 className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-6 py-4 text-white placeholder:text-slate-500 outline-none focus:border-indigo-500 transition-colors resize-none"
               />
               <button 
                 type="submit"
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-6 rounded-3xl font-black text-xs uppercase tracking-widest transition-all"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-6 rounded-3xl font-black text-xs uppercase tracking-widest transition-all active:scale-95"
               >
                 Send Message
               </button>
