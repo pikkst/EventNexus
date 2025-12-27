@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
 import { getEvents, getUserBySlug, getOrganizerRatings, OrganizerRatingStats } from '../services/dbService';
+import { sendContactInquiry } from '../services/emailService';
 import Footer from './Footer';
 
 interface AgencyProfileProps {
@@ -44,6 +45,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
   const [showVideoReel, setShowVideoReel] = useState(false);
   const [ratings, setRatings] = useState<any[]>([]);
   const [loadingRatings, setLoadingRatings] = useState(false);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   
   // Load events and organizer from database
   useEffect(() => {
@@ -480,7 +482,34 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                     )}
                   </>
                 )}
-                <button className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors">
+                <button 
+                  onClick={async () => {
+                    const name = prompt('Your name:');
+                    if (!name) return;
+                    const email = prompt('Your email:');
+                    if (!email) return;
+                    const message = prompt('Tell us about your partnership idea:');
+                    if (!message) return;
+                    
+                    const success = await sendContactInquiry({
+                      organizerId: organizer.id,
+                      organizerName: organizer.name,
+                      organizerEmail: organizer.email,
+                      fromName: name,
+                      fromEmail: email,
+                      subject: 'Partnership Inquiry',
+                      message: message,
+                      type: 'partnership'
+                    });
+                    
+                    if (success) {
+                      alert('✓ Partnership inquiry sent! The organizer will contact you soon.');
+                    } else {
+                      alert('⚠️ Failed to send inquiry. Please try again.');
+                    }
+                  }}
+                  className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors cursor-pointer"
+                >
                    Inquire for Partnership <ArrowRight size={18} />
                 </button>
               </div>
@@ -734,20 +763,35 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
             <h3 className="text-4xl font-black text-white mb-8">Get In Touch.</h3>
             <form 
               className="space-y-6"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                const data = {
-                  name: formData.get('name'),
-                  email: formData.get('email'),
-                  subject: formData.get('subject'),
-                  message: formData.get('message'),
-                  organizerId: organizer.id
-                };
-                // Here you would send to your backend/email service
-                console.log('Contact form submitted:', data);
-                alert('✓ Message sent! We\'ll get back to you soon.');
-                setShowContactForm(false);
+                setIsSubmittingForm(true);
+                
+                try {
+                  const formData = new FormData(e.currentTarget);
+                  const success = await sendContactInquiry({
+                    organizerId: organizer.id,
+                    organizerName: organizer.name,
+                    organizerEmail: organizer.email,
+                    fromName: formData.get('name') as string,
+                    fromEmail: formData.get('email') as string,
+                    subject: formData.get('subject') as string,
+                    message: formData.get('message') as string,
+                    type: 'contact'
+                  });
+                  
+                  if (success) {
+                    alert('✓ Message sent successfully! The organizer will receive your inquiry via email.');
+                    setShowContactForm(false);
+                  } else {
+                    alert('⚠️ Failed to send message. Please try again or contact the organizer directly.');
+                  }
+                } catch (error) {
+                  console.error('Error sending contact form:', error);
+                  alert('⚠️ An error occurred. Please try again later.');
+                } finally {
+                  setIsSubmittingForm(false);
+                }
               }}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -782,9 +826,17 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
               />
               <button 
                 type="submit"
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-6 rounded-3xl font-black text-xs uppercase tracking-widest transition-all active:scale-95"
+                disabled={isSubmittingForm}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white px-8 py-6 rounded-3xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
               >
-                Send Message
+                {isSubmittingForm ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  'Send Message'
+                )}
               </button>
             </form>
           </div>
