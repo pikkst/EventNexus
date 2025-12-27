@@ -13,7 +13,7 @@ import {
   Cpu, Database, Key, ShieldCheck, Headphones, Smartphone, Paintbrush,
   Link2, Settings2, Bot, Layers, Terminal, Activity, Github, Play,
   ChevronRight, Box, User as UserIcon, Palette, Image as ImageIcon,
-  Chrome, CheckCircle, Smartphone as TikTok, X, Globe2, Volume2, Lightbulb, Clock
+  Chrome, CheckCircle, Smartphone as TikTok, X, Globe2, Volume2, Lightbulb, Clock, Copy
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, EventNexusEvent, Notification, AgencyService } from '../types';
@@ -1253,7 +1253,50 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       )}
 
       {activeTab === 'branding' && (
-        <div className="space-y-12 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+           {/* Public URL Status - Prominent Display */}
+           <div className="p-6 bg-gradient-to-r from-emerald-500/10 to-purple-500/10 border border-emerald-500/30 rounded-2xl space-y-4">
+             <div className="flex items-center gap-3">
+               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+               <div>
+                 <div className="text-lg font-black text-white">Your Public Page is Live! 🎉</div>
+                 <div className="text-xs text-slate-400 mt-1">Share this link with your audience</div>
+               </div>
+             </div>
+             {(user.agencySlug || user.agency_slug) ? (
+               <div className="space-y-3">
+                 <div className="flex items-center gap-2 p-4 bg-slate-900/50 rounded-xl">
+                   <code className="flex-1 text-base text-purple-300 font-mono break-all">
+                     {window.location.origin}/#/agency/{user.agencySlug || user.agency_slug}
+                   </code>
+                   <button 
+                     onClick={() => {
+                       navigator.clipboard.writeText(`${window.location.origin}/#/agency/${user.agencySlug || user.agency_slug}`);
+                       alert('✓ Link copied to clipboard!');
+                     }}
+                     className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-xs font-bold text-white transition-all flex items-center gap-2"
+                   >
+                     <Copy className="w-4 h-4" />
+                     Copy
+                   </button>
+                 </div>
+                 <Link 
+                   to={`/agency/${user.agencySlug || user.agency_slug}`}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl text-white text-sm font-bold transition-all shadow-lg hover:shadow-xl"
+                 >
+                   <ExternalLink className="w-5 h-5" />
+                   Open Your Public Page
+                 </Link>
+               </div>
+             ) : (
+               <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                 <p className="text-sm text-yellow-300">⚠️ Configure your URL slug below to activate your public page</p>
+               </div>
+             )}
+           </div>
+
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
               {/* Left Form: Branded Identity */}
               <div className="lg:col-span-1 space-y-6">
@@ -1261,6 +1304,27 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                     <h3 className="text-2xl font-black text-white tracking-tighter flex items-center gap-3"><Palette className="text-indigo-400" /> Shard Editor</h3>
                     
                     <div className="space-y-6">
+                       {/* URL Slug Configuration */}
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Public URL Slug</label>
+                         <div className="space-y-2">
+                           <div className="flex items-center gap-2">
+                             <span className="text-slate-500 text-sm">eventnexus.eu/#/agency/</span>
+                             <input 
+                               type="text" 
+                               value={user.agencySlug || user.agency_slug || ''}
+                               onChange={(e) => {
+                                 const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+                                 onUpdateUser({agencySlug: slug});
+                               }}
+                               className="flex-1 px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-mono outline-none focus:border-indigo-500"
+                               placeholder="your-agency-name"
+                             />
+                           </div>
+                           <p className="text-[10px] text-slate-500 ml-1">Your unique URL path (letters, numbers, and dashes only)</p>
+                         </div>
+                       </div>
+                    
                        <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Primary Brand Color</label>
                           <div className="flex gap-4 items-center">
