@@ -30,6 +30,7 @@ import AutonomousOperations from './AutonomousOperations';
 import { SimplifiedSocialMediaManager } from './SimplifiedSocialMediaManager';
 import BetaInvitationManager from './BetaInvitationManager';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import AdminContentManager from './AdminContentManager';
 import { 
   getEvents, 
   getAllUsers, 
@@ -593,6 +594,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     { id: 'social-media', label: 'Social Media Hub', icon: <Share2 /> },
     { id: 'brand-protection', label: 'Brand Protection', icon: <Shield /> },
     { id: 'beta-invitations', label: 'Beta Invitations', icon: <Gift /> },
+    { id: 'landing-content', label: 'Landing Content', icon: <Layout /> },
     { id: 'financials', label: 'Nexus Economy', icon: <DollarSign /> },
     { id: 'settings', label: 'System Matrix', icon: <Settings /> },
     { id: 'infrastructure', label: 'System Health', icon: <Database /> },
@@ -1144,6 +1146,12 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         {activeTab === 'beta-invitations' && (
           <div className="animate-in fade-in duration-500">
             <BetaInvitationManager />
+          </div>
+        )}
+
+        {activeTab === 'landing-content' && (
+          <div className="animate-in fade-in duration-500">
+            <AdminContentManager userRole={user.role} />
           </div>
         )}
 

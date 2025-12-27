@@ -2547,3 +2547,176 @@ export const getOrganizerRatings = async (organizerId: string): Promise<any[]> =
     return [];
   }
 };
+
+// Success Stories CRUD
+export const getSuccessStories = async (limit: number = 6, featuredOnly: boolean = false): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_success_stories', {
+      p_limit: limit,
+      p_featured_only: featuredOnly
+    });
+
+    if (error) {
+      console.error('Error fetching success stories:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getSuccessStories:', error);
+    return [];
+  }
+};
+
+export const createSuccessStory = async (story: Omit<any, 'id' | 'created_at' | 'updated_at'>): Promise<any | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+      .from('success_stories')
+      .insert({
+        ...story,
+        created_by: user.id
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating success story:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in createSuccessStory:', error);
+    return null;
+  }
+};
+
+export const updateSuccessStory = async (id: string, updates: Partial<any>): Promise<any | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('success_stories')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating success story:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in updateSuccessStory:', error);
+    return null;
+  }
+};
+
+export const deleteSuccessStory = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('success_stories')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting success story:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deleteSuccessStory:', error);
+    return false;
+  }
+};
+
+// Press Mentions CRUD
+export const getPressMentions = async (limit: number = 10, featuredOnly: boolean = false): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_press_mentions', {
+      p_limit: limit,
+      p_featured_only: featuredOnly
+    });
+
+    if (error) {
+      console.error('Error fetching press mentions:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getPressMentions:', error);
+    return [];
+  }
+};
+
+export const createPressMention = async (mention: Omit<any, 'id' | 'created_at' | 'updated_at'>): Promise<any | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+      .from('press_mentions')
+      .insert({
+        ...mention,
+        created_by: user.id
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating press mention:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in createPressMention:', error);
+    return null;
+  }
+};
+
+export const updatePressMention = async (id: string, updates: Partial<any>): Promise<any | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('press_mentions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating press mention:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in updatePressMention:', error);
+    return null;
+  }
+};
+
+export const deletePressMention = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('press_mentions')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting press mention:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deletePressMention:', error);
+    return false;
+  }
+};
+

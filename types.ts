@@ -276,3 +276,42 @@ export interface MonitoringStats {
   infoAlerts: number;
   lastScanTime: Date;
 }
+
+export interface SuccessStory {
+  id: string;
+  title: string;
+  description: string;
+  organizer_name: string;
+  organizer_role?: string;
+  event_type?: string;
+  avatar_url?: string;
+  metrics?: {
+    tickets_sold?: number;
+    revenue?: string;
+    attendee_growth?: string;
+    [key: string]: any;
+  };
+  quote: string;
+  is_featured: boolean;
+  display_order: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PressMention {
+  id: string;
+  publication_name: string;
+  publication_logo_url?: string;
+  article_title: string;
+  article_url: string;
+  excerpt?: string;
+  published_date: string;
+  author_name?: string;
+  category?: string;
+  is_featured: boolean;
+  display_order: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
