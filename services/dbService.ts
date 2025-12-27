@@ -2037,3 +2037,413 @@ export const getProductionTransitionHistory = async (): Promise<any[]> => {
     return [];
   }
 };
+
+// ============================================================================
+// ENTERPRISE MEDIA UPLOAD FUNCTIONS
+// ============================================================================
+
+/**
+ * Upload media file to Enterprise storage bucket
+ * Supports images and videos with automatic compression and validation
+ */
+export const uploadEnterpriseMedia = async (
+  userId: string, 
+  file: File, 
+  purpose?: string
+): Promise<string | null> => {
+  try {
+    // Convert file to base64
+    const base64 = await fileToBase64(file);
+    
+    // Get auth token
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('No active session');
+      return null;
+    }
+
+    // Call Edge Function for upload
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/upload-media`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file: base64,
+        fileName: file.name,
+        mimeType: file.type,
+        bucket: 'enterprise-media',
+        purpose: purpose,
+        userId: userId
+      })
+    });
+
+    const result = await response.json();
+    
+    if (!result.success) {
+      console.error('Upload failed:', result.error);
+      return null;
+    }
+
+    return result.url;
+  } catch (error) {
+    console.error('Error uploading enterprise media:', error);
+    return null;
+  }
+};
+
+/**
+ * Upload event highlight media (image or video)
+ */
+export const uploadEventHighlight = async (
+  userId: string,
+  file: File,
+  eventId?: string
+): Promise<string | null> => {
+  try {
+    const base64 = await fileToBase64(file);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/upload-media`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file: base64,
+        fileName: file.name,
+        mimeType: file.type,
+        bucket: 'event-highlights',
+        purpose: eventId ? `event-${eventId}` : 'highlight',
+        userId: userId
+      })
+    });
+
+    const result = await response.json();
+    return result.success ? result.url : null;
+  } catch (error) {
+    console.error('Error uploading event highlight:', error);
+    return null;
+  }
+};
+
+/**
+ * Upload team member avatar
+ */
+export const uploadTeamAvatar = async (
+  userId: string,
+  file: File,
+  teamMemberId?: string
+): Promise<string | null> => {
+  try {
+    const base64 = await fileToBase64(file);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/upload-media`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file: base64,
+        fileName: file.name,
+        mimeType: file.type,
+        bucket: 'team-avatars',
+        purpose: teamMemberId ? `team-${teamMemberId}` : 'team',
+        userId: userId
+      })
+    });
+
+    const result = await response.json();
+    return result.success ? result.url : null;
+  } catch (error) {
+    console.error('Error uploading team avatar:', error);
+    return null;
+  }
+};
+
+/**
+ * Upload partner logo
+ */
+export const uploadPartnerLogo = async (
+  userId: string,
+  file: File,
+  partnerId?: string
+): Promise<string | null> => {
+  try {
+    const base64 = await fileToBase64(file);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/upload-media`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file: base64,
+        fileName: file.name,
+        mimeType: file.type,
+        bucket: 'partner-logos',
+        purpose: partnerId ? `partner-${partnerId}` : 'partner',
+        userId: userId
+      })
+    });
+
+    const result = await response.json();
+    return result.success ? result.url : null;
+  } catch (error) {
+    console.error('Error uploading partner logo:', error);
+    return null;
+  }
+};
+
+/**
+ * Upload media outlet logo
+ */
+export const uploadMediaLogo = async (
+  userId: string,
+  file: File,
+  outletName?: string
+): Promise<string | null> => {
+  try {
+    const base64 = await fileToBase64(file);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/upload-media`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file: base64,
+        fileName: file.name,
+        mimeType: file.type,
+        bucket: 'media-logos',
+        purpose: outletName ? `outlet-${outletName}` : 'media',
+        userId: userId
+      })
+    });
+
+    const result = await response.json();
+    return result.success ? result.url : null;
+  } catch (error) {
+    console.error('Error uploading media logo:', error);
+    return null;
+  }
+};
+
+/**
+ * Upload testimonial avatar
+ */
+export const uploadTestimonialAvatar = async (
+  userId: string,
+  file: File,
+  testimonialId?: string
+): Promise<string | null> => {
+  try {
+    const base64 = await fileToBase64(file);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/upload-media`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file: base64,
+        fileName: file.name,
+        mimeType: file.type,
+        bucket: 'testimonial-avatars',
+        purpose: testimonialId ? `testimonial-${testimonialId}` : 'testimonial',
+        userId: userId
+      })
+    });
+
+    const result = await response.json();
+    return result.success ? result.url : null;
+  } catch (error) {
+    console.error('Error uploading testimonial avatar:', error);
+    return null;
+  }
+};
+
+/**
+ * Batch upload multiple files at once
+ */
+export const uploadMediaBatch = async (
+  userId: string,
+  files: File[],
+  bucket: string,
+  purpose?: string
+): Promise<Array<{ fileName: string; url: string; success: boolean }>> => {
+  try {
+    // Convert all files to base64
+    const filePromises = files.map(async (file) => ({
+      file: await fileToBase64(file),
+      fileName: file.name,
+      mimeType: file.type,
+      purpose: purpose
+    }));
+
+    const fileData = await Promise.all(filePromises);
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return [];
+
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/upload-media-batch`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        files: fileData,
+        bucket: bucket,
+        userId: userId
+      })
+    });
+
+    const result = await response.json();
+    return result.results || [];
+  } catch (error) {
+    console.error('Error in batch upload:', error);
+    return [];
+  }
+};
+
+/**
+ * Get user's storage usage and quota
+ */
+export const getUserStorageInfo = async (userId: string): Promise<{
+  used: number;
+  quota: number;
+  percentage: number;
+} | null> => {
+  try {
+    const { data: usage, error: usageError } = await supabase.rpc(
+      'get_user_storage_usage',
+      { user_id: userId }
+    );
+
+    if (usageError) throw usageError;
+
+    const { data: quota, error: quotaError } = await supabase.rpc(
+      'get_user_storage_quota',
+      { user_id: userId }
+    );
+
+    if (quotaError) throw quotaError;
+
+    const usedBytes = usage || 0;
+    const quotaBytes = quota || 0;
+    const percentage = quotaBytes > 0 ? (usedBytes / quotaBytes) * 100 : 0;
+
+    return {
+      used: usedBytes,
+      quota: quotaBytes,
+      percentage: Math.round(percentage * 100) / 100
+    };
+  } catch (error) {
+    console.error('Error getting storage info:', error);
+    return null;
+  }
+};
+
+/**
+ * Get user's media uploads history
+ */
+export const getUserMediaUploads = async (
+  userId: string,
+  filters?: { bucket?: string; mediaType?: string; purpose?: string }
+): Promise<any[]> => {
+  try {
+    let query = supabase
+      .from('media_uploads')
+      .select('*')
+      .eq('user_id', userId)
+      .order('uploaded_at', { ascending: false });
+
+    if (filters?.bucket) {
+      query = query.eq('bucket_id', filters.bucket);
+    }
+    if (filters?.mediaType) {
+      query = query.eq('media_type', filters.mediaType);
+    }
+    if (filters?.purpose) {
+      query = query.eq('purpose', filters.purpose);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching media uploads:', error);
+    return [];
+  }
+};
+
+/**
+ * Delete media file and tracking record
+ */
+export const deleteMediaFile = async (
+  userId: string,
+  filePath: string,
+  bucket: string
+): Promise<boolean> => {
+  try {
+    // Delete from storage
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .remove([filePath]);
+
+    if (storageError) {
+      console.error('Error deleting from storage:', storageError);
+      return false;
+    }
+
+    // Delete tracking record
+    const { error: dbError } = await supabase
+      .from('media_uploads')
+      .delete()
+      .eq('user_id', userId)
+      .eq('file_path', filePath)
+      .eq('bucket_id', bucket);
+
+    if (dbError) {
+      console.error('Error deleting tracking record:', dbError);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting media file:', error);
+    return false;
+  }
+};
+
+// Helper function to convert File to base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
