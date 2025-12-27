@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
 import { getEvents, getUserBySlug, getOrganizerRatings, OrganizerRatingStats } from '../services/dbService';
-import { sendContactInquiry } from '../services/emailService';
+import { supabase } from '../services/supabase';
 import Footer from './Footer';
 
 interface AgencyProfileProps {
@@ -491,20 +491,28 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                     const message = prompt('Tell us about your partnership idea:');
                     if (!message) return;
                     
-                    const success = await sendContactInquiry({
-                      organizerId: organizer.id,
-                      organizerName: organizer.name,
-                      organizerEmail: organizer.email,
-                      fromName: name,
-                      fromEmail: email,
-                      subject: 'Partnership Inquiry',
-                      message: message,
-                      type: 'partnership'
-                    });
-                    
-                    if (success) {
-                      alert('✓ Partnership inquiry sent! The organizer will contact you soon.');
-                    } else {
+                    try {
+                      const { data, error } = await supabase.functions.invoke('send-contact-email', {
+                        body: {
+                          organizerId: organizer.id,
+                          organizerName: organizer.name,
+                          organizerEmail: organizer.email,
+                          fromName: name,
+                          fromEmail: email,
+                          subject: 'Partnership Inquiry',
+                          message: message,
+                          type: 'partnership'
+                        }
+                      });
+                      
+                      if (error || !data?.success) {
+                        console.error('Error sending partnership inquiry:', error);
+                        alert('⚠️ Failed to send inquiry. Please try again.');
+                      } else {
+                        alert('✓ Partnership inquiry sent! The organizer will contact you soon.');
+                      }
+                    } catch (error) {
+                      console.error('Error:', error);
                       alert('⚠️ Failed to send inquiry. Please try again.');
                     }
                   }}
@@ -769,22 +777,29 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                 
                 try {
                   const formData = new FormData(e.currentTarget);
-                  const success = await sendContactInquiry({
-                    organizerId: organizer.id,
-                    organizerName: organizer.name,
-                    organizerEmail: organizer.email,
-                    fromName: formData.get('name') as string,
-                    fromEmail: formData.get('email') as string,
-                    subject: formData.get('subject') as string,
-                    message: formData.get('message') as string,
-                    type: 'contact'
+                  
+                  // Call Supabase Edge Function
+                  const { data, error } = await supabase.functions.invoke('send-contact-email', {
+                    body: {
+                      organizerId: organizer.id,
+                      organizerName: organizer.name,
+                      organizerEmail: organizer.email,
+                      fromName: formData.get('name') as string,
+                      fromEmail: formData.get('email') as string,
+                      subject: formData.get('subject') as string,
+                      message: formData.get('message') as string,
+                      type: 'contact'
+                    }
                   });
                   
-                  if (success) {
+                  if (error) {
+                    console.error('Error sending contact form:', error);
+                    alert('⚠️ Failed to send message. Please try again or contact the organizer directly.');
+                  } else if (data?.success) {
                     alert('✓ Message sent successfully! The organizer will receive your inquiry via email.');
                     setShowContactForm(false);
                   } else {
-                    alert('⚠️ Failed to send message. Please try again or contact the organizer directly.');
+                    alert('⚠️ Failed to send message. Please try again.');
                   }
                 } catch (error) {
                   console.error('Error sending contact form:', error);
