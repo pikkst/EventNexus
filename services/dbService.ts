@@ -2457,3 +2457,89 @@ const fileToBase64 = (file: File): Promise<string> => {
     reader.onerror = error => reject(error);
   });
 };
+
+// Organizer Ratings
+export interface OrganizerRatingStats {
+  organizer_id: string;
+  organizer_name: string;
+  agency_slug: string;
+  subscription_tier: string;
+  total_ratings: number;
+  avg_rating: number;
+  weighted_score: number;
+  events_rated: number;
+}
+
+export const getTopOrganizers = async (limit: number = 10, tier?: string): Promise<OrganizerRatingStats[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_top_organizers', {
+      p_limit: limit,
+      p_tier: tier || null
+    });
+
+    if (error) {
+      console.error('Error fetching top organizers:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getTopOrganizers:', error);
+    return [];
+  }
+};
+
+export const submitOrganizerRating = async (
+  organizerId: string,
+  rating: number,
+  eventId?: string,
+  reviewText?: string,
+  aspects?: {
+    organization?: number;
+    venue?: number;
+    communication?: number;
+    value?: number;
+  }
+): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('rate-organizer', {
+      body: {
+        organizerId,
+        eventId,
+        rating,
+        reviewText,
+        aspects
+      }
+    });
+
+    if (error) {
+      console.error('Error submitting rating:', error);
+      return false;
+    }
+
+    return data?.success || false;
+  } catch (error) {
+    console.error('Error in submitOrganizerRating:', error);
+    return false;
+  }
+};
+
+export const getOrganizerRatings = async (organizerId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('organizer_ratings')
+      .select('*')
+      .eq('organizer_id', organizerId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching organizer ratings:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getOrganizerRatings:', error);
+    return [];
+  }
+};
