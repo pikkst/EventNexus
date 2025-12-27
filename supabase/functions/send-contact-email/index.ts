@@ -101,11 +101,11 @@ serve(async (req) => {
     const resendData = await resendResponse.json();
     console.log('✅ Email sent successfully via Resend! ID:', resendData.id);
 
-    // Store inquiry in database
+    // Store inquiry in database using SERVICE_ROLE_KEY to bypass RLS
     console.log('💾 Storing inquiry in database...');
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const { data: inquiryData, error: dbError } = await supabaseClient
