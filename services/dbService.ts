@@ -2872,3 +2872,149 @@ export const deletePlatformMedia = async (id: string): Promise<boolean> => {
   }
 };
 
+/**
+ * Contact Inquiries Management
+ */
+
+export interface ContactInquiry {
+  id: string;
+  organizer_id: string;
+  from_name: string;
+  from_email: string;
+  subject: string | null;
+  message: string;
+  type: 'contact' | 'partnership';
+  email_id: string | null;
+  status: 'new' | 'read' | 'replied' | 'archived';
+  created_at: string;
+  read_at: string | null;
+  replied_at: string | null;
+}
+
+// Get all inquiries for an organizer
+export const getContactInquiries = async (organizerId: string): Promise<ContactInquiry[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('contact_inquiries')
+      .select('*')
+      .eq('organizer_id', organizerId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching contact inquiries:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getContactInquiries:', error);
+    return [];
+  }
+};
+
+// Get unread inquiry count
+export const getUnreadInquiryCount = async (organizerId: string): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from('contact_inquiries')
+      .select('*', { count: 'exact', head: true })
+      .eq('organizer_id', organizerId)
+      .eq('status', 'new');
+
+    if (error) {
+      console.error('Error counting unread inquiries:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error('Error in getUnreadInquiryCount:', error);
+    return 0;
+  }
+};
+
+// Mark inquiry as read
+export const markInquiryAsRead = async (inquiryId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('contact_inquiries')
+      .update({ 
+        status: 'read',
+        read_at: new Date().toISOString()
+      })
+      .eq('id', inquiryId);
+
+    if (error) {
+      console.error('Error marking inquiry as read:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in markInquiryAsRead:', error);
+    return false;
+  }
+};
+
+// Mark inquiry as replied
+export const markInquiryAsReplied = async (inquiryId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('contact_inquiries')
+      .update({ 
+        status: 'replied',
+        replied_at: new Date().toISOString()
+      })
+      .eq('id', inquiryId);
+
+    if (error) {
+      console.error('Error marking inquiry as replied:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in markInquiryAsReplied:', error);
+    return false;
+  }
+};
+
+// Archive inquiry
+export const archiveInquiry = async (inquiryId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('contact_inquiries')
+      .update({ status: 'archived' })
+      .eq('id', inquiryId);
+
+    if (error) {
+      console.error('Error archiving inquiry:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in archiveInquiry:', error);
+    return false;
+  }
+};
+
+// Delete inquiry
+export const deleteContactInquiry = async (inquiryId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('contact_inquiries')
+      .delete()
+      .eq('id', inquiryId);
+
+    if (error) {
+      console.error('Error deleting inquiry:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deleteContactInquiry:', error);
+    return false;
+  }
+};
