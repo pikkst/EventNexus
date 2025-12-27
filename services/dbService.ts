@@ -19,7 +19,8 @@ const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
     maxAttendees: dbEvent.max_capacity || 0,
     // Premium tier fields
     isFeatured: dbEvent.is_featured || false,
-    customBranding: dbEvent.custom_branding || undefined
+    customBranding: dbEvent.custom_branding || undefined,
+    translations: dbEvent.translations || undefined
   };
 };
 
@@ -92,6 +93,9 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
   }
   if (event.customBranding) {
     dbEvent.custom_branding = event.customBranding;
+  }
+  if (event.translations) {
+    dbEvent.translations = event.translations;
   }
   
   const { data, error } = await supabase
