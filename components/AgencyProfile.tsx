@@ -12,7 +12,7 @@ import {
   Facebook, Linkedin
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
-import { getEvents, getUserBySlug } from '../services/dbService';
+import { getEvents, getUserBySlug, getOrganizerRatings, OrganizerRatingStats } from '../services/dbService';
 import Footer from './Footer';
 
 interface AgencyProfileProps {
@@ -42,6 +42,8 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
   const [showContactForm, setShowContactForm] = useState(false);
   const [showVideoReel, setShowVideoReel] = useState(false);
+  const [ratings, setRatings] = useState<any[]>([]);
+  const [loadingRatings, setLoadingRatings] = useState(false);
   
   // Load events and organizer from database
   useEffect(() => {
@@ -70,6 +72,12 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
         }
         
         setOrganizer(fetchedOrganizer);
+        
+        // Load ratings
+        setLoadingRatings(true);
+        const organizerRatings = await getOrganizerRatings(fetchedOrganizer.id);
+        setRatings(organizerRatings.slice(0, 5)); // Top 5 reviews
+        setLoadingRatings(false);
         
         // Then load all events
         const allEvents = await getEvents();
