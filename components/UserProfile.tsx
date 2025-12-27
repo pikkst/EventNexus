@@ -33,7 +33,8 @@ import {
   Image as ImageIcon,
   ExternalLink,
   DollarSign,
-  Bug
+  Bug,
+  Copy
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
 import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, deleteEvent } from '../services/dbService';
@@ -1113,47 +1114,50 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                     {/* Enterprise: White-Label Landing Page Configuration */}
                     {user.subscription_tier === 'enterprise' && (
                       <div className="p-8 bg-gradient-to-br from-purple-600/10 to-pink-600/10 border border-purple-500/30 rounded-3xl space-y-6 mt-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Globe className="w-5 h-5 text-purple-400" />
-                            <h3 className="font-black text-sm uppercase tracking-widest text-purple-300">White-Label Landing Page</h3>
-                          </div>
-                          {user.agencySlug && (
-                            <a 
-                              href={`/#/agency/${user.agencySlug}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-xl text-white text-xs font-bold transition-all"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                              View Public Page
-                            </a>
-                          )}
+                        <div className="flex items-center gap-3 mb-4">
+                          <Globe className="w-5 h-5 text-purple-400" />
+                          <h3 className="font-black text-sm uppercase tracking-widest text-purple-300">White-Label Landing Page</h3>
                         </div>
 
-                        {/* Public URL Status */}
-                        <div className="p-6 bg-gradient-to-r from-emerald-500/10 to-purple-500/10 border border-emerald-500/30 rounded-2xl space-y-3">
+                        {/* Public URL Status - Prominent Display */}
+                        <div className="p-6 bg-gradient-to-r from-emerald-500/10 to-purple-500/10 border border-emerald-500/30 rounded-2xl space-y-4">
                           <div className="flex items-center gap-3">
                             <CheckCircle2 className="w-6 h-6 text-emerald-400" />
                             <div>
-                              <div className="text-sm font-black text-white">Your Page is Live! 🎉</div>
-                              <div className="text-xs text-slate-400 mt-1">Publicly accessible at:</div>
+                              <div className="text-lg font-black text-white">Your Public Page is Live! 🎉</div>
+                              <div className="text-xs text-slate-400 mt-1">Share this link with your audience</div>
                             </div>
                           </div>
-                          {user.agencySlug && (
-                            <div className="flex items-center gap-2 p-3 bg-slate-900/50 rounded-xl">
-                              <code className="flex-1 text-sm text-purple-300 font-mono">
-                                {window.location.origin}/#/agency/{user.agencySlug}
-                              </code>
-                              <button 
-                                onClick={() => {
-                                  navigator.clipboard.writeText(`${window.location.origin}/#/agency/${user.agencySlug}`);
-                                  alert('Link copied to clipboard!');
-                                }}
-                                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 rounded-lg text-xs font-bold text-white transition-all"
+                          {user.agencySlug ? (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 p-4 bg-slate-900/50 rounded-xl">
+                                <code className="flex-1 text-base text-purple-300 font-mono break-all">
+                                  {window.location.origin}/#/agency/{user.agencySlug}
+                                </code>
+                                <button 
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/#/agency/${user.agencySlug}`);
+                                    alert('✓ Link copied to clipboard!');
+                                  }}
+                                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-xs font-bold text-white transition-all flex items-center gap-2"
+                                >
+                                  <Copy className="w-4 h-4" />
+                                  Copy
+                                </button>
+                              </div>
+                              <a 
+                                href={`/#/agency/${user.agencySlug}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl text-white text-sm font-bold transition-all shadow-lg hover:shadow-xl"
                               >
-                                Copy Link
-                              </button>
+                                <ExternalLink className="w-5 h-5" />
+                                Open Your Public Page
+                              </a>
+                            </div>
+                          ) : (
+                            <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                              <p className="text-sm text-yellow-300">⚠️ Configure your URL slug below to activate your public page</p>
                             </div>
                           )}
                         </div>
