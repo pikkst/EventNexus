@@ -19,6 +19,18 @@
     <!-- Facebook Domain Verification -->
     <meta name="facebook-domain-verification" content="371jna0dppnvc777sbvha7jfomtf4h" />
     
+    <!-- GitHub Pages SPA redirect handling -->
+    <script>
+      // Restore path from 404.html redirect
+      (function() {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
+    
     <!-- Google Analytics (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-JD7P5ZKF4L"></script>
     <script>
