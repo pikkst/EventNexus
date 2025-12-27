@@ -12,7 +12,7 @@ import {
   UserX, Ban, AlertTriangle, MessageSquare, Send, Bug, EyeOff,
   Lock, Unlock, KeyRound, AlertOctagon, Github, Cloud, Key, Link as LinkIcon,
   Wifi, Server, Code, Globe2 as MapIcon, HardDrive, Mail as MailIcon,
-  MonitorOff, Power, ShieldX, Shield, Bot
+  MonitorOff, Power, ShieldX, Shield, Bot, Play
 } from 'lucide-react';
 import { 
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, 
