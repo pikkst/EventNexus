@@ -258,12 +258,12 @@ export const getUserLikedEvents = async (userId: string): Promise<string[]> => {
 // Users
 export const getUser = async (id: string): Promise<User | null> => {
   try {
-    // Add timeout to prevent hanging - reduced for faster feedback
+    // Add timeout to prevent hanging - increased to 30 seconds due to slow DB
     const timeoutPromise = new Promise<null>((resolve) => {
       setTimeout(() => {
-        console.warn('⏱️ getUser query timeout after 10 seconds');
+        console.warn('⏱️ getUser query timeout after 30 seconds');
         resolve(null);
-      }, 10000); // Reduced to 10 seconds for faster feedback
+      }, 30000); // Increased to 30 seconds
     });
     
     console.log('🔍 Fetching user profile:', id.substring(0, 8) + '...');
