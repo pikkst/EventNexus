@@ -1108,18 +1108,59 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                        />
                     </div>
 
-                    {/* Enterprise: Custom Landing Page Configuration */}
+                    {/* Enterprise: White-Label Landing Page Configuration */}
                     {user.subscription_tier === 'enterprise' && (
                       <div className="p-8 bg-gradient-to-br from-purple-600/10 to-pink-600/10 border border-purple-500/30 rounded-3xl space-y-6 mt-6">
-                        <div className="flex items-center gap-3">
-                          <Globe className="w-5 h-5 text-purple-400" />
-                          <h3 className="font-black text-sm uppercase tracking-widest text-purple-300">Enterprise Landing Page</h3>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Globe className="w-5 h-5 text-purple-400" />
+                            <h3 className="font-black text-sm uppercase tracking-widest text-purple-300">White-Label Landing Page</h3>
+                          </div>
+                          {user.agencySlug && (
+                            <a 
+                              href={`/#/agency/${user.agencySlug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-xl text-white text-xs font-bold transition-all"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              View Public Page
+                            </a>
+                          )}
+                        </div>
+
+                        {/* Public URL Status */}
+                        <div className="p-6 bg-gradient-to-r from-emerald-500/10 to-purple-500/10 border border-emerald-500/30 rounded-2xl space-y-3">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                            <div>
+                              <div className="text-sm font-black text-white">Your Page is Live! 🎉</div>
+                              <div className="text-xs text-slate-400 mt-1">Publicly accessible at:</div>
+                            </div>
+                          </div>
+                          {user.agencySlug && (
+                            <div className="flex items-center gap-2 p-3 bg-slate-900/50 rounded-xl">
+                              <code className="flex-1 text-sm text-purple-300 font-mono">
+                                {window.location.origin}/#/agency/{user.agencySlug}
+                              </code>
+                              <button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${window.location.origin}/#/agency/${user.agencySlug}`);
+                                  alert('Link copied to clipboard!');
+                                }}
+                                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 rounded-lg text-xs font-bold text-white transition-all"
+                              >
+                                Copy Link
+                              </button>
+                            </div>
+                          )}
                         </div>
                         
+                        {/* URL Configuration */}
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Custom URL Path</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">URL Slug</label>
                           <div className="flex items-center gap-2">
-                            <span className="text-slate-500 text-sm">eventnexus.com/</span>
+                            <span className="text-slate-500 text-sm">eventnexus.eu/#/agency/</span>
                             <input 
                               type="text" 
                               value={user.agencySlug || ''}
@@ -1128,7 +1169,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                               placeholder="your-brand"
                             />
                           </div>
-                          <p className="text-[10px] text-slate-500 ml-1">Your personalized public platform URL</p>
+                          <p className="text-[10px] text-slate-500 ml-1">Contact support to change your URL slug</p>
                         </div>
 
                         <div className="space-y-2">
@@ -1143,10 +1184,188 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                           <p className="text-[10px] text-slate-500 ml-1">Point your own domain to your landing page</p>
                         </div>
 
-                        <div className="flex items-center gap-3 p-4 bg-purple-500/10 rounded-2xl">
-                          <CheckCircle2 className="w-5 h-5 text-purple-400 shrink-0" />
-                          <div className="text-[11px] text-slate-300">
-                            <span className="font-bold text-purple-300">White-label activated:</span> Your branded landing page showcases all your events with custom design
+                        {/* Hero Type Selection */}
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hero Section Type</label>
+                          <div className="grid grid-cols-3 gap-3">
+                            {['image', 'video', 'slideshow'].map((type) => (
+                              <button
+                                key={type}
+                                onClick={() => setTempUser({
+                                  ...tempUser, 
+                                  branding: { 
+                                    ...tempUser.branding!, 
+                                    pageConfig: {
+                                      ...tempUser.branding?.pageConfig,
+                                      heroType: type as any
+                                    }
+                                  }
+                                })}
+                                className={`p-4 rounded-xl border-2 transition-all ${
+                                  tempUser.branding?.pageConfig?.heroType === type
+                                    ? 'border-purple-500 bg-purple-500/20'
+                                    : 'border-slate-700 bg-slate-900/30 hover:border-slate-600'
+                                }`}
+                              >
+                                <div className="text-xs font-bold text-white capitalize">{type}</div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Display Toggles */}
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Page Sections</label>
+                          <div className="grid grid-cols-2 gap-3">
+                            {[
+                              { key: 'showStats', label: 'Statistics Bar' },
+                              { key: 'showEventHighlights', label: 'Event Highlights' },
+                              { key: 'showTestimonials', label: 'Testimonials' },
+                              { key: 'showTeam', label: 'Team Section' },
+                              { key: 'showPartners', label: 'Partners Grid' },
+                              { key: 'showMediaCoverage', label: 'Media Coverage' },
+                            ].map((section) => (
+                              <label key={section.key} className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-xl cursor-pointer hover:bg-slate-900/70 transition-all">
+                                <input
+                                  type="checkbox"
+                                  checked={tempUser.branding?.pageConfig?.[section.key] !== false}
+                                  onChange={(e) => setTempUser({
+                                    ...tempUser,
+                                    branding: {
+                                      ...tempUser.branding!,
+                                      pageConfig: {
+                                        ...tempUser.branding?.pageConfig,
+                                        [section.key]: e.target.checked
+                                      }
+                                    }
+                                  })}
+                                  className="w-4 h-4 rounded border-slate-600 text-purple-600 focus:ring-purple-500"
+                                />
+                                <span className="text-xs text-slate-300 font-medium">{section.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Extended About Section */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Extended About (Rich Description)</label>
+                          <textarea 
+                            value={tempUser.branding?.about || ''}
+                            onChange={(e) => setTempUser({
+                              ...tempUser,
+                              branding: {
+                                ...tempUser.branding!,
+                                about: e.target.value
+                              }
+                            })}
+                            className="w-full bg-slate-900/50 border border-purple-500/30 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-400 min-h-[100px]"
+                            placeholder="Tell your story... What makes your events special? What's your mission?"
+                          />
+                          <p className="text-[10px] text-slate-500 ml-1">Rich description for your "About" section (replaces bio on public page)</p>
+                        </div>
+
+                        {/* Video Reel URL */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Agency Video Reel URL</label>
+                          <input 
+                            type="url" 
+                            value={tempUser.branding?.videoReel || ''}
+                            onChange={(e) => setTempUser({
+                              ...tempUser,
+                              branding: {
+                                ...tempUser.branding!,
+                                videoReel: e.target.value
+                              }
+                            })}
+                            className="w-full bg-slate-900/50 border border-purple-500/30 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-purple-400"
+                            placeholder="https://example.com/video.mp4"
+                          />
+                          <p className="text-[10px] text-slate-500 ml-1">Video URL for your agency reel/showcase</p>
+                        </div>
+
+                        {/* Features Toggles */}
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Interactive Features</label>
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-xl cursor-pointer hover:bg-slate-900/70 transition-all">
+                              <input
+                                type="checkbox"
+                                checked={tempUser.branding?.pageConfig?.enableChat !== false}
+                                onChange={(e) => setTempUser({
+                                  ...tempUser,
+                                  branding: {
+                                    ...tempUser.branding!,
+                                    pageConfig: {
+                                      ...tempUser.branding?.pageConfig,
+                                      enableChat: e.target.checked
+                                    }
+                                  }
+                                })}
+                                className="w-4 h-4 rounded border-slate-600 text-purple-600 focus:ring-purple-500"
+                              />
+                              <div className="flex-1">
+                                <div className="text-xs text-white font-medium">Contact Form</div>
+                                <div className="text-[10px] text-slate-500">Allow visitors to send direct inquiries</div>
+                              </div>
+                            </label>
+                            <label className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-xl cursor-pointer hover:bg-slate-900/70 transition-all">
+                              <input
+                                type="checkbox"
+                                checked={tempUser.branding?.pageConfig?.enableNewsletter !== false}
+                                onChange={(e) => setTempUser({
+                                  ...tempUser,
+                                  branding: {
+                                    ...tempUser.branding!,
+                                    pageConfig: {
+                                      ...tempUser.branding?.pageConfig,
+                                      enableNewsletter: e.target.checked
+                                    }
+                                  }
+                                })}
+                                className="w-4 h-4 rounded border-slate-600 text-purple-600 focus:ring-purple-500"
+                              />
+                              <div className="flex-1">
+                                <div className="text-xs text-white font-medium">Newsletter Signup</div>
+                                <div className="text-[10px] text-slate-500">Inner Circle email collection</div>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="pt-4 border-t border-slate-700 space-y-3">
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quick Actions</div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <a 
+                              href={`/#/agency/${user.agencySlug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 rounded-xl text-xs font-bold text-white transition-all border border-slate-700"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              Preview Page
+                            </a>
+                            <button 
+                              onClick={() => window.open('/docs/ENTERPRISE_CUSTOMIZATION_GUIDE.md', '_blank')}
+                              className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 rounded-xl text-xs font-bold text-white transition-all border border-slate-700"
+                            >
+                              <Globe className="w-4 h-4" />
+                              Setup Guide
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Help Text */}
+                        <div className="flex items-start gap-3 p-4 bg-purple-500/10 rounded-2xl">
+                          <Sparkles className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+                          <div className="text-[11px] text-slate-300 space-y-1">
+                            <div className="font-bold text-purple-300">White-Label Features Activated</div>
+                            <div>• Public landing page with custom branding</div>
+                            <div>• Event showcase with your design</div>
+                            <div>• Team, partners, and testimonials sections</div>
+                            <div>• Media coverage and event highlights</div>
+                            <div>• Custom domain support (configure in DNS)</div>
                           </div>
                         </div>
                       </div>

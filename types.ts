@@ -82,6 +82,95 @@ export interface AgencyService {
   desc: string;
 }
 
+export interface Testimonial {
+  id: string;
+  author: string;
+  role?: string;
+  content: string;
+  rating: number;
+  eventName?: string;
+  avatar?: string;
+  date: string;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  bio?: string;
+  avatar?: string;
+  socialLinks?: SocialLinks;
+}
+
+export interface Partner {
+  id: string;
+  name: string;
+  logo: string;
+  website?: string;
+  description?: string;
+}
+
+export interface MediaCoverage {
+  id: string;
+  outlet: string;
+  title: string;
+  url: string;
+  date: string;
+  logo?: string;
+}
+
+export interface CustomSection {
+  id: string;
+  type: 'text' | 'gallery' | 'video' | 'stats' | 'faq';
+  title: string;
+  content: any; // JSON content based on type
+  order: number;
+  isVisible: boolean;
+}
+
+export interface EventHighlight {
+  id: string;
+  eventId: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  videoUrl?: string;
+  stats?: {
+    attendance: number;
+    rating: number;
+    revenue?: number;
+  };
+  date: string;
+}
+
+export interface EnterprisePageConfig {
+  heroType: 'image' | 'video' | 'slideshow';
+  heroMedia: string | string[]; // URL or array of URLs
+  showStats: boolean;
+  showTestimonials: boolean;
+  showTeam: boolean;
+  showPartners: boolean;
+  showMediaCoverage: boolean;
+  showEventHighlights: boolean;
+  enableChat: boolean;
+  enableNewsletter: boolean;
+  enableVIPAccess: boolean;
+  customSections: CustomSection[];
+  layout: 'modern' | 'classic' | 'minimal' | 'bold';
+  theme: 'dark' | 'light' | 'auto';
+}
+
+export interface OrganizerStats {
+  totalEvents: number;
+  totalAttendees: number;
+  totalRevenue: number;
+  averageRating: number;
+  followerCount: number;
+  upcomingEvents: number;
+  activeYears: number;
+  repeatAttendeeRate?: number;
+}
+
 export interface UserBranding {
   primaryColor: string;
   accentColor: string;
@@ -91,6 +180,16 @@ export interface UserBranding {
   tagline?: string;
   socialLinks?: SocialLinks;
   services?: AgencyService[];
+  // Enterprise tier features
+  testimonials?: Testimonial[];
+  team?: TeamMember[];
+  partners?: Partner[];
+  mediaCoverage?: MediaCoverage[];
+  eventHighlights?: EventHighlight[];
+  stats?: OrganizerStats;
+  pageConfig?: EnterprisePageConfig;
+  about?: string; // Extended about section
+  videoReel?: string; // Video URL for agency reel
 }
 
 export interface NotificationPreferences {
