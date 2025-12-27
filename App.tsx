@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { HashRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Map as MapIcon, 
   PlusCircle, 
@@ -69,7 +69,7 @@ import {
 
 const GA_MEASUREMENT_ID = 'G-JD7P5ZKF4L';
 
-// Track page views for HashRouter routes in Google Analytics
+// Track page views for BrowserRouter routes in Google Analytics
 const AnalyticsTracker: React.FC = () => {
   const location = useLocation();
 
