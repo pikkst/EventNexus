@@ -167,9 +167,9 @@ BEGIN
   RETURN QUERY
   SELECT 
     s.organizer_id,
-    s.organizer_name,
-    s.agency_slug,
-    s.subscription_tier,
+    s.organizer_name::TEXT,
+    s.agency_slug::TEXT,
+    s.subscription_tier::TEXT,
     s.total_ratings,
     s.avg_rating,
     calculate_organizer_score(s.organizer_id) as weighted_score,

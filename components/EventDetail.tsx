@@ -38,6 +38,35 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+
+  // Get available languages from event translations
+  const availableLanguages = React.useMemo(() => {
+    if (!event?.translations) return [{ code: 'en', name: 'English' }];
+    
+    const langMap: { [key: string]: string } = {
+      'en': 'English',
+      'es': 'Español',
+      'fr': 'Français',
+      'de': 'Deutsch',
+      'pt': 'Português',
+      'it': 'Italiano'
+    };
+    
+    return Object.keys(event.translations).map(code => ({
+      code,
+      name: langMap[code] || code.toUpperCase()
+    }));
+  }, [event?.translations]);
+
+  // Get description in selected language
+  const displayDescription = React.useMemo(() => {
+    if (!event) return '';
+    if (!event.translations || Object.keys(event.translations).length === 0) {
+      return event.description;
+    }
+    return event.translations[selectedLanguage] || event.description;
+  }, [event, selectedLanguage]);
 
   // Load event from database
   const loadEvent = React.useCallback(async () => {
@@ -299,8 +328,29 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl md:rounded-[32px] p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-xl">
-              <h3 className="text-xl sm:text-2xl font-bold">About this event</h3>
-              <p className="text-slate-400 leading-relaxed text-sm sm:text-base md:text-lg">{event.description}</p>
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-xl sm:text-2xl font-bold">About this event</h3>
+                
+                {/* Language Selector - Only show if translations available */}
+                {availableLanguages.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-indigo-400" />
+                    <select
+                      value={selectedLanguage}
+                      onChange={(e) => setSelectedLanguage(e.target.value)}
+                      className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-300 hover:border-indigo-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all outline-none cursor-pointer"
+                    >
+                      {availableLanguages.map(({ code, name }) => (
+                        <option key={code} value={code}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+              
+              <p className="text-slate-400 leading-relaxed text-sm sm:text-base md:text-lg">{displayDescription}</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-slate-800">
                 <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50 flex items-center gap-4">
@@ -309,7 +359,11 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                   </div>
                   <div>
                     <h4 className="font-bold text-sm">Smart Translation</h4>
-                    <p className="text-xs text-slate-500">Auto-translated into 12+ languages.</p>
+                    <p className="text-xs text-slate-500">
+                      {availableLanguages.length > 1 
+                        ? `Available in ${availableLanguages.length} languages`
+                        : 'Auto-translated into 12+ languages.'}
+                    </p>
                   </div>
                 </div>
                 <div className="bg-emerald-600/10 p-4 rounded-2xl border border-emerald-500/20 flex items-center gap-4">

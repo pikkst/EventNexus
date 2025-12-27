@@ -25,6 +25,9 @@ export interface EventNexusEvent {
     primaryColor?: string;
     logo?: string;
   };
+  translations?: {
+    [languageCode: string]: string; // e.g., { "en": "English", "es": "Español", "fr": "Français" }
+  };
 }
 
 export interface PlatformCampaign {

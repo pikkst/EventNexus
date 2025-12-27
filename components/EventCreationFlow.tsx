@@ -553,11 +553,61 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         console.log('ℹ️ No image preview, creating event without image');
       }
 
+      // AUTO-TRANSLATE FOR PRO+ USERS
+      let translations: { [key: string]: string } = {};
+      const description = formData.tagline || formData.name;
+      
+      if (user.subscription_tier !== 'free') {
+        console.log('🌐 Auto-translating event description for Pro+ tier...');
+        
+        const targetLanguages = [
+          { code: 'es', name: 'Spanish' },
+          { code: 'fr', name: 'French' },
+          { code: 'de', name: 'German' },
+          { code: 'pt', name: 'Portuguese' },
+          { code: 'it', name: 'Italian' }
+        ];
+        
+        try {
+          const translationPromises = targetLanguages.map(async ({ code, name }) => {
+            try {
+              console.log(`🔄 Translating to ${name}...`);
+              const translated = await translateDescription(
+                description,
+                name,
+                user.id,
+                user.subscription_tier
+              );
+              console.log(`✅ ${name} translation complete`);
+              return { lang: code, text: translated };
+            } catch (error) {
+              console.error(`⚠️ ${name} translation failed:`, error);
+              return { lang: code, text: description }; // Fallback to original
+            }
+          });
+          
+          const results = await Promise.all(translationPromises);
+          results.forEach(({ lang, text }) => {
+            translations[lang] = text;
+          });
+          
+          // Add original English
+          translations['en'] = description;
+          
+          console.log('✅ All translations complete:', Object.keys(translations));
+        } catch (error) {
+          console.error('⚠️ Translation process failed, continuing without translations:', error);
+          // Continue without translations if the whole process fails
+        }
+      } else {
+        console.log('ℹ️ Free tier - skipping auto-translation');
+      }
+
       console.log('📦 Preparing event data...');
       const eventData: Omit<EventNexusEvent, 'id'> = {
         name: formData.name,
         category: formData.category,
-        description: formData.tagline || formData.name,
+        description: description,
         date: formData.date,
         time: formData.time,
         location: {
@@ -576,7 +626,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         customBranding: (user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && user.branding ? {
           primaryColor: user.branding.primaryColor,
           logo: user.avatar
-        } : undefined
+        } : undefined,
+        translations: Object.keys(translations).length > 0 ? translations : undefined
       };
 
       console.log('📤 Calling createEvent()...');
@@ -585,7 +636,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       
       if (created) {
         console.log('✅ Event created successfully! Navigating to dashboard...');
-        alert('Event created successfully!');
+        const translationCount = Object.keys(translations).length;
+        const successMessage = translationCount > 0 
+          ? `Event created successfully!\n\n🌐 Auto-translated into ${translationCount} languages: ${Object.keys(translations).join(', ').toUpperCase()}`
+          : 'Event created successfully!';
+        alert(successMessage);
         // Notify parent to reload events
         if (onEventCreated) {
           onEventCreated();
