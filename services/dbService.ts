@@ -480,9 +480,56 @@ export const uploadEventImage = async (eventId: string, file: File): Promise<str
 };
 
 export const updateUser = async (id: string, updates: Partial<User>): Promise<User | null> => {
+  // Transform camelCase to snake_case for database
+  const dbUpdates: any = {};
+  
+  for (const [key, value] of Object.entries(updates)) {
+    if (value === undefined) continue;
+    
+    // Map camelCase frontend keys to snake_case database columns
+    switch (key) {
+      case 'agencySlug':
+        dbUpdates.agency_slug = value;
+        break;
+      case 'subscriptionTier':
+        dbUpdates.subscription_tier = value;
+        break;
+      case 'notificationPrefs':
+        dbUpdates.notification_prefs = value;
+        break;
+      case 'agencyProfile':
+        dbUpdates.agency_profile = value;
+        break;
+      case 'createdAt':
+        dbUpdates.created_at = value;
+        break;
+      case 'updatedAt':
+        dbUpdates.updated_at = value;
+        break;
+      case 'lastLogin':
+        dbUpdates.last_login = value;
+        break;
+      case 'stripeCustomerId':
+        dbUpdates.stripe_customer_id = value;
+        break;
+      case 'stripeAccountId':
+        dbUpdates.stripe_account_id = value;
+        break;
+      case 'stripeSubscriptionId':
+        dbUpdates.stripe_subscription_id = value;
+        break;
+      case 'subscriptionStatus':
+        dbUpdates.subscription_status = value;
+        break;
+      default:
+        // Keep other fields as-is (name, email, avatar, bio, location, branding, etc.)
+        dbUpdates[key] = value;
+    }
+  }
+  
   const { data, error } = await supabase
     .from('users')
-    .update(updates)
+    .update(dbUpdates)
     .eq('id', id)
     .select()
     .single();
