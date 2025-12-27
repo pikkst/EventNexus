@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { X, Calendar, MapPin, Ticket as TicketIcon, CheckCircle, XCircle, Clock, Download, Share2, ArrowLeft, Printer } from 'lucide-react';
+import { X, Calendar, MapPin, Ticket as TicketIcon, CheckCircle, XCircle, Clock, Download, Share2, ArrowLeft, Printer, Star } from 'lucide-react';
 import { generateTicketQRImage } from '../services/ticketService';
 import { getTicketById } from '../services/dbService';
+import RateOrganizerModal from './RateOrganizerModal';
 
 const TicketViewPage: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ const TicketViewPage: React.FC = () => {
   const [ticket, setTicket] = useState<any | null>((location.state as any)?.ticket || null);
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   useEffect(() => {
     // Load ticket if coming from deep link
@@ -172,8 +174,17 @@ const TicketViewPage: React.FC = () => {
           )}
 
           {ticket.status === 'used' && ticket.used_at && (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-              <p className="text-slate-300 font-semibold">✓ Ticket scanned on {new Date(ticket.used_at).toLocaleString()}</p>
+            <div className="space-y-3">
+              <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                <p className="text-slate-300 font-semibold">✓ Ticket scanned on {new Date(ticket.used_at).toLocaleString()}</p>
+              </div>
+              <button
+                onClick={() => setShowRatingModal(true)}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white rounded-xl font-bold transition-all shadow-lg"
+              >
+                <Star className="w-5 h-5 fill-current" />
+                Rate This Organizer
+              </button>
             </div>
           )}
 
@@ -218,6 +229,19 @@ const TicketViewPage: React.FC = () => {
           )}
         </div>
       </div>
+      
+      {/* Rating Modal */}
+      {showRatingModal && ticket?.event?.organizer_id && (
+        <RateOrganizerModal
+          organizerId={ticket.event.organizer_id}
+          organizerName={ticket.event.organizer_name || 'Organizer'}
+          eventId={ticket.event_id}
+          onClose={() => setShowRatingModal(false)}
+          onSuccess={() => {
+            alert('Thank you for your feedback!');
+          }}
+        />
+      )}
     </div>
   );
 };
