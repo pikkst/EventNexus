@@ -55,8 +55,8 @@ export default defineConfig(({ mode }) => {
                 './services/socialAuthHelper.ts'
               ],
               charts: ['recharts'],
-              maps: ['react-leaflet', 'leaflet'],
-              ui: ['lucide-react']
+              maps: ['react-leaflet', 'leaflet']
+              // Removed lucide-react chunking to fix cross-chunk icon reference errors
             }
           }
         }
