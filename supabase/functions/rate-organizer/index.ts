@@ -83,12 +83,12 @@ serve(async (req) => {
     if (eventId) {
       const { data: ticket, error: ticketError } = await supabaseClient
         .from('tickets')
-        .select('checked_in_at')
+        .select('used_at')
         .eq('event_id', eventId)
         .eq('user_id', user.id)
         .single();
 
-      if (ticketError || !ticket || !ticket.checked_in_at) {
+      if (ticketError || !ticket || !ticket.used_at) {
         return new Response(
           JSON.stringify({ error: 'You must attend the event before rating' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
