@@ -74,12 +74,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         const [stories, mentions, stats, videos] = await Promise.all([
           getSuccessStories(3, true), // Get top 3 featured stories
           getPressMentions(6, true),   // Get top 6 featured press mentions
-          getPlatformStats().catch(() => ({
-            totalEvents: 150,
-            totalTickets: 4500,
-            totalUsers: 2800,
-            totalOrganizers: 85
-          })),          // Get live platform metrics with fallback
+          getPlatformStats(),          // Get live platform metrics (public endpoint)
           getPlatformMedia('landing_demo', 'walkthrough_video') // Get landing demo video
         ]);
         setSuccessStories(stories);
@@ -88,13 +83,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         setDemoVideo(videos && videos.length > 0 ? videos[0] : null);
       } catch (error) {
         console.error('Error loading landing content:', error);
-        // Set fallback stats if everything fails
-        setPlatformStats({
-          totalEvents: 150,
-          totalTickets: 4500,
-          totalUsers: 2800,
-          totalOrganizers: 85
-        });
       }
     };
     loadLandingContent();
