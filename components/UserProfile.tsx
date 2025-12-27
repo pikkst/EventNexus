@@ -1114,6 +1114,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                     {/* Enterprise: White-Label Landing Page Configuration */}
                     {user.subscription_tier === 'enterprise' && (
                       <div className="p-8 bg-gradient-to-br from-purple-600/10 to-pink-600/10 border border-purple-500/30 rounded-3xl space-y-6 mt-6">
+                        {/* Debug info - remove after testing */}
+                        <div className="hidden" data-debug={JSON.stringify({
+                          tier: user.subscription_tier,
+                          agencySlug: user.agencySlug,
+                          agency_slug: user.agency_slug,
+                          hasSlug: !!(user.agencySlug || user.agency_slug)
+                        })} />
+                        
                         <div className="flex items-center gap-3 mb-4">
                           <Globe className="w-5 h-5 text-purple-400" />
                           <h3 className="font-black text-sm uppercase tracking-widest text-purple-300">White-Label Landing Page</h3>
@@ -1126,6 +1134,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                             <div>
                               <div className="text-lg font-black text-white">Your Public Page is Live! 🎉</div>
                               <div className="text-xs text-slate-400 mt-1">Share this link with your audience</div>
+                              <div className="text-[10px] text-slate-600 mt-1">
+                                [Debug: slug={user.agencySlug || user.agency_slug || 'NOT SET'} | tier={user.subscription_tier}]
+                              </div>
                             </div>
                           </div>
                           {(user.agencySlug || user.agency_slug) ? (

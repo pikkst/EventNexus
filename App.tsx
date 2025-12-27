@@ -481,8 +481,10 @@ const App: React.FC = () => {
   const handleUpdateUser = async (updatedData: Partial<User>) => {
     if (!user) return;
     
+    console.log('🔄 Updating user with data:', updatedData);
     const updatedUser = await updateUser(user.id, updatedData);
     if (updatedUser) {
+      console.log('✅ User updated. New agency_slug:', updatedUser.agency_slug || updatedUser.agencySlug || 'NOT SET');
       setUser(updatedUser);
     }
   };
