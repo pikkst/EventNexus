@@ -124,6 +124,12 @@ const App: React.FC = () => {
       const cached = localStorage.getItem('eventnexus-user-cache');
       if (cached) {
         const parsed = JSON.parse(cached);
+        // Invalidate cache if it doesn't have agency_slug field (old schema)
+        if (parsed.user && !('agency_slug' in parsed.user || 'agencySlug' in parsed.user)) {
+          console.log('🔄 Cache invalidated - missing agency_slug field. Clearing cache.');
+          localStorage.removeItem('eventnexus-user-cache');
+          return null;
+        }
         // Check if cache is less than 5 minutes old
         if (parsed.timestamp && Date.now() - parsed.timestamp < 5 * 60 * 1000) {
           console.log('⚡ Using cached user data');
