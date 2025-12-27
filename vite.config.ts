@@ -51,34 +51,22 @@ export default defineConfig(({ mode }) => {
         rollupOptions: {
           output: {
             manualChunks(id) {
-              // Vendor chunks for better caching
+              // Only split truly independent heavy libraries
               if (id.includes('node_modules')) {
-                // Large chart library
+                // Large chart library (independent)
                 if (id.includes('recharts')) {
                   return 'charts';
                 }
-                // Map libraries
-                if (id.includes('leaflet') || id.includes('react-leaflet')) {
-                  return 'maps';
-                }
-                // Social media services
-                if (id.includes('socialMediaService') || id.includes('socialAuthHelper')) {
-                  return 'social-media';
-                }
-                // QR Scanner
+                // QR Scanner (independent)
                 if (id.includes('qr-scanner')) {
                   return 'qr';
                 }
-                // AI/Gemini
-                if (id.includes('@google/generative-ai') || id.includes('gemini')) {
+                // AI/Gemini (independent)
+                if (id.includes('@google/generative-ai')) {
                   return 'ai';
                 }
-                // React core (stable, cache forever)
-                if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-                  return 'react-vendor';
-                }
-                // All other vendor code
-                return 'vendor';
+                // Don't split React, maps, or other React-dependent libs
+                // Let Vite handle them automatically
               }
             }
           }
