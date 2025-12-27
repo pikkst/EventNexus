@@ -684,7 +684,7 @@ const App: React.FC = () => {
 const ConditionalFooter = () => {
   const location = useLocation();
   // Don't show global footer on Agency Profile as it has its own branded footer
-  if (location.pathname.startsWith('/org/')) return null;
+  if (location.pathname.startsWith('/org/') || location.pathname.startsWith('/agency/')) return null;
   return <Footer />;
 }
 
