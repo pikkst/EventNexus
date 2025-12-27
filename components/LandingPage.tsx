@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Compass, Zap, Shield, Globe, Map as MapIcon, ChevronRight, Star, Plus, ArrowRight, Gift } from 'lucide-react';
+import { Compass, Zap, Shield, Globe, Map as MapIcon, ChevronRight, Star, Plus, ArrowRight, Gift, Award, TrendingUp } from 'lucide-react';
 import { User, PlatformCampaign } from '../types';
-import { getCampaigns } from '../services/dbService';
+import { getCampaigns, getTopOrganizers, OrganizerRatingStats } from '../services/dbService';
 import { supabase } from '../services/supabase';
 
 interface LandingPageProps {
@@ -15,6 +15,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const navigate = useNavigate();
   const [activeBanner, setActiveBanner] = useState<PlatformCampaign | null>(null);
   const [hasTrackedView, setHasTrackedView] = useState(false);
+  const [topOrganizers, setTopOrganizers] = useState<OrganizerRatingStats[]>([]);
+  const [loadingOrganizers, setLoadingOrganizers] = useState(true);
 
   useEffect(() => {
     const loadActiveCampaign = async () => {
@@ -42,6 +44,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
     loadActiveCampaign();
   }, [user, hasTrackedView]);
+
+  useEffect(() => {
+    const loadTopOrganizers = async () => {
+      setLoadingOrganizers(true);
+      try {
+        const organizers = await getTopOrganizers(6, 'enterprise'); // Top 6 Enterprise organizers
+        setTopOrganizers(organizers);
+      } catch (error) {
+        console.error('Error loading top organizers:', error);
+      } finally {
+        setLoadingOrganizers(false);
+      }
+    };
+    loadTopOrganizers();
+  }, []);
 
   const trackCampaignView = async (campaignId: string) => {
     try {
@@ -203,6 +220,97 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           </div>
         </div>
       </section>
+
+      {/* Top Rated Enterprise Organizers */}
+      {topOrganizers.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-12 space-y-3">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 px-4 py-2 rounded-full border border-yellow-500/30 mb-4">
+              <Award className="w-4 h-4 text-yellow-400" />
+              <span className="text-xs font-bold text-yellow-400 uppercase tracking-wider">Top Rated</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight">Featured Event Organizers</h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+              Trusted by the community. Rated by real attendees.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {topOrganizers.map((org) => (
+              <Link
+                key={org.organizer_id}
+                to={`/agency/${org.agency_slug}`}
+                className="group bg-slate-900/50 border border-slate-800 rounded-[32px] p-6 hover:border-indigo-500/50 transition-all hover:shadow-xl hover:shadow-indigo-500/10"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-black text-white mb-2 group-hover:text-indigo-400 transition-colors">
+                      {org.organizer_name}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={14}
+                            className={`${
+                              i < Math.round(org.avg_rating)
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-slate-700'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm font-bold text-white">
+                        {org.avg_rating.toFixed(1)}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        ({org.total_ratings} {org.total_ratings === 1 ? 'review' : 'reviews'})
+                      </span>
+                    </div>
+                  </div>
+                  <div className="px-3 py-1 bg-purple-600/20 border border-purple-500/30 rounded-full">
+                    <span className="text-[10px] font-black text-purple-400 uppercase tracking-wider">
+                      {org.subscription_tier}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-slate-800/50 rounded-xl p-3">
+                    <div className="text-2xl font-black text-indigo-400">{org.events_rated}</div>
+                    <div className="text-xs text-slate-500 uppercase tracking-wider">Events</div>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-xl p-3">
+                    <div className="text-2xl font-black text-emerald-400">{org.weighted_score.toFixed(1)}</div>
+                    <div className="text-xs text-slate-500 uppercase tracking-wider">Score</div>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                  <span className="text-xs text-slate-400 font-medium">View Profile</span>
+                  <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* View All Link */}
+          <div className="text-center mt-12">
+            <Link
+              to="/explore"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/50 rounded-2xl text-white font-bold transition-all group"
+            >
+              <TrendingUp className="w-5 h-5 group-hover:text-indigo-400 transition-colors" />
+              Explore All Organizers
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Features Grid */}
       <section className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-8">
