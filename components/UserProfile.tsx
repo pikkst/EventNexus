@@ -75,6 +75,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
     bio: user.bio,
     avatar: user.avatar,
     location: user.location,
+    agencySlug: user.agencySlug,
     branding: user.branding
   });
 
@@ -1042,6 +1043,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                      value={tempUser.bio}
                      onChange={(e) => setTempUser({...tempUser, bio: e.target.value})}
                      className="w-full bg-slate-950 border border-slate-800 rounded-3xl px-6 py-4 text-white outline-none focus:border-indigo-500 min-h-[120px]"
+                     placeholder="Tell the world about yourself..."
                    />
                 </div>
 
@@ -1156,20 +1158,34 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                           )}
                         </div>
                         
+                        {/* Agency Name Display */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Agency Name (Public Display)</label>
+                          <div className="p-4 bg-slate-900/50 border border-purple-500/30 rounded-xl">
+                            <div className="text-2xl font-black text-white">{user.name || 'Your Agency'}</div>
+                            <p className="text-xs text-slate-500 mt-1">This is displayed as your agency name on the public page</p>
+                          </div>
+                        </div>
+
                         {/* URL Configuration */}
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">URL Slug</label>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500 text-sm">eventnexus.eu/#/agency/</span>
-                            <input 
-                              type="text" 
-                              value={user.agencySlug || ''}
-                              disabled
-                              className="flex-1 bg-slate-900/50 border border-purple-500/30 rounded-xl px-4 py-2 text-white text-sm outline-none"
-                              placeholder="your-brand"
-                            />
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Public URL Slug</label>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-500 text-sm">eventnexus.eu/#/agency/</span>
+                              <input 
+                                type="text" 
+                                value={tempUser.agencySlug || ''}
+                                onChange={(e) => {
+                                  const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+                                  setTempUser({...tempUser, agencySlug: slug});
+                                }}
+                                className="flex-1 px-4 py-2 bg-slate-900/70 border border-purple-500/30 rounded-xl text-white text-sm font-mono outline-none focus:border-purple-400"
+                                placeholder="your-agency-name"
+                              />
+                            </div>
+                            <p className="text-[10px] text-slate-500 ml-1">Your unique URL path (letters, numbers, and dashes only)</p>
                           </div>
-                          <p className="text-[10px] text-slate-500 ml-1">Contact support to change your URL slug</p>
                         </div>
 
                         <div className="space-y-2">
@@ -1247,11 +1263,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                           </div>
                         </div>
 
-                        {/* Extended About Section */}
+                        {/* Landing Page Bio */}
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Extended About (Rich Description)</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Landing Page Bio (Public "About" Section)</label>
                           <textarea 
-                            value={tempUser.branding?.about || ''}
+                            value={tempUser.branding?.about || tempUser.bio || ''}
                             onChange={(e) => setTempUser({
                               ...tempUser,
                               branding: {
@@ -1259,10 +1275,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
                                 about: e.target.value
                               }
                             })}
-                            className="w-full bg-slate-900/50 border border-purple-500/30 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-400 min-h-[100px]"
-                            placeholder="Tell your story... What makes your events special? What's your mission?"
+                            className="w-full bg-slate-900/50 border border-purple-500/30 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-400 min-h-[120px]"
+                            placeholder="Tell your story... What makes your events special? What's your mission? This will be displayed on your public landing page."
                           />
-                          <p className="text-[10px] text-slate-500 ml-1">Rich description for your "About" section (replaces bio on public page)</p>
+                          <p className="text-[10px] text-slate-500 ml-1">This rich description appears in the "About" section of your public page (defaults to your bio if empty)</p>
                         </div>
 
                         {/* Video Reel URL */}

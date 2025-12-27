@@ -253,7 +253,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
              {organizer.name}
            </h1>
            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-slate-300 font-bold max-w-3xl mx-auto leading-tight opacity-80">
-             {organizer.branding?.tagline}
+             {organizer.branding?.tagline || 'Creating memorable experiences for communities worldwide'}
            </p>
            
            {/* Enterprise Stats Bar */}
@@ -362,7 +362,9 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
            <div className="space-y-8">
               <h2 className="text-5xl font-black tracking-tighter text-white">The Experience Architecture.</h2>
               <p className="text-2xl text-slate-400 leading-relaxed font-medium">
-                {isEnterprise && organizer.branding?.about ? organizer.branding.about : organizer.bio}
+                {isEnterprise && organizer.branding?.about 
+                  ? organizer.branding.about 
+                  : (organizer.bio || 'Creating unforgettable experiences and bringing people together through exceptional events.')}
               </p>
               <div className="pt-6 flex flex-wrap gap-4">
                 {organizer.branding?.socialLinks && (
