@@ -581,7 +581,8 @@ const transformNotificationFromDB = (dbNotif: any): Notification => ({
   eventId: dbNotif.event_id,
   senderName: dbNotif.sender_name,
   timestamp: dbNotif.timestamp,
-  isRead: dbNotif.isRead
+  isRead: dbNotif.isRead,
+  metadata: dbNotif.metadata
 });
 
 export const getNotifications = async (userId: string): Promise<Notification[]> => {
