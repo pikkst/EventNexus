@@ -152,8 +152,9 @@ export interface EnterprisePageConfig {
   showPartners: boolean;
   showMediaCoverage: boolean;
   showEventHighlights: boolean;
-  enableChat: boolean;
+  enableContactForm: boolean;
   enableNewsletter: boolean;
+  enableSocialSharing: boolean;
   enableVIPAccess: boolean;
   customSections: CustomSection[];
   layout: 'modern' | 'classic' | 'minimal' | 'bold';

@@ -567,7 +567,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
              {isEnterprise ? 'Nexus Global Agency' : 'Organizer Studio'}
              {user.subscription_tier === 'premium' && <span className="text-xs font-black uppercase tracking-widest bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-full">Premium</span>}
           </h1>
-          <p className="text-slate-400 font-medium text-lg">Managing <strong className="text-white">{events.length}</strong> active nodes across the global backbone.</p>
+          <p className="text-slate-400 font-medium text-lg">Managing <strong className="text-white">{events.length}</strong> active events across the global platform.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 md:gap-4">
           {/* Enterprise Success Manager Button */}
@@ -1511,6 +1511,70 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                               <span>Newsletter Signup</span>
                               <span className="text-[10px]">Inner Circle email collection</span>
                             </button>
+                            <button
+                              onClick={() => setTempBranding({
+                                ...tempBranding,
+                                pageConfig: {
+                                  ...tempBranding.pageConfig,
+                                  enableSocialSharing: !tempBranding.pageConfig?.enableSocialSharing
+                                }
+                              })}
+                              className={`w-full px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                                tempBranding.pageConfig?.enableSocialSharing
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
+                              }`}
+                            >
+                              <span>Social Media Sharing</span>
+                              <span className="text-[10px]">Show share buttons on public page</span>
+                            </button>
+                          </div>
+                       </div>
+
+                       {/* Media Upload Section */}
+                       <div className="pt-4 space-y-3 border-t border-slate-800">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hero Media Upload</label>
+                          <div className="space-y-2">
+                            <input 
+                              type="file" 
+                              accept="image/*,video/*"
+                              multiple={tempBranding.pageConfig?.heroType === 'slideshow'}
+                              onChange={async (e) => {
+                                const files = Array.from(e.target.files || []);
+                                if (files.length === 0) return;
+                                
+                                // Simple file upload placeholder - you can enhance this
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const dataUrl = event.target?.result as string;
+                                  if (tempBranding.pageConfig?.heroType === 'slideshow') {
+                                    setTempBranding({
+                                      ...tempBranding,
+                                      pageConfig: {
+                                        ...tempBranding.pageConfig,
+                                        heroMedia: [
+                                          ...(Array.isArray(tempBranding.pageConfig?.heroMedia) ? tempBranding.pageConfig.heroMedia : []),
+                                          dataUrl
+                                        ]
+                                      }
+                                    });
+                                  } else {
+                                    setTempBranding({
+                                      ...tempBranding,
+                                      pageConfig: {
+                                        ...tempBranding.pageConfig,
+                                        heroMedia: dataUrl
+                                      }
+                                    });
+                                  }
+                                };
+                                reader.readAsDataURL(files[0]);
+                              }}
+                              className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 file:cursor-pointer"
+                            />
+                            <p className="text-[10px] text-slate-500 ml-1">
+                              Upload {tempBranding.pageConfig?.heroType === 'slideshow' ? 'multiple images' : tempBranding.pageConfig?.heroType === 'video' ? 'a video' : 'an image'} for your hero section
+                            </p>
                           </div>
                        </div>
                     </div>
@@ -1709,7 +1773,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
            </div>
            <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-12 flex flex-col md:flex-row items-center justify-between gap-10 shadow-2xl">
               <div className="space-y-4">
-                 <h3 className="text-3xl font-black text-white tracking-tighter">API & Service Node</h3>
+                 <h3 className="text-3xl font-black text-white tracking-tighter">API & Service Hub</h3>
                  <p className="text-slate-500 font-medium max-w-lg leading-relaxed">Broadcast event lifecycle updates directly to your CRM via webhooks.</p>
               </div>
               <button className="px-10 py-5 bg-slate-800 hover:bg-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all">Setup Webhooks</button>
