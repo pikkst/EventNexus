@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Compass, Zap, Shield, Globe, Map as MapIcon, ChevronRight, Star, Plus, ArrowRight, Gift, Award, TrendingUp, Quote, Newspaper, ExternalLink, Users, Calendar, Ticket, Play, Check, Mail, Send, ChevronDown, DollarSign, Sparkles } from 'lucide-react';
-import { User, PlatformCampaign, SuccessStory, PressMention } from '../types';
-import { getCampaigns, getTopOrganizers, OrganizerRatingStats, getSuccessStories, getPressMentions, getPlatformStats } from '../services/dbService';
+import { User, PlatformCampaign, SuccessStory, PressMention, PlatformMedia } from '../types';
+import { getCampaigns, getTopOrganizers, OrganizerRatingStats, getSuccessStories, getPressMentions, getPlatformStats, getPlatformMedia } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import { SUBSCRIPTION_TIERS } from '../constants';
 
@@ -24,6 +24,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [demoVideo, setDemoVideo] = useState<PlatformMedia | null>(null);
 
   useEffect(() => {
     const loadActiveCampaign = async () => {
@@ -70,14 +71,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   useEffect(() => {
     const loadLandingContent = async () => {
       try {
-        const [stories, mentions, stats] = await Promise.all([
+        const [stories, mentions, stats, videos] = await Promise.all([
           getSuccessStories(3, true), // Get top 3 featured stories
           getPressMentions(6, true),   // Get top 6 featured press mentions
-          getPlatformStats()          // Get live platform metrics
+          getPlatformStats(),          // Get live platform metrics
+          getPlatformMedia('landing_demo', 'walkthrough_video') // Get landing demo video
         ]);
         setSuccessStories(stories);
         setPressMentions(mentions);
         setPlatformStats(stats);
+        setDemoVideo(videos && videos.length > 0 ? videos[0] : null);
       } catch (error) {
         console.error('Error loading landing content:', error);
       }
@@ -394,64 +397,85 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
       </section>
 
       {/* Video/Demo Section */}
-      <section className="max-w-7xl mx-auto px-4">
-        <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-[48px] overflow-hidden">
-          <div className="grid md:grid-cols-2 gap-0">
-            <div className="p-12 md:p-16 flex flex-col justify-center">
-              <div className="inline-flex items-center gap-2 bg-indigo-600/10 px-4 py-2 rounded-full border border-indigo-500/30 mb-6 w-fit">
-                <Play className="w-4 h-4 text-indigo-400" />
-                <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Watch Demo</span>
+      {demoVideo && (
+        <section className="max-w-7xl mx-auto px-4">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-[48px] overflow-hidden">
+            <div className="grid md:grid-cols-2 gap-0">
+              <div className="p-12 md:p-16 flex flex-col justify-center">
+                <div className="inline-flex items-center gap-2 bg-indigo-600/10 px-4 py-2 rounded-full border border-indigo-500/30 mb-6 w-fit">
+                  <Play className="w-4 h-4 text-indigo-400" />
+                  <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Watch Demo</span>
+                </div>
+                <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">
+                  {demoVideo.title}
+                </h2>
+                {demoVideo.description && (
+                  <p className="text-slate-400 text-lg leading-relaxed mb-8">
+                    {demoVideo.description}
+                  </p>
+                )}
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-emerald-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Check className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <span className="text-slate-300">Interactive map-based discovery</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-emerald-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Check className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <span className="text-slate-300">Instant ticket purchasing & QR codes</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-emerald-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Check className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <span className="text-slate-300">AI-powered event translation</span>
+                  </li>
+                </ul>
+                <button
+                  onClick={onOpenAuth}
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl text-white font-bold transition-all w-fit"
+                >
+                  Get Started Free <ArrowRight className="w-5 h-5" />
+                </button>
               </div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">
-                See EventNexus in Action
-              </h2>
-              <p className="text-slate-400 text-lg leading-relaxed mb-8">
-                Watch how easy it is to discover events on the map, purchase tickets securely, and manage your own events with powerful analytics.
-              </p>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-emerald-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Check className="w-4 h-4 text-emerald-400" />
+              <div className="relative bg-slate-950 flex items-center justify-center p-8 md:p-12">
+                {demoVideo.video_url ? (
+                  <div className="relative w-full aspect-video bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden">
+                    <iframe
+                      src={demoVideo.video_url.includes('youtube.com') || demoVideo.video_url.includes('youtu.be') 
+                        ? demoVideo.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
+                        : demoVideo.video_url
+                      }
+                      title={demoVideo.title}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                    {demoVideo.duration && (
+                      <div className="absolute bottom-6 left-6 right-6 bg-slate-950/80 backdrop-blur-md rounded-2xl p-4 border border-slate-800">
+                        <p className="text-sm font-bold text-white">{demoVideo.title}</p>
+                        <p className="text-xs text-slate-400 mt-1">{demoVideo.duration} • {demoVideo.media_type.replace('_', ' ')}</p>
+                      </div>
+                    )}
                   </div>
-                  <span className="text-slate-300">Interactive map-based discovery</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-emerald-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Check className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <div className="relative w-full aspect-video bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden group cursor-pointer hover:border-indigo-500/50 transition-all">
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-purple-600/20" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                        <Play className="w-8 h-8 text-slate-950 ml-1" fill="currentColor" />
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-slate-300">Instant ticket purchasing & QR codes</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-emerald-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Check className="w-4 h-4 text-emerald-400" />
-                  </div>
-                  <span className="text-slate-300">AI-powered event translation</span>
-                </li>
-              </ul>
-              <button
-                onClick={onOpenAuth}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl text-white font-bold transition-all w-fit"
-              >
-                Get Started Free <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="relative bg-slate-950 flex items-center justify-center p-8 md:p-12">
-              <div className="relative w-full aspect-video bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden group cursor-pointer hover:border-indigo-500/50 transition-all">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-purple-600/20" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                    <Play className="w-8 h-8 text-slate-950 ml-1" fill="currentColor" />
-                  </div>
-                </div>
-                <div className="absolute bottom-6 left-6 right-6 bg-slate-950/80 backdrop-blur-md rounded-2xl p-4 border border-slate-800">
-                  <p className="text-sm font-bold text-white">Platform Walkthrough</p>
-                  <p className="text-xs text-slate-400 mt-1">3:45 minutes • Watch demo video</p>
-                </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Top Rated Enterprise Organizers */}
       {topOrganizers.length > 0 && (

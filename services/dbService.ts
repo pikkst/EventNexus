@@ -2720,3 +2720,108 @@ export const deletePressMention = async (id: string): Promise<boolean> => {
   }
 };
 
+// Platform Media CRUD
+export const getPlatformMedia = async (location: string = 'landing_demo', mediaType?: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_platform_media', {
+      p_location: location,
+      p_media_type: mediaType || null
+    });
+
+    if (error) {
+      console.error('Error fetching platform media:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getPlatformMedia:', error);
+    return [];
+  }
+};
+
+export const getAllPlatformMedia = async (): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('platform_media')
+      .select('*')
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching all platform media:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getAllPlatformMedia:', error);
+    return [];
+  }
+};
+
+export const createPlatformMedia = async (media: Omit<any, 'id' | 'created_at' | 'updated_at'>): Promise<any | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+      .from('platform_media')
+      .insert({
+        ...media,
+        created_by: user.id
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating platform media:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in createPlatformMedia:', error);
+    return null;
+  }
+};
+
+export const updatePlatformMedia = async (id: string, updates: Partial<any>): Promise<any | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('platform_media')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating platform media:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in updatePlatformMedia:', error);
+    return null;
+  }
+};
+
+export const deletePlatformMedia = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('platform_media')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting platform media:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deletePlatformMedia:', error);
+    return false;
+  }
+};
+

@@ -315,3 +315,21 @@ export interface PressMention {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface PlatformMedia {
+  id: string;
+  media_type: string; // 'walkthrough_video', 'demo_video', 'tutorial', etc.
+  title: string;
+  description?: string;
+  video_url?: string;
+  thumbnail_url?: string;
+  duration?: string;
+  is_active: boolean;
+  display_location: string;
+  display_order: number;
+  metadata?: {
+    [key: string]: any;
+  };
+  created_at?: string;
+  updated_at?: string;
+}
