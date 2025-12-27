@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Map as MapIcon, 
@@ -28,28 +28,33 @@ import {
   Edit,
   Mail
 } from 'lucide-react';
-import HomeMap from './components/HomeMap';
-import EventCreationFlow from './components/EventCreationFlow';
-import Dashboard from './components/Dashboard';
-import UserProfile from './components/UserProfile';
-import EventDetail from './components/EventDetail';
+
+// Lightweight components - load immediately
 import LandingPage from './components/LandingPage';
-import TicketScanner from './components/TicketScanner';
-import TicketViewPage from './components/TicketViewPage';
-import PricingPage from './components/PricingPage';
-import AgencyProfile from './components/AgencyProfile';
-import AdminCommandCenter from './components/AdminCommandCenter';
-import { SimplifiedSocialMediaManager } from './components/SimplifiedSocialMediaManager';
 import Footer from './components/Footer';
-import HelpCenter from './components/HelpCenter';
-import TermsOfService from './components/TermsOfService';
-import PrivacyPolicy from './components/PrivacyPolicy';
-import CookieSettings from './components/CookieSettings';
-import GDPRCompliance from './components/GDPRCompliance';
-import NotificationSettings from './components/NotificationSettings';
 import AuthModal from './components/AuthModal';
-import BetaInvitation from './components/BetaInvitation';
-import OnboardingTutorial from './components/OnboardingTutorial';
+
+// Heavy components - lazy load on demand
+const HomeMap = lazy(() => import('./components/HomeMap'));
+const EventCreationFlow = lazy(() => import('./components/EventCreationFlow'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const UserProfile = lazy(() => import('./components/UserProfile'));
+const EventDetail = lazy(() => import('./components/EventDetail'));
+const TicketScanner = lazy(() => import('./components/TicketScanner'));
+const TicketViewPage = lazy(() => import('./components/TicketViewPage'));
+const PricingPage = lazy(() => import('./components/PricingPage'));
+const AgencyProfile = lazy(() => import('./components/AgencyProfile'));
+const AdminCommandCenter = lazy(() => import('./components/AdminCommandCenter'));
+const SimplifiedSocialMediaManager = lazy(() => import('./components/SimplifiedSocialMediaManager').then(m => ({ default: m.SimplifiedSocialMediaManager })));
+const HelpCenter = lazy(() => import('./components/HelpCenter'));
+const TermsOfService = lazy(() => import('./components/TermsOfService'));
+const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
+const CookieSettings = lazy(() => import('./components/CookieSettings'));
+const GDPRCompliance = lazy(() => import('./components/GDPRCompliance'));
+const NotificationSettings = lazy(() => import('./components/NotificationSettings'));
+const BetaInvitation = lazy(() => import('./components/BetaInvitation'));
+const OnboardingTutorial = lazy(() => import('./components/OnboardingTutorial'));
+
 import { User, Notification, EventNexusEvent } from './types';
 import { CATEGORIES } from './constants';
 import { supabase } from './services/supabase';
@@ -640,32 +645,41 @@ const App: React.FC = () => {
         <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} user={user} />
         
         <main className="pt-16 flex-grow">
-          <Routes>
-            <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/map" element={<HomeMap />} />
-            <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/event/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/events/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/scanner" element={user ? <TicketScanner user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/ticket" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/ticket/:id" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription_tier: t, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/beta" element={<BetaInvitation />} />
-            <Route path="/beta-signup" element={<BetaInvitation />} />
-            <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
-            <Route path="/agency/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
-            <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/help" element={<HelpCenter user={user || undefined} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/cookies" element={<CookieSettings />} />
-            <Route path="/gdpr" element={<GDPRCompliance />} />
-            <Route path="/notifications" element={user ? <NotificationSettings user={user} onUpdatePrefs={handleUpdatePrefs} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-          </Routes>
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-slate-950">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 mx-auto border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-slate-400 text-sm animate-pulse">Loading...</p>
+              </div>
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/map" element={<HomeMap />} />
+              <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/event/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/events/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/scanner" element={user ? <TicketScanner user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/ticket" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/ticket/:id" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription_tier: t, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/beta" element={<BetaInvitation />} />
+              <Route path="/beta-signup" element={<BetaInvitation />} />
+              <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
+              <Route path="/agency/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
+              <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/help" element={<HelpCenter user={user || undefined} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/cookies" element={<CookieSettings />} />
+              <Route path="/gdpr" element={<GDPRCompliance />} />
+              <Route path="/notifications" element={user ? <NotificationSettings user={user} onUpdatePrefs={handleUpdatePrefs} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+            </Routes>
+          </Suspense>
         </main>
 
         <ConditionalFooter />

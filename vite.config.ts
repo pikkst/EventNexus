@@ -47,17 +47,49 @@ export default defineConfig(({ mode }) => {
       },
       build: {
         chunkSizeWarningLimit: 2500,
+        sourcemap: false, // Disable sourcemaps for production (saves bandwidth)
         rollupOptions: {
           output: {
-            manualChunks: {
-              'social-media': [
-                './services/socialMediaService.ts',
-                './services/socialAuthHelper.ts'
-              ],
-              charts: ['recharts'],
-              maps: ['react-leaflet', 'leaflet']
-              // Removed lucide-react chunking to fix cross-chunk icon reference errors
+            manualChunks(id) {
+              // Vendor chunks for better caching
+              if (id.includes('node_modules')) {
+                // Large chart library
+                if (id.includes('recharts')) {
+                  return 'charts';
+                }
+                // Map libraries
+                if (id.includes('leaflet') || id.includes('react-leaflet')) {
+                  return 'maps';
+                }
+                // Social media services
+                if (id.includes('socialMediaService') || id.includes('socialAuthHelper')) {
+                  return 'social-media';
+                }
+                // QR Scanner
+                if (id.includes('qr-scanner')) {
+                  return 'qr';
+                }
+                // AI/Gemini
+                if (id.includes('@google/generative-ai') || id.includes('gemini')) {
+                  return 'ai';
+                }
+                // React core (stable, cache forever)
+                if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+                  return 'react-vendor';
+                }
+                // All other vendor code
+                return 'vendor';
+              }
             }
+          }
+        },
+        // Compression & optimization
+        minify: 'terser',
+        terserOptions: {
+          compress: {
+            drop_console: true, // Remove console.log in production
+            drop_debugger: true,
+            pure_funcs: ['console.log', 'console.debug', 'console.trace']
           }
         }
       }
