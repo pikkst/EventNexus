@@ -108,7 +108,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    const { error: dbError } = await supabaseClient
+    const { data: inquiryData, error: dbError } = await supabaseClient
       .from('contact_inquiries')
       .insert({
         organizer_id: inquiry.organizerId,
@@ -120,12 +120,45 @@ serve(async (req) => {
         email_id: resendData.id,
         status: 'new',
         created_at: new Date().toISOString(),
-      });
+      })
+      .select()
+      .single();
 
     if (dbError) {
       console.warn('⚠️ Failed to store inquiry in database (email was still sent):', dbError);
     } else {
       console.log('✅ Inquiry stored in database successfully');
+      
+      // Create notification for organizer
+      console.log('🔔 Creating notification for organizer...');
+      const notificationTitle = isPartnership 
+        ? '🤝 New Partnership Inquiry'
+        : '✉️ New Contact Message';
+      
+      const notificationMessage = `${inquiry.fromName} (${inquiry.fromEmail}) sent you a ${isPartnership ? 'partnership inquiry' : 'message'}${inquiry.subject ? `: ${inquiry.subject}` : ''}`;
+      
+      const { error: notifError } = await supabaseClient
+        .from('notifications')
+        .insert({
+          user_id: inquiry.organizerId,
+          title: notificationTitle,
+          message: notificationMessage,
+          type: 'contact_inquiry',
+          sender_name: inquiry.fromName,
+          timestamp: new Date().toISOString(),
+          isRead: false,
+          metadata: {
+            inquiryId: inquiryData?.id,
+            fromEmail: inquiry.fromEmail,
+            inquiryType: inquiry.type,
+          },
+        });
+      
+      if (notifError) {
+        console.warn('⚠️ Failed to create notification:', notifError);
+      } else {
+        console.log('✅ Notification created successfully');
+      }
     }
 
     return new Response(

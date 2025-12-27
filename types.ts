@@ -243,11 +243,16 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'announcement' | 'update' | 'follow_alert' | 'proximity_radar';
+  type: 'announcement' | 'update' | 'follow_alert' | 'proximity_radar' | 'contact_inquiry';
   eventId?: string;
   senderName: string;
   timestamp: string;
   isRead: boolean;
+  metadata?: {
+    inquiryId?: string;
+    fromEmail?: string;
+    inquiryType?: 'contact' | 'partnership';
+  };
 }
 
 export interface BrandMonitoringAlert {

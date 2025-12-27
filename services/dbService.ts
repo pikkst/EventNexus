@@ -600,7 +600,7 @@ export const getNotifications = async (userId: string): Promise<Notification[]> 
 };
 
 export const createNotification = async (notification: Omit<Notification, 'id'> & { user_id: string }): Promise<Notification | null> => {
-  const allowedTypes = new Set(['proximity_radar', 'event_update', 'ticket_purchase', 'system', 'admin']);
+  const allowedTypes = new Set(['proximity_radar', 'event_update', 'ticket_purchase', 'system', 'admin', 'contact_inquiry']);
   const safeType = allowedTypes.has(notification.type) ? notification.type : 'system';
   const payload = {
     user_id: notification.user_id,
@@ -610,7 +610,8 @@ export const createNotification = async (notification: Omit<Notification, 'id'> 
     event_id: notification.eventId,
     sender_name: notification.senderName,
     isRead: notification.isRead,
-    timestamp: notification.timestamp
+    timestamp: notification.timestamp,
+    metadata: notification.metadata
   };
 
   const { data, error } = await supabase

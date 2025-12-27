@@ -25,7 +25,8 @@ import {
   Radar,
   User as UserIcon,
   ChevronDown,
-  Edit
+  Edit,
+  Mail
 } from 'lucide-react';
 import HomeMap from './components/HomeMap';
 import EventCreationFlow from './components/EventCreationFlow';
@@ -757,6 +758,7 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
                               >
                                 <div className="flex items-center gap-2">
                                   {n.type === 'proximity_radar' && <Radar className="w-3 h-3 text-indigo-400" />}
+                                  {n.type === 'contact_inquiry' && <Mail className="w-3 h-3 text-purple-400" />}
                                   <h5 className="font-black text-sm text-white">{n.title}</h5>
                                 </div>
                                 <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">{n.senderName}</p>
@@ -777,6 +779,15 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
                               >
                                  Buy ticket now
                               </Link>
+                            )}
+                            {n.type === 'contact_inquiry' && n.metadata?.fromEmail && (
+                              <a 
+                                href={`mailto:${n.metadata.fromEmail}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="block bg-purple-600 hover:bg-purple-700 py-2 rounded-xl text-center text-[10px] font-black uppercase tracking-widest text-white mt-2 transition-colors"
+                              >
+                                 Reply via Email
+                              </a>
                             )}
                           </div>
                         ))

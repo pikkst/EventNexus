@@ -52,3 +52,17 @@ COMMENT ON TABLE public.contact_inquiries IS 'Contact form and partnership inqui
 COMMENT ON COLUMN public.contact_inquiries.type IS 'Type of inquiry: contact (general) or partnership (business)';
 COMMENT ON COLUMN public.contact_inquiries.email_id IS 'Resend email ID for delivery tracking';
 COMMENT ON COLUMN public.contact_inquiries.status IS 'Inquiry status: new, read, replied, archived';
+
+-- Add metadata column to notifications table to support contact inquiries
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'notifications' 
+    AND column_name = 'metadata'
+  ) THEN
+    ALTER TABLE public.notifications ADD COLUMN metadata JSONB;
+    COMMENT ON COLUMN public.notifications.metadata IS 'Additional notification metadata (e.g., inquiry details)';
+  END IF;
+END $$;
