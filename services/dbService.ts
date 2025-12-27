@@ -1937,7 +1937,7 @@ export const getUserReferralStats = async (userId: string): Promise<{
       .from('credit_transactions')
       .select('amount')
       .eq('user_id', userId)
-      .eq('reason', 'referral_reward');
+      .eq('transaction_type', 'referral_bonus');
 
     const creditsEarned = creditTransactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
 
