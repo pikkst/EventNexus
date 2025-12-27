@@ -138,7 +138,10 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const filteredUsers = useMemo(() => {
     return platformUsers.filter(u => {
       const matchesSearch = u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase());
-      const matchesRole = userRoleFilter === 'all' || u.role === userRoleFilter;
+      // Admin users should be visible in organizers filter since they can create events
+      const matchesRole = userRoleFilter === 'all' || 
+                         u.role === userRoleFilter || 
+                         (userRoleFilter === 'organizer' && u.role === 'admin');
       return matchesSearch && matchesRole;
     });
   }, [platformUsers, userSearch, userRoleFilter]);
