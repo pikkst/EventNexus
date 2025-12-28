@@ -208,6 +208,54 @@ export const deleteEvent = async (id: string): Promise<boolean> => {
   return true;
 };
 
+// Safe delete - checks if tickets sold before deleting
+export const canDeleteEvent = async (eventId: string): Promise<{ canDelete: boolean; ticketsSold: number; reason?: string }> => {
+  try {
+    // Check if any tickets have been sold
+    const { data: tickets, error } = await supabase
+      .from('tickets')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('payment_status', 'paid');
+
+    if (error) {
+      console.error('Error checking tickets:', error);
+      return { canDelete: false, ticketsSold: 0, reason: 'Failed to check ticket status' };
+    }
+
+    const ticketCount = tickets?.length || 0;
+
+    if (ticketCount > 0) {
+      return { 
+        canDelete: false, 
+        ticketsSold: ticketCount, 
+        reason: `Cannot delete: ${ticketCount} ticket${ticketCount > 1 ? 's' : ''} already sold` 
+      };
+    }
+
+    return { canDelete: true, ticketsSold: 0 };
+  } catch (error) {
+    console.error('Error in canDeleteEvent:', error);
+    return { canDelete: false, ticketsSold: 0, reason: 'Unexpected error' };
+  }
+};
+
+export const safeDeleteEvent = async (eventId: string): Promise<{ success: boolean; message: string }> => {
+  const check = await canDeleteEvent(eventId);
+  
+  if (!check.canDelete) {
+    return { success: false, message: check.reason || 'Cannot delete event' };
+  }
+
+  const deleted = await deleteEvent(eventId);
+  
+  if (deleted) {
+    return { success: true, message: 'Event deleted successfully' };
+  } else {
+    return { success: false, message: 'Failed to delete event' };
+  }
+};
+
 // Event Likes
 export const likeEvent = async (userId: string, eventId: string): Promise<boolean> => {
   try {
