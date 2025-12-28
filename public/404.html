@@ -9,11 +9,19 @@
   <!-- This script stores the current path and redirects to index.html -->
   <!-- The index.html will then restore the correct route -->
   <script>
-    // Store the path in sessionStorage so index.html can restore it
-    sessionStorage.setItem('redirect', location.pathname + location.search + location.hash);
-    // Redirect to index.html
-    location.replace(location.origin + location.pathname.split('/').slice(0, -1).join('/') + '/?redirect=' + 
-      encodeURIComponent(location.pathname + location.search + location.hash));
+    // Prevent infinite redirect loops
+    var path = location.pathname + location.search + location.hash;
+    
+    // If already redirecting or at root, don't redirect again
+    if (location.search.includes('redirect=') || location.pathname === '/') {
+      // Just go to home page to break the loop
+      location.replace(location.origin + '/');
+    } else {
+      // Store the path in sessionStorage so index.html can restore it
+      sessionStorage.setItem('redirect', path);
+      // Redirect to root with the path stored
+      location.replace(location.origin + '/');
+    }
   </script>
 </head>
 <body>
