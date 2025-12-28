@@ -147,6 +147,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
             if (result.onboardingComplete) {
               alert('✅ Payment setup complete! You can now receive payouts from ticket sales.');
             }
+            
+            // Reload connect status from database after a short delay to ensure sync
+            setTimeout(async () => {
+              console.log('🔄 Reloading connect status from database...');
+              const status = await checkConnectStatus(user.id);
+              if (status) {
+                console.log('✅ Connect status refreshed:', status);
+                setConnectStatus(status);
+              }
+            }, 2000);
           } else {
             console.warn('⚠️ Connect verification returned no success flag');
           }
@@ -199,8 +209,24 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
   const handleOpenStripeDashboard = async () => {
     setIsConnectLoading(true);
     try {
-      if (!connectStatus?.hasAccount) {
+      // Always refresh status first to get latest data
+      console.log('🔄 Refreshing Connect status before opening dashboard...');
+      const latestStatus = await checkConnectStatus(user.id);
+      if (latestStatus) {
+        console.log('📥 Latest Connect status:', latestStatus);
+        setConnectStatus(latestStatus);
+        
+        // If onboarding is now complete, show success message
+        if (latestStatus.onboardingComplete && !connectStatus?.onboardingComplete) {
+          alert('✅ Payment setup detected as complete! You can now manage your payouts.');
+        }
+      }
+      
+      const currentStatus = latestStatus || connectStatus;
+      
+      if (!currentStatus?.hasAccount) {
         // Need to start onboarding first
+        console.log('📝 Creating new Connect account...');
         const { data: userData } = await supabase.auth.getUser();
         if (!userData.user?.email) {
           alert('Unable to retrieve email. Please try again.');
@@ -209,12 +235,30 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
 
         const result = await createConnectAccount(user.id, userData.user.email);
         if (result?.url) {
+          console.log('🔗 Redirecting to Stripe onboarding...');
           window.location.href = result.url;
         } else {
           alert('Failed to create Connect account. Please try again.');
         }
+      } else if (!currentStatus?.onboardingComplete) {
+        // Account exists but onboarding not complete - create new onboarding link
+        console.log('⚠️ Account exists but onboarding incomplete, creating new link...');
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData.user?.email) {
+          alert('Unable to retrieve email. Please try again.');
+          return;
+        }
+
+        const result = await createConnectAccount(user.id, userData.user.email);
+        if (result?.url) {
+          console.log('🔗 Redirecting to continue Stripe onboarding...');
+          window.location.href = result.url;
+        } else {
+          alert('Failed to create onboarding link. Please try again.');
+        }
       } else {
-        // Open dashboard
+        // Onboarding complete - open dashboard
+        console.log('✅ Opening Stripe Dashboard (onboarding complete)...');
         const url = await getConnectDashboardLink(user.id);
         if (url) {
           window.open(url, '_blank');
