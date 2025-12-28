@@ -63,6 +63,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     tagline: '',
     date: '',
     time: '',
+    end_date: '',
+    end_time: '',
     location: '',
     locationLat: 58.8934,
     locationLng: 25.9659,
@@ -610,6 +612,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         description: description,
         date: formData.date,
         time: formData.time,
+        end_date: formData.end_date || undefined,
+        end_time: formData.end_time || undefined,
         location: {
           lat: formData.locationLat || 40.7128,
           lng: formData.locationLng || -74.0060,
@@ -720,32 +724,63 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <h2 className="text-2xl font-bold">When & Where</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-1">
-                <label className="block text-sm font-medium text-slate-400 mb-1.5">Date</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <input 
-                    type="date" 
-                    value={formData.date}
-                    onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
-                  />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-1">
+                  <label className="block text-sm font-medium text-slate-400 mb-1.5">Start Date</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input 
+                      type="date" 
+                      value={formData.date}
+                      onChange={(e) => setFormData({...formData, date: e.target.value})}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
+                    />
+                  </div>
+                </div>
+                <div className="col-span-1">
+                  <label className="block text-sm font-medium text-slate-400 mb-1.5">Start Time</label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input 
+                      type="time" 
+                      value={formData.time}
+                      onChange={(e) => setFormData({...formData, time: e.target.value})}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="col-span-1">
-                <label className="block text-sm font-medium text-slate-400 mb-1.5">Time</label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <input 
-                    type="time" 
-                    value={formData.time}
-                    onChange={(e) => setFormData({...formData, time: e.target.value})}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
-                  />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-1">
+                  <label className="block text-sm font-medium text-slate-400 mb-1.5">End Date <span className="text-slate-600">(optional)</span></label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input 
+                      type="date" 
+                      value={formData.end_date}
+                      onChange={(e) => setFormData({...formData, end_date: e.target.value})}
+                      min={formData.date}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
+                    />
+                  </div>
+                </div>
+                <div className="col-span-1">
+                  <label className="block text-sm font-medium text-slate-400 mb-1.5">End Time <span className="text-slate-600">(optional)</span></label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input 
+                      type="time" 
+                      value={formData.end_time}
+                      onChange={(e) => setFormData({...formData, end_time: e.target.value})}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="col-span-2">
+              
+              <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1.5">Venue Location</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
