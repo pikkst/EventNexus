@@ -8,6 +8,9 @@ export interface EventNexusEvent {
   description: string;
   date: string;
   time: string;
+  end_date?: string; // For multi-day events
+  end_time?: string; // Event end time
+  duration_hours?: number; // Calculated duration
   location: {
     lat: number;
     lng: number;
@@ -230,13 +233,69 @@ export interface User {
   ban_reason?: string;
 }
 
+export type TicketType = 'general' | 'vip' | 'early_bird' | 'day_pass' | 'multi_day' | 'backstage' | 'student' | 'group';
+export type TicketStatus = 'valid' | 'used' | 'cancelled' | 'refunded' | 'expired';
+
+export interface TicketTemplate {
+  id: string;
+  event_id: string;
+  name: string; // e.g., "VIP Pass", "Early Bird", "Day 1 Ticket"
+  type: TicketType;
+  price: number;
+  quantity_total: number;
+  quantity_available: number;
+  quantity_sold: number;
+  description?: string;
+  sale_start?: string; // When this ticket goes on sale
+  sale_end?: string; // When this ticket stops being sold
+  valid_days?: number[]; // For multi-day events, which days is this valid for (e.g., [1,2,3])
+  includes?: string[]; // List of benefits (e.g., ["Backstage access", "Meet & greet"])
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface Ticket {
   id: string;
-  eventId: string;
-  userId: string;
-  qrCode: string;
-  status: 'valid' | 'used' | 'cancelled';
-  purchasedAt: string;
+  ticket_template_id: string;
+  event_id: string;
+  user_id: string;
+  ticket_type: TicketType;
+  ticket_name: string;
+  price_paid: number;
+  qr_code: string;
+  status: TicketStatus;
+  purchased_at: string;
+  used_at?: string;
+  verified_by?: string; // User ID of who verified the ticket
+  verification_location?: {
+    lat: number;
+    lng: number;
+  };
+  refunded_at?: string;
+  refund_reason?: string;
+  holder_name: string;
+  holder_email: string;
+  metadata?: {
+    seat_number?: string;
+    table_number?: string;
+    group_id?: string;
+    special_requirements?: string;
+  };
+}
+
+export interface TicketVerification {
+  id: string;
+  ticket_id: string;
+  event_id: string;
+  verified_by: string;
+  verified_at: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+  device_info?: string;
+  notes?: string;
 }
 
 export interface Notification {
@@ -337,4 +396,50 @@ export interface PlatformMedia {
   };
   created_at?: string;
   updated_at?: string;
+}
+
+export interface EventTicketStats {
+  event_id: string;
+  total_tickets_available: number;
+  total_tickets_sold: number;
+  total_revenue: number;
+  tickets_by_type: {
+    type: TicketType;
+    name: string;
+    sold: number;
+    available: number;
+    revenue: number;
+  }[];
+  tickets_checked_in: number;
+  check_in_rate: number; // percentage
+  peak_sale_time?: string;
+  average_ticket_price: number;
+}
+
+export interface OrganizerDashboardStats {
+  total_events: number;
+  upcoming_events: number;
+  past_events: number;
+  total_tickets_sold: number;
+  total_revenue: number;
+  total_attendees: number;
+  average_ticket_price: number;
+  top_selling_event?: {
+    id: string;
+    name: string;
+    tickets_sold: number;
+    revenue: number;
+  };
+  revenue_by_month: {
+    month: string;
+    revenue: number;
+    tickets_sold: number;
+  }[];
+  recent_sales: {
+    ticket_id: string;
+    event_name: string;
+    buyer_name: string;
+    amount: number;
+    purchased_at: string;
+  }[];
 }
