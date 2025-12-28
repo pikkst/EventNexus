@@ -80,32 +80,34 @@ RETURNS TRIGGER AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
     -- Decrease available quantity when ticket is purchased
-    UPDATE ticket_templates 
-    SET 
-      quantity_sold = quantity_sold + 1,
-      quantity_available = quantity_available - 1
-    WHERE id = NEW.ticket_template_id;
+    -- Only update if ticket_template_id is not null
+    IF NEW.ticket_template_id IS NOT NULL THEN
+      UPDATE ticket_templates 
+      SET 
+        quantity_sold = quantity_sold + 1,
+        quantity_available = quantity_available - 1
+      WHERE id = NEW.ticket_template_id;
+    END IF;
   ELSIF TG_OP = 'DELETE' THEN
     -- Increase available quantity when ticket is deleted/refunded
-    IF OLD.status != 'refunded' THEN
+    -- Only update if ticket_template_id is not null
+    IF OLD.ticket_template_id IS NOT NULL AND OLD.status != 'refunded' THEN
       UPDATE ticket_templates 
       SET 
         quantity_sold = GREATEST(0, quantity_sold - 1),
         quantity_available = quantity_available + 1
       WHERE id = OLD.ticket_template_id;
     END IF;
+    RETURN OLD;
   END IF;
   
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger for automatic quantity updates (only if not exists)
+-- Note: Trigger will be created after tickets table exists
+-- Drop existing trigger if it exists
 DROP TRIGGER IF EXISTS ticket_template_quantity_trigger ON tickets;
-CREATE TRIGGER ticket_template_quantity_trigger
-AFTER INSERT OR DELETE ON tickets
-FOR EACH ROW
-EXECUTE FUNCTION update_ticket_template_quantities();
 
 -- Function to calculate event duration
 CREATE OR REPLACE FUNCTION calculate_event_duration()
@@ -255,6 +257,13 @@ GROUP BY e.id, e.name, e.organizerId;
 
 -- Grant access to the view
 GRANT SELECT ON ticket_stats TO authenticated;
+
+-- Create the trigger AFTER all tables are created
+-- This ensures the tickets table and ticket_template_id column exist
+CREATE TRIGGER ticket_template_quantity_trigger
+AFTER INSERT OR DELETE ON tickets
+FOR EACH ROW
+EXECUTE FUNCTION update_ticket_template_quantities();
 
 COMMENT ON TABLE ticket_templates IS 'Defines different types of tickets available for events';
 COMMENT ON TABLE tickets IS 'Individual ticket purchases with QR codes and verification status';
