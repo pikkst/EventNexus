@@ -10,8 +10,10 @@ import {
   Download,
   ChevronRight,
   BarChart3,
-  PieChart
+  PieChart,
+  ExternalLink
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { OrganizerDashboardStats, EventTicketStats, EventNexusEvent } from '../types';
 
 interface OrganizerStatsProps {
@@ -287,7 +289,18 @@ export default function OrganizerStats({ organizerId }: OrganizerStatsProps) {
               <div key={event.id} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-lg text-gray-900 mb-2">{event.name}</h4>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h4 className="font-semibold text-lg text-gray-900">{event.name}</h4>
+                      <Link 
+                        to={`/event/${event.id}`}
+                        className="text-indigo-600 hover:text-indigo-700 transition-colors flex items-center gap-1 text-sm"
+                        target="_blank"
+                        title="View event page"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        View
+                      </Link>
+                    </div>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
