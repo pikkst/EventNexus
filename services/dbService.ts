@@ -70,13 +70,29 @@ export const getAllUsers = async (): Promise<User[]> => {
 };
 
 export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<EventNexusEvent | null> => {
+  // Combine date and time into ISO timestamp
+  let dateTimeISO: string;
+  try {
+    // Parse date and time strings into a proper ISO timestamp
+    const dateStr = event.date; // e.g., "2025-02-15"
+    const timeStr = event.time; // e.g., "18:00"
+    
+    // Combine date and time
+    const dateTimeStr = `${dateStr}T${timeStr}:00`;
+    dateTimeISO = new Date(dateTimeStr).toISOString();
+    
+    console.log('📅 Date conversion:', { input: `${dateStr} ${timeStr}`, output: dateTimeISO });
+  } catch (error) {
+    console.error('❌ Date parsing error:', error);
+    throw new Error('Invalid date or time format');
+  }
+  
   // Transform to database schema
   const dbEvent: any = {
     name: event.name,
     description: event.description,
     category: event.category,
-    date: event.date, // Database expects separate date field (DATE type)
-    time: event.time, // Database expects separate time field (TIME type)
+    date: dateTimeISO, // Database expects TIMESTAMP WITH TIME ZONE
     location: event.location,
     price: event.price,
     visibility: event.visibility,
@@ -87,6 +103,18 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
     status: 'active'
   };
 
+  // Add end date/time if present
+  if (event.end_date && event.end_time) {
+    try {
+      const endDateTimeStr = `${event.end_date}T${event.end_time}:00`;
+      dbEvent.end_date = new Date(endDateTimeStr).toISOString();
+      console.log('📅 End date conversion:', { input: `${event.end_date} ${event.end_time}`, output: dbEvent.end_date });
+    } catch (error) {
+      console.warn('⚠️ End date parsing error:', error);
+      // Continue without end_date if parsing fails
+    }
+  }
+  
   // Add Premium tier fields if present
   if (event.isFeatured !== undefined) {
     dbEvent.is_featured = event.isFeatured;
