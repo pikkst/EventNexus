@@ -1194,7 +1194,13 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                     <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Price Range</p>
                     <p className="font-bold text-lg">
                       {ticketTemplates.length > 0 
-                        ? `€${Math.min(...ticketTemplates.map(t => t.price))} - €${Math.max(...ticketTemplates.map(t => t.price))}`
+                        ? (() => {
+                            const prices = ticketTemplates.map(t => t.price || 0).filter(p => p > 0);
+                            if (prices.length === 0) return 'Free';
+                            const minPrice = Math.min(...prices);
+                            const maxPrice = Math.max(...prices);
+                            return minPrice === maxPrice ? `€${minPrice}` : `€${minPrice} - €${maxPrice}`;
+                          })()
                         : formData.price === 0 ? 'Free' : `€${formData.price}`}
                     </p>
                   </div>
