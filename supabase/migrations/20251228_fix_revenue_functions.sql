@@ -1,14 +1,9 @@
--- ============================================
--- Organizer Revenue Dashboard Function
--- Date: 2025-12-22
--- Purpose: Real-time revenue tracking with platform fee calculation
--- ============================================
+-- Fix revenue functions to use price_paid instead of price column
+-- tickets table has price_paid, not price
 
--- Drop existing functions to allow type changes
+-- Drop and recreate get_organizer_revenue function with correct column
 DROP FUNCTION IF EXISTS get_organizer_revenue(UUID);
-DROP FUNCTION IF EXISTS get_organizer_revenue_summary(UUID);
 
--- STEP 1: Create function to get organizer revenue breakdown
 CREATE OR REPLACE FUNCTION get_organizer_revenue(org_id UUID)
 RETURNS TABLE (
   event_id UUID,
@@ -80,7 +75,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- STEP 2: Create summary function for total revenue
+-- Drop and recreate get_organizer_revenue_summary function
+DROP FUNCTION IF EXISTS get_organizer_revenue_summary(UUID);
+
 CREATE OR REPLACE FUNCTION get_organizer_revenue_summary(org_id UUID)
 RETURNS TABLE (
   total_events BIGINT,
@@ -138,29 +135,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- STEP 3: Grant execute permissions
+-- Grant permissions
 GRANT EXECUTE ON FUNCTION get_organizer_revenue(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_organizer_revenue_summary(UUID) TO authenticated;
-
--- ============================================
--- VERIFICATION QUERIES
--- ============================================
-
--- Test revenue breakdown for specific organizer
--- SELECT * FROM get_organizer_revenue('YOUR_ORGANIZER_ID_HERE');
-
--- Test revenue summary
--- SELECT * FROM get_organizer_revenue_summary('YOUR_ORGANIZER_ID_HERE');
-
--- ============================================
--- EXAMPLE OUTPUT
--- ============================================
-
--- Revenue breakdown returns:
--- event_id | event_name | tickets_sold | gross_revenue | platform_fee_percent | platform_fee_amount | stripe_fee_amount | net_revenue | payout_status
--- uuid | "Summer Festival" | 50 | 1250.00 | 0.03 | 37.50 | 37.50 | 1175.00 | "pending"
--- uuid | "Workshop NYC" | 25 | 625.00 | 0.03 | 18.75 | 18.75 | 587.50 | "paid"
-
--- Summary returns:
--- total_events | total_tickets_sold | total_gross | total_platform_fees | total_stripe_fees | total_net | pending_payouts | paid_out
--- 2 | 75 | 1875.00 | 56.25 | 56.25 | 1762.50 | 1250.00 | 625.00
