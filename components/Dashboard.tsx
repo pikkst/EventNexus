@@ -13,7 +13,7 @@ import {
   Cpu, Database, Key, ShieldCheck, Headphones, Smartphone, Paintbrush,
   Link2, Settings2, Bot, Layers, Terminal, Activity, Github, Play,
   ChevronRight, Box, User as UserIcon, Palette, Image as ImageIcon,
-  Chrome, CheckCircle, Smartphone as TikTok, X, Globe2, Volume2, Lightbulb, Clock, Copy
+  Chrome, CheckCircle, Smartphone as TikTok, X, Globe2, Volume2, Lightbulb, Clock, Copy, Trash2
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, EventNexusEvent, Notification, AgencyService } from '../types';
@@ -26,6 +26,7 @@ import {
   RevenueByEvent,
   RevenueSummary,
   verifyConnectOnboarding,
+  safeDeleteEvent,
   AttendanceSummaryItem
 } from '../services/dbService';
 import { generateAdCampaign, generateAdImage, generatePosterDesign } from '../services/geminiService';
@@ -802,6 +803,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                             <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Stripe Fee</th>
                             <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Net</th>
                             <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-500">Status</th>
+                            <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-500">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800">
@@ -843,6 +845,38 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                                 {event.payout_status === 'processing' && (
                                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase">
                                     <RefreshCcw className="w-3 h-3" /> Processing
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                {event.tickets_sold === 0 ? (
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm(`Delete "${event.event_name}"?\n\nThis action cannot be undone.`)) return;
+                                      
+                                      const result = await safeDeleteEvent(event.event_id);
+                                      if (result.success) {
+                                        alert('✅ Event deleted successfully');
+                                        // Reload revenue data
+                                        const newRevenue = await getOrganizerRevenue(user.id);
+                                        setRevenueByEvent(newRevenue);
+                                      } else {
+                                        alert(`❌ ${result.message}`);
+                                      }
+                                    }}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-400 hover:text-red-300 transition-all text-xs font-bold"
+                                    title="Delete event (no tickets sold)"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Delete
+                                  </button>
+                                ) : (
+                                  <span 
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-slate-600 text-xs font-bold cursor-not-allowed"
+                                    title={`Cannot delete: ${event.tickets_sold} ticket${event.tickets_sold > 1 ? 's' : ''} sold`}
+                                  >
+                                    <Lock className="w-3.5 h-3.5" />
+                                    Locked
                                   </span>
                                 )}
                               </td>
