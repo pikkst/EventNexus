@@ -46,6 +46,46 @@ export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId }) => {
     fetchConnectStatus();
   }, [userId]);
 
+  // Check for Stripe Connect return and verify onboarding status
+  useEffect(() => {
+    const checkStripeReturn = async () => {
+      const params = new URLSearchParams(window.location.hash.split('?')[1]);
+      const connectParam = params.get('connect');
+      
+      if (connectParam === 'success' || connectParam === 'refresh') {
+        console.log('PayoutsHistory: Returned from Stripe Connect onboarding, verifying status...');
+        setIsConnectLoading(true);
+        
+        try {
+          const result = await verifyConnectOnboarding(userId);
+          
+          if (result?.success) {
+            console.log('PayoutsHistory: Connect verification result:', result);
+            
+            // Update connect status with latest from Stripe
+            setConnectStatus({
+              hasAccount: result.hasAccount,
+              onboardingComplete: result.onboardingComplete,
+              chargesEnabled: result.chargesEnabled,
+              payoutsEnabled: result.payoutsEnabled,
+            });
+            
+            // Refresh payouts list
+            fetchPayouts();
+          } else {
+            console.warn('PayoutsHistory: Connect verification returned no result');
+          }
+        } catch (error) {
+          console.error('PayoutsHistory: Error verifying Connect status:', error);
+        } finally {
+          setIsConnectLoading(false);
+        }
+      }
+    };
+    
+    checkStripeReturn();
+  }, [userId]);
+
   const fetchConnectStatus = async () => {
     const status = await checkConnectStatus(userId);
     if (status) {

@@ -38,7 +38,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
-import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, deleteEvent } from '../services/dbService';
+import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, verifyConnectOnboarding, deleteEvent } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import TicketCard from './TicketCard';
 // TicketViewModal removed; using dedicated TicketViewPage route
@@ -102,6 +102,43 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
       loadConnectStatus();
     }
   }, [user.id, user.subscription_tier]);
+
+  // Check for Stripe Connect return and verify onboarding status
+  useEffect(() => {
+    const checkStripeReturn = async () => {
+      const params = new URLSearchParams(window.location.hash.split('?')[1]);
+      const connectParam = params.get('connect');
+      
+      if (connectParam === 'success' || connectParam === 'refresh') {
+        console.log('UserProfile: Returned from Stripe Connect onboarding, verifying status...');
+        setIsConnectLoading(true);
+        
+        try {
+          const result = await verifyConnectOnboarding(user.id);
+          
+          if (result?.success) {
+            console.log('UserProfile: Connect verification result:', result);
+            
+            // Update connect status with latest from Stripe
+            setConnectStatus({
+              hasAccount: result.hasAccount,
+              onboardingComplete: result.onboardingComplete,
+              chargesEnabled: result.chargesEnabled,
+              payoutsEnabled: result.payoutsEnabled,
+            });
+          } else {
+            console.warn('UserProfile: Connect verification returned no result');
+          }
+        } catch (error) {
+          console.error('UserProfile: Error verifying Connect status:', error);
+        } finally {
+          setIsConnectLoading(false);
+        }
+      }
+    };
+    
+    checkStripeReturn();
+  }, [user.id]);
 
   // Removed debug logging
 
