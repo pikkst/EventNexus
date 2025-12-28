@@ -50,9 +50,10 @@ interface UserProfileProps {
   user: User;
   onLogout: () => void;
   onUpdateUser: (data: Partial<User>) => void;
+  onRefreshUser?: () => Promise<void>;
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser }) => {
+const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser, onRefreshUser }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -101,6 +102,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
     // All users can access Stripe Connect (needed for paid event organizers regardless of tier)
     loadConnectStatus();
   }, [user.id]);
+
+  // Refresh user data when component mounts to get latest credits
+  useEffect(() => {
+    if (onRefreshUser) {
+      onRefreshUser();
+    }
+  }, [onRefreshUser]);
 
   // Check for Stripe Connect return and verify onboarding status
   useEffect(() => {
@@ -545,7 +553,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
               {user.subscription_tier === 'free' && (
                 <div className="px-4 py-2 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 border bg-orange-600/10 border-orange-500/30 text-orange-400">
                   <Zap className="w-3 h-3" />
-                  {user.credits_balance || 0} Credits
+                  {user.credits || 0} Credits
                 </div>
               )}
               {user.location && (
