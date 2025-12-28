@@ -80,17 +80,17 @@ const EventEditPage: React.FC<EventEditPageProps> = ({ user, onOpenAuth }) => {
     setIsSaving(true);
 
     try {
-      const updatedEvent: EventNexusEvent = {
-        ...event,
+      // Prepare updates with database field names
+      const updates: any = {
         name: formData.name,
         category: formData.category,
         description: formData.description,
-        aboutText: formData.aboutText || undefined
+        about_text: formData.aboutText || null
       };
 
-      const success = await updateEvent(updatedEvent);
+      const result = await updateEvent(event.id, updates);
       
-      if (success) {
+      if (result) {
         alert('✅ Event updated successfully!');
         navigate(`/event/${event.id}`);
       } else {
