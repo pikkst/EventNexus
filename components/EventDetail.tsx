@@ -40,6 +40,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [ticketQuantities, setTicketQuantities] = useState<{ [key: string]: number }>({});
 
   // Get available languages from event translations
   const availableLanguages = React.useMemo(() => {
@@ -182,6 +183,51 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       console.error('Error toggling like:', error);
     } finally {
       setIsLiking(false);
+    }
+  };
+
+  const handlePurchaseTicket = async (template: TicketTemplate) => {
+    // Require authentication before purchase
+    if (!user) {
+      alert('Please sign in to purchase tickets. It only takes a moment!');
+      onOpenAuth?.();
+      return;
+    }
+
+    const quantity = ticketQuantities[template.id] || 0;
+    
+    if (quantity === 0) {
+      alert('Please select a quantity first.');
+      return;
+    }
+
+    if (template.quantity_available < quantity) {
+      alert(`Only ${template.quantity_available} tickets remaining. Please reduce your quantity.`);
+      return;
+    }
+
+    setIsPurchasing(true);
+    
+    try {
+      // Create Stripe checkout session for this specific ticket type
+      const checkoutUrl = await createTicketCheckout(
+        user.id,
+        event!.id,
+        quantity,
+        template.price,
+        `${event!.name} - ${template.name}`
+      );
+
+      if (checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = checkoutUrl;
+      } else {
+        throw new Error('Failed to create checkout session');
+      }
+    } catch (error) {
+      console.error('Purchase failed:', error);
+      alert('Failed to start checkout. Please try again or contact support.');
+      setIsPurchasing(false);
     }
   };
 
@@ -434,73 +480,84 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               {ticketTemplates.length > 0 && (
                 <div className="space-y-3 mb-6 relative z-10">
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Available Tickets</p>
-                  {ticketTemplates.filter(t => t.is_active && t.quantity_available > 0).map((template) => (
-                    <div 
-                      key={template.id}
-                      className={`border rounded-2xl p-4 flex items-center justify-between ${
-                        event.isFeatured
-                          ? 'bg-gradient-to-r from-slate-800/50 to-amber-500/5 border-amber-500/20'
-                          : 'bg-slate-800/50 border-slate-700/50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          event.isFeatured ? 'bg-amber-600/20' : 'bg-indigo-600/20'
-                        }`}>
-                          <Ticket className={`w-5 h-5 ${event.isFeatured ? 'text-amber-500' : 'text-indigo-400'}`} />
+                  {ticketTemplates.filter(t => t.is_active && t.quantity_available > 0).map((template) => {
+                    const quantity = ticketQuantities[template.id] || 0;
+                    
+                    return (
+                      <div 
+                        key={template.id}
+                        className={`border rounded-2xl p-4 space-y-4 ${
+                          event.isFeatured
+                            ? 'bg-gradient-to-r from-slate-800/50 to-amber-500/5 border-amber-500/20'
+                            : 'bg-slate-800/50 border-slate-700/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                              event.isFeatured ? 'bg-amber-600/20' : 'bg-indigo-600/20'
+                            }`}>
+                              <Ticket className={`w-5 h-5 ${event.isFeatured ? 'text-amber-500' : 'text-indigo-400'}`} />
+                            </div>
+                            <div>
+                              <p className="font-bold text-white">{template.name}</p>
+                              <p className="text-xs text-slate-500 capitalize">{template.type.replace('_', ' ')}</p>
+                              {template.description && (
+                                <p className="text-xs text-slate-400 mt-0.5">{template.description}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-black text-xl text-white">€{template.price}</p>
+                            <p className="text-xs text-slate-500">{template.quantity_available} left</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-white">{template.name}</p>
-                          <p className="text-xs text-slate-500 capitalize">{template.type.replace('_', ' ')}</p>
-                          {template.description && (
-                            <p className="text-xs text-slate-400 mt-0.5">{template.description}</p>
-                          )}
+                        
+                        {/* Quantity Selector for this ticket type */}
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <button 
+                              onClick={() => setTicketQuantities(prev => ({
+                                ...prev,
+                                [template.id]: Math.max(0, (prev[template.id] || 0) - 1)
+                              }))}
+                              disabled={quantity === 0}
+                              className="w-9 h-9 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-sm transition-colors"
+                            >-</button>
+                            <span className="font-bold text-lg w-8 text-center">{quantity}</span>
+                            <button 
+                              onClick={() => setTicketQuantities(prev => ({
+                                ...prev,
+                                [template.id]: Math.min(template.quantity_available, Math.min(10, (prev[template.id] || 0) + 1))
+                              }))}
+                              disabled={quantity >= Math.min(10, template.quantity_available)}
+                              className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
+                                event.isFeatured
+                                  ? 'bg-amber-600 hover:bg-amber-700'
+                                  : 'bg-indigo-600 hover:bg-indigo-700'
+                              }`}
+                            >+</button>
+                          </div>
+                          
+                          <button 
+                            onClick={() => handlePurchaseTicket(template)}
+                            disabled={isPurchasing || quantity === 0}
+                            className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                              event.isFeatured
+                                ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600'
+                                : 'bg-indigo-600 hover:bg-indigo-700'
+                            }`}
+                          >
+                            {quantity === 0 ? 'Select quantity' : isPurchasing ? 'Processing...' : `Buy ${quantity} for €${(template.price * quantity).toFixed(2)}`}
+                          </button>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-black text-xl text-white">€{template.price}</p>
-                        <p className="text-xs text-slate-500">{template.quantity_available} left</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
-              <div className="space-y-6 relative z-10">
-                <div className={`border rounded-[24px] p-5 flex items-center justify-between shadow-inner ${
-                  event.isFeatured
-                    ? 'bg-gradient-to-r from-slate-800/50 to-amber-500/10 border-amber-500/20'
-                    : 'bg-slate-800/50 border-slate-700/50'
-                }`}>
-                  <div className="flex items-center gap-4">
-                    <button 
-                      onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}
-                      className="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center font-bold"
-                    >-</button>
-                    <span className="font-black text-xl w-6 text-center">{ticketCount}</span>
-                    <button 
-                      onClick={() => setTicketCount(Math.min(remaining, Math.min(10, ticketCount + 1)))}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-all ${
-                        event.isFeatured
-                          ? 'bg-amber-600 hover:bg-amber-700'
-                          : 'bg-indigo-600 hover:bg-indigo-700'
-                      }`}
-                    >+</button>
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={handlePurchase}
-                  disabled={isPurchasing || remaining === 0}
-                  className={`w-full py-5 rounded-[24px] font-black text-xl transition-all shadow-2xl active:scale-95 disabled:opacity-50 ${
-                    event.isFeatured
-                      ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600'
-                      : 'bg-indigo-600 hover:bg-indigo-700'
-                  }`}
-                >
-                  {remaining === 0 ? 'Sold Out' : isPurchasing ? 'Processing...' : 'Secure Tickets Now'}
-                </button>
-              </div>
+              {/* Old general purchase section removed - each ticket now has its own selector */}
 
               {showSuccess && (
                 <div className="mt-8 p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl">
