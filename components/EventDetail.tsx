@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   MapPin, 
   Calendar, 
@@ -31,6 +31,7 @@ interface EventDetailProps {
 
 const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenAuth }) => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [event, setEvent] = useState<EventNexusEvent | null>(null);
   const [ticketTemplates, setTicketTemplates] = useState<TicketTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -360,10 +361,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                 {/* Edit Button - Only show to event organizer */}
                 {user && user.id === event.organizerId && (
                   <button 
-                    onClick={() => {
-                      // Navigate to edit page with event ID
-                      window.location.href = `#/events/${event.id}/edit`;
-                    }}
+                    onClick={() => navigate(`/events/${event.id}/edit`)}
                     className="p-3 sm:p-4 bg-slate-900 border border-slate-800 rounded-xl sm:rounded-2xl hover:bg-slate-800 transition-all shadow-xl text-indigo-400 hover:text-indigo-300"
                     title="Edit event"
                   >
