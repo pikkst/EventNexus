@@ -3029,3 +3029,287 @@ export const deleteContactInquiry = async (inquiryId: string): Promise<boolean> 
     return false;
   }
 };
+
+// ============================================================================
+// TICKET MANAGEMENT
+// ============================================================================
+
+import { Ticket, TicketTemplate, TicketVerification, EventTicketStats, OrganizerDashboardStats } from '../types';
+
+// Get ticket templates for an event
+export const getTicketTemplates = async (eventId: string): Promise<TicketTemplate[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('ticket_templates')
+      .select('*')
+      .eq('event_id', eventId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching ticket templates:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getTicketTemplates:', error);
+    return [];
+  }
+};
+
+// Create ticket templates for an event
+export const createTicketTemplates = async (
+  eventId: string,
+  templates: Partial<TicketTemplate>[]
+): Promise<TicketTemplate[]> => {
+  try {
+    const templatesToInsert = templates.map(template => ({
+      event_id: eventId,
+      name: template.name,
+      type: template.type,
+      price: template.price || 0,
+      quantity_total: template.quantity_total || 100,
+      quantity_available: template.quantity_available || template.quantity_total || 100,
+      quantity_sold: 0,
+      description: template.description,
+      sale_start: template.sale_start,
+      sale_end: template.sale_end,
+      valid_days: template.valid_days,
+      includes: template.includes,
+      is_active: true
+    }));
+
+    const { data, error } = await supabase
+      .from('ticket_templates')
+      .insert(templatesToInsert)
+      .select();
+
+    if (error) {
+      console.error('Error creating ticket templates:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in createTicketTemplates:', error);
+    throw error;
+  }
+};
+
+// Update ticket template
+export const updateTicketTemplate = async (
+  templateId: string,
+  updates: Partial<TicketTemplate>
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('ticket_templates')
+      .update(updates)
+      .eq('id', templateId);
+
+    if (error) {
+      console.error('Error updating ticket template:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in updateTicketTemplate:', error);
+    return false;
+  }
+};
+
+// Purchase ticket (calls Edge Function)
+export const purchaseTicket = async (
+  ticketTemplateId: string,
+  userId: string,
+  holderName: string,
+  holderEmail: string,
+  quantity: number = 1,
+  metadata?: any
+): Promise<{ success: boolean; tickets?: Ticket[]; message?: string }> => {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/purchase-ticket`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          ticket_template_id: ticketTemplateId,
+          user_id: userId,
+          holder_name: holderName,
+          holder_email: holderEmail,
+          quantity,
+          metadata
+        })
+      }
+    );
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error purchasing ticket:', error);
+    return { success: false, message: 'Failed to purchase ticket' };
+  }
+};
+
+// Get user tickets with enhanced data (via Edge Function)
+export const getUserTicketsEnhanced = async (userId: string): Promise<Ticket[]> => {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-user-tickets`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ user_id: userId })
+      }
+    );
+
+    const result = await response.json();
+    return result.tickets || [];
+  } catch (error) {
+    console.error('Error fetching user tickets:', error);
+    return [];
+  }
+};
+
+// Verify ticket (calls Edge Function)
+export const verifyTicket = async (
+  qrCode: string,
+  eventId: string,
+  verifierId: string
+): Promise<{ success: boolean; ticket?: Ticket; message: string }> => {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-ticket`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          qr_code: qrCode,
+          event_id: eventId,
+          verifier_id: verifierId
+        })
+      }
+    );
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error verifying ticket:', error);
+    return { success: false, message: 'Failed to verify ticket' };
+  }
+};
+
+// Get organizer statistics
+export const getOrganizerStats = async (
+  organizerId: string,
+  period: 'week' | 'month' | 'year' = 'month'
+): Promise<{
+  dashboard_stats: OrganizerDashboardStats;
+  event_stats: EventTicketStats[];
+  events: EventNexusEvent[];
+} | null> => {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/organizer-stats`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          organizer_id: organizerId,
+          period
+        })
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Error response from organizer-stats:', await response.text());
+      return null;
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error fetching organizer stats:', error);
+    return null;
+  }
+};
+
+// Refund ticket
+export const refundTicket = async (ticketId: string, reason: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('tickets')
+      .update({
+        status: 'refunded',
+        refunded_at: new Date().toISOString(),
+        refund_reason: reason
+      })
+      .eq('id', ticketId);
+
+    if (error) {
+      console.error('Error refunding ticket:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in refundTicket:', error);
+    return false;
+  }
+};
+
+// Cancel ticket
+export const cancelTicket = async (ticketId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('tickets')
+      .update({ status: 'cancelled' })
+      .eq('id', ticketId);
+
+    if (error) {
+      console.error('Error cancelling ticket:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in cancelTicket:', error);
+    return false;
+  }
+};
+
+// Get ticket verifications for an event
+export const getTicketVerifications = async (eventId: string): Promise<TicketVerification[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('ticket_verifications')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('verified_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching verifications:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getTicketVerifications:', error);
+    return [];
+  }
+};
