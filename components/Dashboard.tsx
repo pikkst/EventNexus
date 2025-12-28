@@ -808,15 +808,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                           {revenueByEvent.map((event) => (
                             <tr key={event.event_id} className="hover:bg-slate-800/30 transition-colors">
                               <td className="px-6 py-4">
-                                <Link 
-                                  to={`/event/${event.event_id}`}
-                                  className="group flex items-center gap-2 hover:text-indigo-400 transition-colors"
-                                  target="_blank"
-                                >
-                                  <div className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors">{event.event_name}</div>
-                                  <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-indigo-400" />
-                                </Link>
-                                <div className="text-xs text-slate-500">{new Date(event.event_date).toLocaleDateString()}</div>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1">
+                                    <div className="font-bold text-white text-sm">{event.event_name}</div>
+                                    <div className="text-xs text-slate-500">{new Date(event.event_date).toLocaleDateString()}</div>
+                                  </div>
+                                  <Link 
+                                    to={`/event/${event.event_id}`}
+                                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 transition-all text-xs font-bold whitespace-nowrap"
+                                    target="_blank"
+                                    title="View event page"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                    View
+                                  </Link>
+                                </div>
                               </td>
                               <td className="px-6 py-4 text-right text-white font-bold">{event.tickets_sold}</td>
                               <td className="px-6 py-4 text-right text-white font-bold">€{event.gross_revenue.toFixed(2)}</td>
