@@ -873,7 +873,7 @@ export const getUserTickets = async (userId: string) => {
     `)
     .eq('user_id', userId)
     .eq('payment_status', 'paid')  // Only return paid/confirmed tickets
-    .order('purchased_at', { ascending: false });
+    .order('purchase_date', { ascending: false });  // Use purchase_date for consistency
   
   if (error) {
     console.error('Error fetching tickets:', error);

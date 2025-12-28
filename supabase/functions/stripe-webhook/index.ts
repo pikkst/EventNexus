@@ -126,13 +126,16 @@ serve(async (req: Request) => {
               );
 
               // Update ticket with proper QR code and payment status
+              const now = new Date().toISOString();
               const { error: updateError } = await supabase
                 .from('tickets')
                 .update({ 
                   payment_status: 'paid',
                   stripe_payment_id: session.payment_intent,
                   qr_code: qrData,
-                  status: 'valid'
+                  status: 'valid',
+                  purchased_at: now,
+                  purchase_date: now
                 })
                 .eq('id', ticket.id);
               
@@ -162,6 +165,7 @@ serve(async (req: Request) => {
                   metadata.user_id
                 );
                 
+                const now = new Date().toISOString();
                 await supabase
                   .from('tickets')
                   .update({ 
@@ -169,7 +173,9 @@ serve(async (req: Request) => {
                     stripe_payment_id: session.payment_intent,
                     stripe_session_id: session.id,
                     qr_code: qrData,
-                    status: 'valid'
+                    status: 'valid',
+                    purchased_at: now,
+                    purchase_date: now
                   })
                   .eq('id', ticket.id);
               }
