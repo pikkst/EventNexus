@@ -93,6 +93,7 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
     description: event.description,
     category: event.category,
     date: dateTimeISO, // Database expects TIMESTAMP WITH TIME ZONE
+    time: event.time, // Keep original time string for display
     location: event.location,
     price: event.price,
     visibility: event.visibility,
