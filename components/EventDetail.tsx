@@ -44,6 +44,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [organizerName, setOrganizerName] = useState<string>('EventNexus User');
   const [ticketQuantities, setTicketQuantities] = useState<{ [key: string]: number }>({});
+  const [organizerPaymentReady, setOrganizerPaymentReady] = useState(false);
+  const [checkingOrganizerStatus, setCheckingOrganizerStatus] = useState(true);
 
   // Get available languages from event translations
   const availableLanguages = React.useMemo(() => {
@@ -87,16 +89,23 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         const templates = await getTicketTemplates(id);
         setTicketTemplates(templates);
         
-        // Load organizer name
+        // Load organizer name and payment status
         try {
-          const { getUser } = await import('../services/dbService');
+          const { getUser, checkConnectStatus } = await import('../services/dbService');
           const organizer = await getUser(foundEvent.organizerId);
           if (organizer) {
             // If organizer is an agency/organization, show company name
             setOrganizerName(organizer.company_name || organizer.name || 'EventNexus User');
+            
+            // Check if organizer has completed Stripe Connect onboarding
+            const connectStatus = await checkConnectStatus(foundEvent.organizerId);
+            const isReady = connectStatus?.onboardingComplete && connectStatus?.chargesEnabled;
+            setOrganizerPaymentReady(isReady || false);
+            setCheckingOrganizerStatus(false);
           }
         } catch (err) {
           console.error('Error loading organizer:', err);
+          setCheckingOrganizerStatus(false);
         }
       }
       
@@ -206,6 +215,12 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
     if (!user) {
       alert('Please sign in to purchase tickets. It only takes a moment!');
       onOpenAuth?.();
+      return;
+    }
+
+    // Check if organizer has completed payment setup
+    if (!organizerPaymentReady) {
+      alert('⚠️ Ticket sales are not yet available for this event.\n\nThe event organizer needs to complete their payment setup first. Please check back later or contact the organizer.');
       return;
     }
 
@@ -515,6 +530,24 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               {ticketTemplates.length > 0 && (
                 <div className="space-y-3 mb-6 relative z-10">
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Available Tickets</p>
+                  
+                  {/* Payment Setup Warning */}
+                  {!checkingOrganizerStatus && !organizerPaymentReady && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                          <ShieldCheck className="w-4 h-4 text-amber-500" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-amber-400 text-sm mb-1">Ticket Sales Not Available Yet</p>
+                          <p className="text-xs text-amber-300/80 leading-relaxed">
+                            The event organizer is still completing their payment setup. Tickets will be available for purchase once the setup is complete. Please check back later or contact the organizer for updates.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {ticketTemplates.filter(t => t.is_active && t.quantity_available > 0).map((template) => {
                     const quantity = ticketQuantities[template.id] || 0;
                     
@@ -576,14 +609,21 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                           
                           <button 
                             onClick={() => handlePurchaseTicket(template)}
-                            disabled={isPurchasing || quantity === 0}
+                            disabled={isPurchasing || quantity === 0 || !organizerPaymentReady}
                             className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
                               event.isFeatured
                                 ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600'
                                 : 'bg-indigo-600 hover:bg-indigo-700'
                             }`}
                           >
-                            {quantity === 0 ? 'Select quantity' : isPurchasing ? 'Processing...' : `Buy ${quantity} for €${(template.price * quantity).toFixed(2)}`}
+                            {!organizerPaymentReady 
+                              ? 'Not Available' 
+                              : quantity === 0 
+                                ? 'Select quantity' 
+                                : isPurchasing 
+                                  ? 'Processing...' 
+                                  : `Buy ${quantity} for €${(template.price * quantity).toFixed(2)}`
+                            }
                           </button>
                         </div>
                       </div>
