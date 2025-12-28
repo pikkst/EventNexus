@@ -37,26 +37,27 @@ SELECT
   t.price,
   t.status,
   t.payment_status,
-  t.user_id,
-  t.created_at
+  t.ticket_type,
+  t.user_id
 FROM tickets t
 JOIN events e ON t.event_id = e.id
 WHERE e.price > 0
-ORDER BY t.created_at DESC
+ORDER BY e.created_at DESC
 LIMIT 20;
 
--- 4. Count tickets by event
+-- 4. Count tickets by event and ticket type
 SELECT 
   e.id,
   e.name,
   e.price as event_price,
+  t.ticket_type,
   COUNT(t.id) as total_tickets,
   COUNT(CASE WHEN t.payment_status = 'paid' THEN 1 END) as paid_tickets,
   SUM(CASE WHEN t.payment_status = 'paid' THEN t.price ELSE 0 END) as total_revenue
 FROM events e
 LEFT JOIN tickets t ON t.event_id = e.id
 WHERE e.price > 0
-GROUP BY e.id, e.name, e.price
+GROUP BY e.id, e.name, e.price, t.ticket_type
 ORDER BY e.created_at DESC;
 
 -- 5. Check specific user's paid events
