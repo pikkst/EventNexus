@@ -16,7 +16,8 @@ import {
   BarChart3,
   UserPlus,
   UserMinus,
-  Star
+  Star,
+  Edit3
 } from 'lucide-react';
 import { getEvents, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates } from '../services/dbService';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
@@ -356,6 +357,20 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
+                {/* Edit Button - Only show to event organizer */}
+                {user && user.id === event.organizerId && (
+                  <button 
+                    onClick={() => {
+                      // Navigate to edit page with event ID
+                      window.location.href = `#/events/${event.id}/edit`;
+                    }}
+                    className="p-3 sm:p-4 bg-slate-900 border border-slate-800 rounded-xl sm:rounded-2xl hover:bg-slate-800 transition-all shadow-xl text-indigo-400 hover:text-indigo-300"
+                    title="Edit event"
+                  >
+                    <Edit3 className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </button>
+                )}
+                
                 <button 
                   onClick={handleLike}
                   disabled={isLiking}

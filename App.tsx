@@ -42,6 +42,7 @@ const EventCreationFlow = lazy(() => import('./components/EventCreationFlow'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const UserProfile = lazy(() => import('./components/UserProfile'));
 const EventDetail = lazy(() => import('./components/EventDetail'));
+const EventEditPage = lazy(() => import('./components/EventEditPage'));
 const TicketScanner = lazy(() => import('./components/TicketScanner'));
 const TicketViewPage = lazy(() => import('./components/TicketViewPage'));
 const PricingPage = lazy(() => import('./components/PricingPage'));
@@ -675,6 +676,7 @@ const App: React.FC = () => {
               <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} onRefreshUser={handleRefreshUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/event/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/events/:id/edit" element={<EventEditPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/events/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/scanner" element={user ? <TicketScanner user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/ticket" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
