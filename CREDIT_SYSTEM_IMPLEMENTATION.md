@@ -19,20 +19,19 @@ This implementation adds a comprehensive credit management system with promotion
 
 ## Database Setup
 
-### Step 1: Run SQL Migration
-Execute the SQL migration file in Supabase SQL Editor:
+### Step 1: Run SQL Migration (Clean)
+If you already attempted the migration or have partial tables, use the clean migration:
 
 ```bash
-File: /workspaces/EventNexus/supabase/migrations/20251228_credit_system.sql
+File: /workspaces/EventNexus/supabase/migrations/20251228_credit_system_clean.sql
 ```
 
-This creates:
-- `promo_codes` table - Stores all promo/reward codes
-- `credit_transactions` table - Audit log of all credit movements
-- `code_redemptions` table - Tracks code usage by users
-- Database functions for redemption and credit granting
-- Row Level Security (RLS) policies
-- Indexes for performance
+This **clean migration** will:
+- ✅ Drop and recreate all policies (prevents "already exists" errors)
+- ✅ Drop and recreate functions (ensures latest version)
+- ✅ Add missing columns to existing tables (like `performed_by`, `reason`, `metadata`)
+- ✅ Handle existing data safely
+- ✅ Safe to run multiple times (idempotent)
 
 ### Step 2: Verify Edge Function Deployment
 The Edge Function is already deployed:
