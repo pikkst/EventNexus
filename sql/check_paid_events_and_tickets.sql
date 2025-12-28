@@ -8,7 +8,6 @@ SELECT
   e.id,
   e.name,
   e.price as base_price,
-  e.max_attendees,
   e.organizer_id,
   u.name as organizer_name,
   u.email as organizer_email,
@@ -65,7 +64,6 @@ SELECT
   e.id,
   e.name,
   e.price,
-  e.max_attendees,
   e.date,
   e.status
 FROM events e
