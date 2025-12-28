@@ -47,32 +47,13 @@ serve(async (req) => {
       )
     }
 
-    // Check if user is admin
-    const { data: userProfile, error: profileError } = await supabaseClient
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError) {
-      console.error('Profile error:', profileError)
-      return new Response(
-        JSON.stringify({ error: 'Profile not found', details: profileError.message }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
-      )
-    }
-
-    if (userProfile?.role !== 'admin') {
-      return new Response(
-        JSON.stringify({ error: 'Admin access required', role: userProfile?.role }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
-      )
-    }
-
-    // Now use service role for the actual query
+    // Public stats are available to all authenticated users
+    // No admin check needed - get_platform_statistics function returns public data only
+    
+    // Use the authenticated user's client for query
     const serviceClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
     // Get platform statistics using database function (SECURITY DEFINER handles permissions)
