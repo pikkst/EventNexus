@@ -161,7 +161,8 @@ $$ LANGUAGE plpgsql;
 -- Ticket Templates: Anyone can view active templates for public events
 ALTER TABLE ticket_templates ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public ticket templates viewable by all"
+-- Allow everyone (including anonymous users) to view active ticket templates for public events
+CREATE POLICY "Anyone can view public ticket templates"
   ON ticket_templates FOR SELECT
   USING (
     is_active = true AND
@@ -178,20 +179,32 @@ CREATE POLICY "Organizers can manage their ticket templates"
     EXISTS (
       SELECT 1 FROM events 
       WHERE events.id = ticket_templates.event_id 
-      AND events.organizerId = auth.uid()
+      AND events.organizer_id = auth.uid()
     )
   );
 
 -- Tickets: Users can view their own tickets
 ALTER TABLE tickets ENABLE ROW LEVEL SECURITY;
 
+-- Guests can view basic ticket information for public events (to see what's available)
+CREATE POLICY "Anyone can view tickets for public events"
+  ON tickets FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM events 
+      WHERE events.id = tickets.event_id 
+      AND events.visibility = 'public'
+    )
+  );
+
 CREATE POLICY "Users can view their own tickets"
   ON tickets FOR SELECT
   USING (user_id = auth.uid());
 
-CREATE POLICY "Users can purchase tickets"
+-- Only authenticated users can purchase tickets
+CREATE POLICY "Authenticated users can purchase tickets"
   ON tickets FOR INSERT
-  WITH CHECK (user_id = auth.uid());
+  WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
 
 CREATE POLICY "Organizers can view tickets for their events"
   ON tickets FOR SELECT
@@ -199,7 +212,7 @@ CREATE POLICY "Organizers can view tickets for their events"
     EXISTS (
       SELECT 1 FROM events 
       WHERE events.id = tickets.event_id 
-      AND events.organizerId = auth.uid()
+      AND events.organizer_id = auth.uid()
     )
   );
 
@@ -209,7 +222,7 @@ CREATE POLICY "Organizers can update ticket status"
     EXISTS (
       SELECT 1 FROM events 
       WHERE events.id = tickets.event_id 
-      AND events.organizerId = auth.uid()
+      AND events.organizer_id = auth.uid()
     )
   );
 
@@ -222,7 +235,7 @@ CREATE POLICY "Organizers can view verifications"
     EXISTS (
       SELECT 1 FROM events 
       WHERE events.id = ticket_verifications.event_id 
-      AND events.organizerId = auth.uid()
+      AND events.organizer_id = auth.uid()
     )
   );
 
@@ -232,7 +245,7 @@ CREATE POLICY "Organizers can create verifications"
     EXISTS (
       SELECT 1 FROM events 
       WHERE events.id = ticket_verifications.event_id 
-      AND events.organizerId = auth.uid()
+      AND events.organizer_id = auth.uid()
     )
   );
 
@@ -246,7 +259,7 @@ CREATE OR REPLACE VIEW ticket_stats AS
 SELECT 
   e.id as event_id,
   e.name as event_name,
-  e.organizerId,
+  e.organizer_id,
   COUNT(DISTINCT t.id) as total_tickets_sold,
   COUNT(DISTINCT CASE WHEN t.status = 'used' THEN t.id END) as tickets_checked_in,
   COUNT(DISTINCT t.user_id) as unique_attendees,
@@ -257,7 +270,7 @@ SELECT
 FROM events e
 LEFT JOIN tickets t ON t.event_id = e.id
 LEFT JOIN ticket_templates tt ON tt.event_id = e.id AND tt.is_active = true
-GROUP BY e.id, e.name, e.organizerId;
+GROUP BY e.id, e.name, e.organizer_id;
 
 -- Grant access to the view
 GRANT SELECT ON ticket_stats TO authenticated;
