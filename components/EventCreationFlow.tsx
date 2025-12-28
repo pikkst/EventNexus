@@ -62,6 +62,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     category: '',
     description: '',
     tagline: '',
+    aboutText: '',
     date: '',
     time: '',
     end_date: '',
@@ -636,6 +637,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         name: formData.name,
         category: formData.category,
         description: description,
+        aboutText: formData.aboutText || undefined,
         date: formData.date,
         time: formData.time,
         end_date: formData.end_date || undefined,
@@ -1106,6 +1108,24 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               >
                 + Add Another Ticket Type
               </button>
+            </div>
+
+            {/* About Event (Detailed Description) */}
+            <div className="space-y-3 pt-4 border-t border-slate-800">
+              <h3 className="text-lg font-bold">About This Event</h3>
+              <p className="text-xs text-slate-400">
+                Add detailed information about your event. This will be displayed prominently on your event page (schedule, lineup, FAQs, etc.)
+              </p>
+              <textarea
+                value={formData.aboutText}
+                onChange={(e) => setFormData({...formData, aboutText: e.target.value})}
+                placeholder="Example:&#10;&#10;🎵 EVENT SCHEDULE&#10;18:00 - Doors Open&#10;19:00 - Opening Act&#10;20:30 - Main Performance&#10;&#10;📍 VENUE INFO&#10;Located in the heart of the city...&#10;&#10;❓ FAQ&#10;Q: Is there parking?&#10;A: Yes, free parking available..."
+                rows={12}
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none resize-none font-mono"
+              />
+              <p className="text-[10px] text-slate-500">
+                💡 Tip: Use line breaks and emojis to organize information. This text will be shown in "About this event" section.
+              </p>
             </div>
 
             {/* Total Summary */}

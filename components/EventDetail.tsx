@@ -40,6 +40,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [organizerName, setOrganizerName] = useState<string>('EventNexus User');
   const [ticketQuantities, setTicketQuantities] = useState<{ [key: string]: number }>({});
 
   // Get available languages from event translations
@@ -83,6 +84,18 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         // Load ticket templates
         const templates = await getTicketTemplates(id);
         setTicketTemplates(templates);
+        
+        // Load organizer name
+        try {
+          const { getUser } = await import('../services/dbService');
+          const organizer = await getUser(foundEvent.organizerId);
+          if (organizer) {
+            // If organizer is an agency/organization, show company name
+            setOrganizerName(organizer.company_name || organizer.name || 'EventNexus User');
+          }
+        } catch (err) {
+          console.error('Error loading organizer:', err);
+        }
       }
       
       // Check if user has liked this event
@@ -403,6 +416,15 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               
               <p className="text-slate-400 leading-relaxed text-sm sm:text-base md:text-lg">{displayDescription}</p>
               
+              {/* About Text Section - Additional Event Details */}
+              {event.aboutText && (
+                <div className="mt-6 pt-6 border-t border-slate-800">
+                  <pre className="text-slate-300 leading-relaxed text-sm sm:text-base whitespace-pre-wrap font-sans">
+                    {event.aboutText}
+                  </pre>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-slate-800">
                 <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50 flex items-center gap-4">
                   <div className="bg-indigo-600/10 p-3 rounded-xl text-indigo-400">
@@ -578,7 +600,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Organized by</p>
-                <h4 className="font-bold truncate text-slate-100">Nexus Elite Promotions</h4>
+                <h4 className="font-bold truncate text-slate-100">{organizerName}</h4>
               </div>
               <button 
                 onClick={() => {

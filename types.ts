@@ -6,6 +6,7 @@ export interface EventNexusEvent {
   name: string;
   category: string;
   description: string;
+  aboutText?: string; // Detailed "About this event" content
   date: string;
   time: string;
   end_date?: string; // For multi-day events
