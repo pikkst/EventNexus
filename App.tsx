@@ -145,7 +145,7 @@ const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => 
 const App: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<User | null>(() => {
-    // Try to restore user from cache immediately
+    // Try to restore user from cache immediately for faster UI
     try {
       const cached = localStorage.getItem('eventnexus-user-cache');
       if (cached) {
@@ -156,10 +156,10 @@ const App: React.FC = () => {
           localStorage.removeItem('eventnexus-user-cache');
           return null;
         }
-        // Check if cache is less than 5 minutes old
-        if (parsed.timestamp && Date.now() - parsed.timestamp < 5 * 60 * 1000) {
-          console.log('⚡ Using cached user data');
-          // Mark that we already have user data from cache
+        // Use cache for immediate UI, but ALWAYS refresh from DB in background
+        // Cache is now only for initial render speed, not as source of truth
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 60 * 60 * 1000) { // 1 hour max
+          console.log('⚡ Using cached user data (will refresh from DB)');
           return parsed.user;
         }
       }
@@ -324,13 +324,6 @@ const App: React.FC = () => {
       if (sessionRestoreAttempted.current) return;
       sessionRestoreAttempted.current = true;
       
-      // If session already restored from cache, skip
-      if (sessionRestored) {
-        console.log('✅ Using cached session, skipping restoration');
-        setIsLoading(false);
-        return;
-      }
-      
       try {
         // Check for existing session FIRST (avoid TDZ on session variable)
         const { data: { session } } = await supabase.auth.getSession();
@@ -339,21 +332,22 @@ const App: React.FC = () => {
         const { initializeTracking } = await import('./services/campaignTrackingService');
         await initializeTracking(session?.user?.id);
         
-        if (session?.user && mounted && !user) {
-          console.log('🔄 Restoring session on mount...');
+        if (session?.user && mounted) {
+          console.log('🔄 Loading fresh user data from database...');
           try {
+            // ALWAYS fetch fresh data from database, don't rely on cache
             const userData = await getUser(session.user.id);
             if (userData && mounted) {
               setUser(userData);
               cacheUserData(userData);
               setSessionRestored(true);
+              console.log('✅ Fresh user data loaded. Credits:', userData.credits);
               
               const userNotifications = await getNotifications(userData.id);
               if (mounted) {
                 setNotifications(userNotifications);
                 cacheNotifications(userNotifications);
               }
-              console.log('✅ Session restored:', userData.email);
             } else {
               // If user data fails to load, sign out
               console.error('Failed to load user data, signing out');
