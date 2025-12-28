@@ -209,61 +209,94 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
   const handleOpenStripeDashboard = async () => {
     setIsConnectLoading(true);
     try {
-      // Always refresh status first to get latest data
-      console.log('🔄 Refreshing Connect status before opening dashboard...');
-      const latestStatus = await checkConnectStatus(user.id);
-      if (latestStatus) {
-        console.log('📥 Latest Connect status:', latestStatus);
+      // Always verify status with Stripe first to get latest data
+      console.log('🔄 Verifying Connect status with Stripe before opening dashboard...');
+      const verifyResult = await verifyConnectOnboarding(user.id);
+      
+      if (verifyResult && verifyResult.success) {
+        console.log('📥 Verified Connect status from Stripe:', verifyResult);
+        const latestStatus = {
+          hasAccount: verifyResult.hasAccount,
+          onboardingComplete: verifyResult.onboardingComplete,
+          chargesEnabled: verifyResult.chargesEnabled,
+          payoutsEnabled: verifyResult.payoutsEnabled,
+        };
         setConnectStatus(latestStatus);
         
         // If onboarding is now complete, show success message
-        if (latestStatus.onboardingComplete && !connectStatus?.onboardingComplete) {
+        if (verifyResult.onboardingComplete && !connectStatus?.onboardingComplete) {
           alert('✅ Payment setup detected as complete! You can now manage your payouts.');
         }
-      }
-      
-      const currentStatus = latestStatus || connectStatus;
-      
-      if (!currentStatus?.hasAccount) {
-        // Need to start onboarding first
-        console.log('📝 Creating new Connect account...');
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user?.email) {
-          alert('Unable to retrieve email. Please try again.');
-          return;
-        }
+        
+        // Use verified status
+        const currentStatus = latestStatus;
+        
+        if (!currentStatus.hasAccount) {
+          // Need to start onboarding first
+          console.log('📝 Creating new Connect account...');
+          const { data: userData } = await supabase.auth.getUser();
+          if (!userData.user?.email) {
+            alert('Unable to retrieve email. Please try again.');
+            return;
+          }
 
-        const result = await createConnectAccount(user.id, userData.user.email);
-        if (result?.url) {
-          console.log('🔗 Redirecting to Stripe onboarding...');
-          window.location.href = result.url;
-        } else {
-          alert('Failed to create Connect account. Please try again.');
-        }
-      } else if (!currentStatus?.onboardingComplete) {
-        // Account exists but onboarding not complete - create new onboarding link
-        console.log('⚠️ Account exists but onboarding incomplete, creating new link...');
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user?.email) {
-          alert('Unable to retrieve email. Please try again.');
-          return;
-        }
+          const result = await createConnectAccount(user.id, userData.user.email);
+          if (result?.url) {
+            console.log('🔗 Redirecting to Stripe onboarding...');
+            window.location.href = result.url;
+          } else {
+            alert('Failed to create Connect account. Please try again.');
+          }
+        } else if (!currentStatus.onboardingComplete) {
+          // Account exists but onboarding not complete - create new onboarding link
+          console.log('⚠️ Account exists but onboarding incomplete, creating new link...');
+          const { data: userData } = await supabase.auth.getUser();
+          if (!userData.user?.email) {
+            alert('Unable to retrieve email. Please try again.');
+            return;
+          }
 
-        const result = await createConnectAccount(user.id, userData.user.email);
-        if (result?.url) {
-          console.log('🔗 Redirecting to continue Stripe onboarding...');
-          window.location.href = result.url;
+          const result = await createConnectAccount(user.id, userData.user.email);
+          if (result?.url) {
+            console.log('🔗 Redirecting to continue Stripe onboarding...');
+            window.location.href = result.url;
+          } else {
+            alert('Failed to create onboarding link. Please try again.');
+          }
         } else {
-          alert('Failed to create onboarding link. Please try again.');
+          // Onboarding complete - open dashboard
+          console.log('✅ Opening Stripe Dashboard (onboarding complete)...');
+          const url = await getConnectDashboardLink(user.id);
+          if (url) {
+            window.open(url, '_blank');
+          } else {
+            alert('Unable to access dashboard. Please try again.');
+          }
         }
       } else {
-        // Onboarding complete - open dashboard
-        console.log('✅ Opening Stripe Dashboard (onboarding complete)...');
-        const url = await getConnectDashboardLink(user.id);
-        if (url) {
-          window.open(url, '_blank');
+        // Verification failed, fall back to database status
+        console.warn('⚠️ Verification failed, falling back to database check...');
+        const dbStatus = await checkConnectStatus(user.id);
+        if (dbStatus) {
+          setConnectStatus(dbStatus);
+        }
+        
+        if (!dbStatus?.hasAccount) {
+          // Need to start onboarding first
+          const { data: userData } = await supabase.auth.getUser();
+          if (!userData.user?.email) {
+            alert('Unable to retrieve email. Please try again.');
+            return;
+          }
+
+          const result = await createConnectAccount(user.id, userData.user.email);
+          if (result?.url) {
+            window.location.href = result.url;
+          } else {
+            alert('Failed to create Connect account. Please try again.');
+          }
         } else {
-          alert('Unable to access dashboard. Please try again.');
+          alert('Unable to verify your payment setup status. Please try refreshing the page.');
         }
       }
     } catch (error) {
