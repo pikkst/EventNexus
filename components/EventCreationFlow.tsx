@@ -50,7 +50,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   const [userEvents, setUserEvents] = useState<EventNexusEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [isGeocoding, setIsGeocoding] = useState(false);
-  const [userCredits, setUserCredits] = useState<number>(user.credits_balance || 0);
+  const [userCredits, setUserCredits] = useState<number>(user.credits || 0);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -295,6 +295,21 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     loadUserEvents();
   }, [user.id]);
 
+  // Refresh user credits from database on mount
+  useEffect(() => {
+    const refreshCredits = async () => {
+      try {
+        const freshUser = await getUser(user.id);
+        if (freshUser && freshUser.credits !== undefined) {
+          setUserCredits(freshUser.credits);
+        }
+      } catch (error) {
+        console.error('Error refreshing credits:', error);
+      }
+    };
+    refreshCredits();
+  }, [user.id]);
+
   // Get tier limits
   const tierLimits = SUBSCRIPTION_TIERS[user.subscription_tier];
   const eventLimit = tierLimits.maxEvents;
@@ -326,7 +341,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           
           // Update parent component's user state
           if (onUpdateUser) {
-            onUpdateUser({ credits_balance: newBalance });
+            onUpdateUser({ credits: newBalance });
           }
           
           // Mark event as unlocked so gate disappears
