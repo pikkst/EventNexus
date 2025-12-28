@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   Search,
   Upload,
-  X
+  X,
+  Ticket as TicketIcon
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
