@@ -18,9 +18,9 @@ import {
   UserMinus,
   Star
 } from 'lucide-react';
-import { getEvents, likeEvent, unlikeEvent, checkIfUserLikedEvent } from '../services/dbService';
+import { getEvents, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates } from '../services/dbService';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
-import { User, EventNexusEvent } from '../types';
+import { User, EventNexusEvent, TicketTemplate } from '../types';
 
 interface EventDetailProps {
   user: User | null;
@@ -31,6 +31,7 @@ interface EventDetailProps {
 const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenAuth }) => {
   const { id } = useParams();
   const [event, setEvent] = useState<EventNexusEvent | null>(null);
+  const [ticketTemplates, setTicketTemplates] = useState<TicketTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentAttendees, setCurrentAttendees] = useState(0);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -77,6 +78,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       if (foundEvent) {
         setEvent(foundEvent);
         setCurrentAttendees(foundEvent.attendeesCount);
+        
+        // Load ticket templates
+        const templates = await getTicketTemplates(id);
+        setTicketTemplates(templates);
       }
       
       // Check if user has liked this event
@@ -407,8 +412,14 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               )}
               <div className="flex justify-between items-end mb-6 sm:mb-8 md:mb-10 relative z-10">
                 <div>
-                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1 sm:mb-2">Price per seat</p>
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter">{event.price === 0 ? 'Free' : `€${event.price}`}</h2>
+                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1 sm:mb-2">
+                    {ticketTemplates.length > 0 ? 'Price Range' : 'Price per seat'}
+                  </p>
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter">
+                    {ticketTemplates.length > 0 
+                      ? `€${Math.min(...ticketTemplates.map(t => t.price))} - €${Math.max(...ticketTemplates.map(t => t.price))}`
+                      : event.price === 0 ? 'Free' : `€${event.price}`}
+                  </h2>
                 </div>
                 <div className="text-right">
                   <div className="flex items-center gap-1 text-orange-500 mb-1">
@@ -418,6 +429,42 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                   <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest leading-none">Left of {event.maxAttendees}</p>
                 </div>
               </div>
+
+              {/* Ticket Templates List */}
+              {ticketTemplates.length > 0 && (
+                <div className="space-y-3 mb-6 relative z-10">
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Available Tickets</p>
+                  {ticketTemplates.filter(t => t.is_active && t.quantity_available > 0).map((template) => (
+                    <div 
+                      key={template.id}
+                      className={`border rounded-2xl p-4 flex items-center justify-between ${
+                        event.isFeatured
+                          ? 'bg-gradient-to-r from-slate-800/50 to-amber-500/5 border-amber-500/20'
+                          : 'bg-slate-800/50 border-slate-700/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          event.isFeatured ? 'bg-amber-600/20' : 'bg-indigo-600/20'
+                        }`}>
+                          <Ticket className={`w-5 h-5 ${event.isFeatured ? 'text-amber-500' : 'text-indigo-400'}`} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-white">{template.name}</p>
+                          <p className="text-xs text-slate-500 capitalize">{template.type.replace('_', ' ')}</p>
+                          {template.description && (
+                            <p className="text-xs text-slate-400 mt-0.5">{template.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-xl text-white">€{template.price}</p>
+                        <p className="text-xs text-slate-500">{template.quantity_available} left</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="space-y-6 relative z-10">
                 <div className={`border rounded-[24px] p-5 flex items-center justify-between shadow-inner ${
