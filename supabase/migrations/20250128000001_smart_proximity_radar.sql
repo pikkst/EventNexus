@@ -129,7 +129,7 @@ WHERE status = 'active';
 
 -- Index for notifications by user and type
 CREATE INDEX IF NOT EXISTS idx_notifications_user_type_date 
-ON public.notifications(user_id, type, created_at);
+ON public.notifications(user_id, type, timestamp);
 
 -- ============================================
 -- STEP 4: Grant execute permissions
