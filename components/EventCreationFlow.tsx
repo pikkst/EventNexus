@@ -1191,14 +1191,48 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                     <p className="font-bold text-sm">{formData.locationCity || 'TBD'}</p>
                   </div>
                   <div className="bg-slate-800/50 p-3 rounded-xl">
-                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Price</p>
-                    <p className="font-bold text-lg">{formData.price === 0 ? 'Free' : `€${formData.price}`}</p>
+                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Price Range</p>
+                    <p className="font-bold text-lg">
+                      {ticketTemplates.length > 0 
+                        ? `€${Math.min(...ticketTemplates.map(t => t.price))} - €${Math.max(...ticketTemplates.map(t => t.price))}`
+                        : formData.price === 0 ? 'Free' : `€${formData.price}`}
+                    </p>
                   </div>
                   <div className="bg-slate-800/50 p-3 rounded-xl">
-                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Capacity</p>
-                    <p className="font-bold text-lg">{formData.max_capacity}</p>
+                    <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Total Capacity</p>
+                    <p className="font-bold text-lg">
+                      {ticketTemplates.length > 0 
+                        ? ticketTemplates.reduce((sum, t) => sum + (t.quantity || 0), 0)
+                        : formData.max_capacity}
+                    </p>
                   </div>
                 </div>
+
+                {/* Ticket Templates Preview */}
+                {ticketTemplates.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-slate-500 text-[10px] uppercase font-bold">Ticket Types ({ticketTemplates.length})</p>
+                    <div className="space-y-2">
+                      {ticketTemplates.map((ticket, index) => (
+                        <div key={index} className="flex items-center justify-between bg-slate-800/30 rounded-lg px-4 py-2.5 border border-slate-700/50">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-indigo-600/20 rounded-lg flex items-center justify-center">
+                              <TicketIcon className="w-4 h-4 text-indigo-400" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm">{ticket.name}</p>
+                              <p className="text-xs text-slate-500 capitalize">{ticket.type.replace('_', ' ')}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-sm">€{ticket.price}</p>
+                            <p className="text-xs text-slate-500">{ticket.quantity} available</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
