@@ -649,7 +649,33 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       console.log('📥 createEvent() response:', created ? 'success' : 'failed');
       
       if (created) {
-        console.log('✅ Event created successfully! Navigating to dashboard...');
+        console.log('✅ Event created successfully!');
+        
+        // Create ticket templates if any were defined
+        if (ticketTemplates && ticketTemplates.length > 0) {
+          console.log(`🎫 Creating ${ticketTemplates.length} ticket templates...`);
+          try {
+            const { createTicketTemplates } = await import('../services/dbService');
+            const templates = ticketTemplates.map(template => ({
+              name: template.name,
+              type: template.type as any,
+              price: template.price || 0,
+              quantity_total: template.quantity || 50,
+              quantity_available: template.quantity || 50,
+              quantity_sold: 0,
+              description: template.description,
+              is_active: true
+            }));
+            
+            await createTicketTemplates(created.id, templates);
+            console.log('✅ Ticket templates created successfully!');
+          } catch (ticketError) {
+            console.error('⚠️ Failed to create ticket templates:', ticketError);
+            // Don't fail the whole event creation if tickets fail
+          }
+        }
+        
+        console.log('🎉 Navigating to dashboard...');
         const translationCount = Object.keys(translations).length;
         const successMessage = translationCount > 0 
           ? `Event created successfully!\n\n🌐 Auto-translated into ${translationCount} languages: ${Object.keys(translations).join(', ').toUpperCase()}`
