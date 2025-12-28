@@ -791,7 +791,7 @@ export const getUserTickets = async (userId: string) => {
     .from('tickets')
     .select(`
       *,
-      event:events!tickets_event_id_fkey(
+      event:event_id(
         id,
         name,
         date,
@@ -802,7 +802,7 @@ export const getUserTickets = async (userId: string) => {
     `)
     .eq('user_id', userId)
     .eq('payment_status', 'paid')  // Only return paid/confirmed tickets
-    .order('purchase_date', { ascending: false });
+    .order('purchased_at', { ascending: false });
   
   if (error) {
     console.error('Error fetching tickets:', error);
