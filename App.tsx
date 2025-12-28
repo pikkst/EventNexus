@@ -521,6 +521,22 @@ const App: React.FC = () => {
     }
   };
 
+  const handleRefreshUser = async () => {
+    if (!user) return;
+    
+    try {
+      console.log('🔄 Refreshing user data...');
+      const updatedUser = await getUser(user.id);
+      if (updatedUser) {
+        setUser(updatedUser);
+        cacheUserData(updatedUser);
+        console.log('✅ User data refreshed. Credits:', updatedUser.credits);
+      }
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+    }
+  };
+
   const handleReloadEvents = async () => {
     try {
       console.log('🔄 Reloading events after event creation...');
@@ -676,7 +692,7 @@ const App: React.FC = () => {
               <Route path="/agency/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
               <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/redeem" element={user ? <CodeRedemption user={user} onCreditsUpdated={handleUserUpdate} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/redeem" element={user ? <CodeRedemption user={user} onCreditsUpdated={handleRefreshUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/help" element={<HelpCenter user={user || undefined} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/terms" element={<TermsOfService />} />
