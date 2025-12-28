@@ -8,6 +8,7 @@ const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
     name: dbEvent.name,
     category: dbEvent.category,
     description: dbEvent.description,
+    aboutText: dbEvent.about_text || undefined,
     date: dbEvent.date,
     time: dbEvent.time || '',
     location: dbEvent.location,
@@ -91,6 +92,7 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
   const dbEvent: any = {
     name: event.name,
     description: event.description,
+    about_text: event.aboutText || null,
     category: event.category,
     date: dateTimeISO, // Database expects TIMESTAMP WITH TIME ZONE
     time: event.time, // Keep original time string for display
