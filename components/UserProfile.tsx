@@ -98,10 +98,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser 
     };
     loadTickets();
     loadOrganizedEvents();
-    if (user.subscription_tier !== 'free') {
-      loadConnectStatus();
-    }
-  }, [user.id, user.subscription_tier]);
+    // All users can access Stripe Connect (needed for paid event organizers regardless of tier)
+    loadConnectStatus();
+  }, [user.id]);
 
   // Check for Stripe Connect return and verify onboarding status
   useEffect(() => {
