@@ -75,6 +75,16 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     max_capacity: 100
   });
 
+  const [ticketTemplates, setTicketTemplates] = useState<Array<{
+    name: string;
+    type: 'general' | 'vip' | 'early_bird' | 'day_pass' | 'multi_day' | 'backstage' | 'student' | 'group';
+    price: number;
+    quantity: number;
+    description?: string;
+  }>>([
+    { name: 'General Admission', type: 'general', price: 0, quantity: 100 }
+  ]);
+
   const navigate = useNavigate();
 
   // Image handling functions
@@ -938,8 +948,143 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       case 4:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-2xl font-bold">Privacy & Visibility</h2>
+            <h2 className="text-2xl font-bold">Tickets & Pricing</h2>
+            <p className="text-sm text-slate-400">Create different ticket types for your event</p>
+            
+            {/* Ticket Templates List */}
             <div className="space-y-3">
+              {ticketTemplates.map((ticket, index) => (
+                <div key={index} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-sm">Ticket {index + 1}</h4>
+                    {ticketTemplates.length > 1 && (
+                      <button
+                        onClick={() => setTicketTemplates(ticketTemplates.filter((_, i) => i !== index))}
+                        className="p-1.5 hover:bg-red-600/20 rounded-lg text-red-400 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-slate-400 mb-1.5">Ticket Name</label>
+                      <input 
+                        type="text"
+                        value={ticket.name}
+                        onChange={(e) => {
+                          const newTemplates = [...ticketTemplates];
+                          newTemplates[index].name = e.target.value;
+                          setTicketTemplates(newTemplates);
+                        }}
+                        placeholder="e.g., VIP Pass, Early Bird"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 outline-none"
+                      />
+                    </div>
+
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-slate-400 mb-1.5">Ticket Type</label>
+                      <select
+                        value={ticket.type}
+                        onChange={(e) => {
+                          const newTemplates = [...ticketTemplates];
+                          newTemplates[index].type = e.target.value as any;
+                          setTicketTemplates(newTemplates);
+                        }}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 outline-none"
+                      >
+                        <option value="general">General Admission</option>
+                        <option value="vip">VIP</option>
+                        <option value="early_bird">Early Bird</option>
+                        <option value="day_pass">Day Pass</option>
+                        <option value="multi_day">Multi-Day Pass</option>
+                        <option value="backstage">Backstage Access</option>
+                        <option value="student">Student</option>
+                        <option value="group">Group</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1.5">Price ($)</label>
+                      <input 
+                        type="number"
+                        value={ticket.price}
+                        onChange={(e) => {
+                          const newTemplates = [...ticketTemplates];
+                          newTemplates[index].price = Number(e.target.value);
+                          setTicketTemplates(newTemplates);
+                        }}
+                        min="0"
+                        step="0.01"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1.5">Quantity</label>
+                      <input 
+                        type="number"
+                        value={ticket.quantity}
+                        onChange={(e) => {
+                          const newTemplates = [...ticketTemplates];
+                          newTemplates[index].quantity = Number(e.target.value);
+                          setTicketTemplates(newTemplates);
+                        }}
+                        min="1"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 outline-none"
+                      />
+                    </div>
+
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-slate-400 mb-1.5">Description (optional)</label>
+                      <input 
+                        type="text"
+                        value={ticket.description || ''}
+                        onChange={(e) => {
+                          const newTemplates = [...ticketTemplates];
+                          newTemplates[index].description = e.target.value;
+                          setTicketTemplates(newTemplates);
+                        }}
+                        placeholder="e.g., Includes backstage access and meet & greet"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Add Ticket Button */}
+              <button
+                onClick={() => setTicketTemplates([
+                  ...ticketTemplates,
+                  { name: `Ticket ${ticketTemplates.length + 1}`, type: 'general', price: 0, quantity: 50 }
+                ])}
+                className="w-full p-4 border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl text-sm font-bold text-slate-400 hover:text-white transition-all"
+              >
+                + Add Another Ticket Type
+              </button>
+            </div>
+
+            {/* Total Summary */}
+            <div className="p-4 bg-indigo-950/20 border border-indigo-900/50 rounded-2xl">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-slate-400">Total Capacity</span>
+                <span className="text-xl font-black text-white">
+                  {ticketTemplates.reduce((sum, t) => sum + t.quantity, 0)} tickets
+                </span>
+              </div>
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-sm font-medium text-slate-400">Price Range</span>
+                <span className="text-xl font-black text-white">
+                  ${Math.min(...ticketTemplates.map(t => t.price))} - ${Math.max(...ticketTemplates.map(t => t.price))}
+                </span>
+              </div>
+            </div>
+
+            {/* Privacy & Visibility */}
+            <div className="pt-4 border-t border-slate-800 space-y-3">
+              <h3 className="text-lg font-bold">Privacy & Visibility</h3>
               <button 
                 onClick={() => setFormData({...formData, visibility: 'public'})}
                 className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${formData.visibility === 'public' ? 'bg-indigo-600/10 border-indigo-500' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}
@@ -964,31 +1109,6 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   <p className="text-xs text-slate-400">Hidden from map. Only accessible via secret link or code.</p>
                 </div>
               </button>
-            </div>
-            <div className="pt-4 border-t border-slate-800 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1.5">Ticket Price (USD)</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-500">$</span>
-                  <input 
-                    type="number" 
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none font-bold"
-                    placeholder="0.00"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1.5">Max Capacity (Tickets)</label>
-                <input 
-                  type="number" 
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none font-bold"
-                  placeholder="100"
-                  value={formData.max_capacity}
-                  onChange={(e) => setFormData({...formData, max_capacity: Number(e.target.value)})}
-                />
-              </div>
             </div>
           </div>
         );
