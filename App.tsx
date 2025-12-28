@@ -26,7 +26,9 @@ import {
   User as UserIcon,
   ChevronDown,
   Edit,
-  Mail
+  Mail,
+  Gift,
+  Coins
 } from 'lucide-react';
 
 // Lightweight components - load immediately
@@ -54,6 +56,8 @@ const GDPRCompliance = lazy(() => import('./components/GDPRCompliance'));
 const NotificationSettings = lazy(() => import('./components/NotificationSettings'));
 const BetaInvitation = lazy(() => import('./components/BetaInvitation'));
 const OnboardingTutorial = lazy(() => import('./components/OnboardingTutorial'));
+const AdminCreditManager = lazy(() => import('./components/AdminCreditManager'));
+const CodeRedemption = lazy(() => import('./components/CodeRedemption'));
 
 import { User, Notification, EventNexusEvent } from './types';
 import { CATEGORIES } from './constants';
@@ -671,6 +675,8 @@ const App: React.FC = () => {
               <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
               <Route path="/agency/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
               <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/redeem" element={user ? <CodeRedemption user={user} onCreditsUpdated={handleUserUpdate} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/help" element={<HelpCenter user={user || undefined} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/terms" element={<TermsOfService />} />
@@ -911,6 +917,7 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
           <SidebarItem icon={<PlusCircle />} label="Create Event" to="/create" onClick={closeSidebar} />
           <SidebarItem icon={<TicketIcon />} label="My Tickets" to="/profile" onClick={closeSidebar} />
           <SidebarItem icon={<Radar />} label="Nexus Radar" to="/notifications" onClick={closeSidebar} />
+          <SidebarItem icon={<Gift />} label="Redeem Code" to="/redeem" onClick={closeSidebar} />
           <SidebarItem icon={<Zap />} label="Pricing" to="/pricing" onClick={closeSidebar} />
           
           <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">User</div>
@@ -921,6 +928,7 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
             <>
               <div className="pt-6 pb-2 px-3 text-[10px] font-black text-orange-500 uppercase tracking-widest">Admin</div>
               <SidebarItem icon={<ShieldCheck />} label="Command Center" to="/admin" onClick={closeSidebar} />
+              <SidebarItem icon={<Coins />} label="Credit Manager" to="/admin/credits" onClick={closeSidebar} />
               <SidebarItem icon={<Globe />} label="Social Media" to="/social-media" onClick={closeSidebar} />
             </>
           )}
