@@ -117,14 +117,23 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
       const connectParam = params.get('connect');
       
       if (connectParam === 'success' || connectParam === 'refresh') {
-        console.log('UserProfile: Returned from Stripe Connect onboarding, verifying status...');
+        console.log('🔄 UserProfile: Returned from Stripe Connect, param:', connectParam);
+        console.log('📍 Current URL:', window.location.href);
         setIsConnectLoading(true);
         
         try {
+          console.log('📞 Calling verifyConnectOnboarding for user:', user.id);
           const result = await verifyConnectOnboarding(user.id);
           
+          console.log('📥 verifyConnectOnboarding response:', result);
+          
           if (result?.success) {
-            console.log('UserProfile: Connect verification result:', result);
+            console.log('✅ Connect verification successful:', {
+              hasAccount: result.hasAccount,
+              onboardingComplete: result.onboardingComplete,
+              chargesEnabled: result.chargesEnabled,
+              payoutsEnabled: result.payoutsEnabled,
+            });
             
             // Update connect status with latest from Stripe
             setConnectStatus({
@@ -133,13 +142,23 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
               chargesEnabled: result.chargesEnabled,
               payoutsEnabled: result.payoutsEnabled,
             });
+            
+            // Show success message if onboarding complete
+            if (result.onboardingComplete) {
+              alert('✅ Payment setup complete! You can now receive payouts from ticket sales.');
+            }
           } else {
-            console.warn('UserProfile: Connect verification returned no result');
+            console.warn('⚠️ Connect verification returned no success flag');
           }
         } catch (error) {
-          console.error('UserProfile: Error verifying Connect status:', error);
+          console.error('❌ Error verifying Connect status:', error);
+          alert('Failed to verify payment setup status. Please try refreshing the page.');
         } finally {
           setIsConnectLoading(false);
+          
+          // Clean up URL
+          console.log('🧹 Cleaning up URL query params');
+          window.history.replaceState({}, document.title, window.location.pathname + window.location.hash.split('?')[0]);
         }
       }
     };

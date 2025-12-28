@@ -32,7 +32,10 @@ serve(async (req: Request) => {
   try {
     const { userId }: VerifyConnectRequest = await req.json();
 
+    console.log('🔄 verify-connect-onboarding called for user:', userId);
+
     if (!userId) {
+      console.error('❌ Missing userId in request');
       return new Response(
         JSON.stringify({ error: 'Missing userId' }),
         { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
@@ -46,7 +49,19 @@ serve(async (req: Request) => {
       .eq('id', userId)
       .single();
 
-    if (userError || !user?.stripe_connect_account_id) {
+    if (userError) {
+      console.error('❌ Database error fetching user:', userError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to fetch user from database',
+          details: userError.message
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      );
+    }
+
+    if (!user?.stripe_connect_account_id) {
+      console.warn('⚠️ User does not have a Connect account ID');
       return new Response(
         JSON.stringify({ 
           error: 'User does not have a Connect account',
@@ -56,14 +71,18 @@ serve(async (req: Request) => {
       );
     }
 
+    console.log('📋 Fetching Stripe account:', user.stripe_connect_account_id);
+
     // Fetch account status from Stripe
     const account = await stripe.accounts.retrieve(user.stripe_connect_account_id);
 
-    console.log('Stripe account status:', {
+    console.log('✅ Stripe account retrieved:', {
       accountId: account.id,
       details_submitted: account.details_submitted,
       charges_enabled: account.charges_enabled,
       payouts_enabled: account.payouts_enabled,
+      requirements_currently_due: account.requirements?.currently_due || [],
+      requirements_past_due: account.requirements?.past_due || [],
     });
 
     // Update database with current status from Stripe
@@ -78,12 +97,15 @@ serve(async (req: Request) => {
       .eq('id', userId);
 
     if (updateError) {
-      console.error('Failed to update user Connect status:', updateError);
+      console.error('❌ Failed to update user Connect status:', updateError);
+    } else {
+      console.log('✅ Database updated with Connect status');
     }
 
     // If onboarding just completed, send notification
     if (account.details_submitted && !user.stripe_connect_onboarding_complete) {
-      await supabase.from('notifications').insert({
+      console.log('🎉 Onboarding just completed! Sending notification...');
+      const { error: notifError } = await supabase.from('notifications').insert({
         user_id: userId,
         type: 'payout',
         title: 'Bank Account Connected!',
@@ -91,7 +113,15 @@ serve(async (req: Request) => {
         sender_name: 'EventNexus Payments',
         isRead: false,
       });
+      
+      if (notifError) {
+        console.error('❌ Failed to send notification:', notifError);
+      } else {
+        console.log('✅ Notification sent');
+      }
     }
+
+    console.log('✅ Verification complete, returning response');
 
     return new Response(
       JSON.stringify({
@@ -116,10 +146,17 @@ serve(async (req: Request) => {
     );
 
   } catch (error) {
-    console.error('Verify Connect onboarding error:', error);
+    console.error('❌ verify-connect-onboarding error:', error);
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
       }),
       {
         status: 500,
