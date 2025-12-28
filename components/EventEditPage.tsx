@@ -20,16 +20,7 @@ const EventEditPage: React.FC<EventEditPageProps> = ({ user, onOpenAuth }) => {
     name: '',
     category: '',
     description: '',
-    aboutText: '',
-    date: '',
-    time: '',
-    end_date: '',
-    end_time: '',
-    location: '',
-    locationCity: '',
-    price: 0,
-    max_capacity: 100,
-    visibility: 'public'
+    aboutText: ''
   });
 
   useEffect(() => {
@@ -63,16 +54,7 @@ const EventEditPage: React.FC<EventEditPageProps> = ({ user, onOpenAuth }) => {
           name: foundEvent.name,
           category: foundEvent.category,
           description: foundEvent.description,
-          aboutText: foundEvent.aboutText || '',
-          date: foundEvent.date.split('T')[0],
-          time: foundEvent.time,
-          end_date: foundEvent.end_date || '',
-          end_time: foundEvent.end_time || '',
-          location: foundEvent.location.address,
-          locationCity: foundEvent.location.city,
-          price: foundEvent.price,
-          max_capacity: foundEvent.maxAttendees,
-          visibility: foundEvent.visibility
+          aboutText: foundEvent.aboutText || ''
         });
       } catch (error) {
         console.error('Error loading event:', error);
@@ -90,7 +72,7 @@ const EventEditPage: React.FC<EventEditPageProps> = ({ user, onOpenAuth }) => {
     if (!event || !user) return;
 
     // Validate required fields
-    if (!formData.name || !formData.category || !formData.description || !formData.date || !formData.time) {
+    if (!formData.name || !formData.category || !formData.description) {
       alert('Please fill in all required fields');
       return;
     }
@@ -103,19 +85,7 @@ const EventEditPage: React.FC<EventEditPageProps> = ({ user, onOpenAuth }) => {
         name: formData.name,
         category: formData.category,
         description: formData.description,
-        aboutText: formData.aboutText || undefined,
-        date: formData.date,
-        time: formData.time,
-        end_date: formData.end_date || undefined,
-        end_time: formData.end_time || undefined,
-        location: {
-          ...event.location,
-          address: formData.location,
-          city: formData.locationCity
-        },
-        price: formData.price,
-        maxAttendees: formData.max_capacity,
-        visibility: formData.visibility as any
+        aboutText: formData.aboutText || undefined
       };
 
       const success = await updateEvent(updatedEvent);
@@ -228,112 +198,6 @@ const EventEditPage: React.FC<EventEditPageProps> = ({ user, onOpenAuth }) => {
             <p className="text-xs text-slate-500 mt-2">
               This will be displayed in the "About this event" section
             </p>
-          </div>
-
-          {/* Date & Time */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-slate-300 mb-2">Start Date *</label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-300 mb-2">Start Time *</label>
-              <input
-                type="time"
-                value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
-              />
-            </div>
-          </div>
-
-          {/* End Date & Time (Optional) */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-slate-300 mb-2">End Date (Optional)</label>
-              <input
-                type="date"
-                value={formData.end_date}
-                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-300 mb-2">End Time (Optional)</label>
-              <input
-                type="time"
-                value={formData.end_time}
-                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-bold text-slate-300 mb-2">Location *</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
-              placeholder="Enter venue address"
-            />
-          </div>
-
-          {/* City */}
-          <div>
-            <label className="block text-sm font-bold text-slate-300 mb-2">City *</label>
-            <input
-              type="text"
-              value={formData.locationCity}
-              onChange={(e) => setFormData({ ...formData, locationCity: e.target.value })}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
-              placeholder="Enter city"
-            />
-          </div>
-
-          {/* Price & Capacity */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-slate-300 mb-2">Ticket Price (€) *</label>
-              <input
-                type="number"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                min="0"
-                step="0.01"
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-300 mb-2">Max Capacity *</label>
-              <input
-                type="number"
-                value={formData.max_capacity}
-                onChange={(e) => setFormData({ ...formData, max_capacity: parseInt(e.target.value) })}
-                min="1"
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Visibility */}
-          <div>
-            <label className="block text-sm font-bold text-slate-300 mb-2">Visibility</label>
-            <select
-              value={formData.visibility}
-              onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
-            >
-              <option value="public">Public - Visible to everyone</option>
-              <option value="private">Private - Only visible with link</option>
-            </select>
           </div>
 
           {/* Action Buttons */}
