@@ -205,6 +205,11 @@ export interface NotificationPreferences {
   proximityAlerts: boolean;
   alertRadius: number; // in km
   interestedCategories: string[];
+  // Active event notifications
+  notifyActiveEvents: boolean; // Notify about events that are currently happening
+  notifyUpcomingEvents: boolean; // Notify about upcoming events in search radius
+  upcomingEventWindow: number; // Hours before event starts (default 24)
+  minAvailableTickets: number; // Minimum available tickets to trigger notification (default 1)
 }
 
 export interface User {
@@ -302,7 +307,7 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'announcement' | 'update' | 'follow_alert' | 'proximity_radar' | 'contact_inquiry';
+  type: 'announcement' | 'update' | 'follow_alert' | 'proximity_radar' | 'active_event' | 'contact_inquiry';
   eventId?: string;
   senderName: string;
   timestamp: string;
@@ -311,6 +316,9 @@ export interface Notification {
     inquiryId?: string;
     fromEmail?: string;
     inquiryType?: 'contact' | 'partnership';
+    availableTickets?: number;
+    distance?: number;
+    eventStatus?: 'upcoming' | 'active' | 'ending_soon';
   };
 }
 
