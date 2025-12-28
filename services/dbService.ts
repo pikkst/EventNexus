@@ -457,6 +457,26 @@ export const getUser = async (id: string): Promise<User | null> => {
   }
 };
 
+// Get all users (Admin only)
+export const getUsers = async (): Promise<User[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching users:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getUsers:', error);
+    return [];
+  }
+};
+
 export const createUser = async (user: User): Promise<User | null> => {
   console.log('Creating user profile:', user.email);
   
@@ -3414,6 +3434,270 @@ export const getTicketVerifications = async (eventId: string): Promise<TicketVer
     return data || [];
   } catch (error) {
     console.error('Error in getTicketVerifications:', error);
+    return [];
+  }
+};
+
+// ===========================
+// CREDIT MANAGEMENT SYSTEM
+// ===========================
+
+export interface PromoCode {
+  id: string;
+  code: string;
+  code_type: 'promo' | 'reward';
+  tier: 'free' | 'basic' | 'pro' | 'enterprise';
+  credit_amount: number;
+  max_uses: number | null;
+  current_uses: number;
+  valid_from: string;
+  valid_until: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  metadata: any;
+}
+
+export interface CreditTransaction {
+  id: string;
+  user_id: string;
+  transaction_type: 'admin_grant' | 'code_redemption' | 'purchase' | 'refund' | 'adjustment';
+  amount: number;
+  balance_after: number;
+  promo_code_id: string | null;
+  performed_by: string | null;
+  reason: string | null;
+  metadata: any;
+  created_at: string;
+}
+
+export interface CodeRedemption {
+  id: string;
+  promo_code_id: string;
+  user_id: string;
+  redeemed_at: string;
+  credit_granted: number;
+}
+
+// Generate promo codes (Admin only)
+export const generatePromoCodes = async (params: {
+  codeType: 'promo' | 'reward';
+  tier: 'free' | 'basic' | 'pro' | 'enterprise';
+  creditAmount: number;
+  maxUses?: number;
+  validUntil?: string;
+  count?: number;
+  prefix?: string;
+}): Promise<PromoCode[]> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-promo-codes', {
+      body: params
+    });
+
+    if (error) {
+      console.error('Error generating promo codes:', error);
+      return [];
+    }
+
+    return data?.codes || [];
+  } catch (error) {
+    console.error('Error in generatePromoCodes:', error);
+    return [];
+  }
+};
+
+// Get all promo codes (Admin only)
+export const getAllPromoCodes = async (): Promise<PromoCode[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('promo_codes')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching promo codes:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getAllPromoCodes:', error);
+    return [];
+  }
+};
+
+// Get promo code statistics (Admin only)
+export const getPromoCodeStats = async (): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('promo_code_stats')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching promo code stats:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getPromoCodeStats:', error);
+    return [];
+  }
+};
+
+// Update promo code status (Admin only)
+export const updatePromoCodeStatus = async (
+  codeId: string,
+  isActive: boolean
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('promo_codes')
+      .update({ is_active: isActive })
+      .eq('id', codeId);
+
+    if (error) {
+      console.error('Error updating promo code:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in updatePromoCodeStatus:', error);
+    return false;
+  }
+};
+
+// Delete promo code (Admin only)
+export const deletePromoCode = async (codeId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('promo_codes')
+      .delete()
+      .eq('id', codeId);
+
+    if (error) {
+      console.error('Error deleting promo code:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deletePromoCode:', error);
+    return false;
+  }
+};
+
+// Redeem promo code (User)
+export const redeemPromoCode = async (
+  userId: string,
+  code: string
+): Promise<{ success: boolean; error?: string; credits_granted?: number; new_balance?: number }> => {
+  try {
+    const { data, error } = await supabase.rpc('redeem_promo_code', {
+      p_user_id: userId,
+      p_code: code
+    });
+
+    if (error) {
+      console.error('Error redeeming promo code:', error);
+      return { success: false, error: error.message };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in redeemPromoCode:', error);
+    return { success: false, error: 'Failed to redeem code' };
+  }
+};
+
+// Admin grant credits to user
+export const adminGrantCredits = async (
+  userId: string,
+  amount: number,
+  reason: string,
+  adminId: string
+): Promise<{ success: boolean; error?: string; new_balance?: number }> => {
+  try {
+    const { data, error } = await supabase.rpc('admin_grant_credits', {
+      p_user_id: userId,
+      p_amount: amount,
+      p_reason: reason,
+      p_admin_id: adminId
+    });
+
+    if (error) {
+      console.error('Error granting credits:', error);
+      return { success: false, error: error.message };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in adminGrantCredits:', error);
+    return { success: false, error: 'Failed to grant credits' };
+  }
+};
+
+// Get credit transactions for a user
+export const getCreditTransactions = async (userId: string): Promise<CreditTransaction[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('credit_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching credit transactions:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getCreditTransactions:', error);
+    return [];
+  }
+};
+
+// Get all credit transactions (Admin only)
+export const getAllCreditTransactions = async (): Promise<CreditTransaction[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('credit_transactions')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error('Error fetching all credit transactions:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getAllCreditTransactions:', error);
+    return [];
+  }
+};
+
+// Get code redemptions for a user
+export const getUserCodeRedemptions = async (userId: string): Promise<CodeRedemption[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('code_redemptions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('redeemed_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching code redemptions:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getUserCodeRedemptions:', error);
     return [];
   }
 };
