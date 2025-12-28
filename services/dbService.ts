@@ -309,11 +309,15 @@ export const getUser = async (id: string): Promise<User | null> => {
             credits_balance: 0,
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.id}`,
             notification_prefs: {
-              interestedCategories: [],
-              alertRadius: 10,
+              pushEnabled: true,
+              emailEnabled: true,
               proximityAlerts: true,
-              eventUpdates: true,
-              ticketReminders: true
+              alertRadius: 10,
+              interestedCategories: [],
+              notifyActiveEvents: true, // NEW: Enable active event notifications by default
+              notifyUpcomingEvents: true, // NEW: Enable upcoming event notifications
+              upcomingEventWindow: 24, // NEW: Default to 24 hours
+              minAvailableTickets: 1 // NEW: Notify about any available tickets
             }
           };
           
@@ -338,12 +342,29 @@ export const getUser = async (id: string): Promise<User | null> => {
         emailEnabled: true,
         proximityAlerts: true,
         alertRadius: 10,
-        interestedCategories: []
+        interestedCategories: [],
+        notifyActiveEvents: true,
+        notifyUpcomingEvents: true,
+        upcomingEventWindow: 24,
+        minAvailableTickets: 1
       };
     } else {
       // Ensure interestedCategories is an array
       if (!Array.isArray(user.notification_prefs.interestedCategories)) {
         user.notification_prefs.interestedCategories = [];
+      }
+      // Set defaults for new fields if not present
+      if (user.notification_prefs.notifyActiveEvents === undefined) {
+        user.notification_prefs.notifyActiveEvents = true;
+      }
+      if (user.notification_prefs.notifyUpcomingEvents === undefined) {
+        user.notification_prefs.notifyUpcomingEvents = true;
+      }
+      if (!user.notification_prefs.upcomingEventWindow) {
+        user.notification_prefs.upcomingEventWindow = 24;
+      }
+      if (!user.notification_prefs.minAvailableTickets) {
+        user.notification_prefs.minAvailableTickets = 1;
       }
     }
     
@@ -901,7 +922,7 @@ export const getInfrastructureStats = async () => {
   }
 };
 
-// Proximity radar using Edge Function
+// Smart Proximity radar using enhanced Edge Function
 export const checkProximityRadar = async (userId: string, latitude: number, longitude: number) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -909,7 +930,8 @@ export const checkProximityRadar = async (userId: string, latitude: number, long
       throw new Error('Not authenticated');
     }
 
-    const { data, error } = await supabase.functions.invoke('proximity-radar', {
+    // Use the new smart-proximity-radar function that includes active event notifications
+    const { data, error } = await supabase.functions.invoke('smart-proximity-radar', {
       body: { userId, latitude, longitude },
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -919,13 +941,19 @@ export const checkProximityRadar = async (userId: string, latitude: number, long
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error checking proximity radar:', error);
+    console.error('Error checking smart proximity radar:', error);
     return {
       success: false,
       nearbyEvents: [],
+      activeEvents: [],
+      upcomingEvents: [],
       newNotifications: [],
-      totalNearby: 0,
-      notificationsSent: 0
+      summary: {
+        totalNearby: 0,
+        activeEvents: 0,
+        upcomingEvents: 0,
+        notificationsSent: 0
+      }
     };
   }
 };

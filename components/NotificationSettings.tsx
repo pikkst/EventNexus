@@ -102,6 +102,68 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user, onUpd
                   ))}
                 </div>
               </div>
+
+              <div className="space-y-4 pt-6 border-t border-slate-800">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Smart Notifications</label>
+                
+                <div className="space-y-3">
+                  <SmartToggle 
+                    icon="🎉"
+                    title="Active Events"
+                    desc="Get notified about events happening RIGHT NOW with available tickets"
+                    active={prefs.notifyActiveEvents !== false}
+                    onToggle={() => updateSetting('notifyActiveEvents', !(prefs.notifyActiveEvents !== false))}
+                  />
+                  
+                  <SmartToggle 
+                    icon="📅"
+                    title="Upcoming Events"
+                    desc="Alerts for events starting soon in your area"
+                    active={prefs.notifyUpcomingEvents !== false}
+                    onToggle={() => updateSetting('notifyUpcomingEvents', !(prefs.notifyUpcomingEvents !== false))}
+                  />
+                </div>
+
+                {prefs.notifyUpcomingEvents !== false && (
+                  <div className="space-y-3 mt-4 pl-4 border-l-2 border-indigo-600/30">
+                    <div className="flex justify-between items-end px-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Upcoming Window</label>
+                      <span className="text-sm font-black text-white">{prefs.upcomingEventWindow || 24}h</span>
+                    </div>
+                    <input 
+                      type="range"
+                      min="1"
+                      max="72"
+                      value={prefs.upcomingEventWindow || 24}
+                      onChange={(e) => updateSetting('upcomingEventWindow', parseInt(e.target.value))}
+                      className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                    />
+                    <div className="flex justify-between text-[9px] font-bold text-slate-600 uppercase">
+                      <span>1 hour</span>
+                      <span>72 hours (3 days)</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3 pt-3">
+                  <div className="flex justify-between items-end px-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Min. Tickets Available</label>
+                    <span className="text-sm font-black text-white">{prefs.minAvailableTickets || 1}</span>
+                  </div>
+                  <input 
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={prefs.minAvailableTickets || 1}
+                    onChange={(e) => updateSetting('minAvailableTickets', parseInt(e.target.value))}
+                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  />
+                  <div className="flex justify-between text-[9px] font-bold text-slate-600 uppercase">
+                    <span>Any (1+)</span>
+                    <span>Selective (20+)</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -172,6 +234,24 @@ const ChannelToggle = ({ icon, title, desc, active, onToggle }: any) => (
     >
       <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform ${active ? 'translate-x-6' : 'translate-x-0'}`} />
     </button>
+  </div>
+);
+
+const SmartToggle = ({ icon, title, desc, active, onToggle }: any) => (
+  <div 
+    onClick={onToggle}
+    className={`p-4 bg-slate-950 border rounded-2xl transition-all cursor-pointer hover:border-indigo-500/30 ${active ? 'border-indigo-500/50 bg-indigo-950/20' : 'border-slate-800'}`}
+  >
+    <div className="flex items-start gap-3">
+      <span className="text-xl mt-0.5">{icon}</span>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-bold text-white text-sm">{title}</h4>
+        <p className="text-xs text-slate-500 mt-1">{desc}</p>
+      </div>
+      <div className={`relative w-10 h-5 rounded-full transition-all flex items-center px-0.5 ${active ? 'bg-indigo-600' : 'bg-slate-800'}`}>
+        <div className={`w-3.5 h-3.5 bg-white rounded-full shadow-md transition-transform ${active ? 'translate-x-5' : 'translate-x-0'}`} />
+      </div>
+    </div>
   </div>
 );
 
