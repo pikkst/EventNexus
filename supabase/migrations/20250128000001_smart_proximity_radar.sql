@@ -42,7 +42,7 @@ BEGIN
         ) / 1000.0 AS distance,
         to_jsonb(e.*) AS event_data,
         COALESCE(
-            (e.max_attendees - e.attendees_count),
+            (e.max_capacity - e.attendees_count),
             999
         ) AS available_tickets,
         (e.date || ' ' || e.time)::TIMESTAMPTZ AS starts_at,
@@ -83,7 +83,7 @@ BEGIN
             radius_km * 1000
         )
         -- Has minimum available tickets
-        AND (e.max_attendees - e.attendees_count) >= min_tickets
+        AND (e.max_capacity - e.attendees_count) >= min_tickets
         -- Event hasn't ended yet or is currently active
         AND (
             e.end_date IS NULL 
@@ -124,7 +124,7 @@ WHERE status = 'active' AND visibility = 'public';
 
 -- Index for attendees count for ticket availability queries
 CREATE INDEX IF NOT EXISTS idx_events_ticket_availability 
-ON public.events(max_attendees, attendees_count) 
+ON public.events(max_capacity, attendees_count) 
 WHERE status = 'active';
 
 -- Index for notifications by user and type
