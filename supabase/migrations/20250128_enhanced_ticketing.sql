@@ -28,8 +28,12 @@ CREATE TABLE IF NOT EXISTS ticket_templates (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create enhanced tickets table
-CREATE TABLE IF NOT EXISTS tickets (
+-- Drop old tickets table if it exists (backup data first if needed)
+-- WARNING: This will delete existing ticket data. Only run if acceptable.
+DROP TABLE IF EXISTS tickets CASCADE;
+
+-- Create enhanced tickets table with all new columns
+CREATE TABLE tickets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_template_id UUID REFERENCES ticket_templates(id) ON DELETE SET NULL,
   event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
