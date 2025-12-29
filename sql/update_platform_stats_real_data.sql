@@ -57,6 +57,7 @@ DECLARE
     v_retention_rate NUMERIC;
     v_platform_commission NUMERIC;
     v_subscription_revenue NUMERIC;
+    v_total_credits NUMERIC;
 BEGIN
     -- Get event and user counts
     SELECT 
@@ -120,6 +121,11 @@ BEGIN
     WHERE u.subscription_status = 'active'
       AND u.subscription_tier IN ('pro', 'premium', 'enterprise');
     
+    -- Calculate TOTAL CREDITS in circulation (all users' credit balances)
+    SELECT COALESCE(SUM(credits_balance), 0)
+    INTO v_total_credits
+    FROM public.users;
+    
     -- Calculate conversion rate (tickets per user)
     v_conversion_rate := CASE 
         WHEN v_total_users > 0 THEN (v_total_tickets::NUMERIC / v_total_users::NUMERIC * 100)
@@ -178,7 +184,7 @@ BEGIN
         
         -- FORMATTED DISPLAY VALUES 
         'monthlyGPV', ('€' || ROUND(COALESCE(v_gross_revenue / 1000, 0), 1) || 'k')::TEXT,
-        'creditPool', (ROUND(COALESCE(v_total_users * 5.0 / 1000000, 0), 1) || 'M')::TEXT,
+        'creditPool', (ROUND(COALESCE(v_total_credits / 1000000, 0), 1) || 'M')::TEXT,
         'globalFee', ROUND(2.5, 1),  -- Return number, frontend adds %
         'platformConversion', ROUND(COALESCE(v_conversion_rate, 0), 1),  -- Return number, frontend adds %
         
