@@ -1423,6 +1423,36 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
 
         {activeTab === 'financials' && (
            <div className="space-y-8 animate-in fade-in duration-500">
+              {/* Platform Revenue Card */}
+              {platformStats && (
+                <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 border border-emerald-500/30 rounded-[40px] p-8 shadow-2xl">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <p className="text-[10px] font-black text-emerald-200 uppercase tracking-widest mb-2">Platvormi Puhas Kasum</p>
+                      <h3 className="text-5xl font-black text-white mb-2">
+                        €{((platformStats.platformCommission || 0) + (platformStats.subscriptionRevenue || 0)).toFixed(2)}
+                      </h3>
+                      <p className="text-sm text-emerald-100 font-medium">Piletite komisjonitasu + Tellimuste tulu</p>
+                    </div>
+                    <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center">
+                      <DollarSign size={40} className="text-white" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/10 rounded-2xl p-4">
+                      <p className="text-[8px] font-black text-emerald-200 uppercase tracking-widest mb-1">Piletite komisjon</p>
+                      <p className="text-2xl font-black text-white">€{platformStats.platformCommission?.toFixed(2) || '0.00'}</p>
+                      <p className="text-[10px] text-emerald-100 mt-1">5% free, 3% pro, 2.5% premium, 1.5% enterprise</p>
+                    </div>
+                    <div className="bg-white/10 rounded-2xl p-4">
+                      <p className="text-[8px] font-black text-emerald-200 uppercase tracking-widest mb-1">Tellimuste tulu</p>
+                      <p className="text-2xl font-black text-white">€{platformStats.subscriptionRevenue?.toFixed(2) || '0.00'}</p>
+                      <p className="text-[10px] text-emerald-100 mt-1">€19.99 pro, €49.99 premium, €149.99 enterprise</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                  <div className="lg:col-span-2 space-y-8">
                     <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-8 shadow-2xl">
