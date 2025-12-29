@@ -112,7 +112,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   // Check for Stripe Connect return and verify onboarding status
   useEffect(() => {
     const checkStripeReturn = async () => {
-      const params = new URLSearchParams(window.location.hash.split('?')[1]);
+      const params = new URLSearchParams(window.location.search);
       const connectStatus = params.get('connect');
       
       if (connectStatus === 'success' || connectStatus === 'refresh') {
@@ -146,8 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
           setIsVerifyingConnect(false);
           
           // Clean up URL parameters
-          const cleanUrl = window.location.hash.split('?')[0];
-          window.history.replaceState({}, '', cleanUrl);
+          window.history.replaceState({}, document.title, window.location.pathname);
         }
       }
     };
@@ -1115,7 +1114,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
 
       {activeTab === 'payouts' && (
         <div className="animate-in fade-in duration-500">
-          <PayoutsHistory userId={user.id} />
+          <PayoutsHistory userId={user.id} user={user} />
         </div>
       )}
 
