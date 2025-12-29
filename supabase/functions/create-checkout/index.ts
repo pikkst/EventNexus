@@ -185,6 +185,7 @@ serve(async (req: Request) => {
       console.log(`Ticket checkout: Total €${(totalAmount / 100).toFixed(2)}, Fee €${(platformFeeCents / 100).toFixed(2)}, Net €${(netAmountCents / 100).toFixed(2)}`);
 
       // Create checkout session for ticket purchase
+      // Money held on platform, transferred 2 days after event via automated payout system
       session = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ['card'],
