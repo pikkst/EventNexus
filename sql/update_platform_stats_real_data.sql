@@ -55,6 +55,8 @@ DECLARE
     v_revenue_enterprise NUMERIC;
     v_active_users BIGINT;
     v_retention_rate NUMERIC;
+    v_platform_commission NUMERIC;
+    v_subscription_revenue NUMERIC;
 BEGIN
     -- Get event and user counts
     SELECT 
@@ -86,6 +88,37 @@ BEGIN
     SELECT COALESCE(SUM(pending_amount), 0)
     INTO v_pending_payouts
     FROM get_all_organizers_revenue_summary();
+    
+    -- Calculate PLATFORM COMMISSION from all tickets (our revenue)
+    SELECT COALESCE(SUM(
+        t.price_paid * CASE u.subscription_tier
+            WHEN 'free' THEN 0.05
+            WHEN 'pro' THEN 0.03
+            WHEN 'premium' THEN 0.025
+            WHEN 'enterprise' THEN 0.015
+            ELSE 0.05
+        END
+    ), 0)
+    INTO v_platform_commission
+    FROM public.tickets t
+    JOIN public.events e ON t.event_id = e.id
+    JOIN public.users u ON e.organizer_id = u.id
+    WHERE t.payment_status = 'paid' 
+      AND t.status IN ('valid', 'used');
+    
+    -- Calculate SUBSCRIPTION REVENUE from active paid subscribers
+    SELECT COALESCE(SUM(
+        CASE u.subscription_tier
+            WHEN 'pro' THEN 19.99
+            WHEN 'premium' THEN 49.99
+            WHEN 'enterprise' THEN 149.99
+            ELSE 0
+        END
+    ), 0)
+    INTO v_subscription_revenue
+    FROM public.users u
+    WHERE u.subscription_status = 'active'
+      AND u.subscription_tier IN ('pro', 'premium', 'enterprise');
     
     -- Calculate conversion rate (tickets per user)
     v_conversion_rate := CASE 
@@ -133,6 +166,8 @@ BEGIN
         -- REAL FINANCIAL DATA
         'totalRevenue', ROUND(COALESCE(v_gross_revenue, 0), 2),
         'platformFees', ROUND(COALESCE(v_platform_fees, 0), 2),
+        'platformCommission', ROUND(COALESCE(v_platform_commission, 0), 2),
+        'subscriptionRevenue', ROUND(COALESCE(v_subscription_revenue, 0), 2),
         'totalPayouts', ROUND(COALESCE(v_total_payouts, 0), 2),
         'pendingPayouts', ROUND(COALESCE(v_pending_payouts, 0), 2),
         
