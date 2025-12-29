@@ -1,0 +1,20 @@
+# EventNexus - robots.txt for Google crawling
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /private
+
+# Crawl optimization
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://www.eventnexus.eu/sitemap.xml
+
+# Allow specific crawlers
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
