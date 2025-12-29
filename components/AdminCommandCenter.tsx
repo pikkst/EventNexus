@@ -1511,7 +1511,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
                                 <span className="text-[10px] font-black uppercase text-slate-300">{t.name}</span>
                              </div>
-                             <span className="text-sm font-black text-white">€{(t.value / 1000).toFixed(1)}k</span>
+                             <span className="text-sm font-black text-white">€{typeof t.value === 'number' ? t.value.toFixed(2) : '0.00'}</span>
                           </div>
                        ))}
                     </div>
