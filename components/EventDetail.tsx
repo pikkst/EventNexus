@@ -245,7 +245,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         event!.id,
         quantity,
         template.price,
-        `${event!.name} - ${template.name}`
+        `${event!.name} - ${template.name}`,
+        template.id,
+        template.type,
+        template.name
       );
 
       if (checkoutUrl) {

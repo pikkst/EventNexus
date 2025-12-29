@@ -56,7 +56,7 @@ serve(async (req: Request) => {
       );
     }
 
-    const { userId, tier, priceId, customerEmail, eventId, ticketCount, pricePerTicket, eventName, successUrl, cancelUrl } = await req.json();
+    const { userId, tier, priceId, customerEmail, eventId, ticketCount, pricePerTicket, eventName, ticketTemplateId, ticketType, ticketName, successUrl, cancelUrl } = await req.json();
 
     // Validate required parameters
     if (!userId) {
@@ -208,6 +208,9 @@ serve(async (req: Request) => {
           user_id: userId,
           event_id: eventId,
           ticket_count: ticketCount.toString(),
+          ticket_template_id: ticketTemplateId || '',
+          ticket_type: ticketType || 'general',
+          ticket_name: ticketName || 'Standard',
           organizer_id: event.organizer_id,
           organizer_connect_account: event.organizer.stripe_connect_account_id,
           organizer_tier: event.organizer.subscription_tier,
@@ -218,17 +221,20 @@ serve(async (req: Request) => {
         },
       });
 
-      // Create pending ticket records with price and ticket type
+      // Create pending ticket records with template ID, type, and price_paid
+      const now = new Date().toISOString();
       const tickets = Array.from({ length: ticketCount }, () => ({
         user_id: userId,
         event_id: eventId,
-        ticket_type: 'standard',
-        price: pricePerTicket,
-        purchase_date: new Date().toISOString(),
+        ticket_template_id: ticketTemplateId || null,
+        ticket_type: ticketType || 'general',
+        ticket_name: ticketName || 'Standard Ticket',
+        price_paid: pricePerTicket,
+        holder_name: user?.name || 'Guest',
+        holder_email: user?.email || customerEmail || 'guest@eventnexus.eu',
         qr_code: crypto.randomUUID(), // Temporary QR code, will be updated on payment success
-        payment_status: 'pending',
-        stripe_session_id: session.id,
-        status: 'valid'
+        status: 'valid',
+        purchased_at: now,
       }));
 
       await supabase.from('tickets').insert(tickets);
