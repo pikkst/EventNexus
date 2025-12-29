@@ -1987,12 +1987,12 @@ const FinancialRow = ({ name, cat, amt, status }: any) => (
         {cat}
       </span>
     </td>
-    <td className={`py-6 text-center font-black ${amt && amt.startsWith('+') ? 'text-emerald-500' : 'text-red-500'}`}>
-      {amt || '€0'}
+    <td className={`py-6 text-center font-black ${typeof amt === 'number' && amt > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+      {typeof amt === 'number' ? (amt > 0 ? `+€${amt.toFixed(2)}` : `€${Math.abs(amt).toFixed(2)}`) : '€0.00'}
     </td>
     <td className="py-6 text-right px-8">
        <span className={`text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-tighter ${
-         status === 'Complete' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-orange-500/10 text-orange-500'
+         status === 'Settled' ? 'bg-emerald-500/10 text-emerald-500' : status === 'Processing' ? 'bg-orange-500/10 text-orange-500' : 'bg-slate-500/10 text-slate-500'
        }`}>
          {status}
        </span>
