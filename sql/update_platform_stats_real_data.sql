@@ -220,7 +220,7 @@ BEGIN
         
         UNION ALL
         
-        -- Payouts (money out to organizers)
+        -- Payouts (money out to organizers) - EXCLUDE failed payouts
         SELECT 
             e.name::TEXT as transaction_source,
             'Organizer Payout'::TEXT as transaction_type,
@@ -233,6 +233,7 @@ BEGIN
             END as status
         FROM payouts p
         JOIN events e ON p.event_id = e.id
+        WHERE p.status IN ('paid', 'processing', 'pending')  -- Only show non-failed payouts
     )
     ORDER BY transaction_source DESC
     LIMIT 50;
