@@ -84,7 +84,10 @@ export const createTicketCheckout = async (
   eventId: string,
   ticketCount: number,
   pricePerTicket: number,
-  eventName: string
+  eventName: string,
+  ticketTemplateId?: string,
+  ticketType?: string,
+  ticketName?: string
 ): Promise<string | null> => {
   try {
     const publicKey = await getStripePublicKey();
@@ -104,6 +107,9 @@ export const createTicketCheckout = async (
         ticketCount,
         pricePerTicket,
         eventName,
+        ticketTemplateId,
+        ticketType,
+        ticketName,
         successUrl: `${baseUrl}#/events/${eventId}?purchase=success`,
         cancelUrl: `${baseUrl}#/events/${eventId}?purchase=cancelled`
       }
