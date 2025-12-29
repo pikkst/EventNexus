@@ -23,9 +23,10 @@ interface Payout {
 
 interface PayoutsHistoryProps {
   userId: string;
+  user?: any; // Optional user object to detect stripe_connect status changes
 }
 
-export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId }) => {
+export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId, user }) => {
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [connectStatus, setConnectStatus] = useState<{
@@ -46,10 +47,18 @@ export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId }) => {
     fetchConnectStatus();
   }, [userId]);
 
+  // Update connect status when user object changes (from parent Dashboard after verification)
+  useEffect(() => {
+    if (user) {
+      console.log('PayoutsHistory: User object updated, refreshing connect status...');
+      fetchConnectStatus();
+    }
+  }, [user?.stripe_connect_onboarding_complete, user?.stripe_connect_charges_enabled, user?.stripe_connect_payouts_enabled]);
+
   // Check for Stripe Connect return and verify onboarding status
   useEffect(() => {
     const checkStripeReturn = async () => {
-      const params = new URLSearchParams(window.location.hash.split('?')[1]);
+      const params = new URLSearchParams(window.location.search);
       const connectParam = params.get('connect');
       
       if (connectParam === 'success' || connectParam === 'refresh') {

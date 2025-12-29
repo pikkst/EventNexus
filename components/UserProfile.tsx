@@ -103,17 +103,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
     loadConnectStatus();
   }, [user.id]);
 
-  // Refresh user data when component mounts to get latest credits
+  // Refresh user data when component mounts to get latest credits (once only)
   useEffect(() => {
     if (onRefreshUser) {
       onRefreshUser();
     }
-  }, [onRefreshUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount, not when onRefreshUser changes
 
   // Check for Stripe Connect return and verify onboarding status
   useEffect(() => {
     const checkStripeReturn = async () => {
-      const params = new URLSearchParams(window.location.hash.split('?')[1]);
+      const params = new URLSearchParams(window.location.search);
       const connectParam = params.get('connect');
       
       if (connectParam === 'success' || connectParam === 'refresh') {
@@ -168,7 +169,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
           
           // Clean up URL
           console.log('🧹 Cleaning up URL query params');
-          window.history.replaceState({}, document.title, window.location.pathname + window.location.hash.split('?')[0]);
+          window.history.replaceState({}, document.title, window.location.pathname);
         }
       }
     };
