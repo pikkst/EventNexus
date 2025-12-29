@@ -18,7 +18,7 @@ interface TicketCardProps {
     event_id: string;
     user_id: string;
     ticket_type: string;
-    price: number;
+    price_paid: number;
     status: 'valid' | 'used' | 'cancelled' | 'expired';
     qr_code: string;
     purchase_date: string;
@@ -211,7 +211,7 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onExpand }) => {
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-500 uppercase tracking-wider">Price</p>
-            <p className="text-sm font-bold text-white">{formatPrice(ticket.price)}</p>
+            <p className="text-sm font-bold text-white">{formatPrice(ticket.price_paid)}</p>
           </div>
         </div>
 
