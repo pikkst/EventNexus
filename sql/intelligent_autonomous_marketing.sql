@@ -334,7 +334,6 @@ BEGIN
   -- Create actual campaign in campaigns table
   INSERT INTO campaigns (
     title,
-    description,
     user_id,
     status,
     objective,
@@ -348,7 +347,6 @@ BEGIN
     created_at
   ) VALUES (
     v_campaign_name,
-    v_campaign_description,
     p_admin_user_id,
     'Active',
     CASE v_strategy.strategy_type
