@@ -174,6 +174,7 @@ ALTER TABLE campaign_performance ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policy if it exists
 DROP POLICY IF EXISTS "Admin full access to campaign_performance" ON campaign_performance;
+DROP POLICY IF EXISTS "Organizers see own campaign performance" ON campaign_performance;
 
 -- Admin can see all performance data
 CREATE POLICY "Admin full access to campaign_performance" ON campaign_performance
@@ -181,17 +182,11 @@ CREATE POLICY "Admin full access to campaign_performance" ON campaign_performanc
     EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
   );
 
--- Organizers can see their own campaign performance
-DROP POLICY IF EXISTS "Organizers see own campaign performance" ON campaign_performance;
-
-CREATE POLICY "Organizers see own campaign performance" ON campaign_performance
+-- Organizers can see all campaign performance (no user_id in campaigns table)
+CREATE POLICY "Organizers see campaign performance" ON campaign_performance
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM campaigns c
-      WHERE c.id = campaign_performance.campaign_id
-      AND (c.user_id = auth.uid() OR EXISTS (
-        SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
-      ))
+      SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('organizer', 'admin')
     )
   );
 
