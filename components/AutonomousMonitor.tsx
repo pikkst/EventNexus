@@ -107,18 +107,38 @@ const AutonomousMonitor: React.FC<AutonomousMonitorProps> = ({ userId }) => {
         throw error;
       }
       
-      // Add result log
-      const newLog: AutonomousLog = {
-        id: Date.now().toString(),
-        timestamp: new Date().toISOString(),
-        action_type: 'operation_complete',
-        message: `Autonomous operations completed: ${result?.actions_taken?.campaigns_paused || 0} paused, ${result?.actions_taken?.campaigns_scaled || 0} scaled, ${result?.actions_taken?.campaigns_posted || 0} posted`,
-        details: result,
-        status: 'action_taken'
-      };
+      console.log('✅ Intelligent operations result:', result);
       
-      setLogs(prev => [newLog, ...prev]);
-      loadLogs(); // Refresh full logs
+      // If result contains logs array, display them directly
+      if (result?.logs && Array.isArray(result.logs)) {
+        const formattedLogs: AutonomousLog[] = result.logs.map((log: any) => ({
+          id: log.id,
+          timestamp: log.timestamp,
+          action_type: log.action_type,
+          campaign_id: log.campaign_id,
+          campaign_title: log.campaign_title,
+          message: log.message,
+          details: log.details,
+          status: log.status
+        }));
+        
+        setLogs(formattedLogs);
+        console.log('📊 Displaying', formattedLogs.length, 'logs from intelligent operations');
+      } else {
+        // Fallback: create summary log
+        const newLog: AutonomousLog = {
+          id: Date.now().toString(),
+          timestamp: new Date().toISOString(),
+          action_type: 'operation_complete',
+          message: `Intelligent operations completed - Strategy: ${result?.strategy?.type || 'unknown'} targeting ${result?.strategy?.target || 'unknown'}`,
+          details: result,
+          status: 'action_taken'
+        };
+        
+        setLogs(prev => [newLog, ...prev]);
+      }
+      
+      loadLogs(); // Refresh full logs from DB
     } catch (error) {
       console.error('Failed to run autonomous ops:', error);
       alert('Error running autonomous operations: ' + (error as Error).message);
