@@ -830,7 +830,9 @@ ALTER TABLE optimization_opportunities ENABLE ROW LEVEL SECURITY;
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Admin full access to campaign_schedules" ON campaign_schedules;
 DROP POLICY IF EXISTS "Admin full access to autonomous_logs" ON autonomous_logs;
+DROP POLICY IF EXISTS "Service role can insert logs" ON autonomous_logs;
 DROP POLICY IF EXISTS "Admin full access to autonomous_actions" ON autonomous_actions;
+DROP POLICY IF EXISTS "Service role can insert actions" ON autonomous_actions;
 DROP POLICY IF EXISTS "Admin full access to autonomous_rules" ON autonomous_rules;
 DROP POLICY IF EXISTS "Admin full access to optimization_opportunities" ON optimization_opportunities;
 
@@ -845,10 +847,18 @@ CREATE POLICY "Admin full access to autonomous_logs" ON autonomous_logs
     EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
   );
 
+-- Service role (backend functions) can insert logs
+CREATE POLICY "Service role can insert logs" ON autonomous_logs
+  FOR INSERT WITH CHECK (true);
+
 CREATE POLICY "Admin full access to autonomous_actions" ON autonomous_actions
   FOR ALL USING (
     EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
   );
+
+-- Service role (backend functions) can insert actions
+CREATE POLICY "Service role can insert actions" ON autonomous_actions
+  FOR INSERT WITH CHECK (true);
 
 CREATE POLICY "Admin full access to autonomous_rules" ON autonomous_rules
   FOR ALL USING (

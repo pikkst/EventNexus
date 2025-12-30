@@ -335,8 +335,7 @@ BEGIN
   INSERT INTO campaigns (
     title,
     status,
-    ai_metadata,
-    created_at
+    ai_metadata
   ) VALUES (
     v_campaign_name,
     'Active',
@@ -357,8 +356,7 @@ BEGIN
       'budget', 1000.00,
       'daily_budget', 50.00,
       'platforms', ARRAY['facebook', 'instagram', 'google']
-    ),
-    NOW()
+    )
   ) RETURNING id INTO v_campaign_id;
   
   -- Log this autonomous marketing action
