@@ -6,6 +6,7 @@ import { User, PlatformCampaign, SuccessStory, PressMention, PlatformMedia } fro
 import { getCampaigns, getTopOrganizers, OrganizerRatingStats, getSuccessStories, getPressMentions, getPlatformStats, getPlatformMedia } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import { SUBSCRIPTION_TIERS } from '../constants';
+import { sanitizeUrl, sanitizeVideoUrl } from '../utils/security';
 
 interface LandingPageProps {
   user: User | null;
@@ -444,16 +445,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
               <div className="relative bg-slate-950 flex items-center justify-center p-8 md:p-12">
                 {demoVideo.video_url ? (
                   <div className="relative w-full aspect-video bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden">
-                    <iframe
-                      src={demoVideo.video_url.includes('youtube.com') || demoVideo.video_url.includes('youtu.be') 
-                        ? demoVideo.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
-                        : demoVideo.video_url
-                      }
-                      title={demoVideo.title}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
+                    {sanitizeVideoUrl(demoVideo.video_url) ? (
+                      <iframe
+                        src={sanitizeVideoUrl(demoVideo.video_url) || ''}
+                        title={demoVideo.title}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        sandbox="allow-scripts allow-same-origin allow-presentation"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-slate-400">
+                        <p>Video unavailable</p>
+                      </div>
+                    )}
                     {demoVideo.duration && (
                       <div className="absolute bottom-6 left-6 right-6 bg-slate-950/80 backdrop-blur-md rounded-2xl p-4 border border-slate-800">
                         <p className="text-sm font-bold text-white">{demoVideo.title}</p>
@@ -635,38 +640,46 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pressMentions.map((mention) => (
-              <a
-                key={mention.id}
-                href={mention.article_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-slate-900/50 border border-slate-800 rounded-[24px] p-6 hover:border-blue-500/50 transition-all group block"
-              >
-                {mention.publication_logo_url && (
-                  <div className="mb-4 h-12 flex items-center">
-                    <img
-                      src={mention.publication_logo_url}
-                      alt={mention.publication_name}
-                      className="max-h-full max-w-full object-contain"
-                    />
+            {pressMentions.map((mention) => {
+              const safeUrl = sanitizeUrl(mention.article_url);
+              const Component = safeUrl ? 'a' : 'div';
+              const linkProps = safeUrl ? {
+                href: safeUrl,
+                target: '_blank' as const,
+                rel: 'noopener noreferrer nofollow',
+              } : {};
+              
+              return (
+                <Component
+                  key={mention.id}
+                  {...linkProps}
+                  className={`bg-slate-900/50 border border-slate-800 rounded-[24px] p-6 hover:border-blue-500/50 transition-all group block ${!safeUrl ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {mention.publication_logo_url && (
+                    <div className="mb-4 h-12 flex items-center">
+                      <img
+                        src={mention.publication_logo_url}
+                        alt={mention.publication_name}
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                  )}
+                  <p className="font-bold text-slate-500 text-xs uppercase tracking-wider mb-2">
+                    {mention.publication_name}
+                  </p>
+                  <h3 className="font-bold text-white mb-3 group-hover:text-blue-400 transition-colors line-clamp-2">
+                    {mention.article_title}
+                  </h3>
+                  {mention.excerpt && (
+                    <p className="text-sm text-slate-400 mb-4 line-clamp-3">{mention.excerpt}</p>
+                  )}
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>{new Date(mention.published_date).toLocaleDateString()}</span>
+                    <ExternalLink className="w-4 h-4 group-hover:text-blue-400 transition-colors" />
                   </div>
-                )}
-                <p className="font-bold text-slate-500 text-xs uppercase tracking-wider mb-2">
-                  {mention.publication_name}
-                </p>
-                <h3 className="font-bold text-white mb-3 group-hover:text-blue-400 transition-colors line-clamp-2">
-                  {mention.article_title}
-                </h3>
-                {mention.excerpt && (
-                  <p className="text-sm text-slate-400 mb-4 line-clamp-3">{mention.excerpt}</p>
-                )}
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>{new Date(mention.published_date).toLocaleDateString()}</span>
-                  <ExternalLink className="w-4 h-4 group-hover:text-blue-400 transition-colors" />
-                </div>
-              </a>
-            ))}
+                </Component>
+              );
+            })}
           </div>
         </section>
       )}
