@@ -98,9 +98,9 @@ const AutonomousMonitor: React.FC<AutonomousMonitorProps> = ({ userId }) => {
         console.log('✅ Synced campaigns:', syncResult?.synced_campaigns || 0);
       }
 
-      // Then run autonomous operations
+      // Run INTELLIGENT autonomous operations (includes strategic marketing)
       const { data: result, error } = await supabase
-        .rpc('run_autonomous_operations_with_posting');
+        .rpc('run_intelligent_autonomous_operations');
 
       if (error) {
         console.error('Autonomous ops error:', error);
