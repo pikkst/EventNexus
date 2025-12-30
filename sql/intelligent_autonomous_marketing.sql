@@ -300,13 +300,84 @@ AS $$
 DECLARE
   v_strategy RECORD;
   v_intelligence JSONB;
+  v_action_id UUID;
   v_campaign_id UUID;
+  v_campaign_name TEXT;
+  v_campaign_description TEXT;
 BEGIN
   -- Get strategic recommendation
   SELECT * INTO v_strategy FROM get_strategic_recommendation() LIMIT 1;
   
+  -- Generate campaign name and description based on strategy
+  v_campaign_name := CASE v_strategy.strategy_type
+    WHEN 'acquisition' THEN 
+      CASE v_strategy.target_audience
+        WHEN 'creators' THEN '🎯 Creator Acquisition - Zero Fees, AI Tools'
+        ELSE '🚀 Platform Growth - Join EventNexus'
+      END
+    WHEN 'activation' THEN '💳 Convert Browsers to Buyers - Easy Booking'
+    WHEN 'engagement' THEN '🎉 Discover Amazing Events Near You'
+    ELSE '🌟 EventNexus Platform Promotion'
+  END;
+  
+  v_campaign_description := CASE v_strategy.strategy_type
+    WHEN 'acquisition' THEN 
+      CASE v_strategy.target_audience
+        WHEN 'creators' THEN 'Target event organizers, venue owners, and promoters. Highlight: Zero listing fees, AI marketing tools, 95% revenue retention, Stripe direct payouts.'
+        ELSE 'Grow platform user base with compelling value proposition.'
+      END
+    WHEN 'activation' THEN 'Drive conversions by highlighting secure Stripe payments, instant QR tickets, and transparent pricing.'
+    WHEN 'engagement' THEN 'Promote active events to increase engagement and ticket sales.'
+    ELSE 'General platform promotion campaign.'
+  END;
+  
+  -- Create actual campaign in campaigns table
+  INSERT INTO campaigns (
+    name,
+    description,
+    user_id,
+    status,
+    objective,
+    target_audience,
+    budget,
+    daily_budget,
+    start_date,
+    end_date,
+    platforms,
+    ai_metadata,
+    created_at
+  ) VALUES (
+    v_campaign_name,
+    v_campaign_description,
+    p_admin_user_id,
+    'Active',
+    CASE v_strategy.strategy_type
+      WHEN 'acquisition' THEN 'conversions'
+      WHEN 'activation' THEN 'conversions'
+      WHEN 'engagement' THEN 'engagement'
+      ELSE 'awareness'
+    END,
+    v_strategy.target_audience,
+    1000.00, -- Default budget €1000
+    50.00,   -- Daily budget €50
+    NOW(),
+    NOW() + INTERVAL '30 days',
+    ARRAY['facebook', 'instagram', 'google'],
+    jsonb_build_object(
+      'autonomous', true,
+      'strategy_type', v_strategy.strategy_type,
+      'target_audience', v_strategy.target_audience,
+      'rationale', v_strategy.rationale,
+      'confidence_score', v_strategy.confidence_score,
+      'platform_intelligence', v_strategy.key_metrics,
+      'created_by', 'intelligent_autonomous_marketing'
+    ),
+    NOW()
+  ) RETURNING id INTO v_campaign_id;
+  
   -- Log this autonomous marketing action
   INSERT INTO autonomous_actions (
+    campaign_id,
     action_type,
     reason,
     previous_state,
@@ -315,12 +386,15 @@ BEGIN
     expected_impact,
     status
   ) VALUES (
+    v_campaign_id,
     'creative_refreshed',
     'Autonomous strategic campaign creation: ' || v_strategy.rationale,
     jsonb_build_object(
       'platform_state', v_strategy.key_metrics
     ),
     jsonb_build_object(
+      'campaign_id', v_campaign_id,
+      'campaign_name', v_campaign_name,
       'strategy_type', v_strategy.strategy_type,
       'target_audience', v_strategy.target_audience,
       'admin_user_id', p_admin_user_id
@@ -333,21 +407,22 @@ BEGIN
       WHEN 'engagement' THEN 'Expected: 400 engagements, €800 revenue'
       ELSE 'Expected: 250 engagements, €600 revenue'
     END,
-    'pending'
-  ) RETURNING id INTO v_campaign_id;
+    'completed'
+  ) RETURNING id INTO v_action_id;
   
-  -- Return data for Edge Function to create actual campaign with AI
+  -- Return success with campaign details
   RETURN jsonb_build_object(
     'success', true,
-    'action_id', v_campaign_id,
+    'campaign_id', v_campaign_id,
+    'campaign_name', v_campaign_name,
+    'action_id', v_action_id,
     'strategy', jsonb_build_object(
       'type', v_strategy.strategy_type,
       'target', v_strategy.target_audience,
       'rationale', v_strategy.rationale,
       'confidence', v_strategy.confidence_score
     ),
-    'intelligence', v_strategy.key_metrics,
-    'next_step', 'Call Edge Function to generate campaign content with AI'
+    'intelligence', v_strategy.key_metrics
   );
 END;
 $$ LANGUAGE plpgsql;
@@ -478,9 +553,10 @@ BEGIN
         
         PERFORM log_autonomous_action(
           'campaign_created',
-          NULL,
-          NULL,
-          format('✨ Strategic campaign scheduled: %s campaign targeting %s', 
+          (v_marketing_result->>'campaign_id')::UUID,
+          v_marketing_result->>'campaign_name',
+          format('✨ Campaign created: "%s" - %s targeting %s', 
+            v_marketing_result->>'campaign_name',
             v_strategy.strategy_type, 
             v_strategy.target_audience
           ),
