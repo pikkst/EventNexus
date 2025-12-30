@@ -614,7 +614,7 @@ BEGIN
     )
     INTO v_logs
     FROM autonomous_logs
-    WHERE timestamp >= v_intelligence->>'captured_at';
+    WHERE timestamp >= (v_intelligence->>'captured_at')::TIMESTAMPTZ;
   END;
   
   -- Return combined results with logs
