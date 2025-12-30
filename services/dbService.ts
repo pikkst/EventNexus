@@ -873,6 +873,7 @@ export const getUserTickets = async (userId: string) => {
     `)
     .eq('user_id', userId)
     .eq('payment_status', 'paid')  // Only return paid/confirmed tickets
+    .is('archived_at', null)  // Exclude archived tickets
     .order('purchase_date', { ascending: false });  // Use purchase_date for consistency
   
   if (error) {
@@ -3703,4 +3704,79 @@ export const getUserCodeRedemptions = async (userId: string): Promise<CodeRedemp
     console.error('Error in getUserCodeRedemptions:', error);
     return [];
   }
+};
+
+// Ticket Archive Functions
+
+// Archive a ticket (soft delete - only available for completed events)
+export const archiveTicket = async (
+  ticketId: string,
+  userId: string
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const { data, error } = await supabase.rpc('archive_ticket', {
+      p_ticket_id: ticketId,
+      p_user_id: userId
+    });
+
+    if (error) {
+      console.error('Error archiving ticket:', error);
+      return { success: false, message: error.message };
+    }
+
+    return data || { success: false, message: 'Unknown error occurred' };
+  } catch (error) {
+    console.error('Error in archiveTicket:', error);
+    return { success: false, message: 'Failed to archive ticket' };
+  }
+};
+
+// Restore an archived ticket
+export const restoreTicket = async (
+  ticketId: string,
+  userId: string
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const { data, error } = await supabase.rpc('restore_ticket', {
+      p_ticket_id: ticketId,
+      p_user_id: userId
+    });
+
+    if (error) {
+      console.error('Error restoring ticket:', error);
+      return { success: false, message: error.message };
+    }
+
+    return data || { success: false, message: 'Unknown error occurred' };
+  } catch (error) {
+    console.error('Error in restoreTicket:', error);
+    return { success: false, message: 'Failed to restore ticket' };
+  }
+};
+
+// Get user's archived tickets
+export const getArchivedTickets = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('tickets')
+    .select(`
+      *,
+      event:event_id(
+        id,
+        name,
+        date,
+        time,
+        location,
+        image
+      )
+    `)
+    .eq('user_id', userId)
+    .not('archived_at', 'is', null)
+    .order('archived_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching archived tickets:', error);
+    return [];
+  }
+  
+  return data || [];
 };
