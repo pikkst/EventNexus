@@ -40,7 +40,7 @@ import {
   ArchiveRestore
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
-import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, verifyConnectOnboarding, deleteEvent, archiveTicket, restoreTicket, getArchivedTickets } from '../services/dbService';
+import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, verifyConnectOnboarding, deleteEvent, archiveTicket, restoreTicket, getArchivedTickets, archiveEvent, restoreEvent, getArchivedEvents } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import TicketCard from './TicketCard';
 // TicketViewModal removed; using dedicated TicketViewPage route
@@ -66,6 +66,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
   const [showArchivedTickets, setShowArchivedTickets] = useState(false);
   // selectedTicket state removed; using navigation to ticket page
   const [organizedEvents, setOrganizedEvents] = useState<EventNexusEvent[]>([]);
+  const [archivedEvents, setArchivedEvents] = useState<EventNexusEvent[]>([]);
+  const [showArchivedEvents, setShowArchivedEvents] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [showBetaReport, setShowBetaReport] = useState(false);
@@ -99,6 +101,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
       const events = await getOrganizerEvents(user.id);
       setOrganizedEvents(events || []);
     };
+    const loadArchivedEvents = async () => {
+      const archived = await getArchivedEvents(user.id);
+      setArchivedEvents(archived || []);
+    };
     const loadConnectStatus = async () => {
       const status = await checkConnectStatus(user.id);
       if (status) {
@@ -108,6 +114,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
     loadTickets();
     loadArchivedTickets();
     loadOrganizedEvents();
+    loadArchivedEvents();
     // All users can access Stripe Connect (needed for paid event organizers regardless of tier)
     loadConnectStatus();
   }, [user.id]);
@@ -261,6 +268,54 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
     } catch (error) {
       console.error('Error restoring ticket:', error);
       alert('Failed to restore ticket. Please try again.');
+    }
+  };
+
+  const handleArchiveEvent = async (eventId: string, eventName: string) => {
+    if (!confirm(`Archive event "${eventName}"? You can restore it later from the archived view.`)) {
+      return;
+    }
+
+    try {
+      const result = await archiveEvent(eventId, user.id);
+      if (result.success) {
+        // Move event from active to archived
+        const event = organizedEvents.find(e => e.id === eventId);
+        if (event) {
+          setOrganizedEvents(prev => prev.filter(e => e.id !== eventId));
+          setArchivedEvents(prev => [event, ...prev]);
+        }
+        alert('Event archived successfully');
+      } else {
+        alert(result.message || 'Failed to archive event');
+      }
+    } catch (error) {
+      console.error('Error archiving event:', error);
+      alert('Failed to archive event. Please try again.');
+    }
+  };
+
+  const handleRestoreEvent = async (eventId: string, eventName: string) => {
+    if (!confirm(`Restore event "${eventName}"?`)) {
+      return;
+    }
+
+    try {
+      const result = await restoreEvent(eventId, user.id);
+      if (result.success) {
+        // Move event from archived to active
+        const event = archivedEvents.find(e => e.id === eventId);
+        if (event) {
+          setArchivedEvents(prev => prev.filter(e => e.id !== eventId));
+          setOrganizedEvents(prev => [event, ...prev]);
+        }
+        alert('Event restored successfully');
+      } else {
+        alert(result.message || 'Failed to restore event');
+      }
+    } catch (error) {
+      console.error('Error restoring event:', error);
+      alert('Failed to restore event. Please try again.');
     }
   };
 
@@ -746,87 +801,184 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
           {isPro && (
             <div className="bg-slate-900 border border-slate-800 rounded-[40px] overflow-hidden shadow-2xl">
               <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md">
-                <h3 className="font-black text-xl tracking-tight flex items-center gap-3">
-                  <div className="p-2 bg-indigo-600/20 rounded-xl">
-                    <Calendar className="w-5 h-5 text-indigo-400" />
-                  </div>
-                  My Organized Events
-                </h3>
-                <span className="text-xs font-bold text-slate-500">{organizedEvents.length} events</span>
+                <div className="flex items-center gap-4">
+                  <h3 className="font-black text-xl tracking-tight flex items-center gap-3">
+                    <div className="p-2 bg-indigo-600/20 rounded-xl">
+                      <Calendar className="w-5 h-5 text-indigo-400" />
+                    </div>
+                    My Organized Events
+                  </h3>
+                  <button
+                    onClick={() => setShowArchivedEvents(!showArchivedEvents)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${
+                      showArchivedEvents 
+                        ? 'bg-slate-700/50 text-slate-400 hover:bg-slate-700' 
+                        : 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30'
+                    }`}
+                  >
+                    {showArchivedEvents ? (
+                      <>
+                        <ArchiveRestore className="w-4 h-4" />
+                        Show Active
+                      </>
+                    ) : (
+                      <>
+                        <Archive className="w-4 h-4" />
+                        Show Archived ({archivedEvents.length})
+                      </>
+                    )}
+                  </button>
+                </div>
+                <span className="text-xs font-bold text-slate-500">
+                  {showArchivedEvents ? archivedEvents.length : organizedEvents.length} events
+                </span>
               </div>
               <div className="divide-y divide-slate-800">
-                {organizedEvents.length > 0 ? (
-                  organizedEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      className="p-6 hover:bg-slate-800/30 transition-all group"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div 
-                          className="flex-1 cursor-pointer"
-                          onClick={() => navigate(`/event/${event.id}`)}
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">
-                              {event.category}
-                            </span>
-                            <span className="text-xs text-slate-600">•</span>
-                            <span className="text-xs text-slate-500 font-medium">
-                              {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </span>
-                          </div>
-                          <h4 className="font-bold text-lg mb-1 group-hover:text-indigo-400 transition-colors">{event.name}</h4>
-                          <div className="flex items-center gap-4 text-sm text-slate-500">
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              {event.location?.city || 'Location TBA'}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <TicketIcon className="w-4 h-4" />
-                              {event.attendeesCount || 0}/{event.maxAttendees || 0}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {event.attendeesCount === 0 && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteEvent(event.id, event.name, event.attendeesCount);
-                              }}
-                              disabled={isDeletingEvent === event.id}
-                              className="p-2 bg-red-600/10 hover:bg-red-600/20 border border-red-600/30 rounded-xl transition-all disabled:opacity-50 group/del"
-                              title="Delete event (0 tickets sold)"
-                            >
-                              {isDeletingEvent === event.id ? (
-                                <RefreshCw className="w-4 h-4 text-red-400 animate-spin" />
-                              ) : (
-                                <XOctagon className="w-4 h-4 text-red-400 group-hover/del:text-red-300" />
-                              )}
-                            </button>
-                          )}
-                          <button
+                {showArchivedEvents ? (
+                  archivedEvents.length > 0 ? (
+                    archivedEvents.map((event) => (
+                      <div
+                        key={event.id}
+                        className="p-6 hover:bg-slate-800/30 transition-all group"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div 
+                            className="flex-1 cursor-pointer"
                             onClick={() => navigate(`/event/${event.id}`)}
-                            className="p-2 hover:bg-slate-700/50 rounded-xl transition-all"
                           >
-                            <ArrowRight className="w-5 h-5 text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                {event.category}
+                              </span>
+                              <span className="text-xs text-slate-600">•</span>
+                              <span className="text-xs text-slate-500 font-medium">
+                                {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </span>
+                            </div>
+                            <h4 className="font-bold text-lg mb-1 group-hover:text-indigo-400 transition-colors">{event.name}</h4>
+                            <div className="flex items-center gap-4 text-sm text-slate-500">
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                {event.location?.city || 'Location TBA'}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <TicketIcon className="w-4 h-4" />
+                                {event.attendeesCount || 0}/{event.maxAttendees || 0}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRestoreEvent(event.id, event.name);
+                            }}
+                            className="p-2 bg-green-600/20 hover:bg-green-600/30 rounded-xl transition-all"
+                            title="Restore event"
+                          >
+                            <ArchiveRestore className="w-4 h-4 text-green-400" />
                           </button>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="p-12 text-center text-slate-500">
+                      <Archive className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p className="font-bold">No archived events</p>
+                      <p className="text-sm mt-2">Archived events will appear here</p>
                     </div>
-                  ))
+                  )
                 ) : (
-                  <div className="p-12 text-center text-slate-500">
-                    <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p className="font-bold">No events organized yet</p>
-                    <p className="text-sm mt-2">Create your first event to get started</p>
-                    <button
-                      onClick={() => navigate('/create-event')}
-                      className="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold text-sm transition-all"
-                    >
-                      Create Event
-                    </button>
-                  </div>
+                  organizedEvents.length > 0 ? (
+                    organizedEvents.map((event) => {
+                      // Check if event is completed (ended at least 1 day ago)
+                      const eventEndDate = event.end_date || event.date;
+                      const isEventCompleted = eventEndDate && new Date(eventEndDate) < new Date(Date.now() - 24 * 60 * 60 * 1000);
+                      
+                      return (
+                        <div
+                          key={event.id}
+                          className="p-6 hover:bg-slate-800/30 transition-all group"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div 
+                              className="flex-1 cursor-pointer"
+                              onClick={() => navigate(`/event/${event.id}`)}
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">
+                                  {event.category}
+                                </span>
+                                <span className="text-xs text-slate-600">•</span>
+                                <span className="text-xs text-slate-500 font-medium">
+                                  {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </span>
+                              </div>
+                              <h4 className="font-bold text-lg mb-1 group-hover:text-indigo-400 transition-colors">{event.name}</h4>
+                              <div className="flex items-center gap-4 text-sm text-slate-500">
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="w-4 h-4" />
+                                  {event.location?.city || 'Location TBA'}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <TicketIcon className="w-4 h-4" />
+                                  {event.attendeesCount || 0}/{event.maxAttendees || 0}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {isEventCompleted && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleArchiveEvent(event.id, event.name);
+                                  }}
+                                  className="p-2 bg-slate-700/50 hover:bg-slate-700 rounded-xl transition-all"
+                                  title="Archive event"
+                                >
+                                  <Archive className="w-4 h-4 text-slate-400 group-hover:text-slate-300" />
+                                </button>
+                              )}
+                              {event.attendeesCount === 0 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteEvent(event.id, event.name, event.attendeesCount);
+                                  }}
+                                  disabled={isDeletingEvent === event.id}
+                                  className="p-2 bg-red-600/10 hover:bg-red-600/20 border border-red-600/30 rounded-xl transition-all disabled:opacity-50 group/del"
+                                  title="Delete event (0 tickets sold)"
+                                >
+                                  {isDeletingEvent === event.id ? (
+                                    <RefreshCw className="w-4 h-4 text-red-400 animate-spin" />
+                                  ) : (
+                                    <XOctagon className="w-4 h-4 text-red-400 group-hover/del:text-red-300" />
+                                  )}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => navigate(`/event/${event.id}`)}
+                                className="p-2 hover:bg-slate-700/50 rounded-xl transition-all"
+                              >
+                                <ArrowRight className="w-5 h-5 text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="p-12 text-center text-slate-500">
+                      <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p className="font-bold">No events organized yet</p>
+                      <p className="text-sm mt-2">Create your first event to get started</p>
+                      <button
+                        onClick={() => navigate('/create-event')}
+                        className="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold text-sm transition-all"
+                      >
+                        Create Event
+                      </button>
+                    </div>
+                  )
                 )}
               </div>
             </div>

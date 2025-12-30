@@ -46,6 +46,7 @@ export const getOrganizerEvents = async (organizerId: string): Promise<EventNexu
     .from('events')
     .select('*')
     .eq('organizer_id', organizerId)
+    .is('archived_at', null)
     .order('date', { ascending: true });
   
   if (error) {
@@ -3779,4 +3780,69 @@ export const getArchivedTickets = async (userId: string) => {
   }
   
   return data || [];
+};
+
+// Event Archive Functions
+
+// Archive an event (soft delete - only available for completed events)
+export const archiveEvent = async (
+  eventId: string,
+  userId: string
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const { data, error } = await supabase.rpc('archive_event', {
+      p_event_id: eventId,
+      p_user_id: userId
+    });
+
+    if (error) {
+      console.error('Error archiving event:', error);
+      return { success: false, message: error.message };
+    }
+
+    return data || { success: false, message: 'Unknown error occurred' };
+  } catch (error) {
+    console.error('Error in archiveEvent:', error);
+    return { success: false, message: 'Failed to archive event' };
+  }
+};
+
+// Restore an archived event
+export const restoreEvent = async (
+  eventId: string,
+  userId: string
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const { data, error } = await supabase.rpc('restore_event', {
+      p_event_id: eventId,
+      p_user_id: userId
+    });
+
+    if (error) {
+      console.error('Error restoring event:', error);
+      return { success: false, message: error.message };
+    }
+
+    return data || { success: false, message: 'Unknown error occurred' };
+  } catch (error) {
+    console.error('Error in restoreEvent:', error);
+    return { success: false, message: 'Failed to restore event' };
+  }
+};
+
+// Get organizer's archived events
+export const getArchivedEvents = async (organizerId: string): Promise<EventNexusEvent[]> => {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('organizer_id', organizerId)
+    .not('archived_at', 'is', null)
+    .order('archived_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching archived events:', error);
+    return [];
+  }
+  
+  return (data || []).map(transformEventFromDB);
 };
