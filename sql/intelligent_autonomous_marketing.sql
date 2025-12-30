@@ -411,12 +411,19 @@ CREATE INDEX IF NOT EXISTS idx_campaigns_ai_metadata
 ALTER TABLE marketing_intelligence_log ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Admin access to marketing intelligence" ON marketing_intelligence_log;
+DROP POLICY IF EXISTS "Service role can insert intelligence" ON marketing_intelligence_log;
 
+-- Admin can see all
 CREATE POLICY "Admin access to marketing intelligence" 
   ON marketing_intelligence_log
   FOR ALL USING (
     EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
   );
+
+-- Service role (backend functions) can insert
+CREATE POLICY "Service role can insert intelligence" 
+  ON marketing_intelligence_log
+  FOR INSERT WITH CHECK (true);
 
 -- ============================================================
 -- Test the system
