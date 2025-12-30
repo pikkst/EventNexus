@@ -31,6 +31,7 @@ export const getEvents = async (): Promise<EventNexusEvent[]> => {
     .from('events')
     .select('*')
     .eq('status', 'active')
+    .is('archived_at', null)
     .order('date', { ascending: true });
   
   if (error) {
@@ -47,6 +48,7 @@ export const getOrganizerEvents = async (organizerId: string): Promise<EventNexu
     .select('*')
     .eq('organizer_id', organizerId)
     .is('archived_at', null)
+    .eq('status', 'active')
     .order('date', { ascending: true });
   
   if (error) {
@@ -3845,4 +3847,40 @@ export const getArchivedEvents = async (organizerId: string): Promise<EventNexus
   }
   
   return (data || []).map(transformEventFromDB);
+};
+
+// Check if event is completed and cannot accept ticket purchases
+export const isEventCompleted = async (eventId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc('is_event_completed', {
+      p_event_id: eventId
+    });
+
+    if (error) {
+      console.error('Error checking event completion:', error);
+      return false;
+    }
+
+    return data || false;
+  } catch (error) {
+    console.error('Error in isEventCompleted:', error);
+    return false;
+  }
+};
+
+// Manually trigger auto-archiving of completed events (admin function)
+export const runAutoArchiveCompletedEvents = async (): Promise<number> => {
+  try {
+    const { data, error } = await supabase.rpc('auto_archive_completed_events');
+
+    if (error) {
+      console.error('Error running auto-archive:', error);
+      return 0;
+    }
+
+    return data || 0;
+  } catch (error) {
+    console.error('Error in runAutoArchiveCompletedEvents:', error);
+    return 0;
+  }
 };

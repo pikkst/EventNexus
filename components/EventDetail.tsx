@@ -19,7 +19,7 @@ import {
   Star,
   Edit3
 } from 'lucide-react';
-import { getEvents, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates } from '../services/dbService';
+import { getEvents, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates, isEventCompleted } from '../services/dbService';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
 
@@ -46,6 +46,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [ticketQuantities, setTicketQuantities] = useState<{ [key: string]: number }>({});
   const [organizerPaymentReady, setOrganizerPaymentReady] = useState(false);
   const [checkingOrganizerStatus, setCheckingOrganizerStatus] = useState(true);
+  const [eventCompleted, setEventCompleted] = useState(false);
 
   // Get available languages from event translations
   const availableLanguages = React.useMemo(() => {
@@ -88,6 +89,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         // Load ticket templates
         const templates = await getTicketTemplates(id);
         setTicketTemplates(templates);
+        
+        // Check if event is completed
+        const completed = await isEventCompleted(id);
+        setEventCompleted(completed);
         
         // Load organizer name and payment status
         try {
@@ -534,8 +539,25 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                 <div className="space-y-3 mb-6 relative z-10">
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Available Tickets</p>
                   
+                  {/* Event Completed Warning */}
+                  {eventCompleted && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                          <Clock className="w-4 h-4 text-red-500" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-red-400 text-sm mb-1">Event Has Ended</p>
+                          <p className="text-xs text-red-300/80 leading-relaxed">
+                            This event has already concluded. Ticket sales are no longer available. Thank you for your interest!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Payment Setup Warning */}
-                  {!checkingOrganizerStatus && !organizerPaymentReady && (
+                  {!eventCompleted && !checkingOrganizerStatus && !organizerPaymentReady && (
                     <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-4">
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
@@ -612,20 +634,22 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                           
                           <button 
                             onClick={() => handlePurchaseTicket(template)}
-                            disabled={isPurchasing || quantity === 0 || !organizerPaymentReady}
+                            disabled={isPurchasing || quantity === 0 || !organizerPaymentReady || eventCompleted}
                             className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
                               event.isFeatured
                                 ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600'
                                 : 'bg-indigo-600 hover:bg-indigo-700'
                             }`}
                           >
-                            {!organizerPaymentReady 
-                              ? 'Not Available' 
-                              : quantity === 0 
-                                ? 'Select quantity' 
-                                : isPurchasing 
-                                  ? 'Processing...' 
-                                  : `Buy ${quantity} for €${(template.price * quantity).toFixed(2)}`
+                            {eventCompleted
+                              ? 'Event Ended'
+                              : !organizerPaymentReady 
+                                ? 'Not Available' 
+                                : quantity === 0 
+                                  ? 'Select quantity' 
+                                  : isPurchasing 
+                                    ? 'Processing...' 
+                                    : `Buy ${quantity} for €${(template.price * quantity).toFixed(2)}`
                             }
                           </button>
                         </div>
