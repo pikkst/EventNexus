@@ -32,7 +32,9 @@ CREATE TABLE IF NOT EXISTS marketing_intelligence_log (
 -- Captures current platform state for strategic analysis
 -- ============================================================
 CREATE OR REPLACE FUNCTION capture_platform_intelligence()
-RETURNS JSONB AS $$
+RETURNS JSONB
+SECURITY DEFINER
+AS $$
 DECLARE
   v_total_events INTEGER;
   v_active_events INTEGER;
@@ -178,7 +180,9 @@ RETURNS TABLE(
   rationale TEXT,
   confidence_score DECIMAL,
   key_metrics JSONB
-) AS $$
+)
+SECURITY DEFINER
+AS $$
 DECLARE
   v_intelligence JSONB;
 BEGIN
@@ -290,7 +294,9 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION auto_create_strategic_campaign(
   p_admin_user_id UUID
 )
-RETURNS JSONB AS $$
+RETURNS JSONB
+SECURITY DEFINER
+AS $$
 DECLARE
   v_strategy RECORD;
   v_intelligence JSONB;
@@ -351,27 +357,115 @@ $$ LANGUAGE plpgsql;
 -- Enhanced autonomous operations with strategic marketing
 -- ============================================================
 CREATE OR REPLACE FUNCTION run_intelligent_autonomous_operations()
-RETURNS JSONB AS $$
+RETURNS JSONB
+SECURITY DEFINER
+AS $$
 DECLARE
   v_standard_result JSONB;
   v_marketing_result JSONB;
   v_intelligence JSONB;
+  v_strategy RECORD;
 BEGIN
+  -- Log intelligent marketing start
+  PERFORM log_autonomous_action(
+    'intelligent_analysis_start',
+    NULL,
+    NULL,
+    '🤖 Starting intelligent autonomous operations...',
+    NULL,
+    'checking'
+  );
+  
+  -- Capture platform intelligence
+  PERFORM log_autonomous_action(
+    'platform_analysis',
+    NULL,
+    NULL,
+    '📊 Analyzing platform state...',
+    NULL,
+    'checking'
+  );
+  
+  v_intelligence := capture_platform_intelligence();
+  
+  -- Get strategic recommendation
+  SELECT * INTO v_strategy FROM get_strategic_recommendation() LIMIT 1;
+  
+  -- Log platform intelligence findings
+  PERFORM log_autonomous_action(
+    'intelligence_captured',
+    NULL,
+    NULL,
+    format('📈 Platform snapshot: %s events, %s organizers, %s users', 
+      v_intelligence->>'total_events',
+      v_intelligence->>'total_organizers', 
+      v_intelligence->>'total_users'
+    ),
+    jsonb_build_object(
+      'total_events', v_intelligence->>'total_events',
+      'active_events', v_intelligence->>'active_events',
+      'total_organizers', v_intelligence->>'total_organizers',
+      'total_users', v_intelligence->>'total_users',
+      'conversion_rate', v_intelligence->>'conversion_rate'
+    ),
+    'action_taken'
+  );
+  
+  -- Log strategic recommendation
+  IF (v_intelligence->>'total_events')::INTEGER < 100 OR 
+     (v_intelligence->>'total_organizers')::INTEGER < 20 THEN
+    PERFORM log_autonomous_action(
+      'early_stage_detected',
+      NULL,
+      NULL,
+      format('🚨 EARLY STAGE DETECTED! Only %s organizers created %s events. Platform needs SUPPLY before DEMAND.',
+        v_intelligence->>'total_organizers',
+        v_intelligence->>'total_events'
+      ),
+      jsonb_build_object(
+        'stage', 'early',
+        'strategy', v_strategy.strategy_type,
+        'target', v_strategy.target_audience
+      ),
+      'action_taken'
+    );
+  END IF;
+  
+  PERFORM log_autonomous_action(
+    'strategy_recommendation',
+    NULL,
+    NULL,
+    format('💡 AI Strategy: %s targeting %s', 
+      UPPER(v_strategy.strategy_type), 
+      v_strategy.target_audience
+    ),
+    jsonb_build_object(
+      'strategy_type', v_strategy.strategy_type,
+      'target_audience', v_strategy.target_audience,
+      'rationale', v_strategy.rationale,
+      'confidence_score', v_strategy.confidence_score
+    ),
+    'action_taken'
+  );
+  
   -- Run standard autonomous operations (pause/scale/post)
   SELECT * INTO v_standard_result FROM run_autonomous_operations_with_posting();
   
-  -- Capture platform intelligence
-  v_intelligence := capture_platform_intelligence();
-  
   -- Check if we should create a strategic marketing campaign
-  -- Only create if:
-  -- 1. No campaigns created in last 24 hours
-  -- 2. Platform has meaningful activity
   IF NOT EXISTS (
     SELECT 1 FROM campaigns 
     WHERE created_at > NOW() - INTERVAL '24 hours'
       AND ai_metadata IS NOT NULL
-  ) AND (v_intelligence->>'total_events')::INTEGER > 5 THEN
+  ) AND (v_intelligence->>'total_events')::INTEGER >= 0 THEN
+    
+    PERFORM log_autonomous_action(
+      'campaign_creation_start',
+      NULL,
+      NULL,
+      '✅ Creating strategic marketing campaign...',
+      NULL,
+      'checking'
+    );
     
     -- Get admin user for campaign creation
     DECLARE
@@ -381,17 +475,85 @@ BEGIN
       
       IF v_admin_id IS NOT NULL THEN
         v_marketing_result := auto_create_strategic_campaign(v_admin_id);
+        
+        PERFORM log_autonomous_action(
+          'campaign_created',
+          NULL,
+          NULL,
+          format('✨ Strategic campaign scheduled: %s campaign targeting %s', 
+            v_strategy.strategy_type, 
+            v_strategy.target_audience
+          ),
+          v_marketing_result,
+          'action_taken'
+        );
       END IF;
     END;
+  ELSE
+    PERFORM log_autonomous_action(
+      'campaign_skipped',
+      NULL,
+      NULL,
+      '⏭️ Campaign creation skipped - recent campaign exists',
+      jsonb_build_object('reason', 'Campaign created in last 24h'),
+      'no_action'
+    );
   END IF;
   
-  -- Return combined results
+  -- Final summary
+  PERFORM log_autonomous_action(
+    'intelligent_operations_complete',
+    NULL,
+    NULL,
+    format('✅ Intelligent operations complete - Strategy: %s targeting %s', 
+      v_strategy.strategy_type, 
+      v_strategy.target_audience
+    ),
+    jsonb_build_object(
+      'platform_intelligence', v_intelligence,
+      'strategy', jsonb_build_object(
+        'type', v_strategy.strategy_type,
+        'target', v_strategy.target_audience,
+        'confidence', v_strategy.confidence_score
+      )
+    ),
+    'action_taken'
+  );
+  
+  -- Collect all logs created during this run
+  DECLARE
+    v_logs JSONB;
+  BEGIN
+    SELECT jsonb_agg(
+      jsonb_build_object(
+        'id', id,
+        'timestamp', timestamp,
+        'action_type', action_type,
+        'campaign_id', campaign_id,
+        'campaign_title', campaign_title,
+        'message', message,
+        'details', details,
+        'status', status
+      ) ORDER BY timestamp ASC
+    )
+    INTO v_logs
+    FROM autonomous_logs
+    WHERE timestamp >= v_intelligence->>'captured_at';
+  END;
+  
+  -- Return combined results with logs
   RETURN jsonb_build_object(
     'success', true,
     'timestamp', NOW(),
     'standard_operations', v_standard_result,
     'intelligent_marketing', COALESCE(v_marketing_result, jsonb_build_object('skipped', true, 'reason', 'Recent campaign exists or low activity')),
-    'platform_intelligence', v_intelligence
+    'platform_intelligence', v_intelligence,
+    'strategy', jsonb_build_object(
+      'type', v_strategy.strategy_type,
+      'target', v_strategy.target_audience,
+      'rationale', v_strategy.rationale
+    ),
+    'logs', COALESCE(v_logs, '[]'::jsonb)
   );
 END;
 $$ LANGUAGE plpgsql;
