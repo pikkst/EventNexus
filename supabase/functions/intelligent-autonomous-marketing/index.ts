@@ -106,6 +106,9 @@ serve(async (req) => {
         if (!campError && campaign) {
           console.log('✅ Campaign created:', campaign.id);
           
+          // Sync to performance table immediately
+          await supabase.rpc('sync_campaign_to_performance', { p_campaign_id: campaign.id });
+          
           campaignResult = {
             campaign_id: campaign.id,
             status: 'created',
@@ -135,11 +138,18 @@ serve(async (req) => {
       console.log('⏭️ Skipping campaign creation - recent campaign exists or criteria not met');
     }
 
-    // Step 5: Monitor and optimize existing campaigns
+    // Step 5: Sync campaign metrics to performance table
+    console.log('🔄 Syncing campaign metrics to performance table...');
+    const { data: syncResult } = await supabase
+      .rpc('sync_all_campaigns_to_performance');
+    
+    console.log('✅ Synced campaigns:', syncResult?.synced_campaigns || 0);
+
+    // Step 6: Monitor and optimize existing campaigns
     console.log('📈 Step 2: Monitoring existing campaigns...');
     const optimizationResults = await monitorCampaigns(supabase);
 
-    // Step 6: Run standard autonomous operations (pause/scale/post)
+    // Step 7: Run standard autonomous operations (pause/scale/post)
     console.log('⚙️ Step 3: Running standard autonomous operations...');
     const { data: opsResult } = await supabase
       .rpc('run_autonomous_operations_with_posting');
@@ -159,6 +169,7 @@ serve(async (req) => {
         actions: {
           campaign_created: campaignResult !== null,
           campaign_result: campaignResult,
+          campaigns_synced: syncResult?.synced_campaigns || 0,
           campaigns_monitored: optimizationResults.monitored,
           campaigns_paused: optimizationResults.paused,
           standard_operations: opsResult
@@ -306,6 +317,9 @@ async function monitorCampaigns(supabase: any): Promise<{ monitored: number; pau
         .from('campaigns')
         .update({ status: 'Paused' })
         .eq('id', campaign.id);
+      
+      // Sync performance after status change
+      await supabase.rpc('sync_campaign_to_performance', { p_campaign_id: campaign.id });
       
       paused++;
       insights.push(`Paused "${campaign.title}" - Low CTR: ${ctr.toFixed(2)}%`);

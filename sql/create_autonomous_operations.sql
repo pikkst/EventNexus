@@ -9,6 +9,35 @@
 ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS budget DECIMAL(10,2) DEFAULT 100.00;
 ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS daily_budget DECIMAL(10,2);
 
+-- Table: campaign_schedules
+-- Tracks scheduled social media posts for campaigns
+CREATE TABLE IF NOT EXISTS campaign_schedules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_id UUID REFERENCES campaigns(id) ON DELETE CASCADE,
+  scheduled_for TIMESTAMPTZ NOT NULL,
+  timezone TEXT DEFAULT 'UTC',
+  platforms TEXT[] NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'posted', 'failed', 'cancelled')),
+  post_result JSONB, -- Stores results after posting
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Table: autonomous_logs
+-- Real-time logging for AI decisions and actions
+CREATE TABLE IF NOT EXISTS autonomous_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  action_type TEXT NOT NULL,
+  campaign_id UUID REFERENCES campaigns(id) ON DELETE SET NULL,
+  campaign_title TEXT,
+  message TEXT NOT NULL,
+  details JSONB,
+  status TEXT NOT NULL CHECK (status IN ('checking', 'action_taken', 'no_action', 'error')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Table: autonomous_actions
 -- Tracks all autonomous decisions and actions taken by the system
 CREATE TABLE IF NOT EXISTS autonomous_actions (
@@ -75,6 +104,12 @@ CREATE TABLE IF NOT EXISTS optimization_opportunities (
 );
 
 -- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_campaign_schedules_campaign ON campaign_schedules(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_campaign_schedules_scheduled ON campaign_schedules(scheduled_for);
+CREATE INDEX IF NOT EXISTS idx_campaign_schedules_status ON campaign_schedules(status);
+CREATE INDEX IF NOT EXISTS idx_autonomous_logs_timestamp ON autonomous_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_autonomous_logs_campaign ON autonomous_logs(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_autonomous_logs_status ON autonomous_logs(status);
 CREATE INDEX IF NOT EXISTS idx_autonomous_actions_campaign ON autonomous_actions(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_autonomous_actions_type ON autonomous_actions(action_type);
 CREATE INDEX IF NOT EXISTS idx_autonomous_actions_status ON autonomous_actions(status);
@@ -530,14 +565,15 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Campaign not found or inactive');
   END IF;
   
-  -- Check if user has connected social accounts
+  -- Check if platform has connected social accounts (autonomous posting uses admin accounts)
   IF NOT EXISTS (
-    SELECT 1 FROM social_media_accounts 
-    WHERE user_id = v_campaign.user_id 
-      AND is_connected = true 
-      AND platform = ANY(p_platforms)
+    SELECT 1 FROM social_media_accounts sma
+    JOIN users u ON u.id = sma.user_id
+    WHERE u.role = 'admin'
+      AND sma.is_connected = true 
+      AND sma.platform = ANY(p_platforms)
   ) THEN
-    RETURN jsonb_build_object('success', false, 'error', 'No connected social media accounts');
+    RETURN jsonb_build_object('success', false, 'error', 'No connected social media accounts for admin');
   END IF;
   
   -- Create schedule for immediate posting or optimal time
@@ -595,8 +631,40 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================================
+-- FUNCTION: log_autonomous_action
+-- Helper to log AI decisions for monitoring
+-- ============================================================
+CREATE OR REPLACE FUNCTION log_autonomous_action(
+  p_action_type TEXT,
+  p_campaign_id UUID DEFAULT NULL,
+  p_campaign_title TEXT DEFAULT NULL,
+  p_message TEXT DEFAULT '',
+  p_details JSONB DEFAULT NULL,
+  p_status TEXT DEFAULT 'checking'
+)
+RETURNS VOID AS $$
+BEGIN
+  INSERT INTO autonomous_logs (
+    action_type,
+    campaign_id,
+    campaign_title,
+    message,
+    details,
+    status
+  ) VALUES (
+    p_action_type,
+    p_campaign_id,
+    p_campaign_title,
+    p_message,
+    p_details,
+    p_status
+  );
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================
 -- FUNCTION: run_autonomous_operations_with_posting
--- Enhanced autonomous operations that also auto-posts campaigns
+-- Enhanced autonomous operations with detailed logging
 -- ============================================================
 CREATE OR REPLACE FUNCTION run_autonomous_operations_with_posting()
 RETURNS JSONB AS $$
@@ -605,24 +673,52 @@ DECLARE
   v_scaled_count INTEGER := 0;
   v_opportunities_count INTEGER := 0;
   v_posted_count INTEGER := 0;
+  v_campaigns_checked INTEGER := 0;
   v_campaign RECORD;
   v_result JSONB;
   v_post_result JSONB;
 BEGIN
+  -- Log operation start
+  PERFORM log_autonomous_action(
+    'operation_start',
+    NULL,
+    NULL,
+    'Starting autonomous operations cycle',
+    NULL,
+    'checking'
+  );
+  
   -- Run standard autonomous operations
   SELECT * INTO v_result FROM run_autonomous_operations();
   
-  v_paused_count := (v_result->>'actions_taken')::JSONB->>'campaigns_paused';
-  v_scaled_count := (v_result->>'actions_taken')::JSONB->>'campaigns_scaled';
-  v_opportunities_count := (v_result->>'actions_taken')::JSONB->>'opportunities_detected';
+  v_paused_count := COALESCE((v_result->'actions_taken'->>'campaigns_paused')::INTEGER, 0);
+  v_scaled_count := COALESCE((v_result->'actions_taken'->>'campaigns_scaled')::INTEGER, 0);
+  v_opportunities_count := COALESCE((v_result->'actions_taken'->>'opportunities_detected')::INTEGER, 0);
+  
+  -- Check and log campaign analysis
+  SELECT COUNT(*) INTO v_campaigns_checked FROM campaigns WHERE status = 'Active';
+  
+  PERFORM log_autonomous_action(
+    'analysis_complete',
+    NULL,
+    NULL,
+    format('Analyzed %s active campaigns', v_campaigns_checked),
+    jsonb_build_object(
+      'campaigns_checked', v_campaigns_checked,
+      'paused', v_paused_count,
+      'scaled', v_scaled_count,
+      'opportunities', v_opportunities_count
+    ),
+    CASE WHEN v_paused_count + v_scaled_count + v_opportunities_count > 0 THEN 'action_taken' ELSE 'no_action' END
+  );
   
   -- Now auto-post high-performing campaigns
   FOR v_campaign IN
-    SELECT c.id, c.user_id, c.title, c.copy 
+    SELECT c.id, c.title, c.copy 
     FROM campaigns c
     WHERE c.status = 'Active'
-      AND c.metrics->>'views' > 0
-      AND CAST(c.metrics->>'clicks' AS NUMERIC) / CAST(c.metrics->>'views' AS NUMERIC) > 0.02
+      AND COALESCE((c.metrics->>'views')::INTEGER, 0) > 0
+      AND COALESCE((c.metrics->>'clicks')::NUMERIC, 0) / NULLIF(COALESCE((c.metrics->>'views')::NUMERIC, 0), 0) > 0.02
       AND c.updated_at > NOW() - INTERVAL '7 days'
       AND NOT EXISTS (
         SELECT 1 FROM campaign_schedules 
@@ -631,13 +727,54 @@ BEGIN
       )
     LIMIT 10
   LOOP
+    PERFORM log_autonomous_action(
+      'auto_post_attempt',
+      v_campaign.id,
+      v_campaign.title,
+      format('Attempting to schedule social posts for campaign: %s', v_campaign.title),
+      NULL,
+      'checking'
+    );
+    
     v_post_result := auto_post_campaign_to_social(v_campaign.id, ARRAY['instagram', 'facebook']);
     
     IF (v_post_result->>'success')::BOOLEAN THEN
       v_posted_count := v_posted_count + 1;
-      RAISE NOTICE '✅ Posted campaign % to social media', v_campaign.id;
+      
+      PERFORM log_autonomous_action(
+        'auto_post_success',
+        v_campaign.id,
+        v_campaign.title,
+        format('✅ Scheduled social posts for campaign: %s', v_campaign.title),
+        v_post_result,
+        'action_taken'
+      );
+    ELSE
+      PERFORM log_autonomous_action(
+        'auto_post_failed',
+        v_campaign.id,
+        v_campaign.title,
+        format('❌ Failed to schedule posts: %s', v_post_result->>'error'),
+        v_post_result,
+        'error'
+      );
     END IF;
   END LOOP;
+  
+  -- Log operation complete
+  PERFORM log_autonomous_action(
+    'operation_complete',
+    NULL,
+    NULL,
+    format('Autonomous operations completed - %s actions taken', v_paused_count + v_scaled_count + v_posted_count),
+    jsonb_build_object(
+      'campaigns_paused', v_paused_count,
+      'campaigns_scaled', v_scaled_count,
+      'campaigns_posted', v_posted_count,
+      'opportunities_detected', v_opportunities_count
+    ),
+    CASE WHEN v_paused_count + v_scaled_count + v_posted_count > 0 THEN 'action_taken' ELSE 'no_action' END
+  );
   
   -- Return enhanced summary
   RETURN jsonb_build_object(
@@ -649,7 +786,8 @@ BEGIN
       'opportunities_detected', v_opportunities_count,
       'campaigns_posted', v_posted_count
     ),
-    'total_actions', v_paused_count + v_scaled_count + v_posted_count
+    'total_actions', v_paused_count + v_scaled_count + v_posted_count,
+    'campaigns_analyzed', v_campaigns_checked
   );
 END;
 $$ LANGUAGE plpgsql;
@@ -683,16 +821,30 @@ ON CONFLICT (rule_name) DO NOTHING;
 -- ============================================================
 -- RLS Policies (Admin-only access)
 -- ============================================================
+ALTER TABLE campaign_schedules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE autonomous_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE autonomous_actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE autonomous_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE optimization_opportunities ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Admin full access to campaign_schedules" ON campaign_schedules;
+DROP POLICY IF EXISTS "Admin full access to autonomous_logs" ON autonomous_logs;
 DROP POLICY IF EXISTS "Admin full access to autonomous_actions" ON autonomous_actions;
 DROP POLICY IF EXISTS "Admin full access to autonomous_rules" ON autonomous_rules;
 DROP POLICY IF EXISTS "Admin full access to optimization_opportunities" ON optimization_opportunities;
 
 -- Create new policies
+CREATE POLICY "Admin full access to campaign_schedules" ON campaign_schedules
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+  );
+
+CREATE POLICY "Admin full access to autonomous_logs" ON autonomous_logs
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+  );
+
 CREATE POLICY "Admin full access to autonomous_actions" ON autonomous_actions
   FOR ALL USING (
     EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
