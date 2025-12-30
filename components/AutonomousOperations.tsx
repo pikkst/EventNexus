@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Bot, TrendingUp, TrendingDown, AlertCircle, CheckCircle2, Clock, 
   Zap, Settings, Play, Pause, RefreshCw, Activity, Target, DollarSign,
-  BarChart3, Lightbulb, Shield, ArrowUpRight, ArrowDownRight, Info, Loader2, Share2
+  BarChart3, Lightbulb, Shield, ArrowUpRight, ArrowDownRight, Info, Loader2, Share2, Terminal
 } from 'lucide-react';
 import {
   getAutonomousStats,
@@ -19,6 +19,7 @@ import {
   type OptimizationOpportunity,
   type AutonomousRule
 } from '../services/autonomousCampaignService';
+import AutonomousMonitor from './AutonomousMonitor';
 
 export default function AutonomousOperations() {
   // State
@@ -37,7 +38,7 @@ export default function AutonomousOperations() {
   const [scalingCandidates, setScalingCandidates] = useState<any[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [lastRun, setLastRun] = useState<Date | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'actions' | 'opportunities' | 'rules'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'actions' | 'opportunities' | 'rules' | 'monitor'>('monitor');
 
   // Load data
   const loadData = async () => {
@@ -237,16 +238,17 @@ export default function AutonomousOperations() {
       {/* Tabs */}
       <div className="border-b border-slate-800">
         <div className="flex gap-6">
-          {(['overview', 'actions', 'opportunities', 'rules'] as const).map((tab) => (
+          {(['monitor', 'overview', 'actions', 'opportunities', 'rules'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-4 px-2 text-sm font-bold border-b-2 transition-colors uppercase tracking-widest text-[10px] ${
+              className={`pb-4 px-2 text-sm font-bold border-b-2 transition-colors uppercase tracking-widest text-[10px] flex items-center gap-2 ${
                 activeTab === tab
                   ? 'border-indigo-500 text-indigo-500'
                   : 'border-transparent text-slate-500 hover:text-slate-300'
               }`}
             >
+              {tab === 'monitor' && <Terminal className="w-3 h-3" />}
               {tab}
             </button>
           ))}
@@ -254,6 +256,10 @@ export default function AutonomousOperations() {
       </div>
 
       {/* Tab Content */}
+      {activeTab === 'monitor' && (
+        <AutonomousMonitor userId="admin" />
+      )}
+
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Underperformers */}
