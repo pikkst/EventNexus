@@ -237,6 +237,7 @@ export interface User {
   suspension_reason?: string;
   banned_at?: string;
   ban_reason?: string;
+  tutorial_completed?: boolean; // Tracks if user has completed onboarding tutorial
 }
 
 export type TicketType = 'general' | 'vip' | 'early_bird' | 'day_pass' | 'multi_day' | 'backstage' | 'student' | 'group';

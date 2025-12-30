@@ -446,9 +446,9 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Trigger onboarding for new users
+  // Trigger onboarding for new users (check database, not localStorage)
   useEffect(() => {
-    if (user && !localStorage.getItem('onboarding_completed')) {
+    if (user && !user.tutorial_completed) {
       // Wait 2 seconds after user loads to show onboarding
       const timer = setTimeout(() => {
         setShowOnboarding(true);
@@ -724,11 +724,36 @@ const App: React.FC = () => {
         {showOnboarding && user && (
           <OnboardingTutorial
             user={user}
-            onComplete={() => {
-              localStorage.setItem('onboarding_completed', 'true');
+            onComplete={async () => {
+              // Save to database AND localStorage for backup
+              if (user) {
+                try {
+                  await updateUser(user.id, { tutorial_completed: true });
+                  // Update local state
+                  setUser({ ...user, tutorial_completed: true });
+                  localStorage.setItem('onboarding_completed', 'true');
+                } catch (error) {
+                  console.error('Failed to save tutorial completion:', error);
+                  // Still mark as completed locally to avoid repeated showing
+                  localStorage.setItem('onboarding_completed', 'true');
+                }
+              }
               setShowOnboarding(false);
             }}
-            onSkip={() => setShowOnboarding(false)}
+            onSkip={async () => {
+              // Also mark as completed when skipped
+              if (user) {
+                try {
+                  await updateUser(user.id, { tutorial_completed: true });
+                  setUser({ ...user, tutorial_completed: true });
+                  localStorage.setItem('onboarding_completed', 'true');
+                } catch (error) {
+                  console.error('Failed to save tutorial skip:', error);
+                  localStorage.setItem('onboarding_completed', 'true');
+                }
+              }
+              setShowOnboarding(false);
+            }}
           />
         )}
       </div>
