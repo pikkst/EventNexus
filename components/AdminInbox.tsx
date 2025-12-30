@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Inbox, Send, Archive, Trash2, Star, RefreshCw, AlertCircle, Clock, Search, Filter, ChevronLeft, ExternalLink } from 'lucide-react';
 import { getInboxMessages, markInboxAsRead, replyToInboxMessage, deleteInboxMessage, getInboxStats } from '../services/dbService';
+import { sanitizeHtml } from '../utils/security';
 
 interface InboxMessage {
   id: string;
@@ -322,7 +323,10 @@ const AdminInbox: React.FC = () => {
               {/* Message Body */}
               <div className="prose prose-invert max-w-none">
                 {selectedMessage.body_html ? (
-                  <div dangerouslySetInnerHTML={{ __html: selectedMessage.body_html }} className="text-slate-300" />
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedMessage.body_html) }} 
+                    className="text-slate-300" 
+                  />
                 ) : (
                   <p className="text-slate-300 whitespace-pre-wrap">{selectedMessage.body_text}</p>
                 )}
