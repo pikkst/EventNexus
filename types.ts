@@ -32,6 +32,8 @@ export interface EventNexusEvent {
   translations?: {
     [languageCode: string]: string; // e.g., { "en": "English", "es": "Español", "fr": "Français" }
   };
+  archived_at?: string; // When the event was archived by organizer
+  archived_by?: string; // User ID who archived the event
 }
 
 export interface PlatformCampaign {
