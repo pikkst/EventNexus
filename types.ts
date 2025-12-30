@@ -283,6 +283,8 @@ export interface Ticket {
   refund_reason?: string;
   holder_name: string;
   holder_email: string;
+  archived_at?: string; // When the ticket was archived by the user
+  archived_by?: string; // User ID who archived the ticket
   metadata?: {
     seat_number?: string;
     table_number?: string;

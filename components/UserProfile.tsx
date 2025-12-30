@@ -35,10 +35,12 @@ import {
   DollarSign,
   Bug,
   Copy,
-  Sparkles
+  Sparkles,
+  Archive,
+  ArchiveRestore
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
-import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, verifyConnectOnboarding, deleteEvent } from '../services/dbService';
+import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, verifyConnectOnboarding, deleteEvent, archiveTicket, restoreTicket, getArchivedTickets } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import TicketCard from './TicketCard';
 // TicketViewModal removed; using dedicated TicketViewPage route
@@ -60,6 +62,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [userTickets, setUserTickets] = useState<any[]>([]);
+  const [archivedTickets, setArchivedTickets] = useState<any[]>([]);
+  const [showArchivedTickets, setShowArchivedTickets] = useState(false);
   // selectedTicket state removed; using navigation to ticket page
   const [organizedEvents, setOrganizedEvents] = useState<EventNexusEvent[]>([]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -87,6 +91,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
       const tickets = await getUserTickets(user.id);
       setUserTickets(tickets || []);
     };
+    const loadArchivedTickets = async () => {
+      const archived = await getArchivedTickets(user.id);
+      setArchivedTickets(archived || []);
+    };
     const loadOrganizedEvents = async () => {
       const events = await getOrganizerEvents(user.id);
       setOrganizedEvents(events || []);
@@ -98,6 +106,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
       }
     };
     loadTickets();
+    loadArchivedTickets();
     loadOrganizedEvents();
     // All users can access Stripe Connect (needed for paid event organizers regardless of tier)
     loadConnectStatus();
@@ -204,6 +213,54 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
       alert('Failed to delete event. Please try again.');
     } finally {
       setIsDeletingEvent(null);
+    }
+  };
+
+  const handleArchiveTicket = async (ticketId: string, eventName: string) => {
+    if (!confirm(`Archive ticket for "${eventName}"? You can restore it later from the archived view.`)) {
+      return;
+    }
+
+    try {
+      const result = await archiveTicket(ticketId, user.id);
+      if (result.success) {
+        // Move ticket from active to archived
+        const ticket = userTickets.find(t => t.id === ticketId);
+        if (ticket) {
+          setUserTickets(prev => prev.filter(t => t.id !== ticketId));
+          setArchivedTickets(prev => [{ ...ticket, archived_at: new Date().toISOString() }, ...prev]);
+        }
+        alert('Ticket archived successfully');
+      } else {
+        alert(result.message || 'Failed to archive ticket');
+      }
+    } catch (error) {
+      console.error('Error archiving ticket:', error);
+      alert('Failed to archive ticket. Please try again.');
+    }
+  };
+
+  const handleRestoreTicket = async (ticketId: string, eventName: string) => {
+    if (!confirm(`Restore ticket for "${eventName}"?`)) {
+      return;
+    }
+
+    try {
+      const result = await restoreTicket(ticketId, user.id);
+      if (result.success) {
+        // Move ticket from archived to active
+        const ticket = archivedTickets.find(t => t.id === ticketId);
+        if (ticket) {
+          setArchivedTickets(prev => prev.filter(t => t.id !== ticketId));
+          setUserTickets(prev => [{ ...ticket, archived_at: null }, ...prev]);
+        }
+        alert('Ticket restored successfully');
+      } else {
+        alert(result.message || 'Failed to restore ticket');
+      }
+    } catch (error) {
+      console.error('Error restoring ticket:', error);
+      alert('Failed to restore ticket. Please try again.');
     }
   };
 
@@ -785,33 +842,99 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
           {/* Tickets Section */}
           <div className="bg-slate-900 border border-slate-800 rounded-[40px] overflow-hidden shadow-2xl">
             <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md">
-              <h3 className="font-black text-xl tracking-tight flex items-center gap-3">
-                <div className="p-2 bg-indigo-600/20 rounded-xl">
-                  <TicketIcon className="w-5 h-5 text-indigo-400" />
-                </div>
-                My Tickets
-              </h3>
+              <div className="flex items-center gap-4">
+                <h3 className="font-black text-xl tracking-tight flex items-center gap-3">
+                  <div className="p-2 bg-indigo-600/20 rounded-xl">
+                    <TicketIcon className="w-5 h-5 text-indigo-400" />
+                  </div>
+                  My Tickets
+                </h3>
+                <button
+                  onClick={() => setShowArchivedTickets(!showArchivedTickets)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${
+                    showArchivedTickets 
+                      ? 'bg-slate-700/50 text-slate-400 hover:bg-slate-700' 
+                      : 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30'
+                  }`}
+                >
+                  {showArchivedTickets ? (
+                    <>
+                      <ArchiveRestore className="w-4 h-4" />
+                      Show Active
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="w-4 h-4" />
+                      Show Archived ({archivedTickets.length})
+                    </>
+                  )}
+                </button>
+              </div>
               <span className="px-3 py-1.5 bg-indigo-600/20 text-indigo-400 rounded-full text-sm font-bold">
-                {userTickets.length}
+                {showArchivedTickets ? archivedTickets.length : userTickets.length}
               </span>
             </div>
             <div className="p-6">
-              {userTickets.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {userTickets.map((ticket) => (
-                    <TicketCard
-                      key={ticket.id}
-                      ticket={ticket}
-                      onExpand={() => navigate('/ticket', { state: { ticket } })}
-                    />
-                  ))}
-                </div>
+              {showArchivedTickets ? (
+                archivedTickets.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {archivedTickets.map((ticket) => (
+                      <div key={ticket.id} className="relative">
+                        <TicketCard
+                          ticket={ticket}
+                          onExpand={() => navigate('/ticket', { state: { ticket } })}
+                        />
+                        <button
+                          onClick={() => handleRestoreTicket(ticket.id, ticket.event?.name || 'Event')}
+                          className="absolute top-4 right-4 p-2 bg-green-600/20 hover:bg-green-600/30 rounded-xl transition-all group"
+                          title="Restore ticket"
+                        >
+                          <ArchiveRestore className="w-4 h-4 text-green-400" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-12 text-center text-slate-500">
+                    <Archive className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-bold">No archived tickets</p>
+                    <p className="text-sm mt-2">Archived tickets will appear here</p>
+                  </div>
+                )
               ) : (
-                <div className="p-12 text-center text-slate-500">
-                  <TicketIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p className="font-bold">No tickets yet</p>
-                  <p className="text-sm mt-2">Purchase tickets to events and they'll appear here</p>
-                </div>
+                userTickets.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {userTickets.map((ticket) => {
+                      // Check if event is completed (ended at least 1 day ago)
+                      const eventEndDate = ticket.event?.end_date || ticket.event?.date;
+                      const isEventCompleted = eventEndDate && new Date(eventEndDate) < new Date(Date.now() - 24 * 60 * 60 * 1000);
+                      
+                      return (
+                        <div key={ticket.id} className="relative">
+                          <TicketCard
+                            ticket={ticket}
+                            onExpand={() => navigate('/ticket', { state: { ticket } })}
+                          />
+                          {isEventCompleted && (
+                            <button
+                              onClick={() => handleArchiveTicket(ticket.id, ticket.event?.name || 'Event')}
+                              className="absolute top-4 right-4 p-2 bg-slate-700/50 hover:bg-slate-700 rounded-xl transition-all group"
+                              title="Archive ticket"
+                            >
+                              <Archive className="w-4 h-4 text-slate-400 group-hover:text-slate-300" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-12 text-center text-slate-500">
+                    <TicketIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-bold">No tickets yet</p>
+                    <p className="text-sm mt-2">Purchase tickets to events and they'll appear here</p>
+                  </div>
+                )
               )}
             </div>
           </div>
