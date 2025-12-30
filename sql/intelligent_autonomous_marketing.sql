@@ -334,33 +334,12 @@ BEGIN
   -- Create actual campaign in campaigns table
   INSERT INTO campaigns (
     title,
-    user_id,
     status,
-    objective,
-    target_audience,
-    budget,
-    daily_budget,
-    start_date,
-    end_date,
-    platforms,
     ai_metadata,
     created_at
   ) VALUES (
     v_campaign_name,
-    p_admin_user_id,
     'Active',
-    CASE v_strategy.strategy_type
-      WHEN 'acquisition' THEN 'conversions'
-      WHEN 'activation' THEN 'conversions'
-      WHEN 'engagement' THEN 'engagement'
-      ELSE 'awareness'
-    END,
-    v_strategy.target_audience,
-    1000.00, -- Default budget €1000
-    50.00,   -- Daily budget €50
-    NOW(),
-    NOW() + INTERVAL '30 days',
-    ARRAY['facebook', 'instagram', 'google'],
     jsonb_build_object(
       'autonomous', true,
       'strategy_type', v_strategy.strategy_type,
@@ -368,7 +347,16 @@ BEGIN
       'rationale', v_strategy.rationale,
       'confidence_score', v_strategy.confidence_score,
       'platform_intelligence', v_strategy.key_metrics,
-      'created_by', 'intelligent_autonomous_marketing'
+      'created_by', 'intelligent_autonomous_marketing',
+      'objective', CASE v_strategy.strategy_type
+        WHEN 'acquisition' THEN 'conversions'
+        WHEN 'activation' THEN 'conversions'
+        WHEN 'engagement' THEN 'engagement'
+        ELSE 'awareness'
+      END,
+      'budget', 1000.00,
+      'daily_budget', 50.00,
+      'platforms', ARRAY['facebook', 'instagram', 'google']
     ),
     NOW()
   ) RETURNING id INTO v_campaign_id;
