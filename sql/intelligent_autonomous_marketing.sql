@@ -333,7 +333,7 @@ BEGIN
   
   -- Create actual campaign in campaigns table
   INSERT INTO campaigns (
-    name,
+    title,
     description,
     user_id,
     status,
