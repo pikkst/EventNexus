@@ -89,80 +89,191 @@ export const generateSocialMediaPosts = async (
 };
 
 /**
- * Generate platform growth campaign
+ * Generate platform growth campaign with deep platform knowledge
  * ADMIN FEATURE - NO CREDIT COST
  */
-export const generatePlatformGrowthCampaign = async (theme: string, target: string) => {
+export const generatePlatformGrowthCampaign = async (
+  theme: string, 
+  target: string,
+  platformContext?: {
+    totalEvents?: number;
+    activeEvents?: number;
+    topCategories?: string[];
+    topCities?: string[];
+    totalUsers?: number;
+    keyFeatures?: string[];
+  }
+) => {
   try {
     const ai = getAI();
     
-    const audienceMap: Record<string, { name: string; tone: string; cta: string }> = {
-      attendees: { name: 'Event Attendees', tone: 'exciting and fun', cta: 'Discover Events' },
-      creators: { name: 'Event Creators & Organizers', tone: 'professional and empowering', cta: 'Start Creating' },
-      'platform-growth': { name: 'New Users', tone: 'welcoming and innovative', cta: 'Join EventNexus' },
-      'new-features': { name: 'Existing Users', tone: 'exciting and informative', cta: 'Try New Features' },
-      community: { name: 'Community Members', tone: 'friendly and engaging', cta: 'Join the Community' },
-      seasonal: { name: 'Seasonal Event-Goers', tone: 'festive and energetic', cta: 'Explore Events' },
-      retention: { name: 'Returning Users', tone: 'warm and appreciative', cta: 'Welcome Back' },
-      referral: { name: 'Active Users', tone: 'rewarding and motivational', cta: 'Invite Friends' }
+    const audienceMap: Record<string, { name: string; tone: string; cta: string; painPoints: string[]; desires: string[] }> = {
+      attendees: { 
+        name: 'Event Attendees', 
+        tone: 'exciting and fun', 
+        cta: 'Discover Events',
+        painPoints: ['Hard to find local events', 'Missing out on happenings', 'Boring weekends'],
+        desires: ['Easy discovery', 'Variety of options', 'Social experiences', 'Authentic local culture']
+      },
+      creators: { 
+        name: 'Event Creators & Organizers', 
+        tone: 'professional and empowering', 
+        cta: 'Start Creating',
+        painPoints: ['High platform fees', 'Complex setup', 'Limited reach', 'Slow payouts'],
+        desires: ['Easy event creation', 'Direct payments', 'Marketing tools', 'Growing audience']
+      },
+      'platform-growth': { 
+        name: 'New Users', 
+        tone: 'welcoming and innovative', 
+        cta: 'Join EventNexus',
+        painPoints: ['Generic event platforms', 'Poor discovery', 'Complicated booking'],
+        desires: ['Simple discovery', 'Local focus', 'Reliable platform', 'Good UX']
+      },
+      'new-features': { 
+        name: 'Existing Users', 
+        tone: 'exciting and informative', 
+        cta: 'Try New Features',
+        painPoints: ['Missing features', 'Want improvements'],
+        desires: ['Better experience', 'New capabilities', 'Innovation']
+      },
+      community: { 
+        name: 'Community Members', 
+        tone: 'friendly and engaging', 
+        cta: 'Join the Community',
+        painPoints: ['Isolation', 'Want connections'],
+        desires: ['Social connections', 'Shared experiences', 'Belonging']
+      },
+      seasonal: { 
+        name: 'Seasonal Event-Goers', 
+        tone: 'festive and energetic', 
+        cta: 'Explore Events',
+        painPoints: ['Limited time', 'FOMO'],
+        desires: ['Seasonal experiences', 'Time-sensitive events', 'Special occasions']
+      },
+      retention: { 
+        name: 'Returning Users', 
+        tone: 'warm and appreciative', 
+        cta: 'Welcome Back',
+        painPoints: ['Lost interest', 'Forgot about platform'],
+        desires: ['Familiar comfort', 'New reasons to return', 'Value reminder']
+      },
+      referral: { 
+        name: 'Active Users', 
+        tone: 'rewarding and motivational', 
+        cta: 'Invite Friends',
+        painPoints: ['Want to share', 'Friends missing out'],
+        desires: ['Share discovery', 'Rewards', 'Community building']
+      }
     };
     
     const audience = audienceMap[target] || audienceMap.attendees;
     
+    // Build platform context string
+    let contextInfo = '';
+    if (platformContext) {
+      contextInfo = `
+      
+      REAL PLATFORM DATA TO USE:
+      - Total Events: ${platformContext.totalEvents || 0}
+      - Active Events: ${platformContext.activeEvents || 0}
+      - Total Users: ${platformContext.totalUsers || 0}
+      ${platformContext.topCategories && platformContext.topCategories.length > 0 ? `- Popular Categories: ${platformContext.topCategories.join(', ')}` : ''}
+      ${platformContext.topCities && platformContext.topCities.length > 0 ? `- Active Cities: ${platformContext.topCities.join(', ')}` : ''}
+      ${platformContext.keyFeatures && platformContext.keyFeatures.length > 0 ? `- Key Features to Highlight: ${platformContext.keyFeatures.join(', ')}` : ''}
+      `;
+    }
+    
+    // Real EventNexus features to communicate
+    const platformFeatures = {
+      for_attendees: [
+        'Interactive map showing events by location',
+        'Secure Stripe payment processing',
+        'Instant QR code tickets on phone',
+        'Multi-language event descriptions',
+        'Follow favorite organizers',
+        'Real-time event updates'
+      ],
+      for_creators: [
+        'Zero upfront listing costs',
+        'Direct Stripe Connect payouts',
+        'AI-powered marketing content generation',
+        'Professional ticketing system with QR codes',
+        'Real-time analytics dashboard',
+        'Unlimited event image uploads',
+        'Built-in social media sharing'
+      ],
+      unique: [
+        'Map-first discovery - find by location',
+        'AI tools included (descriptions, images, social posts)',
+        'Multi-language support built-in',
+        'PostGIS geospatial search',
+        'Modern React web platform',
+        'GDPR compliant and secure'
+      ]
+    };
+    
+    const relevantFeatures = target === 'creators' 
+      ? platformFeatures.for_creators 
+      : platformFeatures.for_attendees;
+    
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `You are an expert growth marketing copywriter and visual designer for EventNexus, a premium map-first event discovery WEB PLATFORM (NOT a mobile app).
+      contents: `You are an expert growth marketing strategist for EventNexus, a premium map-first event discovery WEB PLATFORM.
       
       CRITICAL PLATFORM INFO:
-      - EventNexus is a WEBSITE accessible at www.eventnexus.eu
-      - It is NOT an iOS or Android mobile app
-      - Users access it through web browsers on any device
+      - EventNexus is a WEBSITE at www.eventnexus.eu (NOT a mobile app)
+      - It is a WEB-BASED platform accessible through browsers
       - NEVER mention "download app", "app store", "iOS", "Android", or "mobile app"
-      - Instead use: "Visit EventNexus", "Access online", "Discover on the web", "Join at eventnexus.eu"
+      - Use: "Visit EventNexus", "Access online", "Discover on the web", "Join at eventnexus.eu"
+      ${contextInfo}
+      
+      REAL PLATFORM FEATURES FOR ${audience.name.toUpperCase()}:
+      ${relevantFeatures.map((f, i) => `${i + 1}. ${f}`).join('\n')}
+      
+      TARGET AUDIENCE INSIGHTS:
+      - Pain Points: ${audience.painPoints.join(', ')}
+      - Desires: ${audience.desires.join(', ')}
+      - Tone: ${audience.tone}
       
       Campaign Details:
       - Theme: ${theme}
       - Target Audience: ${audience.name}
-      - Tone: ${audience.tone}
       - Primary CTA: ${audience.cta}
       - Platform URL: www.eventnexus.eu
       
-      Generate a high-converting marketing campaign with:
+      Generate a data-driven, feature-focused marketing campaign:
       
       1. TITLE (max 40 chars):
-         - Bold, attention-grabbing headline
-         - Use power words and emotional triggers
-         - Make it memorable and shareable
+         - Reference REAL platform data if provided (e.g., "${platformContext?.activeEvents} Events Near You")
+         - Highlight a specific REAL feature (e.g., "Find Events on Interactive Map")
+         - Make it concrete and specific, not generic
       
       2. MARKETING COPY (max 120 chars):
-         - Lead with benefit, not feature
-         - Create FOMO (fear of missing out)
-         - NEVER mention specific user numbers or fake statistics (NO "50k users", "10k+ downloads", etc.)
-         - NEVER mention mobile app, iOS, Android, or app stores
-         - Focus on the WEB PLATFORM experience
-         - Focus on emotions and experiences instead
-         - Include aspirational language
-         - End with clear value proposition
+         - Lead with a SPECIFIC feature benefit (e.g., "Interactive map shows 50+ events by location")
+         - Include REAL numbers if provided (events, categories, cities)
+         - Highlight 1-2 key platform features
+         - NEVER mention fake statistics or user counts
+         - Focus on concrete value (e.g., "Zero fees", "Instant tickets", "AI tools included")
+         - End with clear action
       
-      3. VISUAL PROMPT (detailed DALL-E/Midjourney style):
-         - Describe a premium, modern, eye-catching image FOR A WEB PLATFORM
-         - Specify style: "cinematic photography", "vibrant gradient design", "minimalist tech aesthetic"
-         - Include: composition, colors, mood, lighting, key visual elements
-         - Match EventNexus brand (modern, bold, community-focused)
-         - Include promotional text overlay with campaign title and "www.eventnexus.eu"
-         - Should look like professional web marketing material
-         - Example: "Professional web platform marketing banner, cinematic wide shot of diverse young people celebrating at colorful outdoor festival at sunset, vibrant purple and orange lighting, confetti in air, joyful atmosphere, bold text overlay with 'Discover Your City's Events' and 'www.eventnexus.eu', premium lifestyle photography, shallow depth of field, 8k quality, web-optimized composition"
+      3. VISUAL PROMPT (detailed for web marketing):
+         - Professional web platform marketing banner
+         - Include specific platform UI elements (map interface, event cards, mobile web view)
+         - Show real EventNexus features visually
+         - Modern, tech-forward aesthetic
+         - Include "www.eventnexus.eu" in design
+         - Example: "Professional web marketing banner, MacBook showing EventNexus interface with interactive map displaying colorful event pins, sidebar with event cards showing ${platformContext?.topCategories?.[0] || 'Music'} events, clean modern UI with indigo accents, city skyline in background, text overlay '${theme}' and 'www.eventnexus.eu', premium SaaS aesthetic, 8k quality"
       
       4. CALL TO ACTION:
-         - Use ${audience.cta} or similar action-oriented phrase
-         - Make it urgent and specific
-         - Should drive traffic to www.eventnexus.eu
+         - Use ${audience.cta} or feature-specific variant
+         - Make it action-oriented (e.g., "See Events on Map", "List Your Event Free", "Book Tickets Now")
+         - Include www.eventnexus.eu
       
       5. INCENTIVE:
-         - Suggest relevant reward based on audience
-         - Options: credits, discount, exclusive access, referral bonus
+         - Based on audience and real platform offerings
+         - Options: "50 AI credits", "First event free", "Premium trial", or "none"
       
-      Make it conversion-optimized, web-focused, and visually striking!`,
+      Make it specific, data-driven, and feature-focused!`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
