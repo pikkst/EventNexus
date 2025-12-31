@@ -712,14 +712,20 @@ BEGIN
     CASE WHEN v_paused_count + v_scaled_count + v_opportunities_count > 0 THEN 'action_taken' ELSE 'no_action' END
   );
   
-  -- Now auto-post high-performing campaigns
+  -- Now auto-post campaigns (NEW campaigns + high-performing ones)
   FOR v_campaign IN
     SELECT c.id, c.title, c.copy 
     FROM campaigns c
     WHERE c.status = 'Active'
-      AND COALESCE((c.metrics->>'views')::INTEGER, 0) > 0
-      AND COALESCE((c.metrics->>'clicks')::NUMERIC, 0) / NULLIF(COALESCE((c.metrics->>'views')::NUMERIC, 0), 0) > 0.02
-      AND c.updated_at > NOW() - INTERVAL '7 days'
+      AND (
+        -- NEW campaigns created in last 48h with 0 metrics (first post)
+        (c.created_at > NOW() - INTERVAL '48 hours' AND COALESCE((c.metrics->>'views')::INTEGER, 0) = 0)
+        OR
+        -- High-performing campaigns with good CTR (repeat posts)
+        (COALESCE((c.metrics->>'views')::INTEGER, 0) > 0
+         AND COALESCE((c.metrics->>'clicks')::NUMERIC, 0) / NULLIF(COALESCE((c.metrics->>'views')::NUMERIC, 0), 0) > 0.02
+         AND c.updated_at > NOW() - INTERVAL '7 days')
+      )
       AND NOT EXISTS (
         SELECT 1 FROM campaign_schedules 
         WHERE campaign_id = c.id 
