@@ -335,10 +335,12 @@ BEGIN
   INSERT INTO campaigns (
     title,
     status,
+    copy,
     ai_metadata
   ) VALUES (
     v_campaign_name,
     'Active',
+    v_campaign_description,
     jsonb_build_object(
       'autonomous', true,
       'strategy_type', v_strategy.strategy_type,
