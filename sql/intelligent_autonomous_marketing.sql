@@ -339,6 +339,7 @@ BEGIN
     placement,
     target,
     cta,
+    tracking_code,
     ai_metadata
   ) VALUES (
     v_campaign_name,
@@ -347,6 +348,7 @@ BEGIN
     'facebook',
     v_strategy.target_audience,
     'Learn More',
+    'autonomous_' || EXTRACT(EPOCH FROM NOW())::TEXT,
     jsonb_build_object(
       'autonomous', true,
       'strategy_type', v_strategy.strategy_type,
