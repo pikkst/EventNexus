@@ -436,6 +436,7 @@ DECLARE
   v_marketing_result JSONB;
   v_intelligence JSONB;
   v_strategy RECORD;
+  v_logs JSONB;
 BEGIN
   -- Log intelligent marketing start
   PERFORM log_autonomous_action(
@@ -593,25 +594,21 @@ BEGIN
   );
   
   -- Collect all logs created during this run
-  DECLARE
-    v_logs JSONB;
-  BEGIN
-    SELECT jsonb_agg(
-      jsonb_build_object(
-        'id', id,
-        'timestamp', timestamp,
-        'action_type', action_type,
-        'campaign_id', campaign_id,
-        'campaign_title', campaign_title,
-        'message', message,
-        'details', details,
-        'status', status
-      ) ORDER BY timestamp ASC
-    )
-    INTO v_logs
-    FROM autonomous_logs
-    WHERE timestamp >= (v_intelligence->>'captured_at')::TIMESTAMPTZ;
-  END;
+  SELECT jsonb_agg(
+    jsonb_build_object(
+      'id', id,
+      'timestamp', timestamp,
+      'action_type', action_type,
+      'campaign_id', campaign_id,
+      'campaign_title', campaign_title,
+      'message', message,
+      'details', details,
+      'status', status
+    ) ORDER BY timestamp ASC
+  )
+  INTO v_logs
+  FROM autonomous_logs
+  WHERE timestamp >= (v_intelligence->>'captured_at')::TIMESTAMPTZ;
   
   -- Return combined results with logs
   RETURN jsonb_build_object(
