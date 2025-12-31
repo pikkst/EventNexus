@@ -6,8 +6,14 @@
 -- Enable pg_cron extension (run once as admin)
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
--- Remove existing cron job if it exists
-SELECT cron.unschedule('run-autonomous-operations-6h');
+-- Remove existing cron job if it exists (safe - won't error if doesn't exist)
+DO $$
+BEGIN
+  PERFORM cron.unschedule('run-autonomous-operations-6h');
+EXCEPTION
+  WHEN undefined_table THEN NULL;
+  WHEN OTHERS THEN NULL;
+END $$;
 
 -- Schedule autonomous operations to run every 6 hours
 -- Cron syntax: minute hour day month weekday
