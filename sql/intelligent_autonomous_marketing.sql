@@ -345,7 +345,7 @@ BEGIN
     v_campaign_name,
     'Active',
     v_campaign_description,
-    'facebook',
+    'feed',
     v_strategy.target_audience,
     'Learn More',
     'autonomous_' || EXTRACT(EPOCH FROM NOW())::TEXT,
