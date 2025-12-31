@@ -336,11 +336,13 @@ BEGIN
     title,
     status,
     copy,
+    placement,
     ai_metadata
   ) VALUES (
     v_campaign_name,
     'Active',
     v_campaign_description,
+    'facebook',
     jsonb_build_object(
       'autonomous', true,
       'strategy_type', v_strategy.strategy_type,
