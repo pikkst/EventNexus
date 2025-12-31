@@ -339,16 +339,20 @@ BEGIN
     placement,
     target,
     cta,
+    image_url,
     tracking_code,
+    link_url,
     ai_metadata
   ) VALUES (
     v_campaign_name,
     'Active',
     v_campaign_description,
-    'feed',
+    'automatic',
     v_strategy.target_audience,
     'Learn More',
+    'https://eventnexus.eu/og-image.png',
     'autonomous_' || EXTRACT(EPOCH FROM NOW())::TEXT,
+    'https://www.eventnexus.eu',
     jsonb_build_object(
       'autonomous', true,
       'strategy_type', v_strategy.strategy_type,
