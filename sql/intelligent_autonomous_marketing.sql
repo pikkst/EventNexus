@@ -338,6 +338,7 @@ BEGIN
     copy,
     placement,
     target,
+    cta,
     ai_metadata
   ) VALUES (
     v_campaign_name,
@@ -345,6 +346,7 @@ BEGIN
     v_campaign_description,
     'facebook',
     v_strategy.target_audience,
+    'Learn More',
     jsonb_build_object(
       'autonomous', true,
       'strategy_type', v_strategy.strategy_type,
