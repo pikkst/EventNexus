@@ -403,7 +403,7 @@ BEGIN
       WHEN 'engagement' THEN 'Expected: 400 engagements, €800 revenue'
       ELSE 'Expected: 250 engagements, €600 revenue'
     END,
-    'completed'
+    'pending'
   ) RETURNING id INTO v_action_id;
   
   -- Return success with campaign details
