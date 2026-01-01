@@ -408,6 +408,13 @@ const App: React.FC = () => {
       if (event === 'SIGNED_IN' && session?.user && mounted && !user) {
         console.log('User signed in (new login), loading data...');
         try {
+          // For OAuth users, ensure profile exists before trying to fetch
+          console.log('🔧 Ensuring user profile exists via RPC...');
+          await supabase.rpc('ensure_user_profile', { user_id: session.user.id });
+          
+          // Wait a moment for the profile creation
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
           const userData = await getUser(session.user.id);
           if (userData && mounted) {
             setUser(userData);
