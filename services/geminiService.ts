@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-// Removed supabase import - not used anymore after removing Storage upload code
+import { supabase } from './supabase';
 import { deductUserCredits, checkUserCredits } from './dbService';
 
 const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -306,7 +306,7 @@ export const generatePlatformGrowthCampaign = async (
 export const generateAdImage = async (
   prompt: string, 
   aspectRatio: "1:1" | "9:16" | "16:9" = "1:1", 
-  saveToStorage = false,  // Default to false to avoid Storage errors
+  saveToStorage = false,  // Upload to Storage when true
   userId?: string,
   userTier?: string
 ) => {
@@ -337,11 +337,33 @@ export const generateAdImage = async (
           await deductUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_IMAGE);
         }
 
-        // STORAGE UPLOAD TEMPORARILY DISABLED
-        // Causes "Upload is not defined" error in production
-        // TODO: Re-enable after fixing Storage initialization issue
-        // For now, always return base64 data URL (works perfectly in database)
-        
+        // Upload to Supabase Storage when requested; fallback to base64 if upload fails
+        if (saveToStorage) {
+          try {
+            const safeUuid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+            const fileName = `campaign-images/${safeUuid}.png`;
+            const binary = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+            const { error: uploadError } = await supabase.storage
+              .from('campaign-images')
+              .upload(fileName, binary, {
+                contentType: 'image/png',
+                cacheControl: '31536000',
+                upsert: true
+              });
+
+            if (!uploadError) {
+              const { data: publicData } = supabase.storage
+                .from('campaign-images')
+                .getPublicUrl(fileName);
+              if (publicData?.publicUrl) return publicData.publicUrl;
+            } else {
+              console.error('Storage upload failed:', uploadError);
+            }
+          } catch (storageError) {
+            console.error('Storage upload exception:', storageError);
+          }
+        }
+
         return inlineDataUrl;
       }
     }
