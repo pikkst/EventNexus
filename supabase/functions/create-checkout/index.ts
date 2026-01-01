@@ -236,9 +236,18 @@ serve(async (req: Request) => {
         qr_code: crypto.randomUUID(), // Temporary QR code, will be updated on payment success
         status: 'valid',
         purchased_at: now,
+        payment_status: 'pending', // Set to pending until webhook confirms payment
+        stripe_session_id: session.id, // Link to Stripe session for tracking
+        purchase_date: now,
       }));
 
-      await supabase.from('tickets').insert(tickets);
+      const { error: ticketInsertError } = await supabase.from('tickets').insert(tickets);
+      if (ticketInsertError) {
+        console.error('Error creating tickets:', ticketInsertError);
+        throw new Error('Failed to create ticket records');
+      }
+      
+      console.log(`✓ Created ${ticketCount} pending tickets for session ${session.id}`);
     } else {
       console.error('Invalid checkout parameters:', { tier, priceId, eventId, ticketCount, pricePerTicket });
       throw new Error('Invalid checkout request: must provide either (tier + priceId) for subscription or (eventId + ticketCount + pricePerTicket) for tickets');

@@ -183,7 +183,15 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
     );
   }
 
-  const remaining = event.maxAttendees - currentAttendees;
+  // Calculate total capacity and remaining from ticket templates if available
+  const totalCapacity = ticketTemplates.length > 0
+    ? ticketTemplates.reduce((sum, t) => sum + t.quantity_sold + t.quantity_available, 0)
+    : event.maxAttendees;
+  
+  const remaining = ticketTemplates.length > 0
+    ? ticketTemplates.reduce((sum, t) => sum + t.quantity_available, 0)
+    : event.maxAttendees - currentAttendees;
+  
   const totalRevenue = currentAttendees * event.price;
   const isFollowing = user?.followedOrganizers.includes(event.organizerId) ?? false;
 
@@ -530,7 +538,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                     <Users className="w-4 h-4" />
                     <span className="text-sm font-black">{remaining}</span>
                   </div>
-                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest leading-none">Left of {event.maxAttendees}</p>
+                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest leading-none">Left of {totalCapacity}</p>
                 </div>
               </div>
 
