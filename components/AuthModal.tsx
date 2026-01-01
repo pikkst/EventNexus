@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { X, Mail, Lock, Github, Chrome, Facebook, ArrowRight, Loader2, Sparkles } from 'lucide-react';
-import { signInUser, signUpUser, getUser, updateUser, claimCampaignIncentive } from '../services/dbService';
+import { signInUser, signUpUser, getUser, updateUser, claimCampaignIncentive, signInWithGoogle, signInWithFacebook } from '../services/dbService';
 import { User } from '../types';
 
 interface AuthModalProps {
@@ -17,6 +17,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
+  const [oauthLoading, setOauthLoading] = useState(false);
 
   if (!isOpen) return null;
 
@@ -182,6 +183,56 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setOauthLoading(true);
+    setError('');
+    
+    try {
+      console.log('Starting Google OAuth...');
+      const { data, error: oauthError } = await signInWithGoogle();
+      
+      if (oauthError) {
+        console.error('Google OAuth error:', oauthError);
+        setError('Failed to sign in with Google. Please try again.');
+        setOauthLoading(false);
+        return;
+      }
+      
+      // OAuth redirect will happen automatically
+      console.log('Google OAuth initiated, redirecting...');
+      // Don't set loading to false - user will be redirected
+    } catch (err) {
+      console.error('Google sign-in error:', err);
+      setError('Failed to sign in with Google. Please try again.');
+      setOauthLoading(false);
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    setOauthLoading(true);
+    setError('');
+    
+    try {
+      console.log('Starting Facebook OAuth...');
+      const { data, error: oauthError } = await signInWithFacebook();
+      
+      if (oauthError) {
+        console.error('Facebook OAuth error:', oauthError);
+        setError('Failed to sign in with Facebook. Please try again.');
+        setOauthLoading(false);
+        return;
+      }
+      
+      // OAuth redirect will happen automatically
+      console.log('Facebook OAuth initiated, redirecting...');
+      // Don't set loading to false - user will be redirected
+    } catch (err) {
+      console.error('Facebook sign-in error:', err);
+      setError('Failed to sign in with Facebook. Please try again.');
+      setOauthLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={onClose} />
@@ -272,11 +323,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-2 py-3.5 bg-slate-950 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-sm font-bold text-white">
-              <Chrome className="w-4 h-4" /> Google
+            <button 
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading || oauthLoading}
+              className="flex items-center justify-center gap-2 py-3.5 bg-slate-950 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {oauthLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Chrome className="w-4 h-4" />} Google
             </button>
-            <button className="flex items-center justify-center gap-2 py-3.5 bg-slate-950 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-sm font-bold text-white">
-              <Facebook className="w-4 h-4" /> Facebook
+            <button 
+              type="button"
+              onClick={handleFacebookSignIn}
+              disabled={isLoading || oauthLoading}
+              className="flex items-center justify-center gap-2 py-3.5 bg-slate-950 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {oauthLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Facebook className="w-4 h-4" />} Facebook
             </button>
           </div>
 

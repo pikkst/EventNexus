@@ -840,6 +840,64 @@ export const signOutUser = async () => {
   return true;
 };
 
+// OAuth authentication helpers
+export const signInWithGoogle = async () => {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: typeof window !== 'undefined' 
+          ? `${window.location.origin}${window.location.pathname}#/profile`
+          : undefined,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
+      }
+    });
+    
+    if (error) {
+      console.error('Error signing in with Google:', error);
+      return { data: null, error };
+    }
+    
+    return { data, error: null };
+  } catch (err) {
+    console.error('Google OAuth error:', err);
+    return { 
+      data: null, 
+      error: { message: err instanceof Error ? err.message : 'Failed to sign in with Google' } as any 
+    };
+  }
+};
+
+export const signInWithFacebook = async () => {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'facebook',
+      options: {
+        redirectTo: typeof window !== 'undefined' 
+          ? `${window.location.origin}${window.location.pathname}#/profile`
+          : undefined,
+        scopes: 'email,public_profile'
+      }
+    });
+    
+    if (error) {
+      console.error('Error signing in with Facebook:', error);
+      return { data: null, error };
+    }
+    
+    return { data, error: null };
+  } catch (err) {
+    console.error('Facebook OAuth error:', err);
+    return { 
+      data: null, 
+      error: { message: err instanceof Error ? err.message : 'Failed to sign in with Facebook' } as any 
+    };
+  }
+};
+
 export const getCurrentUser = async () => {
   // First check if there's an existing session
   const { data: { session } } = await supabase.auth.getSession();
