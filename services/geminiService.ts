@@ -284,9 +284,11 @@ export const generatePlatformGrowthCampaign = async (
             visualPrompt: { type: Type.STRING },
             cta: { type: Type.STRING },
             recommendedIncentiveType: { type: Type.STRING, enum: ["credits", "pro_discount", "none"] },
-            recommendedIncentiveValue: { type: Type.NUMBER }
+            recommendedIncentiveValue: { type: Type.NUMBER },
+            offerHeadline: { type: Type.STRING },
+            offerDetails: { type: Type.STRING }
           },
-          required: ["title", "copy", "visualPrompt", "cta", "recommendedIncentiveType", "recommendedIncentiveValue"]
+          required: ["title", "copy", "visualPrompt", "cta", "recommendedIncentiveType", "recommendedIncentiveValue", "offerHeadline", "offerDetails"]
         }
       }
     });

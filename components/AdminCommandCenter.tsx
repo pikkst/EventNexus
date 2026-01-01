@@ -391,6 +391,13 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       const data = await generatePlatformGrowthCampaign(newCampaignTheme, targetAudience);
       if (data) {
         const imageUrl = await generateAdImage(data.visualPrompt, "16:9", true);
+        const incentiveType = (data.recommendedIncentiveType as any) || 'credits';
+        const defaultValue = incentiveType === 'pro_discount' ? 30 : 50; // 30% discount or 50 credits
+        const incentiveValue = data.recommendedIncentiveValue && data.recommendedIncentiveValue > 0
+          ? data.recommendedIncentiveValue
+          : defaultValue;
+        const incentiveLimit = targetAudience === 'creators' ? 500 : 200;
+
         const trackingCode = `AI-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
         const trackingUrl = `https://www.eventnexus.eu?utm_source=campaign&utm_medium=social&utm_campaign=${trackingCode}&utm_content=${targetAudience}`;
         
@@ -404,9 +411,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
           target: targetAudience === 'creators' ? 'organizers' : 'attendees',
           trackingCode: trackingCode,
           incentive: { 
-            type: data.recommendedIncentiveType as any, 
-            value: data.recommendedIncentiveValue, 
-            limit: 100, 
+            type: incentiveType, 
+            value: incentiveValue, 
+            limit: incentiveLimit, 
             redeemed: 0 
           },
           metrics: { views: 0, clicks: 0, guestSignups: 0, proConversions: 0, revenueValue: 0 },
