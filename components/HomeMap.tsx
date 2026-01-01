@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Search, SlidersHorizontal, MapPin, Calendar, 
   Star, Navigation2, LocateFixed, Compass, Route, X,
-  Clock, ArrowRight, Radar
+  Clock, ArrowRight, Radar, Sun, Moon
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline } from 'react-leaflet';
 import L from 'leaflet';
@@ -36,7 +36,12 @@ const MapEffects = ({ center, isFollowing }: { center: [number, number], isFollo
   return null;
 };
 
-const HomeMap: React.FC = () => {
+interface HomeMapProps {
+  theme?: 'dark' | 'light';
+  onToggleTheme?: () => void;
+}
+
+const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,11 +128,21 @@ const HomeMap: React.FC = () => {
     iconAnchor: [20, 20]
   });
 
+  // Tile layer configuration based on theme
+  const tileLayerUrl = theme === 'light' 
+    ? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
+  const bgClass = theme === 'light' ? 'bg-slate-50' : 'bg-slate-950';
+
   return (
-    <div className="relative flex flex-col h-[calc(100vh-64px)] w-full bg-slate-950 overflow-hidden">
+    <div className={`relative flex flex-col h-[calc(100vh-64px)] w-full ${bgClass} overflow-hidden`}>
       <div className="absolute inset-0 z-0">
         <MapContainer center={userLocation} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false} attributionControl={false}>
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+          <TileLayer 
+            url={tileLayerUrl}
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          />
           <MapEffects center={userLocation} isFollowing={isFollowingUser} />
           <Circle center={userLocation} radius={searchRadius * 1000} pathOptions={{ fillColor: '#6366f1', fillOpacity: 0.03, color: '#6366f1', weight: 1, dashArray: '8, 12' }} />
           <Marker position={userLocation} icon={userIcon} />
@@ -149,15 +164,25 @@ const HomeMap: React.FC = () => {
         <div className="absolute left-4 md:left-6 bottom-6 md:bottom-10 z-[500] animate-in slide-in-from-left duration-700">
            <button 
              onClick={() => setSelectedEvent(nearestEvent)}
-             className="bg-slate-900 border border-slate-800 p-3 md:p-4 rounded-2xl md:rounded-[32px] shadow-2xl flex items-center gap-3 md:gap-4 group hover:border-indigo-500 transition-all"
+             className={`${
+               theme === 'light'
+                 ? 'bg-white border-slate-200 hover:border-indigo-400'
+                 : 'bg-slate-900 border-slate-800 hover:border-indigo-500'
+             } border p-3 md:p-4 rounded-2xl md:rounded-[32px] shadow-2xl flex items-center gap-3 md:gap-4 group transition-all`}
            >
               <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white relative">
                  <Radar className="w-6 h-6 animate-pulse" />
-                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-900" />
+                 <div className={`absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 ${
+                   theme === 'light' ? 'border-white' : 'border-slate-900'
+                 }`} />
               </div>
               <div className="text-left">
-                 <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Nearest Vibe</p>
-                 <p className="text-xs font-black text-white">{calculateDistance(userLocation[0], userLocation[1], nearestEvent.location.lat, nearestEvent.location.lng).toFixed(1)} km away</p>
+                 <p className={`text-[8px] font-black uppercase tracking-widest ${
+                   theme === 'light' ? 'text-slate-400' : 'text-slate-500'
+                 }`}>Nearest Vibe</p>
+                 <p className={`text-xs font-black ${
+                   theme === 'light' ? 'text-slate-900' : 'text-white'
+                 }`}>{calculateDistance(userLocation[0], userLocation[1], nearestEvent.location.lat, nearestEvent.location.lng).toFixed(1)} km away</p>
               </div>
            </button>
         </div>
@@ -165,10 +190,24 @@ const HomeMap: React.FC = () => {
 
       {/* Overlays */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-2 sm:px-4 z-[400] space-y-3">
-        <div className="bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-2xl md:rounded-[24px] shadow-2xl p-2 flex flex-col md:flex-row items-center gap-2">
+        <div className={`${
+          theme === 'light'
+            ? 'bg-white/95 border-slate-200'
+            : 'bg-slate-900/90 border-slate-800'
+        } border backdrop-blur-xl rounded-2xl md:rounded-[24px] shadow-2xl p-2 flex flex-col md:flex-row items-center gap-2`}>
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input type="text" placeholder="Explore events..." className="w-full bg-slate-800/50 md:bg-transparent pl-12 pr-4 py-3 text-sm focus:outline-none rounded-xl text-white" />
+            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${
+              theme === 'light' ? 'text-slate-400' : 'text-slate-500'
+            }`} />
+            <input 
+              type="text" 
+              placeholder="Explore events..." 
+              className={`w-full ${
+                theme === 'light'
+                  ? 'bg-slate-50 text-slate-900 placeholder:text-slate-400'
+                  : 'bg-slate-800/50 md:bg-transparent text-white placeholder:text-slate-500'
+              } pl-12 pr-4 py-3 text-sm focus:outline-none rounded-xl`}
+            />
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto">
             <div className="px-6 py-3 bg-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg shadow-indigo-600/30">
@@ -178,7 +217,19 @@ const HomeMap: React.FC = () => {
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide justify-center">
           {['All', ...CATEGORIES].map((cat) => (
-            <button key={cat} onClick={() => setActiveCategory(cat === 'All' ? null : cat)} className={`px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border shrink-0 ${(activeCategory === cat || (cat === 'All' && !activeCategory)) ? 'bg-white border-white text-slate-950 shadow-xl' : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-600'}`}>
+            <button 
+              key={cat} 
+              onClick={() => setActiveCategory(cat === 'All' ? null : cat)} 
+              className={`px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border shrink-0 ${
+                (activeCategory === cat || (cat === 'All' && !activeCategory))
+                  ? theme === 'light'
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl'
+                    : 'bg-white border-white text-slate-950 shadow-xl'
+                  : theme === 'light'
+                    ? 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300'
+                    : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-600'
+              }`}
+            >
               {cat}
             </button>
           ))}
@@ -186,28 +237,65 @@ const HomeMap: React.FC = () => {
       </div>
 
       <div className="absolute right-4 md:right-6 bottom-6 md:bottom-10 flex flex-col gap-2 md:gap-3 z-[400]">
-        <button onClick={() => setIsFollowingUser(!isFollowingUser)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${isFollowingUser ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
+        {onToggleTheme && (
+          <button 
+            onClick={onToggleTheme} 
+            className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${
+              theme === 'light' 
+                ? 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50' 
+                : 'bg-slate-900 text-slate-100 border-slate-800 hover:bg-slate-800'
+            }`}
+            title={theme === 'light' ? 'Switch to Dark Theme' : 'Switch to Light Theme'}
+          >
+            {theme === 'light' ? <Moon className="w-5 h-5 md:w-6 md:h-6" /> : <Sun className="w-5 h-5 md:w-6 md:h-6" />}
+          </button>
+        )}
+        <button onClick={() => setIsFollowingUser(!isFollowingUser)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${isFollowingUser ? 'bg-indigo-600 text-white border-indigo-500' : theme === 'light' ? 'bg-white text-slate-400 border-slate-200' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
           <LocateFixed className="w-5 h-5 md:w-6 md:h-6" />
         </button>
-        <div className="bg-slate-900/90 border border-slate-800 backdrop-blur-md p-4 rounded-3xl flex flex-col items-center gap-3">
-          <input type="range" min="5" max="100" step="5" value={searchRadius} onChange={(e) => setSearchRadius(Number(e.target.value))} className="appearance-none w-1 h-32 bg-slate-800 rounded-lg accent-indigo-500 vertical-range cursor-pointer" />
+        <div className={`${
+          theme === 'light'
+            ? 'bg-white/95 border-slate-200'
+            : 'bg-slate-900/90 border-slate-800'
+        } border backdrop-blur-md p-4 rounded-3xl flex flex-col items-center gap-3`}>
+          <input 
+            type="range" 
+            min="5" 
+            max="100" 
+            step="5" 
+            value={searchRadius} 
+            onChange={(e) => setSearchRadius(Number(e.target.value))} 
+            className={`appearance-none w-1 h-32 rounded-lg accent-indigo-500 vertical-range cursor-pointer ${
+              theme === 'light' ? 'bg-slate-200' : 'bg-slate-800'
+            }`}
+          />
         </div>
       </div>
 
       {selectedEvent && (
         <div className="absolute bottom-4 md:bottom-10 left-1/2 -translate-x-1/2 w-full max-w-lg px-2 sm:px-4 z-[400] animate-in slide-in-from-bottom-10 duration-500">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col sm:flex-row p-2 gap-2">
+          <div className={`${
+            theme === 'light'
+              ? 'bg-white border-slate-200'
+              : 'bg-slate-900 border-slate-800'
+          } border rounded-3xl md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col sm:flex-row p-2 gap-2`}>
             <div className="w-full sm:w-1/3 h-32 sm:h-auto relative shrink-0">
               <img src={selectedEvent.imageUrl} className="w-full h-full object-cover rounded-[32px]" alt="" />
             </div>
             <div className="p-4 flex-1 flex flex-col justify-between">
               <div>
-                <h3 className="font-black text-lg text-white leading-tight tracking-tighter">{selectedEvent.name}</h3>
+                <h3 className={`font-black text-lg leading-tight tracking-tighter ${
+                  theme === 'light' ? 'text-slate-900' : 'text-white'
+                }`}>{selectedEvent.name}</h3>
                 <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">{selectedEvent.location.city} • {selectedEvent.date}</p>
               </div>
               <div className="flex items-center gap-2 pt-4">
                 <button onClick={() => navigate(`/event/${selectedEvent.id}`)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95">Book Access</button>
-                <button onClick={() => setSelectedEvent(null)} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-2xl text-slate-400"><X size={20} /></button>
+                <button onClick={() => setSelectedEvent(null)} className={`p-3 rounded-2xl ${
+                  theme === 'light'
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-500'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
+                }`}><X size={20} /></button>
               </div>
             </div>
           </div>
