@@ -242,7 +242,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                    </button>
                    <div className="flex flex-col">
                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Incentive Status</p>
-                      <p className="text-sm font-bold text-orange-500">{activeBanner.incentive.limit - activeBanner.incentive.redeemed} Spots Left</p>
+                      {activeBanner.incentive?.limit !== undefined && activeBanner.incentive?.redeemed !== undefined ? (
+                        <p className="text-sm font-bold text-orange-500">{activeBanner.incentive.limit - activeBanner.incentive.redeemed} Spots Left</p>
+                      ) : (
+                        <p className="text-sm font-bold text-orange-500">Limited Time</p>
+                      )}
                    </div>
                 </div>
              </div>
@@ -253,7 +257,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                    <div className="w-12 h-12 bg-orange-600/10 rounded-2xl flex items-center justify-center text-orange-500"><Gift size={24}/></div>
                    <div>
                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Reward Value</p>
-                      <p className="text-xl font-black text-white">€{(activeBanner.incentive.value * 0.5).toFixed(2)}</p>
+                      <p className="text-xl font-black text-white">€{((activeBanner.incentive?.value || 0) * 0.5).toFixed(2)}</p>
                    </div>
                 </div>
              </div>
