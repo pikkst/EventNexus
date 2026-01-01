@@ -251,7 +251,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 </div>
              </div>
              <div className="md:w-1/2 h-64 md:h-auto relative">
-                <img src={activeBanner.imageUrl} className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-[10s]" alt="" />
+                <img src={activeBanner.imageUrl || activeBanner.image_url || '/logo for eventnexus.png'} className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-[10s]" alt="" onError={(e) => { e.currentTarget.src = '/logo for eventnexus.png'; }} />
                 <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-transparent to-transparent md:block hidden" />
                 <div className="absolute bottom-6 right-8 bg-slate-950/80 backdrop-blur-md px-6 py-4 rounded-3xl border border-slate-800 flex items-center gap-4 shadow-2xl">
                    <div className="w-12 h-12 bg-orange-600/10 rounded-2xl flex items-center justify-center text-orange-500"><Gift size={24}/></div>
