@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './supabase';
+import { EventNexusEvent } from '../types';
 
 export interface AnalyticsEvent {
   event_type: string;
@@ -60,6 +61,24 @@ export const trackAction = async (
     }
   } catch (error) {
     console.error('Error tracking action:', error);
+  }
+};
+
+// Lightweight wrapper for Meta Pixel custom events
+export const trackMetaPixel = (
+  eventName: string,
+  payload: Record<string, any> = {}
+) => {
+  if (typeof window === 'undefined') return;
+  const fbq = (window as any).fbq;
+  if (typeof fbq === 'function') {
+    try {
+      fbq('trackCustom', eventName, payload);
+    } catch (error) {
+      console.warn('Meta Pixel tracking failed:', error);
+    }
+  } else {
+    console.warn('Meta Pixel not ready');
   }
 };
 
@@ -217,4 +236,38 @@ export const trackRetention = async (
   } catch (error) {
     console.error('Error tracking retention:', error);
   }
+};
+
+// Capture a complete event-creation conversion across Supabase, GA, and Meta
+export const trackEventCreation = async (
+  event: EventNexusEvent,
+  userId?: string | null
+) => {
+  const metadata = {
+    event_id: event.id,
+    name: event.name,
+    category: event.category,
+    price: event.price,
+    city: event.location?.city,
+    visibility: event.visibility,
+    is_featured: !!event.isFeatured,
+    start: event.date,
+    end: event.end_date,
+    translations: event.translations ? Object.keys(event.translations).length : 0
+  };
+
+  await Promise.allSettled([
+    trackAction('event_created', userId || null, metadata),
+    trackFunnelStep('event_creation', 'completed', userId || null, true, metadata)
+  ]);
+
+  trackMetaPixel('EventCreated', {
+    content_name: event.name,
+    content_category: event.category,
+    value: event.price,
+    currency: 'EUR',
+    city: event.location?.city,
+    event_id: event.id,
+    visibility: event.visibility
+  });
 };
