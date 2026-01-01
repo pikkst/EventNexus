@@ -864,17 +864,17 @@ export const signOutUser = async () => {
 // OAuth authentication helpers
 export const signInWithGoogle = async () => {
   try {
-    // Construct proper redirect URL for GitHub Pages deployment
+    // Construct proper redirect URL for GitHub Pages deployment with HashRouter
     const getRedirectUrl = () => {
       if (typeof window === 'undefined') return undefined;
       
-      // For production - redirect to /profile
+      // For production - redirect to /#/profile (HashRouter format)
       if (window.location.origin.includes('eventnexus.eu')) {
-        return 'https://www.eventnexus.eu/EventNexus/profile';
+        return 'https://www.eventnexus.eu/EventNexus/#/profile';
       }
       
-      // For local development
-      return `${window.location.origin}/profile`;
+      // For local development - use HashRouter format
+      return `${window.location.origin}/#/profile`;
     };
     
     const { data, error } = await supabase.auth.signInWithOAuth({

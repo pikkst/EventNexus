@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Map as MapIcon, 
   PlusCircle, 
@@ -80,22 +80,7 @@ import {
 const GA_MEASUREMENT_ID = 'G-JD7P5ZKF4L';
 
 // Redirect legacy hash URLs to clean URLs
-const HashRedirect: React.FC = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.startsWith('#/')) {
-      const cleanPath = hash.substring(1); // Remove the #
-      console.log('Redirecting legacy hash URL:', hash, '→', cleanPath);
-      navigate(cleanPath, { replace: true });
-    }
-  }, [navigate]);
-
-  return null;
-};
-
-// Track page views for BrowserRouter routes in Google Analytics
+// Track page views for HashRouter routes in Google Analytics
 const AnalyticsTracker: React.FC = () => {
   const location = useLocation();
 
@@ -677,8 +662,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <BrowserRouter basename="/EventNexus">
-      <HashRedirect />
+    <HashRouter>
       <AnalyticsTracker />
       <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
         {/* Loading overlay for initial authentication */}
@@ -800,7 +784,7 @@ const App: React.FC = () => {
           />
         )}
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 
