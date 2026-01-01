@@ -236,20 +236,18 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
         </div>
       </div>
 
-      <div className="absolute right-4 md:right-6 bottom-6 md:bottom-10 flex flex-col gap-2 md:gap-3 z-[400]">
-        {onToggleTheme && (
-          <button 
-            onClick={onToggleTheme} 
-            className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${
-              theme === 'light' 
-                ? 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50' 
-                : 'bg-slate-900 text-slate-100 border-slate-800 hover:bg-slate-800'
-            }`}
-            title={theme === 'light' ? 'Switch to Dark Theme' : 'Switch to Light Theme'}
-          >
-            {theme === 'light' ? <Moon className="w-5 h-5 md:w-6 md:h-6" /> : <Sun className="w-5 h-5 md:w-6 md:h-6" />}
-          </button>
-        )}
+      <div className="absolute right-4 md:right-6 bottom-6 md:bottom-10 flex flex-col gap-2 md:gap-3 z-[600]">
+        <button 
+          onClick={onToggleTheme || (() => {})} 
+          className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${
+            theme === 'light' 
+              ? 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50' 
+              : 'bg-slate-900 text-slate-100 border-slate-800 hover:bg-slate-800'
+          }`}
+          title={theme === 'light' ? 'Switch to Dark Theme' : 'Switch to Light Theme'}
+        >
+          {theme === 'light' ? <Moon className="w-5 h-5 md:w-6 md:h-6" /> : <Sun className="w-5 h-5 md:w-6 md:h-6" />}
+        </button>
         <button onClick={() => setIsFollowingUser(!isFollowingUser)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${isFollowingUser ? 'bg-indigo-600 text-white border-indigo-500' : theme === 'light' ? 'bg-white text-slate-400 border-slate-200' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
           <LocateFixed className="w-5 h-5 md:w-6 md:h-6" />
         </button>
