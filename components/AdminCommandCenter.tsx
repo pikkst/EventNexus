@@ -390,7 +390,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     try {
       const data = await generatePlatformGrowthCampaign(newCampaignTheme, targetAudience);
       if (data) {
-        const imageUrl = await generateAdImage(data.visualPrompt, "16:9");
+        const imageUrl = await generateAdImage(data.visualPrompt, "16:9", true);
         const trackingCode = `AI-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
         const trackingUrl = `https://www.eventnexus.eu?utm_source=campaign&utm_medium=social&utm_campaign=${trackingCode}&utm_content=${targetAudience}`;
         

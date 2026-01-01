@@ -1415,6 +1415,26 @@ export const updateCampaign = async (id: string, updates: Partial<Campaign>): Pr
 
 export const deleteCampaign = async (id: string): Promise<boolean> => {
   try {
+    // Attempt to delete associated campaign image from Storage
+    try {
+      const { data: campaignRow } = await supabase
+        .from('campaigns')
+        .select('image_url')
+        .eq('id', id)
+        .single();
+
+      const imageUrl = campaignRow?.image_url as string | undefined;
+      const marker = '/storage/v1/object/public/campaign-images/';
+      if (imageUrl && imageUrl.includes(marker)) {
+        const objectPath = imageUrl.split('campaign-images/')[1];
+        if (objectPath) {
+          await supabase.storage.from('campaign-images').remove([objectPath]);
+        }
+      }
+    } catch (storageCleanupError) {
+      console.error('Warning: failed to delete campaign image from storage', storageCleanupError);
+    }
+
     const { error } = await supabase
       .from('campaigns')
       .delete()
