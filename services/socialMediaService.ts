@@ -6,6 +6,35 @@
 import { supabase } from './supabase';
 import { generateAdImage } from './geminiService';
 
+// Publicly hosted fallback image to avoid Graph API 324 errors when an asset is missing
+const FALLBACK_AD_IMAGE_URL = 'https://www.eventnexus.eu/EventNexus/logo%20for%20eventnexus.png';
+
+const isImageError = (code?: number, message?: string) => {
+  if (!code && !message) return false;
+  const normalized = (message || '').toLowerCase();
+  return code === 324 || code === 100 || code === 2069019 || normalized.includes('image');
+};
+
+const resolveImageUrlWithFallback = async (
+  imageUrl?: string,
+  requireImage = false
+): Promise<{ url: string | null; isFallback: boolean }> => {
+  if (!imageUrl) {
+    return { url: requireImage ? FALLBACK_AD_IMAGE_URL : null, isFallback: requireImage };
+  }
+
+  if (imageUrl.startsWith('data:')) {
+    const publicUrl = await uploadDataUrlToSupabase(imageUrl);
+    if (publicUrl) {
+      return { url: publicUrl, isFallback: false };
+    }
+
+    return { url: requireImage ? FALLBACK_AD_IMAGE_URL : null, isFallback: requireImage };
+  }
+
+  return { url: imageUrl, isFallback: false };
+};
+
 const makeId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
 // Upload base64 data URL to Supabase Storage to obtain a public URL (used for Instagram)
@@ -200,174 +229,144 @@ export const postToFacebook = async (
   imageUrl?: string,
   eventUrl?: string
 ): Promise<{ success: boolean; postId?: string; error?: string }> => {
-  try {
-    console.log('📘 Facebook posting (NEW API):', { pageId, hasImage: !!imageUrl, hasEventUrl: !!eventUrl });
-    
-    if (!pageId) {
-      throw new Error('Facebook Page ID is required');
-    }
+  type FacebookResult = {
+    success: boolean;
+    postId?: string;
+    errorCode?: number;
+    errorMessage?: string;
+    fbtraceId?: string;
+  };
 
-    // If we have an image, use /photos endpoint to upload image with clickable link
-    if (imageUrl) {
-      // Convert base64 data URL to blob for upload
-      let imageBlob: Blob;
-      if (imageUrl.startsWith('data:')) {
-        // Base64 data URL - convert to blob
-        const base64Data = imageUrl.split(',')[1];
-        const binaryData = atob(base64Data);
-        const bytes = new Uint8Array(binaryData.length);
-        for (let i = 0; i < binaryData.length; i++) {
-          bytes[i] = binaryData.charCodeAt(i);
-        }
-        imageBlob = new Blob([bytes], { type: 'image/png' });
-        console.log('📦 Converted base64 image to blob:', imageBlob.size, 'bytes');
-      } else {
-        // HTTP URL - let Facebook fetch it
-        const photoData: any = {
-          url: imageUrl,
-          message: content,
-          access_token: accessToken
-        };
+  const postPhoto = async (photoUrl: string): Promise<FacebookResult> => {
+    try {
+      const photoData: any = {
+        url: photoUrl,
+        message: content,
+        access_token: accessToken
+      };
 
-        if (eventUrl) {
-          photoData.link = eventUrl;
-          console.log('🔗 Adding clickable tracking link to photo:', eventUrl);
-        }
-
-        console.log('📤 Posting photo URL to Facebook...');
-        const response = await fetch(
-          `https://graph.facebook.com/v18.0/${pageId}/photos`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(photoData)
-          }
-        );
-        const result = await response.json();
-        
-        if (result.error) {
-          console.error('❌ Facebook API error:', result.error);
-          if (result.error.code === 190) {
-            throw new Error('Facebook access token has expired. Please reconnect your Facebook account.');
-          }
-          throw new Error(result.error.message || 'Facebook photo posting failed');
-        }
-
-        console.log('✅ Posted photo to Facebook with tracking link:', result.id);
-        return { success: true, postId: result.id, error: undefined };
-      }
-
-      // Upload blob using multipart/form-data
-      const formData = new FormData();
-      formData.append('source', imageBlob, 'ad-image.png');
-      formData.append('message', content);
-      formData.append('access_token', accessToken);
-      
       if (eventUrl) {
-        formData.append('link', eventUrl);
-        console.log('🔗 Adding clickable tracking link to photo:', eventUrl);
+        photoData.link = eventUrl;
       }
 
-      console.log('📤 Uploading photo to Facebook with clickable link...');
+      console.log('📤 Posting photo URL to Facebook...', { pageId, photoUrl });
       const response = await fetch(
         `https://graph.facebook.com/v18.0/${pageId}/photos`,
         {
           method: 'POST',
-          body: formData
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(photoData)
         }
       );
 
       const result = await response.json();
-      
-      console.log('📊 Facebook photo API response:', {
-        status: response.status,
-        ok: response.ok,
-        hasError: !!result.error,
-        hasId: !!result.id,
-        result: result
-      });
-      
+
       if (result.error) {
-        console.error('❌ Facebook API error details:', {
-          code: result.error.code,
-          type: result.error.type,
-          message: result.error.message,
-          fbtrace_id: result.error.fbtrace_id
-        });
-        
-        if (result.error.code === 190) {
-          throw new Error('Facebook access token has expired. Please reconnect your Facebook account.');
-        }
-        
-        throw new Error(result.error.message || 'Facebook photo posting failed');
+        console.error('❌ Facebook API error:', result.error);
+        return {
+          success: false,
+          errorCode: result.error.code,
+          errorMessage: result.error.message,
+          fbtraceId: result.error.fbtrace_id
+        };
       }
 
       console.log('✅ Posted photo to Facebook with tracking link:', result.id);
+      return { success: true, postId: result.id };
+    } catch (error) {
       return {
-        success: true,
-        postId: result.id,
-        error: undefined
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Facebook photo posting failed'
       };
     }
+  };
 
-    // No image: Use /feed endpoint with text and optional link
-    const postData: any = {
-      message: content,
-      access_token: accessToken
-    };
+  const postTextOnly = async (): Promise<FacebookResult> => {
+    try {
+      const postData: any = {
+        message: content,
+        access_token: accessToken
+      };
 
-    if (eventUrl) {
-      postData.link = eventUrl;
+      if (eventUrl) {
+        postData.link = eventUrl;
+      }
+
+      console.log('📤 Posting to Facebook /feed endpoint (text only)...');
+      const response = await fetch(
+        `https://graph.facebook.com/v18.0/${pageId}/feed`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(postData)
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.error) {
+        console.error('❌ Facebook API error details:', result.error);
+        return {
+          success: false,
+          errorCode: result.error.code,
+          errorMessage: result.error.message,
+          fbtraceId: result.error.fbtrace_id
+        };
+      }
+
+      console.log('✅ Posted to Facebook:', result.id);
+      return { success: true, postId: result.id };
+    } catch (error) {
+      return {
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Facebook posting failed'
+      };
+    }
+  };
+
+  try {
+    console.log('📘 Facebook posting (NEW API):', { pageId, hasImage: !!imageUrl, hasEventUrl: !!eventUrl });
+
+    if (!pageId) {
+      throw new Error('Facebook Page ID is required');
     }
 
-    console.log('📤 Posting to Facebook /feed endpoint (text only)...');
-    const response = await fetch(
-      `https://graph.facebook.com/v18.0/${pageId}/feed`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(postData)
-      }
-    );
+    if (imageUrl) {
+      const { url: resolvedImageUrl, isFallback } = await resolveImageUrlWithFallback(imageUrl, false);
 
-    const result = await response.json();
-    
-    console.log('📊 Facebook API response:', {
-      status: response.status,
-      ok: response.ok,
-      hasError: !!result.error,
-      hasId: !!result.id,
-      result: result
-    });
-    
-    if (result.error) {
-      console.error('❌ Facebook API error details:', {
-        code: result.error.code,
-        type: result.error.type,
-        message: result.error.message,
-        fbtrace_id: result.error.fbtrace_id
-      });
-      
-      // Check if token expired
-      if (result.error.code === 190) {
-        throw new Error('Facebook access token has expired. Please reconnect your Facebook account.');
+      if (resolvedImageUrl) {
+        const primaryResult = await postPhoto(resolvedImageUrl);
+
+        if (!primaryResult.success && !isFallback && isImageError(primaryResult.errorCode, primaryResult.errorMessage)) {
+          console.warn('⚠️ Facebook image rejected, retrying with fallback logo');
+          const fallbackResult = await postPhoto(FALLBACK_AD_IMAGE_URL);
+          if (fallbackResult.success) {
+            return { success: true, postId: fallbackResult.postId };
+          }
+
+          return {
+            success: false,
+            error: fallbackResult.errorMessage || primaryResult.errorMessage || 'Facebook photo posting failed'
+          };
+        }
+
+        return primaryResult.success
+          ? { success: true, postId: primaryResult.postId }
+          : { success: false, error: primaryResult.errorMessage || 'Facebook photo posting failed' };
       }
-      
-      throw new Error(result.error.message || 'Facebook posting failed');
     }
 
-    console.log('✅ Posted to Facebook:', result.id);
-    return {
-      success: true,
-      postId: result.id,
-      error: undefined
-    };
+    const textResult = await postTextOnly();
+    return textResult.success
+      ? { success: true, postId: textResult.postId }
+      : { success: false, error: textResult.errorMessage || 'Facebook posting failed' };
   } catch (error) {
     console.error('❌ Facebook posting error (caught):', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
     });
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -384,93 +383,135 @@ export const postToInstagram = async (
   caption: string,
   imageUrl: string
 ): Promise<{ success: boolean; postId?: string; error?: string }> => {
+  type InstagramResult = {
+    success: boolean;
+    postId?: string;
+    errorCode?: number;
+    errorMessage?: string;
+  };
+
+  const publishInstagram = async (photoUrl: string): Promise<InstagramResult> => {
+    try {
+      console.log('📸 Instagram posting:', { accountId, photoUrl });
+
+      // Step 1: Create media container
+      const containerResponse = await fetch(
+        `https://graph.facebook.com/v18.0/${accountId}/media`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_url: photoUrl,
+            caption: caption,
+            access_token: accessToken
+          })
+        }
+      );
+
+      const containerResult = await containerResponse.json();
+
+      if (containerResult.error) {
+        console.error('Instagram container creation error:', containerResult.error);
+        return {
+          success: false,
+          errorCode: containerResult.error.code,
+          errorMessage: containerResult.error.message
+        };
+      }
+
+      console.log('✅ Instagram container created:', containerResult.id);
+
+      // Step 2: Wait for container to be ready (Instagram needs time to process image)
+      console.log('⏳ Waiting for Instagram to process media container...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Step 2.5: Check container status
+      const statusResponse = await fetch(
+        `https://graph.facebook.com/v18.0/${containerResult.id}?fields=status_code&access_token=${accessToken}`
+      );
+      const statusResult = await statusResponse.json();
+      console.log('📊 Container status:', statusResult);
+
+      if (statusResult.error) {
+        return {
+          success: false,
+          errorCode: statusResult.error.code,
+          errorMessage: statusResult.error.message
+        };
+      }
+
+      if (statusResult.status_code !== 'FINISHED' && statusResult.status_code !== 'IN_PROGRESS') {
+        return {
+          success: false,
+          errorMessage: `Container not ready: ${statusResult.status_code || 'unknown status'}`
+        };
+      }
+
+      // Step 3: Publish the media container
+      console.log('📤 Publishing Instagram post...');
+      const publishResponse = await fetch(
+        `https://graph.facebook.com/v18.0/${accountId}/media_publish`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            creation_id: containerResult.id,
+            access_token: accessToken
+          })
+        }
+      );
+
+      const publishResult = await publishResponse.json();
+
+      if (publishResult.error) {
+        console.error('❌ Instagram publish error:', publishResult.error);
+        return {
+          success: false,
+          errorCode: publishResult.error.code,
+          errorMessage: publishResult.error.message
+        };
+      }
+
+      console.log('✅ Posted to Instagram:', publishResult.id);
+      return { success: true, postId: publishResult.id };
+    } catch (error) {
+      return {
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Failed to publish Instagram post'
+      };
+    }
+  };
+
   try {
-    console.log('📸 Instagram posting:', { accountId, hasImage: !!imageUrl });
-    
     if (!accountId) {
       throw new Error('Instagram Business Account ID is required');
     }
 
-    // Instagram requires a publicly accessible image URL; upload base64 images to storage
-    let finalImageUrl = imageUrl;
+    const { url: finalImageUrl, isFallback } = await resolveImageUrlWithFallback(imageUrl, true);
+
     if (!finalImageUrl) {
       throw new Error('Instagram requires an image');
     }
 
-    if (finalImageUrl.startsWith('data:')) {
-      const publicUrl = await uploadDataUrlToSupabase(finalImageUrl);
-      if (!publicUrl) {
-        throw new Error('Failed to upload image for Instagram. Please retry.');
+    const firstAttempt = await publishInstagram(finalImageUrl);
+
+    if (!firstAttempt.success && !isFallback && isImageError(firstAttempt.errorCode, firstAttempt.errorMessage)) {
+      console.warn('⚠️ Instagram image rejected, retrying with fallback logo');
+      const fallbackAttempt = await publishInstagram(FALLBACK_AD_IMAGE_URL);
+
+      if (fallbackAttempt.success) {
+        return { success: true, postId: fallbackAttempt.postId };
       }
-      finalImageUrl = publicUrl;
-      console.log('🌐 Uploaded image for Instagram, public URL:', finalImageUrl);
+
+      return {
+        success: false,
+        error: fallbackAttempt.errorMessage || firstAttempt.errorMessage || 'Failed to publish Instagram post'
+      };
     }
 
-    // Step 1: Create media container
-    const containerResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${accountId}/media`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_url: finalImageUrl,
-          caption: caption,
-          access_token: accessToken
-        })
-      }
-    );
-
-    const containerResult = await containerResponse.json();
-    
-    if (containerResult.error) {
-      console.error('Instagram container creation error:', containerResult.error);
-      throw new Error(containerResult.error.message || 'Failed to create Instagram media container');
-    }
-
-    console.log('✅ Instagram container created:', containerResult.id);
-
-    // Step 2: Wait for container to be ready (Instagram needs time to process image)
-    console.log('⏳ Waiting for Instagram to process media container...');
-    await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds
-
-    // Step 2.5: Check container status
-    const statusResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${containerResult.id}?fields=status_code&access_token=${accessToken}`
-    );
-    const statusResult = await statusResponse.json();
-    console.log('📊 Container status:', statusResult);
-
-    if (statusResult.status_code !== 'FINISHED' && statusResult.status_code !== 'IN_PROGRESS') {
-      throw new Error(`Container not ready: ${statusResult.status_code || 'unknown status'}`);
-    }
-
-    // Step 3: Publish the media container
-    console.log('📤 Publishing Instagram post...');
-    const publishResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${accountId}/media_publish`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creation_id: containerResult.id,
-          access_token: accessToken
-        })
-      }
-    );
-
-    const publishResult = await publishResponse.json();
-    
-    if (publishResult.error) {
-      console.error('❌ Instagram publish error:', publishResult.error);
-      throw new Error(publishResult.error.message || 'Failed to publish Instagram post');
-    }
-
-    console.log('✅ Posted to Instagram:', publishResult.id);
-    return {
-      success: true,
-      postId: publishResult.id,
-      error: undefined
-    };
+    return firstAttempt.success
+      ? { success: true, postId: firstAttempt.postId }
+      : { success: false, error: firstAttempt.errorMessage || 'Failed to publish Instagram post' };
   } catch (error) {
     console.error('Instagram posting error:', error);
     return {

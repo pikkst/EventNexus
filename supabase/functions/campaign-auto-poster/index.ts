@@ -6,6 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const FALLBACK_AD_IMAGE_URL = 'https://www.eventnexus.eu/EventNexus/logo%20for%20eventnexus.png';
+
+const getImageUrlOrFallback = (imageUrl?: string, requireImage = false): string | null => {
+  if (!imageUrl) return requireImage ? FALLBACK_AD_IMAGE_URL : null;
+  return imageUrl.startsWith('http') ? imageUrl : FALLBACK_AD_IMAGE_URL;
+};
+
 interface ScheduledPost {
   id: string;
   campaign_id: string;
@@ -215,48 +222,62 @@ async function postToFacebook(
   customContent?: any
 ): Promise<string | null> {
   const content = customContent?.content || `${campaign.title}\n\n${campaign.copy}\n\n👉 ${campaign.cta}`;
-  const imageUrl = customContent?.imageUrl || campaign.imageUrl || campaign.image_url;
+  const safeImageUrl = getImageUrlOrFallback(customContent?.imageUrl || campaign.imageUrl || campaign.image_url, false);
 
-  try {
-    let endpoint = '';
-    let body: any = {};
+  const publishFacebook = async (photoUrl?: string): Promise<string | null> => {
+    try {
+      let endpoint = '';
+      let body: any = {};
 
-    if (imageUrl) {
-      // Post with photo
-      endpoint = `https://graph.facebook.com/v18.0/${account.account_id}/photos`;
-      body = {
-        url: imageUrl,
-        caption: content,
-        link: 'https://www.eventnexus.eu',
-        access_token: account.access_token
-      };
-    } else {
-      // Text-only post
-      endpoint = `https://graph.facebook.com/v18.0/${account.account_id}/feed`;
-      body = {
-        message: content,
-        link: 'https://www.eventnexus.eu',
-        access_token: account.access_token
-      };
+      if (photoUrl) {
+        endpoint = `https://graph.facebook.com/v18.0/${account.account_id}/photos`;
+        body = {
+          url: photoUrl,
+          caption: content,
+          link: 'https://www.eventnexus.eu',
+          access_token: account.access_token
+        };
+      } else {
+        endpoint = `https://graph.facebook.com/v18.0/${account.account_id}/feed`;
+        body = {
+          message: content,
+          link: 'https://www.eventnexus.eu',
+          access_token: account.access_token
+        };
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Facebook API error payload:', error);
+        return null;
+      }
+
+      const data = await response.json();
+      return data.id || data.post_id || null;
+    } catch (error) {
+      console.error('Facebook posting error:', error);
+      return null;
     }
+  };
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+  const primaryId = await publishFacebook(safeImageUrl || undefined);
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Facebook API error: ${error}`);
-    }
-
-    const data = await response.json();
-    return data.id || data.post_id || null;
-  } catch (error: any) {
-    console.error('Facebook posting error:', error);
-    throw error;
+  if (!primaryId && safeImageUrl && safeImageUrl !== FALLBACK_AD_IMAGE_URL) {
+    console.warn('Retrying Facebook post with fallback image');
+    return await publishFacebook(FALLBACK_AD_IMAGE_URL);
   }
+
+  if (!primaryId) {
+    throw new Error('Facebook posting failed');
+  }
+
+  return primaryId;
 }
 
 /**
@@ -268,59 +289,74 @@ async function postToInstagram(
   customContent?: any
 ): Promise<string | null> {
   const caption = customContent?.caption || `${campaign.title}\n\n${campaign.copy}\n\n🔗 www.eventnexus.eu\n\n#EventNexus #Events`;
-  const imageUrl = customContent?.imageUrl || campaign.imageUrl || campaign.image_url;
+  const safeImageUrl = getImageUrlOrFallback(customContent?.imageUrl || campaign.imageUrl || campaign.image_url, true);
 
-  if (!imageUrl) {
+  if (!safeImageUrl) {
     throw new Error('Instagram requires an image');
   }
 
-  try {
-    // Step 1: Create container
-    const containerResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${account.account_id}/media`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_url: imageUrl,
-          caption: caption,
-          access_token: account.access_token
-        })
+  const publishInstagram = async (photoUrl: string): Promise<string | null> => {
+    try {
+      const containerResponse = await fetch(
+        `https://graph.facebook.com/v18.0/${account.account_id}/media`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_url: photoUrl,
+            caption: caption,
+            access_token: account.access_token
+          })
+        }
+      );
+
+      if (!containerResponse.ok) {
+        const error = await containerResponse.text();
+        console.error('Instagram container error payload:', error);
+        return null;
       }
-    );
 
-    if (!containerResponse.ok) {
-      const error = await containerResponse.text();
-      throw new Error(`Instagram container error: ${error}`);
-    }
+      const containerData = await containerResponse.json();
+      const containerId = containerData.id;
 
-    const containerData = await containerResponse.json();
-    const containerId = containerData.id;
+      const publishResponse = await fetch(
+        `https://graph.facebook.com/v18.0/${account.account_id}/media_publish`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            creation_id: containerId,
+            access_token: account.access_token
+          })
+        }
+      );
 
-    // Step 2: Publish container
-    const publishResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${account.account_id}/media_publish`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creation_id: containerId,
-          access_token: account.access_token
-        })
+      if (!publishResponse.ok) {
+        const error = await publishResponse.text();
+        console.error('Instagram publish error payload:', error);
+        return null;
       }
-    );
 
-    if (!publishResponse.ok) {
-      const error = await publishResponse.text();
-      throw new Error(`Instagram publish error: ${error}`);
+      const publishData = await publishResponse.json();
+      return publishData.id || null;
+    } catch (error) {
+      console.error('Instagram posting error:', error);
+      return null;
     }
+  };
 
-    const publishData = await publishResponse.json();
-    return publishData.id || null;
-  } catch (error: any) {
-    console.error('Instagram posting error:', error);
-    throw error;
+  const primaryId = await publishInstagram(safeImageUrl);
+
+  if (!primaryId && safeImageUrl !== FALLBACK_AD_IMAGE_URL) {
+    console.warn('Retrying Instagram post with fallback image');
+    return await publishInstagram(FALLBACK_AD_IMAGE_URL);
   }
+
+  if (!primaryId) {
+    throw new Error('Instagram publish error');
+  }
+
+  return primaryId;
 }
 
 /**
