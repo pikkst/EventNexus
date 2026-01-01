@@ -91,6 +91,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
   const trackCampaignView = async (campaignId: string) => {
     try {
+      // Validate UUID format before making RPC call
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!campaignId || !uuidRegex.test(campaignId)) {
+        console.warn('Invalid campaign ID format:', campaignId);
+        return;
+      }
+
       const { error } = await supabase.rpc('increment_campaign_metric', {
         p_campaign_id: campaignId,
         p_metric: 'views',
@@ -104,6 +111,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
   const trackCampaignClick = async (campaignId: string) => {
     try {
+      // Validate UUID format before making RPC call
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!campaignId || !uuidRegex.test(campaignId)) {
+        console.warn('Invalid campaign ID format:', campaignId);
+        return;
+      }
+
       const { error } = await supabase.rpc('increment_campaign_metric', {
         p_campaign_id: campaignId,
         p_metric: 'clicks',
