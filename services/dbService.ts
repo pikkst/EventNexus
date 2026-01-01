@@ -375,38 +375,53 @@ export const getUser = async (id: string): Promise<User | null> => {
     const { data, error } = result as any;
     
     if (error) {
-      console.error('Error fetching user:', error.message);
+      console.error('Error fetching user:', error.message, error.code);
     
-      if (error.code === 'PGRST116') {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+      // If user profile doesn't exist or RLS blocks access, try to ensure it exists
+      if (error.code === 'PGRST116' || error.code === '42501' || error.message?.includes('406')) {
+        console.log('🔧 User profile missing or inaccessible, attempting to create via RPC...');
         
-        if (authUser) {
-          const newUser: User = {
-            id: authUser.id,
-            name: authUser.email?.split('@')[0] || 'User',
-            email: authUser.email || '',
-            role: 'attendee',
-            subscription_tier: 'free',
-            credits: 0,
-            credits_balance: 0,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.id}`,
-            notification_prefs: {
-              pushEnabled: true,
-              emailEnabled: true,
-              proximityAlerts: true,
-              alertRadius: 10,
-              interestedCategories: [],
-              notifyActiveEvents: true, // NEW: Enable active event notifications by default
-              notifyUpcomingEvents: true, // NEW: Enable upcoming event notifications
-              upcomingEventWindow: 24, // NEW: Default to 24 hours
-              minAvailableTickets: 1 // NEW: Notify about any available tickets
-            }
-          };
+        try {
+          // Use the ensure_user_profile RPC function which has SECURITY DEFINER
+          const { data: ensuredUser, error: rpcError } = await supabase
+            .rpc('ensure_user_profile', { user_id: id });
           
-          const createdUser = await createUser(newUser);
-          if (createdUser) {
-            return createdUser;
+          if (rpcError) {
+            console.error('❌ RPC ensure_user_profile failed:', rpcError);
+          } else if (ensuredUser) {
+            console.log('✅ User profile ensured via RPC');
+            // Fetch the user again now that it should exist
+            const { data: fetchedUser, error: fetchError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', id)
+              .single();
+            
+            if (!fetchError && fetchedUser) {
+              const user = fetchedUser;
+              // Apply same notification_prefs normalization
+              if (!user.notification_prefs || typeof user.notification_prefs !== 'object') {
+                user.notification_prefs = {
+                  pushEnabled: true,
+                  emailEnabled: true,
+                  proximityAlerts: true,
+                  alertRadius: 10,
+                  interestedCategories: [],
+                  notifyActiveEvents: true,
+                  notifyUpcomingEvents: true,
+                  upcomingEventWindow: 24,
+                  minAvailableTickets: 1
+                };
+              }
+              if (!Array.isArray(user.followed_organizers)) {
+                user.followed_organizers = [];
+              }
+              user.followedOrganizers = user.followed_organizers;
+              return user;
+            }
           }
+        } catch (rpcErr) {
+          console.error('❌ RPC call exception:', rpcErr);
         }
       }
       
