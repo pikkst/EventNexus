@@ -203,6 +203,15 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [toast, setToast] = useState<null | { message: string; variant: 'success' | 'info' | 'error' }>(null);
+  const [mapTheme, setMapTheme] = useState<'dark' | 'light'>(() => {
+    // Restore map theme preference from localStorage
+    try {
+      const saved = localStorage.getItem('eventnexus-map-theme');
+      return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
  
   // Ensure GA script is present even if index.html is cached/stripped
   useEffect(() => {
@@ -532,6 +541,12 @@ const App: React.FC = () => {
     }
   };
 
+  const handleToggleMapTheme = () => {
+    const newTheme = mapTheme === 'dark' ? 'light' : 'dark';
+    setMapTheme(newTheme);
+    localStorage.setItem('eventnexus-map-theme', newTheme);
+  };
+
   const handleReloadEvents = async () => {
     try {
       console.log('🔄 Reloading events after event creation...');
@@ -670,7 +685,7 @@ const App: React.FC = () => {
           }>
             <Routes>
               <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/map" element={<HomeMap />} />
+              <Route path="/map" element={<HomeMap theme={mapTheme} onToggleTheme={handleToggleMapTheme} />} />
               <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />

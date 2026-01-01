@@ -58,6 +58,14 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isEventUnlocked, setIsEventUnlocked] = useState(false);
+  const [mapTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem('eventnexus-map-theme');
+      return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -886,7 +894,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  url={mapTheme === 'light' 
+                    ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                  }
                 />
                 {formData.locationAddress && (
                   <Marker position={[formData.locationLat, formData.locationLng]}>
