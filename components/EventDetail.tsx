@@ -344,7 +344,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           {/* Event Title Overlay */}
           <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8 pb-6 sm:pb-8 md:pb-12">
             <div className="max-w-6xl mx-auto">
-              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:gap-3 mb-2 sm:mb-3 md:mb-4">
                 <span className="px-3 sm:px-4 py-1.5 sm:py-2 bg-indigo-600/90 backdrop-blur-sm rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider">
                   {event.category}
                 </span>
@@ -379,8 +379,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-12">
           {/* Left: Event Details */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {/* Edit Button - Only show to event organizer */}
                 {user && user.id === event.organizerId && (
                   <button 
@@ -427,8 +427,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl md:rounded-[32px] p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-xl">
-              <div className="flex items-center justify-between gap-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl sm:rounded-2xl md:rounded-[32px] p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-xl">
+              <div className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 flex-col sm:flex-row">
                 <h3 className="text-xl sm:text-2xl font-bold">About this event</h3>
                 
                 {/* Language Selector - Only show if translations available */}

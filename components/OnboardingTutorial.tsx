@@ -110,7 +110,7 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ user, onComplet
       {/* Tutorial Modal */}
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
         <div 
-          className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full shadow-2xl pointer-events-auto animate-in slide-in-from-bottom-4 duration-500"
+          className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl max-w-lg w-full mx-4 sm:mx-0 shadow-2xl pointer-events-auto animate-in slide-in-from-bottom-4 duration-500"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Progress Bar */}

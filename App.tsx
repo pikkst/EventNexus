@@ -809,22 +809,22 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
                 </button>
 
                 {showNotifs && (
-                  <div className="absolute top-full mt-4 right-0 w-80 sm:w-96 bg-slate-900 border border-slate-800 rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                    <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
-                      <h4 className="font-black text-xs uppercase tracking-[0.2em] text-indigo-400">Notification Center</h4>
-                      <button onClick={() => setShowNotifs(false)}><X className="w-4 h-4 text-slate-500" /></button>
+                  <div className="fixed sm:absolute top-16 sm:top-full sm:mt-4 right-0 sm:right-0 left-0 sm:left-auto w-full sm:w-96 bg-slate-900 border-x-0 sm:border-x border-t-0 sm:border-t border-b border-slate-800 sm:rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in sm:zoom-in-95 slide-in-from-top-4 sm:slide-in-from-top-0 duration-200 max-h-[calc(100vh-4rem)] sm:max-h-[80vh]">
+                    <div className="p-4 sm:p-5 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+                      <h4 className="font-black text-xs sm:text-xs uppercase tracking-[0.15em] sm:tracking-[0.2em] text-indigo-400">Notifications</h4>
+                      <button onClick={() => setShowNotifs(false)} className="p-2 hover:bg-slate-800 rounded-lg transition-colors"><X className="w-4 h-4 text-slate-500" /></button>
                     </div>
-                    <div className="max-h-[400px] overflow-y-auto divide-y divide-slate-800 scrollbar-hide">
+                    <div className="max-h-[calc(100vh-12rem)] sm:max-h-[400px] overflow-y-auto divide-y divide-slate-800 scrollbar-hide">
                       {notifications.length === 0 ? (
                         <div className="p-10 text-center text-slate-600 italic text-sm">No notifications yet.</div>
                       ) : (
                         notifications.map((n: any) => (
                           <div 
                             key={n.id} 
-                            className={`block p-5 space-y-3 transition-colors ${n.isRead ? 'opacity-60' : 'bg-indigo-600/5'}`} 
+                            className={`block p-4 sm:p-5 space-y-2 sm:space-y-3 transition-colors ${n.isRead ? 'opacity-60' : 'bg-indigo-600/5'}`} 
                             onClick={() => { onMarkRead(n.id); }}
                           >
-                            <div className="flex justify-between items-start gap-3">
+                            <div className="flex justify-between items-start gap-2 sm:gap-3">
                               <Link 
                                 to={n.eventId ? `/event/${n.eventId}` : '#'}
                                 className="space-y-1"
@@ -881,10 +881,10 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
                 </button>
 
                 {showProfileMenu && (
-                  <div className="absolute top-full mt-4 right-0 w-64 bg-slate-900 border border-slate-800 rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                    <div className="p-6 border-b border-slate-800 bg-slate-950/50">
+                  <div className="fixed sm:absolute top-16 sm:top-full sm:mt-4 right-0 left-0 sm:left-auto w-full sm:w-64 bg-slate-900 border-x-0 sm:border-x border-t-0 sm:border-t border-b border-slate-800 sm:rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in sm:zoom-in-95 slide-in-from-top-4 sm:slide-in-from-top-0 duration-200">
+                    <div className="p-4 sm:p-6 border-b border-slate-800 bg-slate-950/50">
                       <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">{user.subscription_tier} plan</p>
-                      <h4 className="font-black text-white truncate">{user.name}</h4>
+                      <h4 className="font-black text-white truncate text-sm sm:text-base">{user.name}</h4>
                     </div>
                     <div className="p-2">
                       <ProfileMenuItem 
@@ -926,8 +926,8 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
 const ProfileMenuItem = ({ icon, label, onClick, variant }: any) => (
   <button 
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-sm font-bold ${
-      variant === 'danger' ? 'text-red-400 hover:bg-red-400/10' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+    className={`w-full flex items-center gap-3 px-4 py-3 sm:py-3 min-h-[48px] sm:min-h-0 rounded-2xl transition-all text-sm font-bold active:scale-98 ${
+      variant === 'danger' ? 'text-red-400 hover:bg-red-400/10 active:bg-red-400/20' : 'text-slate-300 hover:bg-slate-800 hover:text-white active:bg-slate-700'
     }`}
   >
     <span className="shrink-0">{React.cloneElement(icon, { size: 18 })}</span>
@@ -979,9 +979,9 @@ const SidebarItem = ({ icon, label, to, onClick }: any) => (
   <Link 
     to={to} 
     onClick={onClick}
-    className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-indigo-600/10 text-slate-300 hover:text-indigo-400 transition-all group"
+    className="flex items-center gap-4 px-4 py-3 min-h-[48px] rounded-xl hover:bg-indigo-600/10 active:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 transition-all group"
   >
-    <span className="w-5 h-5 text-slate-500 group-hover:text-indigo-400 transition-colors">{icon}</span>
+    <span className="w-5 h-5 text-slate-500 group-hover:text-indigo-400 transition-colors shrink-0">{icon}</span>
     <span className="text-sm font-bold tracking-tight">{label}</span>
   </Link>
 );

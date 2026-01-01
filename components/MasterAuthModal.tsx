@@ -71,7 +71,7 @@ const MasterAuthModal: React.FC<MasterAuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl border-2 border-red-500/50 shadow-[0_0_50px_rgba(239,68,68,0.3)] max-w-md w-full p-8 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl sm:rounded-2xl border-2 border-red-500/50 shadow-[0_0_50px_rgba(239,68,68,0.3)] max-w-md w-full mx-4 sm:mx-0 p-6 sm:p-8 relative overflow-hidden">
         {/* Animated background effect */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-red-500 via-transparent to-amber-500 animate-pulse"></div>

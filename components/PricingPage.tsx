@@ -169,16 +169,16 @@ const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade, onOpenAuth }
           <div className="inline-flex items-center gap-2 bg-indigo-600/10 border border-indigo-500/20 px-4 py-2 rounded-full text-indigo-400 text-xs font-black uppercase tracking-widest">
             <Zap className="w-4 h-4" /> Pricing & Plans
           </div>
-          <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-white">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white">
             Choose Your <span className="text-indigo-500">Nexus Journey</span>
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 items-start">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 items-start">
           {PLANS.map((plan) => (
             <div 
               key={plan.name}
-              className={`relative bg-slate-900 border ${plan.highlight ? 'border-indigo-500 shadow-2xl shadow-indigo-500/10 md:scale-105 z-10' : 'border-slate-800'} rounded-3xl md:rounded-[40px] p-6 md:p-8 transition-all hover:border-indigo-500/50 group`}
+              className={`relative bg-slate-900 border ${plan.highlight ? 'border-indigo-500 shadow-2xl shadow-indigo-500/10 lg:scale-105 z-10' : 'border-slate-800'} rounded-2xl md:rounded-3xl lg:rounded-[40px] p-6 md:p-8 transition-all hover:border-indigo-500/50 group`}
             >
               <div className="space-y-6">
                 <div>

@@ -699,7 +699,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
         </div>
       )}
 
-      <div className={`flex gap-4 overflow-x-auto pb-2 border-b border-slate-800 scrollbar-hide ${isGated ? 'opacity-20 pointer-events-none' : ''}`}>
+      <div className={`flex gap-2 sm:gap-4 overflow-x-auto pb-2 border-b border-slate-800 scrollbar-hide snap-x snap-mandatory ${isGated ? 'opacity-20 pointer-events-none' : ''}`}>
          <TabBtn label="Insights" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<BarChart3 />} title="View revenue, attendance, and event performance metrics" />
          <TabBtn label="Payouts" active={activeTab === 'payouts'} onClick={() => setActiveTab('payouts')} icon={<DollarSign />} title="Track earnings and bank transfers from ticket sales" />
          <TabBtn label="Marketing Studio" active={activeTab === 'marketing'} onClick={() => setActiveTab('marketing')} icon={<Megaphone />} title="AI-powered campaign creation and social media automation" />
@@ -710,7 +710,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
 
       {activeTab === 'overview' && (
         <div className="space-y-8 animate-in fade-in duration-500">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <StatCard title="Gross Volume" value={`€${totalRevenue.toLocaleString()}`} change="+12.5%" icon={<DollarSign />} color="emerald" />
             <StatCard title="Active Tickets" value={totalSold.toLocaleString()} change="+18.2%" icon={<TicketIcon />} color="indigo" />
             <StatCard
@@ -744,7 +744,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Gross</p>
                   <h4 className="text-3xl font-black text-white">€{revenueSummary.total_gross.toFixed(2)}</h4>
@@ -767,7 +767,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-6">
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] font-black uppercase tracking-widest text-yellow-500">Pending Payouts</p>
@@ -795,24 +795,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                       <table className="w-full">
                         <thead className="bg-slate-950 border-b border-slate-800">
                           <tr>
-                            <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Event</th>
-                            <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Tickets</th>
-                            <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Gross</th>
-                            <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Platform Fee</th>
-                            <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Stripe Fee</th>
-                            <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Net</th>
-                            <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-500">Status</th>
-                            <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-500">Actions</th>
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Event</th>
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Tickets</th>
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Gross</th>
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Fee</th>
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Stripe</th>
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Net</th>
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Status</th>
+                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800">
                           {revenueByEvent.map((event) => (
                             <tr key={event.event_id} className="hover:bg-slate-800/30 transition-colors">
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1">
-                                    <div className="font-bold text-white text-sm">{event.event_name}</div>
-                                    <div className="text-xs text-slate-500">{new Date(event.event_date).toLocaleDateString()}</div>
+                              <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                <div className="flex items-center gap-1 sm:gap-2">
+                                  <div className="flex-1 min-w-[140px] sm:min-w-0">
+                                    <div className="font-bold text-white text-xs sm:text-sm truncate">{event.event_name}</div>
+                                    <div className="text-[10px] sm:text-xs text-slate-500">{new Date(event.event_date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}</div>
                                   </div>
                                   <Link 
                                     to={`/event/${event.event_id}`}
@@ -912,16 +912,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                 </div>
               </div>
 
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden">
-                <div className="overflow-x-auto">
+              <div className="bg-slate-900/50 border border-slate-800 rounded-xl sm:rounded-2xl overflow-hidden -mx-4 sm:mx-0">
+                <div className="overflow-x-auto touch-pan-x">
                   <table className="w-full">
                     <thead className="bg-slate-950 border-b border-slate-800">
                       <tr>
-                        <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Event</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Purchased</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Checked-in</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Rate</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Date</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Event</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Purchased</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Checked-in</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Rate</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Date</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800">
@@ -929,21 +929,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                         const rate = item.total_tickets > 0 ? Math.round((item.checked_in / item.total_tickets) * 100) : 0;
                         return (
                           <tr key={item.event_id} className="hover:bg-slate-800/30 transition-colors">
-                            <td className="px-6 py-4">
-                              <div className="font-bold text-white text-sm">{item.name}</div>
-                              <div className="text-xs text-slate-500">{item.date ? new Date(item.date).toLocaleDateString() : ''}</div>
+                            <td className="px-3 sm:px-6 py-3 sm:py-4">
+                              <div className="font-bold text-white text-xs sm:text-sm truncate max-w-[150px] sm:max-w-none">{item.name}</div>
+                              <div className="text-[10px] sm:text-xs text-slate-500">{item.date ? new Date(item.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : ''}</div>
                             </td>
-                            <td className="px-6 py-4 text-right text-white font-bold">{item.total_tickets.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-right text-emerald-400 font-bold">{item.checked_in.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <div className="w-24 bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-right text-white font-bold text-xs sm:text-sm">{item.total_tickets.toLocaleString()}</td>
+                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-right text-emerald-400 font-bold text-xs sm:text-sm">{item.checked_in.toLocaleString()}</td>
+                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
+                              <div className="flex items-center justify-end gap-1 sm:gap-2">
+                                <div className="w-16 sm:w-24 bg-slate-800 rounded-full h-1.5 sm:h-2 overflow-hidden">
                                   <div className="h-full bg-emerald-500" style={{ width: `${rate}%` }} />
                                 </div>
-                                <span className="text-white font-black text-sm">{rate}%</span>
+                                <span className="text-white font-black text-xs sm:text-sm whitespace-nowrap">{rate}%</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-right text-slate-400 font-medium">{item.date ? new Date(item.date).toLocaleDateString() : '—'}</td>
+                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-right text-slate-400 font-medium text-[10px] sm:text-xs whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '—'}</td>
                           </tr>
                         );
                       })}

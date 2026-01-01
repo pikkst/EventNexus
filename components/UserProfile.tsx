@@ -1256,7 +1256,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
       {isSubscriptionModalOpen && (
         <div className="fixed inset-0 z-[2100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" onClick={() => setIsSubscriptionModalOpen(false)} />
-          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-[48px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+          <div className="relative w-full max-w-lg mx-4 sm:mx-0 bg-slate-900 border border-slate-800 rounded-3xl sm:rounded-[48px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="p-10 space-y-8">
               <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-black tracking-tighter">Manage Subscription</h2>
@@ -1387,7 +1387,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
       {showBetaReport && (
         <div className="fixed inset-0 z-[2150] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" onClick={() => setShowBetaReport(false)} />
-          <div className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-[48px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto scrollbar-hide">
+          <div className="relative w-full max-w-3xl mx-4 sm:mx-0 bg-slate-900 border border-slate-800 rounded-3xl sm:rounded-[48px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto scrollbar-hide">
             <div className="p-8">
               <BetaTesterReport user={user} onClose={() => setShowBetaReport(false)} />
             </div>
@@ -1399,7 +1399,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[2100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" onClick={() => setIsEditModalOpen(false)} />
-          <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-[48px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto scrollbar-hide">
+          <div className="relative w-full max-w-2xl mx-4 sm:mx-0 bg-slate-900 border border-slate-800 rounded-3xl sm:rounded-[48px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto scrollbar-hide">
             <div className="p-10 space-y-8">
               <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-black tracking-tighter">Edit Identity</h2>
