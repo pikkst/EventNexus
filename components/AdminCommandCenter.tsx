@@ -799,7 +799,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                      <h3 className="text-lg md:text-xl font-black tracking-tight">Revenue Stream Velocity</h3>
                      <div className="h-[250px] md:h-[350px]">
                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={platformStats.revenueByTier}>
+                          <AreaChart data={platformStats.revenueByTier || []}>
                             <defs>
                               <linearGradient id="colorTier" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
@@ -1020,14 +1020,14 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                           </div>
                         </div>
 
-                        {campaign.incentive && (
+                        {campaign.incentive && campaign.incentive.limit !== undefined && (
                           <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-3">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <Gift size={14} className="text-violet-400" />
                                 <span className="text-[10px] font-black text-violet-400 uppercase">{campaign.incentive.type}</span>
                               </div>
-                              <span className="text-xs font-bold text-white">{campaign.incentive.value} × {campaign.incentive.redeemed}/{campaign.incentive.limit}</span>
+                              <span className="text-xs font-bold text-white">{campaign.incentive.value} × {campaign.incentive.redeemed || 0}/{campaign.incentive.limit}</span>
                             </div>
                           </div>
                         )}
