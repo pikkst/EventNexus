@@ -407,7 +407,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       const campaignWithImages = await Promise.all(campaign.map(async (ad: any) => {
         const platform = ad.platform || '';
         const ratio = platform.includes('Story') ? '9:16' : (platform.includes('Header') ? '16:9' : '1:1');
-        const imageUrl = await generateAdImage(ad.visualPrompt, ratio as any, false, user.id, user.subscription_tier);
+        const imageUrl = await generateAdImage(ad.visualPrompt, ratio as any, true, user.id, user.subscription_tier);
         return { ...ad, imageUrl, deploying: false, deployed: false, eventUrl };
       }));
       
