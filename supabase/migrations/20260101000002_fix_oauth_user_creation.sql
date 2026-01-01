@@ -5,10 +5,20 @@
 -- access their profiles after signing up via Google/Facebook.
 -- ============================================
 
+-- Fix RLS policies to allow OAuth users to access their profiles
+-- Recreate the SELECT policy to allow authenticated users to query their profile
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.users;
+CREATE POLICY "Users can view their own profile"
+    ON public.users FOR SELECT
+    TO authenticated
+    USING (auth.uid() = id);
+
 -- Add INSERT policy for authenticated users to create their own profile
 -- This allows OAuth users to create their profile if the trigger fails
+DROP POLICY IF EXISTS "Users can create their own profile" ON public.users;
 CREATE POLICY "Users can create their own profile" ON public.users
     FOR INSERT
+    TO authenticated
     WITH CHECK (auth.uid() = id);
 
 -- Improve the handle_new_user trigger to better handle OAuth data
@@ -93,20 +103,23 @@ CREATE TRIGGER on_auth_user_created
     EXECUTE FUNCTION public.handle_new_user();
 
 -- Add a helper function to check if a user profile exists and create if missing
+-- Drop existing function first to allow return type change
+DROP FUNCTION IF EXISTS public.ensure_user_profile(UUID);
+
 CREATE OR REPLACE FUNCTION public.ensure_user_profile(user_id UUID)
-RETURNS public.users
+RETURNS VOID
 SECURITY DEFINER
 SET search_path = public
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    user_record public.users;
+    user_exists BOOLEAN;
     auth_record record;
 BEGIN
     -- Check if user profile exists
-    SELECT * INTO user_record FROM public.users WHERE id = user_id;
+    SELECT EXISTS(SELECT 1 FROM public.users WHERE id = user_id) INTO user_exists;
     
-    IF user_record IS NULL THEN
+    IF NOT user_exists THEN
         -- User profile doesn't exist, fetch from auth.users and create
         SELECT * INTO auth_record FROM auth.users WHERE id = user_id;
         
@@ -153,17 +166,17 @@ BEGIN
                 NOW(),
                 NOW(),
                 NOW()
-            )
-            RETURNING * INTO user_record;
+            );
+            
+            RAISE NOTICE 'Created user profile for %', user_id;
         END IF;
     END IF;
-    
-    RETURN user_record;
 END;
 $$;
 
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION public.ensure_user_profile(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.ensure_user_profile(UUID) TO anon;
 
 -- Add comment for documentation
 COMMENT ON FUNCTION public.ensure_user_profile IS 

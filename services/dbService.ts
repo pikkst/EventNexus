@@ -383,13 +383,18 @@ export const getUser = async (id: string): Promise<User | null> => {
         
         try {
           // Use the ensure_user_profile RPC function which has SECURITY DEFINER
-          const { data: ensuredUser, error: rpcError } = await supabase
+          // This function returns VOID but creates the user profile
+          const { error: rpcError } = await supabase
             .rpc('ensure_user_profile', { user_id: id });
           
           if (rpcError) {
             console.error('❌ RPC ensure_user_profile failed:', rpcError);
-          } else if (ensuredUser) {
+          } else {
             console.log('✅ User profile ensured via RPC');
+            
+            // Wait a moment for the insert to complete
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             // Fetch the user again now that it should exist
             const { data: fetchedUser, error: fetchError } = await supabase
               .from('users')
@@ -398,6 +403,7 @@ export const getUser = async (id: string): Promise<User | null> => {
               .single();
             
             if (!fetchError && fetchedUser) {
+              console.log('✅ User profile fetched successfully after creation');
               const user = fetchedUser;
               // Apply same notification_prefs normalization
               if (!user.notification_prefs || typeof user.notification_prefs !== 'object') {
