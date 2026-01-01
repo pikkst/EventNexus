@@ -81,7 +81,6 @@ Deno.serve(async (req: Request) => {
               .from('tickets')
               .update({
                 payment_status: 'paid',
-                stripe_payment_id: session.payment_intent,
                 qr_code: qrData,
                 status: 'valid'
               })
