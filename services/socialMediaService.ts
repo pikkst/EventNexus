@@ -249,6 +249,12 @@ export const postToFacebook = async (
   imageUrl?: string,
   eventUrl?: string
 ): Promise<{ success: boolean; postId?: string; error?: string }> => {
+  // Validate and fix image URL if needed
+  if (imageUrl && !isValidInstagramImageUrl(imageUrl)) {
+    console.warn('⚠️ Invalid Facebook image URL detected, using fallback:', imageUrl);
+    imageUrl = FALLBACK_AD_IMAGE_URL;
+  }
+
   type FacebookResult = {
     success: boolean;
     postId?: string;
