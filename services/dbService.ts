@@ -864,13 +864,13 @@ export const signOutUser = async () => {
 // OAuth authentication helpers
 export const signInWithGoogle = async () => {
   try {
-    // Construct proper redirect URL for GitHub Pages deployment with BrowserRouter
+    // Construct proper redirect URL for custom domain
     const getRedirectUrl = () => {
       if (typeof window === 'undefined') return undefined;
       
-      // For production - redirect to /profile (BrowserRouter format)
+      // For production - redirect to /profile
       if (window.location.origin.includes('eventnexus.eu')) {
-        return 'https://www.eventnexus.eu/EventNexus/profile';
+        return 'https://www.eventnexus.eu/profile';
       }
       
       // For local development
