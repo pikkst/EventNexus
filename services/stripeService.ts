@@ -100,6 +100,7 @@ export const createTicketCheckout = async (
     const baseUrl = window.location.origin + window.location.pathname.split('#')[0];
 
     // Call Supabase Edge Function to create checkout session
+    // Note: query params MUST come before hash for proper parsing
     const { data, error } = await supabase.functions.invoke('create-checkout', {
       body: {
         userId,
@@ -110,8 +111,8 @@ export const createTicketCheckout = async (
         ticketTemplateId,
         ticketType,
         ticketName,
-        successUrl: `${baseUrl}#/events/${eventId}?purchase=success`,
-        cancelUrl: `${baseUrl}#/events/${eventId}?purchase=cancelled`
+        successUrl: `${baseUrl}?purchase=success#/events/${eventId}`,
+        cancelUrl: `${baseUrl}?purchase=cancelled#/events/${eventId}`
       }
     });
 
@@ -170,7 +171,8 @@ export const cancelSubscription = async (userId: string): Promise<boolean> => {
  * Check if checkout was successful (from URL params)
  */
 export const checkCheckoutSuccess = (): boolean => {
-  const params = new URLSearchParams(window.location.hash.split('?')[1]);
+  // Query params are now BEFORE hash: ?purchase=success#/events/id
+  const params = new URLSearchParams(window.location.search);
   return params.get('checkout') === 'success' || params.get('purchase') === 'success';
 };
 
@@ -207,6 +209,7 @@ export const verifyCheckoutPayment = async (sessionId: string): Promise<boolean>
  * Clear checkout status from URL
  */
 export const clearCheckoutStatus = () => {
-  const hash = window.location.hash.split('?')[0];
-  window.history.replaceState(null, '', hash);
+  // Remove query params but keep hash
+  const hash = window.location.hash;
+  window.history.replaceState(null, '', window.location.pathname + hash);
 };

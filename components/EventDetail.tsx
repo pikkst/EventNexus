@@ -134,8 +134,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   useEffect(() => {
     const verifyPurchase = async () => {
       if (checkCheckoutSuccess()) {
-        // Get session ID from URL
-        const params = new URLSearchParams(window.location.hash.split('?')[1]);
+        // Get session ID from URL (query params come BEFORE hash now)
+        // URL format: https://site.com?purchase=success&session_id=xxx#/events/id
+        const params = new URLSearchParams(window.location.search);
         const sessionId = params.get('session_id');
 
         if (sessionId) {
