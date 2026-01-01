@@ -868,13 +868,13 @@ export const signInWithGoogle = async () => {
     const getRedirectUrl = () => {
       if (typeof window === 'undefined') return undefined;
       
-      // For production (GitHub Pages) - use dedicated callback page
+      // Redirect to root and let frontend handle routing
       if (window.location.origin.includes('eventnexus.eu')) {
-        return 'https://www.eventnexus.eu/oauth-callback.html';
+        return 'https://www.eventnexus.eu/';
       }
       
       // For local development
-      return `${window.location.origin}/#/profile`;
+      return `${window.location.origin}/`;
     };
     
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -909,13 +909,13 @@ export const signInWithFacebook = async () => {
     const getRedirectUrl = () => {
       if (typeof window === 'undefined') return undefined;
       
-      // For production (GitHub Pages) - use dedicated callback page
+      // Redirect to root and let frontend handle routing
       if (window.location.origin.includes('eventnexus.eu')) {
-        return 'https://www.eventnexus.eu/oauth-callback.html';
+        return 'https://www.eventnexus.eu/';
       }
       
       // For local development
-      return `${window.location.origin}/#/profile`;
+      return `${window.location.origin}/`;
     };
     
     const { data, error } = await supabase.auth.signInWithOAuth({
