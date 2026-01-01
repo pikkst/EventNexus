@@ -100,7 +100,7 @@ export const createTicketCheckout = async (
     const baseUrl = window.location.origin + window.location.pathname.split('#')[0];
 
     // Call Supabase Edge Function to create checkout session
-    // Note: query params MUST come before hash for proper parsing
+    // Note: Include session_id placeholder in URL to ensure proper placement
     const { data, error } = await supabase.functions.invoke('create-checkout', {
       body: {
         userId,
@@ -111,7 +111,7 @@ export const createTicketCheckout = async (
         ticketTemplateId,
         ticketType,
         ticketName,
-        successUrl: `${baseUrl}?purchase=success#/events/${eventId}`,
+        successUrl: `${baseUrl}?purchase=success&session_id={CHECKOUT_SESSION_ID}#/events/${eventId}`,
         cancelUrl: `${baseUrl}?purchase=cancelled#/events/${eventId}`
       }
     });
