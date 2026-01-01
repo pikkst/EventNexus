@@ -11,6 +11,7 @@ Kui Facebook OAuth annab vea "URL on blokeeritud", kontrolli kõiki neid punkte:
   - [ ] **App Mode** on **Live** ✅ (mitte Development 🔴)
   - [ ] **Privacy Policy URL** on lisatud: `https://www.eventnexus.eu/#/privacy`
   - [ ] **Terms of Service URL** on lisatud: `https://www.eventnexus.eu/#/terms`
+  - [ ] **User Data Deletion** on lisatud: `https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/data-deletion`
   - [ ] **App Domain** sisaldab: `eventnexus.eu` ja `supabase.co`
 
 ### 2. Facebook Login seaded

@@ -91,6 +91,7 @@ To enable Google and Facebook sign-in, you need to configure OAuth providers in 
    - Toggle **App Mode** from Development to **Live**
    - Add **Privacy Policy URL**: `https://www.eventnexus.eu/#/privacy`
    - Add **Terms of Service URL**: `https://www.eventnexus.eu/#/terms`
+   - Add **User Data Deletion**: `https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/data-deletion`
    - Add **App Icon** (1024x1024 PNG)
 
 ### 3. Additional Configuration
