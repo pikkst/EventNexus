@@ -661,7 +661,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-[90] lg:hidden" 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] lg:hidden" 
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -683,7 +683,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 setActiveTab(item.id);
                 setIsSidebarOpen(false); // Close sidebar on mobile after selection
               }} 
-              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-orange-600 text-white font-bold shadow-xl shadow-orange-600/10' : 'text-slate-400 hover:bg-slate-800'}`}
+              className={`w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl transition-all min-h-[48px] ${activeTab === item.id ? 'bg-orange-600 text-white font-bold shadow-xl shadow-orange-600/10' : 'text-slate-400 hover:bg-slate-800 active:bg-slate-700'}`}
             >
               {React.cloneElement(item.icon as React.ReactElement, { size: 18 })}
               <span className="text-sm">{item.label}</span>
@@ -718,21 +718,21 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-10 scrollbar-hide">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
-          <div className="flex items-center gap-4 w-full md:w-auto">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-8 space-y-4 sm:space-y-6 md:space-y-10 scrollbar-hide">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4 md:gap-6">
+          <div className="flex items-center gap-3 sm:gap-4 w-full md:w-auto">
             {/* Mobile Menu Button */}
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden w-10 h-10 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center hover:bg-slate-800 transition-colors"
+              className="lg:hidden w-10 h-10 sm:w-12 sm:h-12 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center hover:bg-slate-800 active:bg-slate-700 transition-colors flex-shrink-0"
               aria-label="Toggle menu"
             >
               <Menu size={20} />
             </button>
             
-            <div className="flex-1">
-              <h2 className="text-2xl md:text-4xl font-black tracking-tighter uppercase">{activeTab.replace('_', ' ')}</h2>
-              <p className="text-xs md:text-sm text-slate-500 font-bold">Protocol Status: <span className="text-emerald-500">{infrastructureStats?.protocolStatus || 'Loading...'}</span></p>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl sm:text-2xl md:text-4xl font-black tracking-tighter uppercase truncate">{activeTab.replace('_', ' ')}</h2>
+              <p className="text-[10px] sm:text-xs md:text-sm text-slate-500 font-bold truncate">Protocol Status: <span className="text-emerald-500">{infrastructureStats?.protocolStatus || 'Loading...'}</span></p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 md:gap-4 w-full md:w-auto">
@@ -794,7 +794,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
               </div>
             ) : platformStats ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                   <StatCard label="Monthly GPV" value={platformStats.monthlyGPV} change="+12%" trend="up" icon={<DollarSign />} color="emerald" />
                   <StatCard label="Platform Conversion" value={`${platformStats.platformConversion}%`} change="+0.4%" trend="up" icon={<Target />} color="orange" />
                   <StatCard label="Global Fee" value={`${platformStats.globalFee}%`} change="Stable" trend="neutral" icon={<CreditCard />} color="blue" />

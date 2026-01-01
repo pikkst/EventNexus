@@ -186,18 +186,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={onClose} />
       
-      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="relative w-full max-w-md mx-4 sm:mx-0 bg-slate-900 border border-slate-800 rounded-3xl sm:rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none" />
         
-        <div className="p-8 sm:p-10 space-y-8 relative z-10">
+        <div className="p-6 sm:p-8 md:p-10 space-y-6 sm:space-y-8 relative z-10">
           <div className="flex justify-between items-start">
             <div className="space-y-1">
-              <h2 className="text-3xl font-black tracking-tighter text-white">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tighter text-white">
                 {mode === 'login' ? 'Welcome Back' : 'Create Account'}
               </h2>
-              <p className="text-slate-400 text-sm font-medium">Join the global Nexus network.</p>
+              <p className="text-slate-400 text-xs sm:text-sm font-medium">Join the global Nexus network.</p>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 transition-colors">
+            <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 transition-colors flex-shrink-0">
               <X className="w-5 h-5" />
             </button>
           </div>
