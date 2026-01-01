@@ -107,7 +107,7 @@ const AnalyticsTracker: React.FC = () => {
     const page_location = window.location.href;
 
     if (gtag) {
-      gtag('config', 'G-JD7P5ZKF4L', { page_path, page_location });
+      gtag('config', GA_MEASUREMENT_ID, { page_path, page_location });
       gtag('event', 'page_view', { page_path, page_location });
       console.log('GA page_view sent', { page_path, page_location });
     } else {

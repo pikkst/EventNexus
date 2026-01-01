@@ -26,6 +26,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { generateMarketingTagline, translateDescription, generateAdImage } from '../services/geminiService';
 import { createEvent, getEvents, getUser, deductUserCredits, uploadEventImage } from '../services/dbService';
+import { trackEventCreation } from '../services/analyticsService';
 import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
 import { FEATURE_UNLOCK_COSTS } from '../services/featureUnlockService';
 import { User, EventNexusEvent } from '../types';
@@ -668,6 +669,12 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       
       if (created) {
         console.log('✅ Event created successfully!');
+
+        try {
+          await trackEventCreation(created, user?.id || null);
+        } catch (trackingError) {
+          console.warn('⚠️ Analytics tracking failed:', trackingError);
+        }
         
         // Create ticket templates if any were defined
         if (ticketTemplates && ticketTemplates.length > 0) {
