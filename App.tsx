@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Map as MapIcon, 
   PlusCircle, 
@@ -677,7 +677,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <Router>
+    <BrowserRouter basename="/EventNexus">
       <HashRedirect />
       <AnalyticsTracker />
       <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
@@ -800,7 +800,7 @@ const App: React.FC = () => {
           />
         )}
       </div>
-    </Router>
+    </BrowserRouter>
   );
 };
 
