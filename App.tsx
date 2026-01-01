@@ -662,7 +662,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <BrowserRouter basename="/EventNexus">
+    <BrowserRouter>
       <AnalyticsTracker />
       <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
         {/* Loading overlay for initial authentication */}
