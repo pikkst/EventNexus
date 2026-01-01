@@ -9,6 +9,26 @@ import { generateAdImage } from './geminiService';
 // Publicly hosted fallback image to avoid Graph API 324 errors when an asset is missing
 const FALLBACK_AD_IMAGE_URL = 'https://www.eventnexus.eu/EventNexus/logo%20for%20eventnexus.png';
 
+/**
+ * Check if image URL is accessible by Instagram
+ */
+const isValidInstagramImageUrl = (url: string): boolean => {
+  if (!url) return false;
+  
+  // Instagram can't fetch from non-HTTPS URLs
+  if (!url.startsWith('https://')) return false;
+  
+  // Known problematic URLs
+  const invalidPatterns = [
+    'og-image.png', // Placeholder that doesn't exist
+    'localhost',
+    '127.0.0.1',
+    'file://',
+  ];
+  
+  return !invalidPatterns.some(pattern => url.includes(pattern));
+};
+
 const isImageError = (code?: number, message?: string) => {
   if (!code && !message) return false;
   const normalized = (message || '').toLowerCase();
@@ -389,6 +409,13 @@ export const postToInstagram = async (
     errorCode?: number;
     errorMessage?: string;
   };
+
+  // Validate image URL before attempting to post
+  if (!isValidInstagramImageUrl(imageUrl)) {
+    console.warn('⚠️ Invalid Instagram image URL:', imageUrl);
+    console.log('🔄 Using fallback image:', FALLBACK_AD_IMAGE_URL);
+    imageUrl = FALLBACK_AD_IMAGE_URL;
+  }
 
   const publishInstagram = async (photoUrl: string): Promise<InstagramResult> => {
     try {
