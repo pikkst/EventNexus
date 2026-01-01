@@ -407,15 +407,32 @@ const App: React.FC = () => {
       // Skip if we already have user data (from cache or previous load)
       if (event === 'SIGNED_IN' && session?.user && mounted && !user) {
         console.log('User signed in (new login), loading data...');
+        
+        const loadingTimeout = setTimeout(() => {
+          console.error('⚠️ Loading timeout after 10 seconds, forcing page reload...');
+          window.location.href = '/#/profile';
+        }, 10000);
+        
         try {
           // For OAuth users, ensure profile exists before trying to fetch
           console.log('🔧 Ensuring user profile exists via RPC...');
-          await supabase.rpc('ensure_user_profile', { user_id: session.user.id });
+          
+          const rpcPromise = supabase.rpc('ensure_user_profile', { user_id: session.user.id });
+          const rpcTimeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('RPC timeout')), 5000)
+          );
+          
+          await Promise.race([rpcPromise, rpcTimeout]).catch(err => {
+            console.warn('⚠️ RPC failed or timed out:', err.message);
+          });
           
           // Wait a moment for the profile creation
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           const userData = await getUser(session.user.id);
+          
+          clearTimeout(loadingTimeout);
+          
           if (userData && mounted) {
             setUser(userData);
             cacheUserData(userData);
@@ -425,16 +442,20 @@ const App: React.FC = () => {
               setNotifications(userNotifications);
               cacheNotifications(userNotifications);
             }
+            
+            // Redirect to profile after successful login
+            window.location.href = '/#/profile';
           } else {
             console.error('⚠️ Failed to load user profile. Database may be slow or unavailable.');
-            // Don't sign out on timeout - user is authenticated, just data load failed
-            // Keep the loading state and let user try refreshing
-            setIsLoading(false);
+            clearTimeout(loadingTimeout);
+            // Force redirect anyway
+            window.location.href = '/#/profile';
           }
         } catch (userError) {
           console.error('Error loading user data:', userError);
-          // Don't sign out on errors - just stop loading
-          setIsLoading(false);
+          clearTimeout(loadingTimeout);
+          // Force redirect on error
+          window.location.href = '/#/profile';
         }
       } else if (event === 'TOKEN_REFRESHED' && session?.user && mounted) {
         console.log('✅ Token refreshed successfully');
