@@ -843,12 +843,23 @@ export const signOutUser = async () => {
 // OAuth authentication helpers
 export const signInWithGoogle = async () => {
   try {
+    // Construct proper redirect URL for GitHub Pages deployment
+    const getRedirectUrl = () => {
+      if (typeof window === 'undefined') return undefined;
+      
+      // For production (GitHub Pages) - use dedicated callback page
+      if (window.location.origin.includes('eventnexus.eu')) {
+        return 'https://www.eventnexus.eu/oauth-callback.html';
+      }
+      
+      // For local development
+      return `${window.location.origin}/#/profile`;
+    };
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: typeof window !== 'undefined' 
-          ? `${window.location.origin}${window.location.pathname}#/profile`
-          : undefined,
+        redirectTo: getRedirectUrl(),
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -873,12 +884,23 @@ export const signInWithGoogle = async () => {
 
 export const signInWithFacebook = async () => {
   try {
+    // Construct proper redirect URL for GitHub Pages deployment
+    const getRedirectUrl = () => {
+      if (typeof window === 'undefined') return undefined;
+      
+      // For production (GitHub Pages) - use dedicated callback page
+      if (window.location.origin.includes('eventnexus.eu')) {
+        return 'https://www.eventnexus.eu/oauth-callback.html';
+      }
+      
+      // For local development
+      return `${window.location.origin}/#/profile`;
+    };
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'facebook',
       options: {
-        redirectTo: typeof window !== 'undefined' 
-          ? `${window.location.origin}${window.location.pathname}#/profile`
-          : undefined,
+        redirectTo: getRedirectUrl(),
         scopes: 'email,public_profile'
       }
     });

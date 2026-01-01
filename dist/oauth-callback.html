@@ -47,27 +47,53 @@
 
     <script>
         (function() {
-            // Get URL parameters
+            console.log('OAuth callback page loaded');
+            console.log('Full URL:', window.location.href);
+            
+            // This page handles BOTH:
+            // 1. Supabase Auth OAuth (Google, Facebook login)
+            // 2. Social Media OAuth (posting to Instagram, Facebook pages)
+            
+            // Check URL parameters (for social media OAuth)
             const urlParams = new URLSearchParams(window.location.search);
             const code = urlParams.get('code');
-            const state = urlParams.get('state'); // platform (facebook, instagram, etc.)
+            const state = urlParams.get('state');
             const error = urlParams.get('error');
             const errorDescription = urlParams.get('error_description');
+            
+            // Check hash parameters (for Supabase Auth OAuth)
+            const hash = window.location.hash.substring(1);
+            const hashParams = new URLSearchParams(hash);
+            const accessToken = hashParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token');
+            const hashError = hashParams.get('error');
+            const hashErrorDescription = hashParams.get('error_description');
 
-            if (error) {
-                // Send error to parent window
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'oauth-error',
-                        platform: state,
-                        error: errorDescription || error
-                    }, window.location.origin);
+            // Handle Supabase Auth OAuth callback (has tokens in hash)
+            if (accessToken || hashError) {
+                console.log('Supabase Auth OAuth detected');
+                
+                if (hashError) {
+                    console.error('Supabase Auth error:', hashError, hashErrorDescription);
+                    alert(`Authentication failed: ${hashErrorDescription || hashError}`);
+                    setTimeout(() => {
+                        window.location.href = '/EventNexus/';
+                    }, 2000);
+                    return;
                 }
-                setTimeout(() => window.close(), 2000);
-                return;
+                
+                if (accessToken) {
+                    console.log('Access token received, redirecting to profile...');
+                    // Redirect to app with hash intact - Supabase client will handle the session
+                    window.location.href = '/EventNexus/#/profile';
+                    return;
+                }
             }
-
+            
+            // Handle Social Media OAuth callback (has code in query)
             if (code && state) {
+                console.log('Social Media OAuth detected for platform:', state);
+                
                 // Send success to parent window with authorization code
                 if (window.opener) {
                     window.opener.postMessage({
@@ -79,16 +105,43 @@
                 
                 // Close popup after sending message
                 setTimeout(() => window.close(), 1000);
-            } else {
-                // Invalid callback
+                return;
+            }
+            
+            // Handle Social Media OAuth error
+            if (error) {
+                console.error('Social Media OAuth error:', error, errorDescription);
+                
+                // Send error to parent window
                 if (window.opener) {
                     window.opener.postMessage({
                         type: 'oauth-error',
                         platform: state || 'unknown',
-                        error: 'Invalid OAuth callback - missing code or state parameter'
+                        error: errorDescription || error
                     }, window.location.origin);
                 }
                 setTimeout(() => window.close(), 2000);
+                return;
+            }
+            
+            // No valid OAuth data found
+            console.warn('No valid OAuth data found in callback');
+            console.log('Query params:', Object.fromEntries(urlParams));
+            console.log('Hash params:', Object.fromEntries(hashParams));
+            
+            // If we have window.opener, this was a popup - close it
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'oauth-error',
+                    platform: state || 'unknown',
+                    error: 'Invalid OAuth callback - missing required parameters'
+                }, window.location.origin);
+                setTimeout(() => window.close(), 2000);
+            } else {
+                // This was not a popup, redirect to home
+                setTimeout(() => {
+                    window.location.href = '/EventNexus/';
+                }, 2000);
             }
         })();
     </script>

@@ -67,10 +67,14 @@ To enable Google and Facebook sign-in, you need to configure OAuth providers in 
 
 4. **Configure Facebook Login Settings**
    - Go to **Facebook Login** → **Settings**
-   - Add **Valid OAuth Redirect URIs**:
+   - Add **Valid OAuth Redirect URIs** (add ALL of these):
      ```
      https://anlivujgkjmajkcgbaxw.supabase.co/auth/v1/callback
+     https://www.eventnexus.eu/EventNexus/
+     https://www.eventnexus.eu/
+     http://localhost:3000/
      ```
+   - **CRITICAL**: Make sure to add ALL URLs above, including both production variants
    - Save changes
 
 5. **Get App Credentials**
@@ -98,19 +102,44 @@ Both providers should be **enabled** in Supabase:
 - Ensure Facebook is **Enabled** ✅
 
 #### Redirect URLs
-The OAuth redirect URLs are configured in the code:
-```typescript
-redirectTo: `${window.location.origin}${window.location.pathname}#/profile`
-```
+The OAuth redirect URLs are configured to use a dedicated callback page for better reliability:
 
-For production, this will be:
-- `https://www.eventnexus.eu/EventNexus/#/profile`
+**Production redirect:**
+- **Primary**: `https://www.eventnexus.eu/oauth-callback.html` ✅ (Recommended)
+- Fallback: `https://www.eventnexus.eu/EventNexus/#/profile`
 
-For development:
+**Development redirect:**
 - `http://localhost:3000/#/profile`
 
-Make sure these URLs are also added to:
-- **Supabase** → **Authentication** → **URL Configuration** → **Redirect URLs**
+The callback page (`public/oauth-callback.html`) handles both:
+1. **Supabase Auth OAuth** (Google, Facebook user login) - detects tokens in URL hash
+2. **Social Media OAuth** (posting to platforms) - detects authorization code in query params
+
+**IMPORTANT**: Make sure ALL these URLs are added to:
+
+1. **Supabase Dashboard** → **Authentication** → **URL Configuration** → **Redirect URLs**:
+   ```
+   https://www.eventnexus.eu/oauth-callback.html
+   https://eventnexus.eu/oauth-callback.html
+   https://www.eventnexus.eu/EventNexus/#/profile
+   https://www.eventnexus.eu/#/profile
+   http://localhost:3000/#/profile
+   ```
+
+2. **Facebook Developer Console** → **Facebook Login** → **Settings** → **Valid OAuth Redirect URIs**:
+   ```
+   https://anlivujgkjmajkcgbaxw.supabase.co/auth/v1/callback
+   https://www.eventnexus.eu/oauth-callback.html
+   https://eventnexus.eu/oauth-callback.html
+   https://www.eventnexus.eu/EventNexus/
+   https://www.eventnexus.eu/
+   http://localhost:3000/
+   ```
+
+3. **Google Cloud Console** → **Credentials** → **Authorized redirect URIs**:
+   ```
+   https://anlivujgkjmajkcgbaxw.supabase.co/auth/v1/callback
+   ```
 
 ## How It Works
 
@@ -206,9 +235,34 @@ npm run build
 
 ### Troubleshooting
 
-#### "Redirect URI mismatch" error
+#### "URL on blokeeritud / Redirect URI mismatch" (Facebook)
+**Probleem:** Facebook OAuth annab vea "URL is blocked" või "Redirect failed"
+
+**Lahendus:**
+1. Mine [Facebook Developers Console](https://developers.facebook.com/)
+2. Vali oma EventNexus app
+3. **Facebook Login** → **Settings**
+4. **Valid OAuth Redirect URIs** - kontrolli, et kõik need URLid on lisatud:
+   ```
+   https://anlivujgkjmajkcgbaxw.supabase.co/auth/v1/callback
+   https://www.eventnexus.eu/EventNexus/
+   https://www.eventnexus.eu/
+   http://localhost:3000/
+   ```
+5. Salvesta muudatused
+6. **Oluline**: Veendu, et rakendus on **LIVE režiimis**:
+   - Mine **Settings** → **Basic**
+   - **App Mode** peab olema: **Live** ✅ (mitte Development)
+   - Lisa **Privacy Policy URL**: `https://www.eventnexus.eu/#/privacy`
+   - Lisa **Terms of Service URL**: `https://www.eventnexus.eu/#/terms`
+7. Kontrolli ka **Supabase Dashboard**:
+   - **Authentication** → **URL Configuration** → **Redirect URLs**
+   - Lisa kõik ülaltoodud URLid
+
+#### "Redirect URI mismatch" error (Google)
 - Ensure redirect URIs match exactly in provider settings
 - Check both Supabase callback URL and application redirect URL
+- Google only needs: `https://anlivujgkjmajkcgbaxw.supabase.co/auth/v1/callback`
 
 #### "App not verified" (Google)
 - Submit app for verification in Google Cloud Console
