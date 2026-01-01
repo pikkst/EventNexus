@@ -5,30 +5,25 @@
   <title>EventNexus - Event Management Platform</title>
   <meta name="description" content="EventNexus - Modern event management and ticketing platform">
   
-  <!-- GitHub Pages SPA redirect trick -->
-  <!-- This script stores the current path and redirects to index.html -->
-  <!-- The index.html will then restore the correct route -->
+  <!-- GitHub Pages SPA redirect for BrowserRouter -->
   <script>
-    // Prevent infinite redirect loops
-    var path = location.pathname + location.search + location.hash;
+    // Get the path after /EventNexus/
+    var pathSegmentsToKeep = 1; // Keep '/EventNexus' part
     
-    // If already redirecting or at root, don't redirect again
-    if (location.search.includes('redirect=') || location.pathname === '/') {
-      // Just go to home page to break the loop
-      location.replace(location.origin + '/');
-    } else {
-      // Store the path in sessionStorage so index.html can restore it
-      sessionStorage.setItem('redirect', path);
-      // Redirect to root with the path stored
-      location.replace(location.origin + '/');
-    }
+    var l = window.location;
+    
+    // Store the full path in sessionStorage
+    sessionStorage.setItem('pathToRestore', l.pathname.slice(0, pathSegmentsToKeep + 1) + l.pathname.substring(pathSegmentsToKeep + 1).replace(/&/g, '~and~') + (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') + l.hash);
+    
+    // Redirect to index.html with special query param
+    var redirect = l.pathname.slice(0, pathSegmentsToKeep + 1);
+    l.replace(redirect + '?p=/' + l.pathname.slice(pathSegmentsToKeep + 1).replace(/&/g, '~and~') + (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') + l.hash);
   </script>
 </head>
 <body>
-  <!-- This content won't be shown due to instant redirect -->
-  <div style="text-align: center; padding: 50px;">
-    <h1>Loading EventNexus...</h1>
-    <p>Please wait while we redirect you.</p>
+  <div style="text-align: center; padding: 50px; font-family: sans-serif;">
+    <h1>Redirecting...</h1>
+    <p>Please wait while we load EventNexus.</p>
   </div>
 </body>
 </html>

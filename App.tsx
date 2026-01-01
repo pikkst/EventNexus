@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Map as MapIcon, 
   PlusCircle, 
@@ -80,7 +80,7 @@ import {
 const GA_MEASUREMENT_ID = 'G-JD7P5ZKF4L';
 
 // Redirect legacy hash URLs to clean URLs
-// Track page views for HashRouter routes in Google Analytics
+// Track page views for BrowserRouter routes in Google Analytics
 const AnalyticsTracker: React.FC = () => {
   const location = useLocation();
 
@@ -662,7 +662,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <HashRouter>
+    <BrowserRouter basename="/EventNexus">
       <AnalyticsTracker />
       <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
         {/* Loading overlay for initial authentication */}
@@ -784,7 +784,7 @@ const App: React.FC = () => {
           />
         )}
       </div>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 
