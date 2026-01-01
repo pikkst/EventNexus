@@ -12,12 +12,10 @@ CREATE TABLE IF NOT EXISTS campaign_performance (
   total_clicks INTEGER DEFAULT 0,
   total_conversions INTEGER DEFAULT 0,
   total_spend DECIMAL(10,2) DEFAULT 0.00,
-  revenue DECIMAL(10,2) DEFAULT 0.00,
+  total_revenue DECIMAL(10,2) DEFAULT 0.00,
   roi DECIMAL(10,4) DEFAULT 0.0000,
   ctr DECIMAL(10,4) DEFAULT 0.0000,
   conversion_rate DECIMAL(10,4) DEFAULT 0.0000,
-  cost_per_click DECIMAL(10,2) DEFAULT 0.00,
-  cost_per_conversion DECIMAL(10,2) DEFAULT 0.00,
   last_updated TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -79,12 +77,10 @@ BEGIN
     total_clicks,
     total_conversions,
     total_spend,
-    revenue,
+    total_revenue,
     roi,
     ctr,
     conversion_rate,
-    cost_per_click,
-    cost_per_conversion,
     last_updated
   ) VALUES (
     p_campaign_id,
@@ -96,8 +92,6 @@ BEGIN
     v_roi,
     v_ctr,
     v_conversion_rate,
-    CASE WHEN v_clicks > 0 THEN v_spend / v_clicks ELSE 0 END,
-    CASE WHEN v_conversions > 0 THEN v_spend / v_conversions ELSE 0 END,
     NOW()
   )
   ON CONFLICT (campaign_id) DO UPDATE SET
@@ -105,12 +99,10 @@ BEGIN
     total_clicks = EXCLUDED.total_clicks,
     total_conversions = EXCLUDED.total_conversions,
     total_spend = EXCLUDED.total_spend,
-    revenue = EXCLUDED.revenue,
+    total_revenue = EXCLUDED.total_revenue,
     roi = EXCLUDED.roi,
     ctr = EXCLUDED.ctr,
     conversion_rate = EXCLUDED.conversion_rate,
-    cost_per_click = EXCLUDED.cost_per_click,
-    cost_per_conversion = EXCLUDED.cost_per_conversion,
     last_updated = NOW();
 
 END;
@@ -174,7 +166,7 @@ ALTER TABLE campaign_performance ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policy if it exists
 DROP POLICY IF EXISTS "Admin full access to campaign_performance" ON campaign_performance;
-DROP POLICY IF EXISTS "Organizers see own campaign performance" ON campaign_performance;
+DROP POLICY IF EXISTS "Organizers see campaign performance" ON campaign_performance;
 
 -- Admin can see all performance data
 CREATE POLICY "Admin full access to campaign_performance" ON campaign_performance
