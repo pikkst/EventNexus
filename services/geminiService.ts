@@ -886,7 +886,7 @@ export const generateProfessionalAdCampaign = async (
     let op1 = await aiClient.models.generateVideos({
       model: 'veo-3.1-generate-preview',
       prompt: `${scenes.hook}. ${globalContext}`,
-      config: { numberOfVideos: 1, resolution: '720p', aspectRatio }
+      config: { numberOfVideos: 1, aspectRatio }
     });
     while (!op1.done) { 
       await new Promise(r => setTimeout(r, 10000)); 
@@ -902,7 +902,7 @@ export const generateProfessionalAdCampaign = async (
       model: 'veo-3.1-generate-preview',
       prompt: `Continuity: ${scenes.conflict}. Use same lighting and objects from Scene 1. Narrative progression. ${globalContext}`,
       video: v1,
-      config: { numberOfVideos: 1, resolution: '720p', aspectRatio }
+      config: { numberOfVideos: 1, aspectRatio }
     });
     while (!op2.done) { 
       await new Promise(r => setTimeout(r, 10000)); 
@@ -918,7 +918,7 @@ export const generateProfessionalAdCampaign = async (
       model: 'veo-3.1-generate-preview',
       prompt: `Discovery: ${scenes.resolution}. Brighten lighting while maintaining style. Reveal the solution. ${globalContext}`,
       video: v2,
-      config: { numberOfVideos: 1, resolution: '720p', aspectRatio }
+      config: { numberOfVideos: 1, aspectRatio }
     });
     while (!op3.done) { 
       await new Promise(r => setTimeout(r, 10000)); 
@@ -934,7 +934,7 @@ export const generateProfessionalAdCampaign = async (
       model: 'veo-3.1-generate-preview',
       prompt: `Power shot: ${scenes.power}. High energy movement, consistent materials. Show the core benefit in action. ${globalContext}`,
       video: v3,
-      config: { numberOfVideos: 1, resolution: '720p', aspectRatio }
+      config: { numberOfVideos: 1, aspectRatio }
     });
     while (!op4.done) { 
       await new Promise(r => setTimeout(r, 10000)); 
@@ -949,7 +949,7 @@ export const generateProfessionalAdCampaign = async (
       model: 'veo-3.1-generate-preview',
       prompt: `Finale: ${scenes.closing}. Fade to brand colors, cinematic logo environment. Stable and premium. ${globalContext}`,
       video: v4,
-      config: { numberOfVideos: 1, resolution: '720p', aspectRatio }
+      config: { numberOfVideos: 1, aspectRatio }
     });
     while (!op5.done) { 
       await new Promise(r => setTimeout(r, 10000)); 
