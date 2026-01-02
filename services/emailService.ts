@@ -95,7 +95,7 @@ export async function sendAlertEmail(alert: EmailAlert): Promise<boolean> {
     </div>
 
     <div style="text-align: center; padding: 20px 0; border-top: 1px solid #e5e7eb; margin-top: 20px;">
-      <a href="https://www.eventnexus.eu/#/admin" style="display: inline-block; background: #111827; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-bottom: 15px;">Go to Admin Dashboard →</a>
+      <a href="https://www.eventnexus.eu/admin" style="display: inline-block; background: #111827; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-bottom: 15px;">Go to Admin Dashboard →</a>
       <p style="color: #6b7280; font-size: 13px; margin: 15px 0 0 0;">
         This is an automated alert from EventNexus Brand Protection Monitor<br>
         <a href="https://www.eventnexus.eu" style="color: #8b5cf6; text-decoration: none;">eventnexus.eu</a> • 
@@ -187,7 +187,7 @@ export async function sendWeeklySummary(stats: {
     </div>
 
     <div style="text-align: center; padding: 20px 0; border-top: 1px solid #e5e7eb;">
-      <a href="https://www.eventnexus.eu/#/admin" style="display: inline-block; background: #8b5cf6; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">View Full Dashboard →</a>
+      <a href="https://www.eventnexus.eu/admin" style="display: inline-block; background: #8b5cf6; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">View Full Dashboard →</a>
       <p style="color: #6b7280; font-size: 13px; margin: 15px 0 0 0;">
         Weekly summary from EventNexus Brand Protection Monitor
       </p>
@@ -299,7 +299,7 @@ export async function sendContactInquiry(inquiry: ContactInquiry): Promise<boole
         Reply to ${inquiry.fromName} →
       </a>
       <div style="margin-top: 20px;">
-        <a href="https://www.eventnexus.eu/#/dashboard" 
+        <a href="https://www.eventnexus.eu/dashboard" 
            style="display: inline-block; background: #111827; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; margin: 0 8px;">
           Go to Dashboard
         </a>

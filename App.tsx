@@ -381,43 +381,73 @@ const App: React.FC = () => {
 
     // Listen for auth state changes (login, logout, token refresh)
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event);
+      console.log('🔐 Auth event:', event, session?.user?.email || 'no session');
       
-      // Skip SIGNED_IN during initial mount - it's already handled by loadInitialData
+      // Handle OAuth callback - detect OAuth params in URL
+      const hasOAuthParams = window.location.hash.includes('access_token') || 
+                            window.location.hash.includes('code=') ||
+                            window.location.search.includes('code=');
+      
+      if (event === 'INITIAL_SESSION' && session?.user && hasOAuthParams && !user) {
+        console.log('🔄 OAuth callback detected, loading user profile...');
+        setIsLoading(true);
+        
+        try {
+          // Ensure profile exists via RPC
+          await supabase.rpc('ensure_user_profile', { user_id: session.user.id })
+            .catch(err => console.warn('⚠️ RPC warning:', err.message));
+          
+          // Small delay for profile creation
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          const userData = await getUser(session.user.id);
+          
+          if (userData && mounted) {
+            setUser(userData);
+            cacheUserData(userData);
+            setIsLoading(false);
+            
+            // Load notifications and events in background
+            getNotifications(userData.id).then(notifs => {
+              if (mounted) {
+                setNotifications(notifs);
+                cacheNotifications(notifs);
+              }
+            });
+            
+            getAllEvents().then(eventsData => {
+              if (mounted) {
+                setEvents(eventsData);
+                cacheEvents(eventsData);
+              }
+            });
+            
+            // Clean URL - remove OAuth params and redirect to profile
+            window.history.replaceState({}, '', '/profile');
+            console.log('✅ OAuth login successful');
+          } else {
+            console.error('⚠️ Failed to load user profile');
+            setIsLoading(false);
+          }
+        } catch (error) {
+          console.error('OAuth callback error:', error);
+          setIsLoading(false);
+        }
+        return;
+      }
+      
+      // Skip other INITIAL_SESSION events
       if (event === 'INITIAL_SESSION') {
         console.log('✅ Session restored:', session?.user?.email || 'No session');
         return;
       }
       
-      // Only handle SIGNED_IN if it's a truly new login (not from cache or initial restore)
-      // Skip if we already have user data (from cache or previous load)
-      if (event === 'SIGNED_IN' && session?.user && mounted && !user) {
-        console.log('User signed in (new login), loading data...');
-        
-        const loadingTimeout = setTimeout(() => {
-          console.error('⚠️ Loading timeout after 10 seconds, forcing page reload...');
-          window.location.href = '/#/profile';
-        }, 10000);
+      // Handle regular sign-in (non-OAuth)
+      if (event === 'SIGNED_IN' && session?.user && mounted && !user && !hasOAuthParams) {
+        console.log('User signed in (regular login), loading data...');
         
         try {
-          // For OAuth users, ensure profile exists before trying to fetch
-          console.log('🔧 Ensuring user profile exists via RPC...');
-          
-          const rpcPromise = supabase.rpc('ensure_user_profile', { user_id: session.user.id });
-          const rpcTimeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('RPC timeout')), 5000)
-          );
-          
-          await Promise.race([rpcPromise, rpcTimeout]).catch(err => {
-            console.warn('⚠️ RPC failed or timed out:', err.message);
-          });
-          
-          // Wait a moment for the profile creation
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
           const userData = await getUser(session.user.id);
-          
-          clearTimeout(loadingTimeout);
           
           if (userData && mounted) {
             setUser(userData);
@@ -429,26 +459,14 @@ const App: React.FC = () => {
               cacheNotifications(userNotifications);
             }
             
-            // Reload events with authenticated access
             const eventsData = await getAllEvents();
             if (mounted) {
               setEvents(eventsData);
               cacheEvents(eventsData);
             }
-            
-            // Redirect to profile after successful login
-            window.location.href = '/#/profile';
-          } else {
-            console.error('⚠️ Failed to load user profile. Database may be slow or unavailable.');
-            clearTimeout(loadingTimeout);
-            // Force redirect anyway
-            window.location.href = '/#/profile';
           }
         } catch (userError) {
           console.error('Error loading user data:', userError);
-          clearTimeout(loadingTimeout);
-          // Force redirect on error
-          window.location.href = '/#/profile';
         }
       } else if (event === 'TOKEN_REFRESHED' && session?.user && mounted) {
         console.log('✅ Token refreshed successfully');

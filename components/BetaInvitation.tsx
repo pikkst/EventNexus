@@ -101,7 +101,7 @@ const BetaInvitation: React.FC = () => {
         
         // Redirect after 3 seconds
         setTimeout(() => {
-          window.location.href = '/#/';
+          window.location.href = '/';
         }, 3000);
       }
     } catch (error) {
@@ -425,9 +425,9 @@ const BetaInvitation: React.FC = () => {
               {/* Terms */}
               <p className="text-xs text-slate-400 text-center mt-4">
                 By signing up, you agree to our{' '}
-                <a href="/#/terms" className="text-indigo-400 hover:text-indigo-300">Terms of Service</a>
-                {' '}and{' '}
-                <a href="/#/privacy" className="text-indigo-400 hover:text-indigo-300">Privacy Policy</a>
+                <a href="/terms" className="text-indigo-400 hover:text-indigo-300">Terms of Service</a>
+                {' and '}
+                <a href="/privacy" className="text-indigo-400 hover:text-indigo-300">Privacy Policy</a>
               </p>
             </form>
 

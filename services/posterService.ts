@@ -26,7 +26,7 @@ export const generatePrintablePoster = async (
 ): Promise<Blob | null> => {
   try {
     // Create QR code pointing to event ticket page
-    const eventUrl = `${window.location.origin}/#/event/${event.id}`;
+    const eventUrl = `${window.location.origin}/event/${event.id}`;
     const qrCodeDataUrl = await QRCode.toDataURL(eventUrl, {
       errorCorrectionLevel: 'H',
       type: 'image/png',

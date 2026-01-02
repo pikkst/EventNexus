@@ -95,7 +95,7 @@ serve(async (req) => {
                       </ul>
                       
                       <div class="actions">
-                        <a href="https://www.eventnexus.eu/#/map" class="button">
+                        <a href="https://www.eventnexus.eu/map" class="button">
                           Claim My Bonus
                         </a>
                       </div>

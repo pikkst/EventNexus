@@ -841,7 +841,7 @@ export const deleteNotification = async (id: string): Promise<boolean> => {
 export const signUpUser = async (email: string, password: string) => {
   // Get the current origin for email confirmation redirect
   const redirectUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}${window.location.pathname}#/profile`
+    ? `${window.location.origin}/profile`
     : undefined;
 
   const { data, error } = await supabase.auth.signUp({
@@ -904,7 +904,7 @@ export const signInWithGoogle = async () => {
     const getRedirectUrl = () => {
       if (typeof window === 'undefined') return undefined;
       
-      // For production - redirect to /profile
+      // For production - redirect to /profile (BrowserRouter with 404.html redirect)
       if (window.location.origin.includes('eventnexus.eu')) {
         return 'https://www.eventnexus.eu/profile';
       }

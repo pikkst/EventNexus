@@ -44,8 +44,8 @@ export const createSubscriptionCheckout = async (
       enterprise: 'price_1SgXxRJ9WsSrj5gMLhDEB26O'
     };
 
-    // Get the base URL including the /EventNexus/ path for GitHub Pages
-    const baseUrl = window.location.origin + window.location.pathname.split('#')[0];
+    // Get the base URL (use origin for clean URLs with BrowserRouter)
+    const baseUrl = window.location.origin;
     
     // Call Supabase Edge Function to create checkout session
     const { data, error } = await supabase.functions.invoke('create-checkout', {
@@ -54,8 +54,8 @@ export const createSubscriptionCheckout = async (
         tier,
         priceId: priceIds[tier],
         customerEmail: userEmail,
-        successUrl: `${baseUrl}#/dashboard?checkout=success`,
-        cancelUrl: `${baseUrl}#/pricing?checkout=cancelled`
+        successUrl: `${baseUrl}/dashboard?checkout=success`,
+        cancelUrl: `${baseUrl}/pricing?checkout=cancelled`
       }
     });
 
@@ -96,8 +96,8 @@ export const createTicketCheckout = async (
       return null;
     }
 
-    // Get the base URL including the /EventNexus/ path for GitHub Pages
-    const baseUrl = window.location.origin + window.location.pathname.split('#')[0];
+    // Get the base URL (use origin for clean URLs with BrowserRouter)
+    const baseUrl = window.location.origin;
 
     // Call Supabase Edge Function to create checkout session
     // Note: Include session_id placeholder in URL to ensure proper placement
@@ -111,8 +111,8 @@ export const createTicketCheckout = async (
         ticketTemplateId,
         ticketType,
         ticketName,
-        successUrl: `${baseUrl}?purchase=success&session_id={CHECKOUT_SESSION_ID}#/events/${eventId}`,
-        cancelUrl: `${baseUrl}?purchase=cancelled#/events/${eventId}`
+        successUrl: `${baseUrl}/event/${eventId}?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${baseUrl}/event/${eventId}?purchase=cancelled`
       }
     });
 
@@ -171,7 +171,7 @@ export const cancelSubscription = async (userId: string): Promise<boolean> => {
  * Check if checkout was successful (from URL params)
  */
 export const checkCheckoutSuccess = (): boolean => {
-  // Query params are now BEFORE hash: ?purchase=success#/events/id
+  // Query params are in URL: ?purchase=success (BrowserRouter will handle routing)
   const params = new URLSearchParams(window.location.search);
   return params.get('checkout') === 'success' || params.get('purchase') === 'success';
 };

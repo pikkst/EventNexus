@@ -8,7 +8,7 @@
  * 1. Copy the generated config
  * 2. Update user branding in Supabase SQL Editor:
  *    UPDATE users SET branding = '<paste-json-here>'::jsonb WHERE email = 'your-email@example.com';
- * 3. Visit https://eventnexus.eu/#/agency/your-slug to see your white-label page
+ * 3. Visit https://eventnexus.eu/agency/your-slug to see your white-label page
  */
 
 import type { UserBranding, EnterprisePageConfig } from '../types';

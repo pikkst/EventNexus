@@ -34,7 +34,7 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ user }) => {
     }
   };
 
-  const referralUrl = stats ? `${window.location.origin}/#/beta?ref=${stats.code}` : '';
+  const referralUrl = stats ? `${window.location.origin}/beta?ref=${stats.code}` : '';
 
   const handleCopy = async () => {
     try {

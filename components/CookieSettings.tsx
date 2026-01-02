@@ -62,7 +62,7 @@ const CookieSettings: React.FC = () => {
       <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-3xl flex items-start gap-4">
         <Info className="w-6 h-6 text-indigo-400 shrink-0" />
         <p className="text-xs text-slate-500 font-medium leading-relaxed">
-          Your preferences are stored locally on your device. Clearing your browser cache will reset these settings to their default values. For more details, see our <a href="#/privacy" className="text-indigo-400 underline">Privacy Policy</a>.
+          Your preferences are stored locally on your device. Clearing your browser cache will reset these settings to their default values. For more details, see our <a href="/privacy" className="text-indigo-400 underline">Privacy Policy</a>.
         </p>
       </div>
     </div>
