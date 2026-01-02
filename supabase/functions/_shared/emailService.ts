@@ -82,7 +82,7 @@ export async function sendAlertEmail(alert: Alert): Promise<void> {
       </div>
       ` : ''}
       
-      <a href="https://www.eventnexus.eu/#/admin" class="button">
+      <a href="https://www.eventnexus.eu/admin" class="button">
         View in Admin Dashboard →
       </a>
       
@@ -190,7 +190,7 @@ export async function sendWeeklySummary(stats: any): Promise<void> {
         <li>🔵 Info: ${stats.infoAlerts}</li>
       </ul>
       
-      <a href="https://www.eventnexus.eu/#/admin" class="button">
+      <a href="https://www.eventnexus.eu/admin" class="button">
         View Full Report →
       </a>
       

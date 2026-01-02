@@ -233,7 +233,7 @@ function generateEmailHTML(inquiry: ContactInquiryRequest, isPartnership: boolea
         Reply to ${inquiry.fromName} →
       </a>
       <div style="margin-top: 20px;">
-        <a href="https://www.eventnexus.eu/#/dashboard" 
+        <a href="https://www.eventnexus.eu/dashboard" 
            style="display: inline-block; background: #111827; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; margin: 0 8px;">
           Go to Dashboard
         </a>

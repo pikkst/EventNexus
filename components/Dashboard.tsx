@@ -391,7 +391,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     
     try {
       // Build event URL for ticket purchases
-      const eventUrl = `${window.location.origin}/#/event/${selectedEvent.id}`;
+      const eventUrl = `${window.location.origin}/event/${selectedEvent.id}`;
       
       const campaign = await generateAdCampaign(
         selectedEvent.name, 
@@ -1357,11 +1357,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                <div className="space-y-3">
                  <div className="flex items-center gap-2 p-4 bg-slate-900/50 rounded-xl">
                    <code className="flex-1 text-base text-purple-300 font-mono break-all">
-                     {window.location.origin}/#/agency/{user.agencySlug || user.agency_slug}
+                     {window.location.origin}/agency/{user.agencySlug || user.agency_slug}
                    </code>
                    <button 
                      onClick={() => {
-                       navigator.clipboard.writeText(`${window.location.origin}/#/agency/${user.agencySlug || user.agency_slug}`);
+                       navigator.clipboard.writeText(`${window.location.origin}/agency/${user.agencySlug || user.agency_slug}`);
                        alert('✓ Link copied to clipboard!');
                      }}
                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-xs font-bold text-white transition-all flex items-center gap-2"
@@ -1399,7 +1399,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Public URL Slug</label>
                          <div className="space-y-2">
                            <div className="flex items-center gap-2">
-                             <span className="text-slate-500 text-sm">eventnexus.eu/#/agency/</span>
+                             <span className="text-slate-500 text-sm">eventnexus.eu/agency/</span>
                              <input 
                                type="text" 
                                value={tempSlug}

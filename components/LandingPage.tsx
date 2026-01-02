@@ -207,7 +207,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
       {/* Beta Testing Banner */}
       <section className="px-4">
-        <a href="/#/beta" className="block">
+        <a href="/beta" className="block">
           <div className="max-w-7xl mx-auto bg-gradient-to-r from-purple-900/50 to-indigo-900/50 border border-purple-500/50 rounded-[32px] p-6 md:p-8 hover:border-purple-400 transition-all shadow-2xl">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex-1">

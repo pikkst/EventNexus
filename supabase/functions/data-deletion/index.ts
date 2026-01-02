@@ -127,7 +127,7 @@ serve(async (req) => {
 
       // Return confirmation response for Facebook
       const response: DeletionResponse = {
-        url: `https://www.eventnexus.eu/#/data-deletion-status?code=${confirmationCode}`,
+        url: `https://www.eventnexus.eu/data-deletion-status?code=${confirmationCode}`,
         confirmation_code: confirmationCode,
       };
 

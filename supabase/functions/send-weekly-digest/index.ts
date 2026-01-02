@@ -117,7 +117,7 @@ serve(async (req) => {
                           <div class="event-details">
                             ${event.category} • ${new Date(event.date).toLocaleDateString()} • ${event.location.city}
                           </div>
-                          <a href="https://www.eventnexus.eu/#/event/${event.id}" class="button">View Details</a>
+                          <a href="https://www.eventnexus.eu/event/${event.id}" class="button">View Details</a>
                         </div>
                       `).join('')}
                     </div>
@@ -132,7 +132,7 @@ serve(async (req) => {
                           <div class="event-details">
                             ${event.category} • ${new Date(event.date).toLocaleDateString()} • ${event.location.city}
                           </div>
-                          <a href="https://www.eventnexus.eu/#/event/${event.id}" class="button">View Details</a>
+                          <a href="https://www.eventnexus.eu/event/${event.id}" class="button">View Details</a>
                         </div>
                       `).join('')}
                     </div>
@@ -140,7 +140,7 @@ serve(async (req) => {
 
                     <div class="footer">
                       <p>
-                        Don't want these emails? <a href="https://www.eventnexus.eu/#/profile?tab=notifications" style="color: #6366f1;">Update preferences</a>
+                        Don't want these emails? <a href="https://www.eventnexus.eu/profile?tab=notifications" style="color: #6366f1;">Update preferences</a>
                       </p>
                       <p style="margin-top: 16px;">
                         EventNexus • Discover Events Near You<br>

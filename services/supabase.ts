@@ -31,6 +31,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     storageKey: 'eventnexus-auth-token',
     flowType: 'pkce',
+    // Add debug mode to help diagnose OAuth issues
+    debug: process.env.NODE_ENV === 'development',
   },
   global: {
     headers: {
