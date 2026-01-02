@@ -4,44 +4,50 @@
 -- ============================================================================
 -- SECTION 1: Check specific event by ID
 -- ============================================================================
--- Replace this ID with your event ID:
-\set event_id '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e'
+-- ⚠️ REPLACE THIS ID WITH YOUR EVENT ID:
+WITH event_to_check AS (
+  SELECT '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e'::uuid as event_id
+)
 
+-- SECTION 1: EVENT DETAILS
 SELECT 
   '=== EVENT DETAILS ===' AS section,
-  id,
-  name,
-  visibility,
-  status,
-  archived_at,
-  date,
-  time,
-  location,
-  organizer_id,
-  created_at,
-  updated_at,
+  e.id,
+  e.name,
+  e.visibility,
+  e.status,
+  e.archived_at,
+  e.date,
+  e.time,
+  e.location,
+  e.organizer_id,
+  e.created_at,
+  e.updated_at,
   CASE 
-    WHEN visibility = 'public' THEN '✓ Should show on map (public)'
-    WHEN visibility = 'semi-private' THEN '✓ Should show on map (semi-private)'
-    WHEN visibility = 'private' THEN '✗ Hidden from map (private)'
+    WHEN e.visibility = 'public' THEN '✓ Should show on map (public)'
+    WHEN e.visibility = 'semi-private' THEN '✓ Should show on map (semi-private)'
+    WHEN e.visibility = 'private' THEN '✗ Hidden from map (private)'
     ELSE '⚠ Unknown visibility type!'
   END AS map_visibility_status,
   CASE 
-    WHEN status = 'active' THEN '✓ Active'
-    WHEN status = 'draft' THEN '✗ Draft (not shown)'
-    WHEN status = 'cancelled' THEN '✗ Cancelled'
+    WHEN e.status = 'active' THEN '✓ Active'
+    WHEN e.status = 'draft' THEN '✗ Draft (not shown)'
+    WHEN e.status = 'cancelled' THEN '✗ Cancelled'
     ELSE '⚠ Unknown status'
   END AS status_check,
   CASE 
-    WHEN archived_at IS NULL THEN '✓ Not archived'
-    ELSE '✗ ARCHIVED at ' || archived_at::text
+    WHEN e.archived_at IS NULL THEN '✓ Not archived'
+    ELSE '✗ ARCHIVED at ' || e.archived_at::text
   END AS archive_status
-FROM events 
-WHERE id = :'event_id';
+FROM event_to_check c
+LEFT JOIN events e ON e.id = c.event_id;
 
 -- ============================================================================
 -- SECTION 2: Check if event would be returned by getEvents() query
 -- ============================================================================
+WITH event_to_check AS (
+  SELECT '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e'::uuid as event_id
+)
 SELECT 
   '=== GETEVENTS() QUERY TEST ===' AS section,
   COUNT(*) as matching_events,
@@ -49,15 +55,19 @@ SELECT
     WHEN COUNT(*) > 0 THEN '✓ Event WOULD be returned by getEvents()'
     ELSE '✗ Event would NOT be returned by getEvents()'
   END AS result
-FROM events
-WHERE id = :'event_id'
-  AND status = 'active'
-  AND visibility IN ('public', 'semi-private')
-  AND archived_at IS NULL;
+FROM event_to_check c
+LEFT JOIN events e ON e.id = c.event_id
+WHERE e.id IS NOT NULL
+  AND e.status = 'active'
+  AND e.visibility IN ('public', 'semi-private')
+  AND e.archived_at IS NULL;
 
 -- ============================================================================
 -- SECTION 3: Check if event would be returned by getAllEvents() query
 -- ============================================================================
+WITH event_to_check AS (
+  SELECT '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e'::uuid as event_id
+)
 SELECT 
   '=== GETALLEVENTS() QUERY TEST ===' AS section,
   COUNT(*) as matching_events,
@@ -65,55 +75,65 @@ SELECT
     WHEN COUNT(*) > 0 THEN '✓ Event WOULD be returned by getAllEvents()'
     ELSE '✗ Event would NOT be returned by getAllEvents()'
   END AS result
-FROM events
-WHERE id = :'event_id'
-  AND status = 'active'
-  AND archived_at IS NULL;
+FROM event_to_check c
+LEFT JOIN events e ON e.id = c.event_id
+WHERE e.id IS NOT NULL
+  AND e.status = 'active'
+  AND e.archived_at IS NULL;
 
 -- ============================================================================
 -- SECTION 4: Check location data validity
 -- ============================================================================
+WITH event_to_check AS (
+  SELECT '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e'::uuid as event_id
+)
 SELECT 
   '=== LOCATION DATA CHECK ===' AS section,
-  location,
-  location->'lat' as latitude,
-  location->'lng' as longitude,
-  location->'address' as address,
-  location->'city' as city,
+  e.location,
+  e.location->'lat' as latitude,
+  e.location->'lng' as longitude,
+  e.location->'address' as address,
+  e.location->'city' as city,
   CASE 
-    WHEN location->'lat' IS NOT NULL AND location->'lng' IS NOT NULL THEN '✓ Has coordinates'
+    WHEN e.location->'lat' IS NOT NULL AND e.location->'lng' IS NOT NULL THEN '✓ Has coordinates'
     ELSE '✗ Missing coordinates'
   END AS coordinates_status,
   CASE 
-    WHEN (location->>'lat')::float BETWEEN -90 AND 90 
-     AND (location->>'lng')::float BETWEEN -180 AND 180 
+    WHEN (e.location->>'lat')::float BETWEEN -90 AND 90 
+     AND (e.location->>'lng')::float BETWEEN -180 AND 180 
     THEN '✓ Coordinates are valid'
     ELSE '✗ Coordinates out of range'
   END AS coordinates_validity
-FROM events
-WHERE id = :'event_id';
+FROM event_to_check c
+LEFT JOIN events e ON e.id = c.event_id;
 
 -- ============================================================================
 -- SECTION 5: Check date/time validity
 -- ============================================================================
+WITH event_to_check AS (
+  SELECT '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e'::uuid as event_id
+)
 SELECT 
   '=== DATE/TIME CHECK ===' AS section,
-  date as event_date,
-  time as event_time,
+  e.date as event_date,
+  e.time as event_time,
   CASE 
-    WHEN date >= NOW() THEN '✓ Future event'
+    WHEN e.date >= NOW() THEN '✓ Future event'
     ELSE '⚠ Past event (may still show)'
   END AS date_status,
   CASE 
-    WHEN date IS NOT NULL THEN '✓ Has date'
+    WHEN e.date IS NOT NULL THEN '✓ Has date'
     ELSE '✗ Missing date'
   END AS date_presence
-FROM events
-WHERE id = :'event_id';
+FROM event_to_check c
+LEFT JOIN events e ON e.id = c.event_id;
 
 -- ============================================================================
 -- SECTION 6: Check organizer validity
 -- ============================================================================
+WITH event_to_check AS (
+  SELECT '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e'::uuid as event_id
+)
 SELECT 
   '=== ORGANIZER CHECK ===' AS section,
   e.organizer_id,
@@ -124,9 +144,9 @@ SELECT
     WHEN u.id IS NOT NULL THEN '✓ Organizer exists'
     ELSE '✗ Organizer not found'
   END AS organizer_status
-FROM events e
-LEFT JOIN users u ON e.organizer_id = u.id
-WHERE e.id = :'event_id';
+FROM event_to_check c
+LEFT JOIN events e ON e.id = c.event_id
+LEFT JOIN users u ON e.organizer_id = u.id;
 
 -- ============================================================================
 -- SECTION 7: Similar events that ARE showing (for comparison)
@@ -182,6 +202,9 @@ ORDER BY policyname;
 -- ============================================================================
 -- SECTION 10: Recommended fixes based on common issues
 -- ============================================================================
+WITH event_to_check AS (
+  SELECT '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e'::uuid as event_id
+)
 SELECT 
   '=== DIAGNOSTIC SUMMARY & FIXES ===' AS section,
   CASE 
@@ -198,29 +221,24 @@ SELECT
     ELSE 
       '✓ Event looks correct! Check frontend console for errors.'
   END AS diagnosis_and_fix
-FROM events e
-WHERE e.id = :'event_id'
-UNION ALL
-SELECT 
-  '=== DIAGNOSTIC SUMMARY & FIXES ===' AS section,
-  '⚠ EVENT NOT FOUND IN DATABASE - Event may have been deleted or ID is incorrect' as diagnosis_and_fix
-WHERE NOT EXISTS (SELECT 1 FROM events WHERE id = :'event_id');
+FROM event_to_check c
+LEFT JOIN events e ON e.id = c.event_id;
 
 -- ============================================================================
--- QUICK FIX: Uncomment lines below to automatically fix common issues
+-- QUICK FIX: Uncomment and modify ID below to automatically fix common issues
 -- ============================================================================
 
 -- Fix 1: Make event active
--- UPDATE events SET status = 'active' WHERE id = :'event_id';
+-- UPDATE events SET status = 'active' WHERE id = '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e';
 
 -- Fix 2: Make event public
--- UPDATE events SET visibility = 'public' WHERE id = :'event_id';
+-- UPDATE events SET visibility = 'public' WHERE id = '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e';
 
 -- Fix 3: Unarchive event
--- UPDATE events SET archived_at = NULL, archived_by = NULL WHERE id = :'event_id';
+-- UPDATE events SET archived_at = NULL, archived_by = NULL WHERE id = '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e';
 
 -- Fix 4: Set current date if missing
--- UPDATE events SET date = NOW() + INTERVAL '1 day' WHERE id = :'event_id' AND date IS NULL;
+-- UPDATE events SET date = NOW() + INTERVAL '1 day' WHERE id = '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e' AND date IS NULL;
 
 -- Verify fixes:
--- SELECT id, name, visibility, status, archived_at FROM events WHERE id = :'event_id';
+-- SELECT id, name, visibility, status, archived_at FROM events WHERE id = '57a2cac1-f3cc-4ea7-9f44-bdc8ba20f56e';
