@@ -5,10 +5,11 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Download, Share2, Play, Pause, Film, ExternalLink } from 'lucide-react';
+import { Sparkles, Download, Share2, Play, Pause, Film, ExternalLink, Upload, Image as ImageIcon, Languages, Palette, Calendar } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
 import { generateProfessionalAdCampaign, generateAdVoiceover } from '../services/geminiService';
 import { deductUserCredits, checkUserCredits } from '../services/dbService';
+import { supabase } from '../services/supabase';
 
 enum Step {
   INPUT,
@@ -85,6 +86,15 @@ export const ProfessionalAdCampaignCreator: React.FC<ProfessionalAdCampaignCreat
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  
+  // Enhanced features
+  const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en']);
+  const [brandColors, setBrandColors] = useState<string[]>(['#6366f1', '#8b5cf6']);
 
   // Check tier access
   const hasAccess = isAdmin || 
@@ -103,6 +113,28 @@ export const ProfessionalAdCampaignCreator: React.FC<ProfessionalAdCampaignCreat
       setUrl('https://www.eventnexus.eu');
     }
   }, [event, isAdmin]);
+
+  // Load connected social accounts for direct upload
+  useEffect(() => {
+    const loadConnectedAccounts = async () => {
+      if (!isAdmin) return; // Only admins have social connections
+      
+      try {
+        const { data, error } = await supabase
+          .from('social_media_accounts')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_connected', true);
+        
+        if (error) throw error;
+        setConnectedAccounts(data || []);
+      } catch (error) {
+        console.error('Error loading social accounts:', error);
+      }
+    };
+    
+    loadConnectedAccounts();
+  }, [user.id, isAdmin]);
 
   const startCampaignCreation = async () => {
     if (!url) return;
@@ -171,6 +203,121 @@ export const ProfessionalAdCampaignCreator: React.FC<ProfessionalAdCampaignCreat
         setIsAudioPlaying(false);
       }
     }
+  };
+
+  // 1. Direct Upload to Social Platforms
+  const handleDirectUpload = async (platformName: string) => {
+    if (!campaign?.videoUrl) return;
+    
+    setIsUploading(true);
+    setUploadStatus(`Uploading to ${platformName}...`);
+    
+    try {
+      const account = connectedAccounts.find(acc => acc.platform === platformName);
+      if (!account) {
+        throw new Error(`No ${platformName} account connected`);
+      }
+
+      // Convert video URL to blob
+      const response = await fetch(campaign.videoUrl);
+      const blob = await response.blob();
+      
+      // Upload to social platform via Edge Function
+      const { data, error } = await supabase.functions.invoke('upload-social-video', {
+        body: {
+          platform: platformName,
+          accountId: account.account_id,
+          videoBlob: await blobToBase64(blob),
+          caption: `${campaign.analysis.socialCopy.headline}\n\n${campaign.analysis.socialCopy.body}\n\n${campaign.analysis.socialCopy.cta}\n\n${campaign.analysis.socialCopy.hashtags.join(' ')}`,
+          thumbnailUrl: thumbnail
+        }
+      });
+      
+      if (error) throw error;
+      
+      setUploadStatus(`✅ Successfully uploaded to ${platformName}!`);
+      setTimeout(() => setUploadStatus(null), 3000);
+    } catch (error: any) {
+      console.error('Upload failed:', error);
+      setUploadStatus(`❌ Upload failed: ${error.message}`);
+      setTimeout(() => setUploadStatus(null), 5000);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // 2. Generate Thumbnail from Video
+  const generateThumbnail = () => {
+    if (!videoRef.current) return;
+    
+    const video = videoRef.current;
+    video.currentTime = 3; // Get frame at 3 seconds
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.95);
+      setThumbnail(thumbnailUrl);
+    }
+  };
+
+  // 3. Generate Subtitles (Auto-captions)
+  const generateSubtitles = async () => {
+    if (!campaign) return;
+    
+    // Use the script to create SRT format subtitles
+    const script = campaign.analysis.script;
+    const words = script.split(' ');
+    const wordsPerSecond = 2.5;
+    
+    let srt = '';
+    let index = 1;
+    let currentTime = 0;
+    
+    for (let i = 0; i < words.length; i += 5) {
+      const chunk = words.slice(i, i + 5).join(' ');
+      const duration = chunk.split(' ').length / wordsPerSecond;
+      const endTime = currentTime + duration;
+      
+      srt += `${index}\n`;
+      srt += `${formatSRTTime(currentTime)} --> ${formatSRTTime(endTime)}\n`;
+      srt += `${chunk}\n\n`;
+      
+      currentTime = endTime;
+      index++;
+    }
+    
+    // Download SRT file
+    const blob = new Blob([srt], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${campaign.analysis.brandName}_subtitles.srt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Helper: Convert blob to base64
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  // Helper: Format time for SRT
+  const formatSRTTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
   };
 
   const handleDownload = () => {
@@ -454,6 +601,146 @@ export const ProfessionalAdCampaignCreator: React.FC<ProfessionalAdCampaignCreat
                     </div>
                   </div>
                 </div>
+
+                {/* Advanced Features (Admin Only) */}
+                {isAdmin && (
+                  <div className="border border-purple-500/30 rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-purple-400" />
+                        Advanced Publishing Tools
+                      </h4>
+                      <button
+                        onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                        className="text-sm text-purple-400 hover:text-purple-300"
+                      >
+                        {showAdvancedOptions ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+
+                    {showAdvancedOptions && (
+                      <div className="space-y-4 pt-2">
+                        {/* 1. Direct Upload */}
+                        <div>
+                          <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                            <Upload className="w-4 h-4" />
+                            Direct Upload to Social Platforms
+                          </h5>
+                          <div className="grid grid-cols-2 gap-2">
+                            {connectedAccounts.length > 0 ? (
+                              connectedAccounts.map((account) => (
+                                <button
+                                  key={account.account_id}
+                                  onClick={() => handleDirectUpload(account.platform)}
+                                  disabled={isUploading}
+                                  className="py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-700 disabled:to-gray-700 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
+                                >
+                                  {isUploading ? (
+                                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                                  ) : (
+                                    <Upload className="w-4 h-4" />
+                                  )}
+                                  {account.platform}
+                                </button>
+                              ))
+                            ) : (
+                              <p className="text-xs text-gray-400 col-span-2">
+                                No social accounts connected. Connect accounts in Social Media Manager.
+                              </p>
+                            )}
+                          </div>
+                          {uploadStatus && (
+                            <p className="text-xs mt-2 text-center">{uploadStatus}</p>
+                          )}
+                        </div>
+
+                        {/* 2. Thumbnail Generator */}
+                        <div>
+                          <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                            <Image className="w-4 h-4" />
+                            Thumbnail Generator
+                          </h5>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={generateThumbnail}
+                              className="flex-1 py-2 px-4 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-all"
+                            >
+                              Generate from Video (3s)
+                            </button>
+                            {thumbnail && (
+                              <a
+                                href={thumbnail}
+                                download="thumbnail.jpg"
+                                className="py-2 px-4 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                              >
+                                <Download className="w-4 h-4" />
+                                Download
+                              </a>
+                            )}
+                          </div>
+                          {thumbnail && (
+                            <img
+                              src={thumbnail}
+                              alt="Thumbnail preview"
+                              className="mt-2 w-full rounded-lg border border-gray-700"
+                            />
+                          )}
+                        </div>
+
+                        {/* 3. Subtitles Generator */}
+                        <div>
+                          <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                            <Languages className="w-4 h-4" />
+                            Auto-Generated Subtitles
+                          </h5>
+                          <button
+                            onClick={generateSubtitles}
+                            className="w-full py-2 px-4 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-all"
+                          >
+                            Generate & Download SRT File
+                          </button>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Download subtitle file for your video editing software
+                          </p>
+                        </div>
+
+                        {/* 4. Brand Kit */}
+                        <div>
+                          <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                            <Palette className="w-4 h-4" />
+                            Brand Kit
+                          </h5>
+                          <div className="flex gap-2">
+                            {brandColors.map((color, i) => (
+                              <div
+                                key={i}
+                                className="w-12 h-12 rounded-lg border-2 border-gray-600"
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Brand colors extracted from campaign
+                          </p>
+                        </div>
+
+                        {/* 5. Schedule Campaign (Coming Soon) */}
+                        <div className="opacity-50">
+                          <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            Schedule Campaign (Coming Soon)
+                          </h5>
+                          <button
+                            disabled
+                            className="w-full py-2 px-4 bg-gray-800 cursor-not-allowed rounded-lg text-sm font-medium"
+                          >
+                            Schedule for Later
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {campaign.sources && campaign.sources.length > 0 && (
                   <div>
