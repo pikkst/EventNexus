@@ -46,11 +46,16 @@ export default function TicketQRDisplay({ ticket, event, showActions = true }: T
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
+    // Escape HTML to prevent XSS
+    const escapeHtml = (str: string) => str.replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m] || m));
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Ticket - ${event.name}</title>
+          <title>Ticket - ${escapeHtml(event.name)}</title>
           <style>
             body {
               font-family: Arial, sans-serif;
@@ -121,39 +126,39 @@ export default function TicketQRDisplay({ ticket, event, showActions = true }: T
         <body>
           <div class="ticket-container">
             <div class="ticket-header">
-              <div class="event-name">${event.name}</div>
-              <div class="ticket-type">${ticket.ticket_name}</div>
+              <div class="event-name">${escapeHtml(event.name)}</div>
+              <div class="ticket-type">${escapeHtml(ticket.ticket_name)}</div>
             </div>
             
             <div class="ticket-details">
               <div class="detail-item">
                 <div class="detail-label">Holder Name</div>
-                <div class="detail-value">${ticket.holder_name}</div>
+                <div class="detail-value">${escapeHtml(ticket.holder_name)}</div>
               </div>
               <div class="detail-item">
                 <div class="detail-label">Ticket Type</div>
-                <div class="detail-value">${ticket.ticket_type}</div>
+                <div class="detail-value">${escapeHtml(ticket.ticket_type)}</div>
               </div>
               <div class="detail-item">
                 <div class="detail-label">Event Date</div>
-                <div class="detail-value">${new Date(event.date).toLocaleDateString()} ${event.time}</div>
+                <div class="detail-value">${escapeHtml(new Date(event.date).toLocaleDateString())} ${escapeHtml(event.time)}</div>
               </div>
               <div class="detail-item">
                 <div class="detail-label">Location</div>
-                <div class="detail-value">${event.location.address}</div>
+                <div class="detail-value">${escapeHtml(event.location.address)}</div>
               </div>
               <div class="detail-item">
                 <div class="detail-label">Purchase Date</div>
-                <div class="detail-value">${new Date(ticket.purchased_at).toLocaleString()}</div>
+                <div class="detail-value">${escapeHtml(new Date(ticket.purchased_at).toLocaleString())}</div>
               </div>
               <div class="detail-item">
                 <div class="detail-label">Ticket ID</div>
-                <div class="detail-value">${ticket.id.slice(0, 8).toUpperCase()}</div>
+                <div class="detail-value">${escapeHtml(ticket.id.slice(0, 8).toUpperCase())}</div>
               </div>
             </div>
             
             <div class="qr-section">
-              <img src="${qrDataUrl}" class="qr-code" alt="Ticket QR Code" />
+              <img src="${escapeHtml(qrDataUrl)}" class="qr-code" alt="Ticket QR Code" />
               <div class="qr-instructions">
                 Present this QR code at the venue entrance
               </div>
