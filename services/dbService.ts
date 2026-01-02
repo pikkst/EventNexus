@@ -60,6 +60,24 @@ export const getAllEvents = async (): Promise<EventNexusEvent[]> => {
   return (data || []).map(transformEventFromDB);
 };
 
+// Get single event by ID (for direct links, ignores visibility)
+export const getEventById = async (eventId: string): Promise<EventNexusEvent | null> => {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('id', eventId)
+    .eq('status', 'active')
+    .is('archived_at', null)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching event by ID:', error);
+    return null;
+  }
+  
+  return data ? transformEventFromDB(data) : null;
+};
+
 export const getOrganizerEvents = async (organizerId: string): Promise<EventNexusEvent[]> => {
   const { data, error } = await supabase
     .from('events')

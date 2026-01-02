@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Save, X, ArrowLeft, Loader } from 'lucide-react';
-import { getEvents, updateEvent } from '../services/dbService';
+import { getEventById, updateEvent } from '../services/dbService';
 import { EventNexusEvent, User } from '../types';
 import { CATEGORIES } from '../constants';
 
@@ -31,8 +31,7 @@ const EventEditPage: React.FC<EventEditPageProps> = ({ user, onOpenAuth }) => {
       }
 
       try {
-        const events = await getEvents();
-        const foundEvent = events.find(e => e.id === id);
+        const foundEvent = await getEventById(id);
         
         if (!foundEvent) {
           alert('Event not found');
