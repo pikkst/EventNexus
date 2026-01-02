@@ -1943,6 +1943,19 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       {/* Campaign Scheduler Modal */}
       <SchedulerModal />
 
+      {/* Platform Video Ads Modal */}
+      {showPlatformVideoCreator && (
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="w-full h-full max-w-[95vw] max-h-[95vh] overflow-hidden">
+            <ProfessionalAdCampaignCreator
+              user={user}
+              isAdmin={true}
+              onClose={() => setShowPlatformVideoCreator(false)}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Production Transition Modal */}
       <ProductionTransitionModal
         open={showProductionModal}
@@ -2271,18 +2284,4 @@ const DiagnosticModal: React.FC<{
     );
   };
 
-  {/* Platform Video Ads Modal */}
-  {showPlatformVideoCreator && (
-    <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="w-full h-full max-w-[95vw] max-h-[95vh] overflow-hidden">
-        <ProfessionalAdCampaignCreator
-          user={user}
-          isAdmin={true}
-          onClose={() => setShowPlatformVideoCreator(false)}
-        />
-      </div>
-    </div>
-  )}
-
-  {/* Campaign Scheduler Modal */}
 export default AdminCommandCenter;
