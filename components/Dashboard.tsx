@@ -16,7 +16,7 @@ import {
   Chrome, CheckCircle, Smartphone as TikTok, X, Globe2, Volume2, Lightbulb, Clock, Copy, Trash2
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, EventNexusEvent, Notification, AgencyService } from '../types';
+import { User, EventNexusEvent, Notification, AgencyService, AffiliateStats, AffiliateReferralActivity } from '../types';
 import { 
   getEvents, 
   getOrganizerEvents,
@@ -27,7 +27,10 @@ import {
   RevenueSummary,
   verifyConnectOnboarding,
   safeDeleteEvent,
-  AttendanceSummaryItem
+  AttendanceSummaryItem,
+  createAffiliatePartner,
+  getAffiliateStats,
+  getAffiliateReferrals
 } from '../services/dbService';
 import { generateAdCampaign, generateAdImage, generatePosterDesign } from '../services/geminiService';
 import { generatePrintablePoster, PosterDesign } from '../services/posterService';
@@ -218,6 +221,35 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     loadConnectedAccounts();
   }, [user.id]);
 
+  // Load affiliate data when affiliate tab is active
+  useEffect(() => {
+    const loadAffiliateData = async () => {
+      if (activeTab !== 'affiliate') return;
+      if (user.subscription_tier !== 'premium' && user.subscription_tier !== 'enterprise') return;
+
+      setIsLoadingAffiliate(true);
+      try {
+        // Ensure user has affiliate partner account
+        await createAffiliatePartner(user.id);
+        
+        // Load stats and referrals
+        const [stats, referrals] = await Promise.all([
+          getAffiliateStats(user.id),
+          getAffiliateReferrals(user.id, 10)
+        ]);
+
+        setAffiliateStats(stats);
+        setAffiliateReferrals(referrals);
+      } catch (error) {
+        console.error('Error loading affiliate data:', error);
+      } finally {
+        setIsLoadingAffiliate(false);
+      }
+    };
+
+    loadAffiliateData();
+  }, [user.id, activeTab, user.subscription_tier]);
+
   // Edit State
   const [tempBranding, setTempBranding] = useState(user.branding || {
     primaryColor: '#6366f1',
@@ -260,6 +292,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [revenueByEvent, setRevenueByEvent] = useState<RevenueByEvent[]>([]);
   const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
   const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummaryItem[]>([]);
+
+  // Affiliate State
+  const [affiliateStats, setAffiliateStats] = useState<AffiliateStats | null>(null);
+  const [affiliateReferrals, setAffiliateReferrals] = useState<AffiliateReferralActivity[]>([]);
+  const [isLoadingAffiliate, setIsLoadingAffiliate] = useState(false);
+  const [affiliateCodeCopied, setAffiliateCodeCopied] = useState(false);
 
   // Only gate free users when they have no events yet; free users with events unlocked via credits should have full access
   const isGated = user.subscription_tier === 'free' && !isLoadingEvents && events.length === 0;
@@ -1758,113 +1796,163 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
               </div>
            </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-4">
-                 <div className="flex justify-between items-start">
-                    <div className="p-4 bg-emerald-500/10 rounded-2xl">
-                       <DollarSign className="w-8 h-8 text-emerald-400" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full">+24%</span>
-                 </div>
-                 <div>
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Total Earnings</p>
-                    <h3 className="text-4xl font-black text-white mt-2">$2,847</h3>
-                    <p className="text-slate-500 text-xs font-medium mt-1">From 23 referrals</p>
-                 </div>
+           {isLoadingAffiliate ? (
+              <div className="flex items-center justify-center py-20">
+                 <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
               </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-4">
-                 <div className="flex justify-between items-start">
-                    <div className="p-4 bg-indigo-500/10 rounded-2xl">
-                       <Users className="w-8 h-8 text-indigo-400" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full">Active</span>
-                 </div>
-                 <div>
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Active Referrals</p>
-                    <h3 className="text-4xl font-black text-white mt-2">23</h3>
-                    <p className="text-slate-500 text-xs font-medium mt-1">18 Pro, 5 Premium</p>
-                 </div>
-              </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-4">
-                 <div className="flex justify-between items-start">
-                    <div className="p-4 bg-violet-500/10 rounded-2xl">
-                       <TrendingUp className="w-8 h-8 text-violet-400" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-400 bg-violet-500/10 px-3 py-1 rounded-full">30D</span>
-                 </div>
-                 <div>
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Conversion Rate</p>
-                    <h3 className="text-4xl font-black text-white mt-2">38%</h3>
-                    <p className="text-slate-500 text-xs font-medium mt-1">Above average</p>
-                 </div>
-              </div>
-           </div>
-
-           <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 space-y-8">
-              <div className="flex justify-between items-center">
-                 <h3 className="text-2xl font-black text-white">Your Affiliate Link</h3>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-4 py-2 rounded-full">Premium Feature</span>
-              </div>
-              <div className="flex gap-4 items-center">
-                 <div className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 font-mono text-sm text-slate-400">
-                    https://eventnexus.app/ref/{user.id}
-                 </div>
-                 <button className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all shadow-xl active:scale-95">
-                    Copy Link
-                 </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-                 <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center">
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Commission Rate</p>
-                    <p className="text-3xl font-black text-white">15%</p>
-                    <p className="text-slate-500 text-xs font-medium mt-1">Recurring monthly</p>
-                 </div>
-                 <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center">
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Cookie Duration</p>
-                    <p className="text-3xl font-black text-white">90 Days</p>
-                    <p className="text-slate-500 text-xs font-medium mt-1">Attribution window</p>
-                 </div>
-                 <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center">
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Payout Cycle</p>
-                    <p className="text-3xl font-black text-white">Monthly</p>
-                    <p className="text-slate-500 text-xs font-medium mt-1">Via Stripe Connect</p>
-                 </div>
-              </div>
-           </div>
-
-           <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 space-y-6">
-              <h3 className="text-2xl font-black text-white">Referral Activity</h3>
-              <div className="space-y-4">
-                 {[
-                    { name: 'Sarah Chen', plan: 'Pro', amount: '$19.99', date: '2 days ago', status: 'Active' },
-                    { name: 'Mike Rodriguez', plan: 'Premium', amount: '$49.99', date: '5 days ago', status: 'Active' },
-                    { name: 'Emma Wilson', plan: 'Pro', amount: '$19.99', date: '1 week ago', status: 'Active' }
-                 ].map((ref, i) => (
-                    <div key={i} className="flex items-center justify-between p-6 bg-slate-950 border border-slate-800 rounded-2xl">
-                       <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-lg">
-                             {ref.name.charAt(0)}
+           ) : affiliateStats ? (
+              <>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-4">
+                       <div className="flex justify-between items-start">
+                          <div className="p-4 bg-emerald-500/10 rounded-2xl">
+                             <DollarSign className="w-8 h-8 text-emerald-400" />
                           </div>
-                          <div>
-                             <p className="font-black text-white">{ref.name}</p>
-                             <p className="text-sm text-slate-500 font-medium">{ref.plan} Plan • {ref.date}</p>
-                          </div>
+                          {affiliateStats.total_earnings > 0 && (
+                             <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full">
+                                ${affiliateStats.pending_payout.toFixed(2)} pending
+                             </span>
+                          )}
                        </div>
-                       <div className="flex items-center gap-4">
-                          <div className="text-right">
-                             <p className="font-black text-emerald-400">{ref.amount}</p>
-                             <p className="text-xs text-slate-500 font-medium">+15% commission</p>
+                       <div>
+                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Total Earnings</p>
+                          <h3 className="text-4xl font-black text-white mt-2">${affiliateStats.total_earnings.toFixed(2)}</h3>
+                          <p className="text-slate-500 text-xs font-medium mt-1">From {affiliateStats.total_conversions} conversions</p>
+                       </div>
+                    </div>
+
+                    <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-4">
+                       <div className="flex justify-between items-start">
+                          <div className="p-4 bg-indigo-500/10 rounded-2xl">
+                             <Users className="w-8 h-8 text-indigo-400" />
                           </div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full">
-                             {ref.status}
+                          <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full">
+                             {affiliateStats.status}
                           </span>
                        </div>
+                       <div>
+                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Active Referrals</p>
+                          <h3 className="text-4xl font-black text-white mt-2">{affiliateStats.active_referrals}</h3>
+                          <p className="text-slate-500 text-xs font-medium mt-1">
+                             {affiliateStats.pro_referrals} Pro, {affiliateStats.premium_referrals} Premium, {affiliateStats.enterprise_referrals} Enterprise
+                          </p>
+                       </div>
                     </div>
-                 ))}
+
+                    <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-4">
+                       <div className="flex justify-between items-start">
+                          <div className="p-4 bg-violet-500/10 rounded-2xl">
+                             <TrendingUp className="w-8 h-8 text-violet-400" />
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-violet-400 bg-violet-500/10 px-3 py-1 rounded-full">Lifetime</span>
+                       </div>
+                       <div>
+                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Conversion Rate</p>
+                          <h3 className="text-4xl font-black text-white mt-2">{affiliateStats.conversion_rate.toFixed(1)}%</h3>
+                          <p className="text-slate-500 text-xs font-medium mt-1">
+                             {affiliateStats.total_conversions} of {affiliateStats.total_referrals} referrals
+                          </p>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 space-y-8">
+                    <div className="flex justify-between items-center">
+                       <h3 className="text-2xl font-black text-white">Your Affiliate Link</h3>
+                       <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-4 py-2 rounded-full">Premium Feature</span>
+                    </div>
+                    <div className="flex gap-4 items-center">
+                       <div className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 font-mono text-sm text-slate-400">
+                          https://eventnexus.eu/signup?ref={affiliateStats.affiliate_code}
+                       </div>
+                       <button 
+                          onClick={() => {
+                             navigator.clipboard.writeText(`https://eventnexus.eu/signup?ref=${affiliateStats.affiliate_code}`);
+                             setAffiliateCodeCopied(true);
+                             setTimeout(() => setAffiliateCodeCopied(false), 2000);
+                          }}
+                          className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all shadow-xl active:scale-95 flex items-center gap-2"
+                       >
+                          {affiliateCodeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          {affiliateCodeCopied ? 'Copied!' : 'Copy Link'}
+                       </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+                       <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center">
+                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Commission Rate</p>
+                          <p className="text-3xl font-black text-white">{affiliateStats.commission_rate}%</p>
+                          <p className="text-slate-500 text-xs font-medium mt-1">Recurring monthly</p>
+                       </div>
+                       <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center">
+                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Cookie Duration</p>
+                          <p className="text-3xl font-black text-white">{affiliateStats.cookie_duration_days} Days</p>
+                          <p className="text-slate-500 text-xs font-medium mt-1">Attribution window</p>
+                       </div>
+                       <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center">
+                          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Payout Cycle</p>
+                          <p className="text-3xl font-black text-white">Monthly</p>
+                          <p className="text-slate-500 text-xs font-medium mt-1">Via Stripe Connect</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-10 space-y-6">
+                    <h3 className="text-2xl font-black text-white">Referral Activity</h3>
+                    {affiliateReferrals.length === 0 ? (
+                       <div className="text-center py-12">
+                          <Users className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                          <p className="text-slate-500 font-medium">No referrals yet. Share your affiliate link to start earning!</p>
+                       </div>
+                    ) : (
+                       <div className="space-y-4">
+                          {affiliateReferrals.map((ref) => {
+                             const tierPrices: Record<string, number> = { pro: 19.99, premium: 49.99, enterprise: 199.99 };
+                             const price = ref.subscription_tier ? tierPrices[ref.subscription_tier] || 0 : 0;
+                             const commission = (price * affiliateStats.commission_rate / 100).toFixed(2);
+                             
+                             return (
+                                <div key={ref.id} className="flex items-center justify-between p-6 bg-slate-950 border border-slate-800 rounded-2xl">
+                                   <div className="flex items-center gap-4">
+                                      <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-lg">
+                                         {ref.referred_user_name.charAt(0).toUpperCase()}
+                                      </div>
+                                      <div>
+                                         <p className="font-black text-white">{ref.referred_user_name}</p>
+                                         <p className="text-sm text-slate-500 font-medium">
+                                            {ref.subscription_tier ? `${ref.subscription_tier.charAt(0).toUpperCase() + ref.subscription_tier.slice(1)} Plan` : 'Pending'} • {ref.days_ago}
+                                         </p>
+                                      </div>
+                                   </div>
+                                   <div className="flex items-center gap-4">
+                                      {ref.conversion_status === 'converted' && ref.subscription_tier ? (
+                                         <>
+                                            <div className="text-right">
+                                               <p className="font-black text-emerald-400">${price.toFixed(2)}</p>
+                                               <p className="text-xs text-slate-500 font-medium">+${commission} commission</p>
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full">
+                                               Active
+                                            </span>
+                                         </>
+                                      ) : (
+                                         <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400 bg-yellow-500/10 px-3 py-1.5 rounded-full">
+                                            Pending
+                                         </span>
+                                      )}
+                                   </div>
+                                </div>
+                             );
+                          })}
+                       </div>
+                    )}
+                 </div>
+              </>
+           ) : (
+              <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-12 text-center">
+                 <AlertCircle className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                 <p className="text-slate-400 font-medium">Unable to load affiliate data. Please try again later.</p>
               </div>
-           </div>
+           )}
         </div>
       )}
 

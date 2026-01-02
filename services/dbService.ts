@@ -4041,3 +4041,340 @@ export const runAutoArchiveCompletedEvents = async (): Promise<number> => {
     return 0;
   }
 };
+
+/**
+ * Affiliate Marketing System Functions
+ */
+
+/**
+ * Create or get affiliate partner for a user
+ */
+export const createAffiliatePartner = async (userId: string): Promise<any> => {
+  try {
+    // Check if partner already exists
+    const { data: existing } = await supabase
+      .from('affiliate_partners')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (existing) {
+      return existing;
+    }
+
+    // Generate unique affiliate code
+    const { data: codeData, error: codeError } = await supabase.rpc(
+      'generate_affiliate_code',
+      { p_user_id: userId }
+    );
+
+    if (codeError) throw codeError;
+
+    // Create new partner
+    const { data, error } = await supabase
+      .from('affiliate_partners')
+      .insert({
+        user_id: userId,
+        affiliate_code: codeData,
+        status: 'active',
+        commission_rate: 15.00,
+        cookie_duration_days: 90
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return data;
+  } catch (error) {
+    console.error('Error creating affiliate partner:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get affiliate partner stats for a user
+ */
+export const getAffiliateStats = async (userId: string): Promise<any> => {
+  try {
+    const { data, error } = await supabase.rpc('get_affiliate_stats', {
+      p_user_id: userId
+    });
+
+    if (error) throw error;
+
+    return data?.[0] || null;
+  } catch (error) {
+    console.error('Error getting affiliate stats:', error);
+    return null;
+  }
+};
+
+/**
+ * Get affiliate referral activity (recent referrals)
+ */
+export const getAffiliateReferrals = async (
+  userId: string,
+  limit: number = 10
+): Promise<any[]> => {
+  try {
+    // First get the partner ID
+    const { data: partner } = await supabase
+      .from('affiliate_partners')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!partner) return [];
+
+    // Get referrals with user details
+    const { data, error } = await supabase
+      .from('affiliate_referrals')
+      .select(`
+        *,
+        referred_user:users!referred_user_id(
+          id,
+          name,
+          email
+        )
+      `)
+      .eq('affiliate_partner_id', partner.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    // Transform data with user details
+    return (data || []).map((ref: any) => ({
+      id: ref.id,
+      affiliate_partner_id: ref.affiliate_partner_id,
+      referred_user_id: ref.referred_user_id,
+      referral_code: ref.referral_code,
+      conversion_status: ref.conversion_status,
+      subscription_tier: ref.subscription_tier,
+      conversion_value: ref.conversion_value,
+      commission_amount: ref.commission_amount,
+      converted_at: ref.converted_at,
+      created_at: ref.created_at,
+      referred_user_name: ref.referred_user?.name || 'Unknown User',
+      referred_user_email: ref.referred_user?.email || '',
+      days_ago: calculateDaysAgo(ref.created_at)
+    }));
+  } catch (error) {
+    console.error('Error getting affiliate referrals:', error);
+    return [];
+  }
+};
+
+/**
+ * Get affiliate commissions history
+ */
+export const getAffiliateCommissions = async (
+  userId: string,
+  limit: number = 20
+): Promise<any[]> => {
+  try {
+    // First get the partner ID
+    const { data: partner } = await supabase
+      .from('affiliate_partners')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!partner) return [];
+
+    const { data, error } = await supabase
+      .from('affiliate_commissions')
+      .select('*')
+      .eq('affiliate_partner_id', partner.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error('Error getting affiliate commissions:', error);
+    return [];
+  }
+};
+
+/**
+ * Get affiliate payouts history
+ */
+export const getAffiliatePayouts = async (
+  userId: string,
+  limit: number = 10
+): Promise<any[]> => {
+  try {
+    // First get the partner ID
+    const { data: partner } = await supabase
+      .from('affiliate_partners')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (!partner) return [];
+
+    const { data, error } = await supabase
+      .from('affiliate_payouts')
+      .select('*')
+      .eq('affiliate_partner_id', partner.id)
+      .order('initiated_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error('Error getting affiliate payouts:', error);
+    return [];
+  }
+};
+
+/**
+ * Track affiliate referral (when user signs up with affiliate code)
+ */
+export const trackAffiliateReferral = async (
+  referralCode: string,
+  newUserId: string
+): Promise<boolean> => {
+  try {
+    // Find partner by affiliate code
+    const { data: partner } = await supabase
+      .from('affiliate_partners')
+      .select('id, cookie_duration_days')
+      .eq('affiliate_code', referralCode)
+      .eq('status', 'active')
+      .single();
+
+    if (!partner) return false;
+
+    // Calculate expiration date
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + partner.cookie_duration_days);
+
+    // Create referral record
+    const { error } = await supabase
+      .from('affiliate_referrals')
+      .insert({
+        affiliate_partner_id: partner.id,
+        referred_user_id: newUserId,
+        referral_code: referralCode,
+        conversion_status: 'pending',
+        expires_at: expiresAt.toISOString()
+      });
+
+    if (error) throw error;
+
+    // Update partner total referrals
+    await supabase
+      .from('affiliate_partners')
+      .update({ total_referrals: supabase.sql`total_referrals + 1` })
+      .eq('id', partner.id);
+
+    return true;
+  } catch (error) {
+    console.error('Error tracking affiliate referral:', error);
+    return false;
+  }
+};
+
+/**
+ * Process affiliate conversion (when referred user subscribes)
+ */
+export const processAffiliateConversion = async (
+  userId: string,
+  subscriptionTier: 'pro' | 'premium' | 'enterprise',
+  conversionValue: number
+): Promise<boolean> => {
+  try {
+    // Find pending referral for this user
+    const { data: referral } = await supabase
+      .from('affiliate_referrals')
+      .select('*')
+      .eq('referred_user_id', userId)
+      .eq('conversion_status', 'pending')
+      .single();
+
+    if (!referral) return false;
+
+    // Update referral to converted (trigger will handle commission calculation)
+    const { error } = await supabase
+      .from('affiliate_referrals')
+      .update({
+        conversion_status: 'converted',
+        subscription_tier: subscriptionTier,
+        conversion_value: conversionValue
+      })
+      .eq('id', referral.id);
+
+    if (error) throw error;
+
+    return true;
+  } catch (error) {
+    console.error('Error processing affiliate conversion:', error);
+    return false;
+  }
+};
+
+/**
+ * Request affiliate payout
+ */
+export const requestAffiliatePayout = async (
+  userId: string,
+  amount: number
+): Promise<any> => {
+  try {
+    // Get partner
+    const { data: partner } = await supabase
+      .from('affiliate_partners')
+      .select('id, pending_payout')
+      .eq('user_id', userId)
+      .single();
+
+    if (!partner) {
+      throw new Error('Affiliate partner not found');
+    }
+
+    if (partner.pending_payout < amount) {
+      throw new Error('Insufficient pending payout balance');
+    }
+
+    // Create payout request
+    const { data, error } = await supabase
+      .from('affiliate_payouts')
+      .insert({
+        affiliate_partner_id: partner.id,
+        amount: amount,
+        status: 'pending',
+        payout_method: 'stripe_connect',
+        currency: 'USD'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return data;
+  } catch (error) {
+    console.error('Error requesting affiliate payout:', error);
+    throw error;
+  }
+};
+
+/**
+ * Helper function to calculate days ago
+ */
+function calculateDaysAgo(dateString: string): string {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffTime = Math.abs(now.getTime() - date.getTime());
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'today';
+  if (diffDays === 1) return '1 day ago';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return `${Math.floor(diffDays / 30)} months ago`;
+}
