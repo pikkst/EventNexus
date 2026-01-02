@@ -127,7 +127,7 @@ export function sanitizeVideoUrl(url: string): string | null {
     }
 
     // Convert to embed format for YouTube
-    if (urlObj.hostname.includes('youtube.com') || urlObj.hostname === 'youtu.be') {
+    if (urlObj.hostname === 'www.youtube.com' || urlObj.hostname === 'youtube.com' || urlObj.hostname === 'youtu.be') {
       let videoId = '';
       
       if (urlObj.hostname === 'youtu.be') {
@@ -144,7 +144,7 @@ export function sanitizeVideoUrl(url: string): string | null {
     }
 
     // Convert to embed format for Vimeo
-    if (urlObj.hostname.includes('vimeo.com')) {
+    if (urlObj.hostname === 'vimeo.com' || urlObj.hostname === 'www.vimeo.com' || urlObj.hostname === 'player.vimeo.com') {
       const vimeoId = urlObj.pathname.split('/').filter(Boolean)[0];
       if (vimeoId && /^\d+$/.test(vimeoId)) {
         return `https://player.vimeo.com/video/${vimeoId}`;

@@ -342,7 +342,8 @@ export const generateAdImage = async (
         // Upload to Supabase Storage when requested; fallback to base64 if upload fails
         if (saveToStorage) {
           try {
-            const safeUuid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+            // Use crypto.randomUUID() for secure random IDs
+            const safeUuid = crypto.randomUUID();
             const fileName = `campaign-images/${safeUuid}.png`;
             const binary = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
             const { error: uploadError } = await supabase.storage

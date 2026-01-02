@@ -50,6 +50,11 @@ export const generatePrintablePoster = async (
     container.style.fontFamily = 'system-ui, -apple-system, sans-serif';
     container.style.overflow = 'hidden';
 
+    // Escape HTML to prevent XSS
+    const escapeHtml = (str: string) => str.replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m] || m));
+
     // Poster HTML structure
     container.innerHTML = `
       <div style="
@@ -125,7 +130,7 @@ export const generatePrintablePoster = async (
                 text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
                 color: white;
               ">
-                ${event.name}
+                ${escapeHtml(event.name)}
               </h1>
             </div>
 
@@ -143,12 +148,12 @@ export const generatePrintablePoster = async (
                 color: rgba(255, 255, 255, 0.9);
               ">
                 <strong style="display: block; margin-bottom: 4px;">📅 Date & Time</strong>
-                ${new Date(event.date).toLocaleDateString('en-US', { 
+                ${escapeHtml(new Date(event.date).toLocaleDateString('en-US', { 
                   weekday: 'long', 
                   year: 'numeric', 
                   month: 'long', 
                   day: 'numeric' 
-                })} at ${event.time}
+                }))} at ${escapeHtml(event.time)}
               </div>
 
               <div style="
@@ -157,8 +162,8 @@ export const generatePrintablePoster = async (
                 color: rgba(255, 255, 255, 0.9);
               ">
                 <strong style="display: block; margin-bottom: 4px;">📍 Location</strong>
-                ${event.location.address}<br/>
-                ${event.location.city}
+                ${escapeHtml(event.location.address)}<br/>
+                ${escapeHtml(event.location.city)}
               </div>
 
               <div style="
@@ -166,7 +171,7 @@ export const generatePrintablePoster = async (
                 color: rgba(255, 255, 255, 0.9);
               ">
                 <strong style="display: block; margin-bottom: 4px;">💰 Price</strong>
-                €${event.price.toFixed(2)}
+                €${escapeHtml(event.price.toFixed(2))}
               </div>
             </div>
 
