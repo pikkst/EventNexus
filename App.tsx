@@ -48,6 +48,7 @@ const TicketViewPage = lazy(() => import('./components/TicketViewPage'));
 const PricingPage = lazy(() => import('./components/PricingPage'));
 const AgencyProfile = lazy(() => import('./components/AgencyProfile'));
 const AdminCommandCenter = lazy(() => import('./components/AdminCommandCenter'));
+const ProfessionalAdCampaignCreator = lazy(() => import('./components/ProfessionalAdCampaignCreator').then(m => ({ default: m.ProfessionalAdCampaignCreator })));
 const SimplifiedSocialMediaManager = lazy(() => import('./components/SimplifiedSocialMediaManager').then(m => ({ default: m.SimplifiedSocialMediaManager })));
 const HelpCenter = lazy(() => import('./components/HelpCenter'));
 const TermsOfService = lazy(() => import('./components/TermsOfService'));
@@ -748,6 +749,7 @@ const App: React.FC = () => {
               <Route path="/agency/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
               <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/admin/platform-ads" element={user?.role === 'admin' ? <ProfessionalAdCampaignCreator user={user} isAdmin={true} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/redeem" element={user ? <CodeRedemption user={user} onCreditsUpdated={handleRefreshUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/help" element={<HelpCenter user={user || undefined} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
