@@ -83,9 +83,6 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
 
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
-      // Only show public events on the map
-      if (event.visibility !== 'public') return false;
-      
       const dist = calculateDistance(userLocation[0], userLocation[1], event.location.lat, event.location.lng);
       return dist <= searchRadius && (!activeCategory || event.category === activeCategory);
     });

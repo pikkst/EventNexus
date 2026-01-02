@@ -64,7 +64,8 @@ import { User, Notification, EventNexusEvent } from './types';
 import { CATEGORIES } from './constants';
 import { supabase } from './services/supabase';
 import { 
-  getEvents, 
+  getEvents,
+  getAllEvents, 
   getUser, 
   createUser, 
   updateUser, 
@@ -359,9 +360,9 @@ const App: React.FC = () => {
           setSessionRestored(true);
         }
         
-        // Load events (public data) - in background if we have cache
+        // Load events - use getAllEvents for authenticated users, getEvents for guests
         if (events.length === 0 || !sessionStorage.getItem('eventnexus-events-cache')) {
-          const eventsData = await getEvents();
+          const eventsData = session?.user ? await getAllEvents() : await getEvents();
           if (mounted) {
             setEvents(eventsData);
             cacheEvents(eventsData);
@@ -428,6 +429,13 @@ const App: React.FC = () => {
               cacheNotifications(userNotifications);
             }
             
+            // Reload events with authenticated access
+            const eventsData = await getAllEvents();
+            if (mounted) {
+              setEvents(eventsData);
+              cacheEvents(eventsData);
+            }
+            
             // Redirect to profile after successful login
             window.location.href = '/#/profile';
           } else {
@@ -452,6 +460,13 @@ const App: React.FC = () => {
         sessionStorage.removeItem('eventnexus-notifications-cache');
         setSessionRestored(false);
         sessionRestoreAttempted.current = false;
+        
+        // Reload only public events for guests
+        const eventsData = await getEvents();
+        if (mounted) {
+          setEvents(eventsData);
+          cacheEvents(eventsData);
+        }
       } else if (event === 'USER_UPDATED' && session?.user && mounted) {
         console.log('User updated, reloading data...');
         const userData = await getUser(session.user.id);
@@ -563,7 +578,7 @@ const App: React.FC = () => {
   const handleReloadEvents = async () => {
     try {
       console.log('🔄 Reloading events after event creation...');
-      const eventsData = await getEvents();
+      const eventsData = user ? await getAllEvents() : await getEvents();
       setEvents(eventsData);
       cacheEvents(eventsData);
       console.log(`✅ Events reloaded: ${eventsData.length} total`);

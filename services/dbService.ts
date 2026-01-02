@@ -31,11 +31,29 @@ export const getEvents = async (): Promise<EventNexusEvent[]> => {
     .from('events')
     .select('*')
     .eq('status', 'active')
+    .eq('visibility', 'public')
     .is('archived_at', null)
     .order('date', { ascending: true });
   
   if (error) {
     console.error('Error fetching events:', error);
+    return [];
+  }
+  
+  return (data || []).map(transformEventFromDB);
+};
+
+// Get all events (for authenticated users, admins, etc.)
+export const getAllEvents = async (): Promise<EventNexusEvent[]> => {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('status', 'active')
+    .is('archived_at', null)
+    .order('date', { ascending: true });
+  
+  if (error) {
+    console.error('Error fetching all events:', error);
     return [];
   }
   
