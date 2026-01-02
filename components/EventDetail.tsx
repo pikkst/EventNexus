@@ -19,7 +19,7 @@ import {
   Star,
   Edit3
 } from 'lucide-react';
-import { getEvents, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates, isEventCompleted } from '../services/dbService';
+import { getEvents, getEventById, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates, isEventCompleted } from '../services/dbService';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
 
@@ -80,8 +80,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const loadEvent = React.useCallback(async () => {
     if (!id) return;
     try {
-      const events = await getEvents();
-      const foundEvent = events.find(e => e.id === id);
+      // Use getEventById to fetch directly (works for all visibility types via direct link)
+      const foundEvent = await getEventById(id);
       if (foundEvent) {
         setEvent(foundEvent);
         setCurrentAttendees(foundEvent.attendeesCount);
