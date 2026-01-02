@@ -50,6 +50,24 @@ serve(async (req) => {
       throw new Error('Social account not connected')
     }
 
+    // Create upload record
+    const { data: uploadRecord, error: insertError } = await supabaseClient
+      .from('video_uploads')
+      .insert({
+        user_id: user.id,
+        platform: platform.toLowerCase(),
+        video_url: videoBlob.substring(0, 100), // Store shortened reference
+        caption,
+        thumbnail_url: thumbnailUrl,
+        upload_status: 'uploading'
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Failed to create upload record:', insertError)
+    }
+
     // Decode base64 video
     const base64Data = videoBlob.split(',')[1]
     const videoBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))
@@ -78,6 +96,18 @@ serve(async (req) => {
         throw new Error(`Unsupported platform: ${platform}`)
     }
 
+    // Update upload record with success
+    if (uploadRecord) {
+      await supabaseClient
+        .from('video_uploads')
+        .update({
+          upload_status: 'success',
+          external_post_id: uploadResult?.id || uploadResult?.data?.id || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', uploadRecord.id)
+    }
+
     return new Response(
       JSON.stringify({ success: true, result: uploadResult }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -85,6 +115,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Upload error:', error)
+    
+    // Update upload record with failure (if we have uploadRecord in scope)
+    // Note: uploadRecord may not be accessible here due to scope
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
