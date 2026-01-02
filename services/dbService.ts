@@ -25,13 +25,13 @@ const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
   };
 };
 
-// Events
+// Events - returns public and semi-private events (excludes only private)
 export const getEvents = async (): Promise<EventNexusEvent[]> => {
   const { data, error } = await supabase
     .from('events')
     .select('*')
     .eq('status', 'active')
-    .eq('visibility', 'public')
+    .in('visibility', ['public', 'semi-private'])
     .is('archived_at', null)
     .order('date', { ascending: true });
   
