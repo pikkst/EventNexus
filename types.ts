@@ -457,3 +457,97 @@ export interface OrganizerDashboardStats {
     purchased_at: string;
   }[];
 }
+
+export type AffiliatePartnerStatus = 'active' | 'paused' | 'suspended' | 'terminated';
+export type ReferralConversionStatus = 'pending' | 'converted' | 'cancelled';
+export type CommissionTransactionType = 'initial_conversion' | 'recurring_payment' | 'bonus' | 'adjustment';
+export type CommissionStatus = 'pending' | 'approved' | 'paid' | 'cancelled';
+export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+
+export interface AffiliatePartner {
+  id: string;
+  user_id: string;
+  affiliate_code: string;
+  status: AffiliatePartnerStatus;
+  commission_rate: number;
+  total_referrals: number;
+  total_conversions: number;
+  total_earnings: number;
+  pending_payout: number;
+  lifetime_earnings: number;
+  cookie_duration_days: number;
+  created_at: string;
+  updated_at: string;
+  last_payout_at?: string;
+  notes?: string;
+}
+
+export interface AffiliateReferral {
+  id: string;
+  affiliate_partner_id: string;
+  referred_user_id: string;
+  referral_code: string;
+  conversion_status: ReferralConversionStatus;
+  subscription_tier?: 'free' | 'pro' | 'premium' | 'enterprise';
+  conversion_value: number;
+  commission_amount: number;
+  converted_at?: string;
+  expires_at: string;
+  created_at: string;
+  metadata?: Record<string, any>;
+  referred_user_name?: string; // Joined data
+  referred_user_email?: string; // Joined data
+}
+
+export interface AffiliateCommission {
+  id: string;
+  affiliate_partner_id: string;
+  referral_id?: string;
+  transaction_type: CommissionTransactionType;
+  amount: number;
+  status: CommissionStatus;
+  subscription_tier?: string;
+  period_start?: string;
+  period_end?: string;
+  paid_at?: string;
+  notes?: string;
+  created_at: string;
+}
+
+export interface AffiliatePayout {
+  id: string;
+  affiliate_partner_id: string;
+  amount: number;
+  status: PayoutStatus;
+  payout_method: string;
+  stripe_transfer_id?: string;
+  currency: string;
+  initiated_at: string;
+  completed_at?: string;
+  failed_reason?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface AffiliateStats {
+  partner_id: string;
+  affiliate_code: string;
+  status: AffiliatePartnerStatus;
+  total_referrals: number;
+  active_referrals: number;
+  total_conversions: number;
+  conversion_rate: number;
+  total_earnings: number;
+  pending_payout: number;
+  lifetime_earnings: number;
+  commission_rate: number;
+  cookie_duration_days: number;
+  pro_referrals: number;
+  premium_referrals: number;
+  enterprise_referrals: number;
+}
+
+export interface AffiliateReferralActivity extends AffiliateReferral {
+  referred_user_name: string;
+  referred_user_email: string;
+  days_ago: string;
+}
