@@ -46,8 +46,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [searchRadius, setSearchRadius] = useState(25); 
-  const [userLocation, setUserLocation] = useState<[number, number]>([40.7128, -74.0060]); 
+  const [searchRadius, setSearchRadius] = useState(5000); // Increased to 5000km for global view
+  const [userLocation, setUserLocation] = useState<[number, number]>([59.4370, 24.7536]); // Default: Tallinn, Estonia
   const [selectedEvent, setSelectedEvent] = useState<EventNexusEvent | null>(null);
   const [isFollowingUser, setIsFollowingUser] = useState(true);
   const [routeToEvent, setRouteToEvent] = useState<EventNexusEvent | null>(null);
