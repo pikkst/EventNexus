@@ -168,8 +168,8 @@ npm run build
 
 ### Production URL
 ```
-https://www.eventnexus.eu/#/admin/platform-ads (adminn)
-https://www.eventnexus.eu/#/dashboard (kasutaja)
+https://www.eventnexus.eu/admin/platform-ads (adminn)
+https://www.eventnexus.eu/dashboard (kasutaja)
 ```
 
 ## Kokkuvõte

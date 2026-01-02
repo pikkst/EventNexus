@@ -5,7 +5,7 @@ These instructions help AI coding agents work productively in this repo.
 **CRITICAL**: All code, comments, documentation, and commit messages MUST be in English only. No other languages are permitted in the codebase.
 
 ## Architecture
-- **Stack:** Vite 6 + React 19 + TypeScript. Router uses `HashRouter` (`App.tsx`).
+- **Stack:** Vite 6 + React 19 + TypeScript. Router uses `BrowserRouter` (`App.tsx`).
 - **Entry:** `index.tsx` mounts `App` into `#root`. Dev server runs on port `3000`.
 - **Routing:** Top-level routes are declared in `App.tsx` via `react-router-dom@7`. Some routes are gated by `user`/`role` state (e.g., `/admin`, `/dashboard`).
 - **State:** No global store; local React state lifts through `App.tsx` and is passed via props to components.
@@ -35,7 +35,7 @@ These instructions help AI coding agents work productively in this repo.
 - **Env Setup:** create `.env.local` with `GEMINI_API_KEY=...` at repo root. Vite `loadEnv` is configured in `vite.config.ts`.
 
 ## Conventions & Patterns
-- **Routing:** Keep `HashRouter` and route guards consistent with `user` state; use `LandingPage` for unauthenticated redirects.
+- **Routing:** Keep `BrowserRouter` and route guards consistent with `user` state; use `LandingPage` for unauthenticated redirects.
 - **Types-first:** Use `types.ts` interfaces for events, users, notifications; avoid ad-hoc shapes.
 - **Services Boundary:** All database operations go through `services/dbService.ts`. Edge Functions for complex operations.
 - **No Mock Data:** All data must come from Supabase. Use Edge Functions for serverless operations.
@@ -116,7 +116,7 @@ These instructions help AI coding agents work productively in this repo.
 ## Deployment Notes
 - **Build:** `npm run build` → static assets in `dist/`.
 - **Preview:** `npm run preview` for local sanity.
-- **Static hosting:** Works with Netlify/Vercel/GitHub Pages (HashRouter already set). Configure build command `npm run build` and publish directory `dist`.
+- **Static hosting:** Works with custom domain (www.eventnexus.eu). Uses BrowserRouter for clean URLs. Configure build command `npm run build` and publish directory `dist`.
 
 ## GitHub Pages Deployment
 - **Set Vite base:** In `vite.config.ts`, set `base: '/EventNexus/'` for asset paths on Pages. Example:

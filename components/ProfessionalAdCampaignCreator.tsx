@@ -96,7 +96,7 @@ export const ProfessionalAdCampaignCreator: React.FC<ProfessionalAdCampaignCreat
     // Pre-fill URL based on context
     if (event) {
       // User mode: Generate ad for their selected event
-      const eventUrl = `${window.location.origin}/#/event/${event.id}`;
+      const eventUrl = `${window.location.origin}/event/${event.id}`;
       setUrl(eventUrl);
     } else if (isAdmin) {
       // Admin mode: Generate ad for platform (www.eventnexus.eu)

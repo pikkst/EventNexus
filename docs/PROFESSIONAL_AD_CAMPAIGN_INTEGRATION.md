@@ -118,7 +118,7 @@ generateAdVoiceover(
 />
 ```
 
-**Access**: `https://www.eventnexus.eu/#/admin/platform-ads`
+**Access**: `https://www.eventnexus.eu/admin/platform-ads`
 
 ## Technical Architecture
 
