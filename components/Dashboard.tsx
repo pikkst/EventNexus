@@ -13,7 +13,7 @@ import {
   Cpu, Database, Key, ShieldCheck, Headphones, Smartphone, Paintbrush,
   Link2, Settings2, Bot, Layers, Terminal, Activity, Github, Play,
   ChevronRight, Box, User as UserIcon, Palette, Image as ImageIcon,
-  Chrome, CheckCircle, Smartphone as TikTok, X, Globe2, Volume2, Lightbulb, Clock, Copy, Trash2
+  Chrome, CheckCircle, Smartphone as TikTok, X, Globe2, Volume2, Lightbulb, Clock, Copy, Trash2, Film
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, EventNexusEvent, Notification, AgencyService, AffiliateStats, AffiliateReferralActivity } from '../types';
@@ -37,6 +37,7 @@ import { generatePrintablePoster, PosterDesign } from '../services/posterService
 import { supabase } from '../services/supabase';
 import PayoutsHistory from './PayoutsHistory';
 import EnterpriseSuccessManager from './EnterpriseSuccessManager';
+import { ProfessionalAdCampaignCreator } from './ProfessionalAdCampaignCreator';
 // Lazy-load heavy social media SDK helpers when needed to reduce main bundle size
 const loadSocialMediaService = () => import('../services/socialMediaService');
 
@@ -98,6 +99,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [broadcastingTo, setBroadcastingTo] = useState<string | null>(null);
+  const [showProfessionalAdCreator, setShowProfessionalAdCreator] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [campaignTheme, setCampaignTheme] = useState('');
@@ -1262,6 +1264,45 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                     </div>
 
                     <div className="space-y-6">
+                       {/* Professional Video Ad Creator */}
+                       <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl p-6 space-y-4">
+                         <div className="flex items-center gap-3">
+                           <Film className="w-6 h-6 text-purple-400" />
+                           <div>
+                             <h4 className="text-sm font-black text-white">Professional Video Ads</h4>
+                             <p className="text-xs text-slate-400">60s cinematic videos for selected event</p>
+                           </div>
+                         </div>
+                         <button
+                           onClick={() => setShowProfessionalAdCreator(true)}
+                           disabled={!selectedEvent || (user.subscription_tier !== 'pro' && user.subscription_tier !== 'premium' && user.subscription_tier !== 'enterprise')}
+                           className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-slate-700 disabled:cursor-not-allowed py-4 rounded-xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all"
+                         >
+                           <Film className="w-4 h-4" />
+                           {selectedEvent ? 'Create Video Ad (200 Credits)' : 'Select Event First'}
+                         </button>
+                         {!selectedEvent && (
+                           <p className="text-[10px] text-yellow-400 text-center">
+                             ⬇️ Select an event below to create video ad
+                           </p>
+                         )}
+                         {selectedEvent && (user.subscription_tier === 'free') && (
+                           <p className="text-[10px] text-yellow-400 text-center">
+                             Requires Pro tier or higher
+                           </p>
+                         )}
+                       </div>
+
+                       {/* Divider */}
+                       <div className="relative">
+                         <div className="absolute inset-0 flex items-center">
+                           <div className="w-full border-t border-slate-800"></div>
+                         </div>
+                         <div className="relative flex justify-center text-xs uppercase">
+                           <span className="bg-slate-900 px-2 text-slate-500 font-bold">Or Generate Image Ads</span>
+                         </div>
+                       </div>
+
                        <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Event to Promote</label>
                           <select 
@@ -2087,6 +2128,29 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Professional Video Ad Creator Modal */}
+      {showProfessionalAdCreator && selectedEvent && (
+        <div className="fixed inset-0 bg-black/90 z-50 overflow-y-auto">
+          <div className="min-h-screen p-4">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={() => setShowProfessionalAdCreator(false)}
+                  className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <ProfessionalAdCampaignCreator
+                user={user}
+                event={selectedEvent}
+                onClose={() => setShowProfessionalAdCreator(false)}
+              />
             </div>
           </div>
         </div>

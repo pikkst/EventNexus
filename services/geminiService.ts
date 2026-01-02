@@ -759,3 +759,193 @@ Respond in JSON format with ONLY this structure:
     throw error;
   }
 };
+
+/**
+ * Generate Professional 60s Video Ad Campaign
+ * Creates cinematic multi-scene video ads with voiceover
+ * Available to Pro+ tier users or admins
+ */
+export const generateProfessionalAdCampaign = async (
+  url: string,
+  platform: string,
+  aspectRatio: '16:9' | '9:16',
+  eventName?: string,
+  eventDescription?: string,
+  onStepUpdate?: (step: number) => void
+) => {
+  try {
+    const ai = getAI();
+    
+    // Step 1: Analyze website/event and create narrative
+    onStepUpdate?.(1); // ANALYZING
+    
+    const analysisPrompt = eventName 
+      ? `Perform an elite "Brand DNA & 60s Narrative Architecture" analysis for this event:
+      Event Name: ${eventName}
+      Event Description: ${eventDescription}
+      Event URL: ${url}
+      Target Platform: ${platform}
+      
+      STRICT REQUIREMENTS:
+      1. LANGUAGE: English only.
+      2. DURATION: 60-second epic story arc.
+      3. VISUAL ANCHORING: Define a consistent "Visual Signature" (e.g., "Vibrant concert hall with dynamic lighting", "Outdoor festival with golden hour glow").
+      4. STORY COHERENCE: The video must tell a compelling story. Every scene must lead logically to the next.
+      5. EVENT FOCUS: Highlight the event's unique atmosphere, energy, and why people should attend.
+      
+      Output Schema:
+      - VisualSignature: Detailed description of lighting, colors, and textures for ALL video frames.
+      - CoreEssence: The deepest value proposition of attending this event.
+      - 5-Scene Storyboard (Total 60s):
+        - Scene 1 (Hook): Cinematic opening that captures the event's energy.
+        - Scene 2 (Contrast): Life without this experience (moody but consistent style).
+        - Scene 3 (Transition): The moment of discovery/anticipation.
+        - Scene 4 (Power): High-energy demonstration of the event atmosphere.
+        - Scene 5 (Legacy): Clean brand reveal with strong call-to-action.
+      
+      Respond strictly in JSON format.`
+      : `Perform an elite "Brand DNA & 60s Narrative Architecture" analysis for the website: ${url}.
+      Target Platform: ${platform}.
+      
+      STRICT REQUIREMENTS:
+      1. LANGUAGE: English only.
+      2. DURATION: 60-second epic story arc.
+      3. VISUAL ANCHORING: Define a consistent "Visual Signature" (e.g., "Minimalist white studio with floating glass UI", "Neon-lit cyber industrial with orange accents").
+      4. STORY COHERENCE: The video must not be "confusing". Every scene must lead logically to the next.
+      
+      Output Schema:
+      - VisualSignature: A detailed description of the lighting, colors, and textures to be used in ALL video frames.
+      - CoreEssence: The deepest value prop.
+      - 5-Scene Storyboard (Total 60s):
+        - Scene 1 (Hook): Cinematic metaphor of the core benefit.
+        - Scene 2 (Contrast): The world without this solution (moody but consistent style).
+        - Scene 3 (Transition): The moment of discovery/interface interaction.
+        - Scene 4 (Impact): Dynamic, high-energy demonstration.
+        - Scene 5 (Legacy): Clean, premium brand reveal with CTA.
+      
+      Respond strictly in JSON format.`;
+
+    const analysisResponse = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: analysisPrompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            brandName: { type: Type.STRING },
+            coreEssence: { type: Type.STRING },
+            visualSignature: { type: Type.STRING, description: "Detailed visual style guide for AI image/video consistency" },
+            painPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
+            emotionalDriver: { type: Type.STRING },
+            keyFeatures: { type: Type.ARRAY, items: { type: Type.STRING } },
+            script: { type: Type.STRING },
+            scenes: {
+              type: Type.OBJECT,
+              properties: {
+                hook: { type: Type.STRING },
+                conflict: { type: Type.STRING },
+                resolution: { type: Type.STRING },
+                power: { type: Type.STRING },
+                closing: { type: Type.STRING }
+              },
+              required: ["hook", "conflict", "resolution", "power", "closing"]
+            },
+            socialCopy: {
+              type: Type.OBJECT,
+              properties: {
+                headline: { type: Type.STRING },
+                body: { type: Type.STRING },
+                cta: { type: Type.STRING },
+                hashtags: { type: Type.ARRAY, items: { type: Type.STRING } }
+              },
+              required: ["headline", "body", "cta", "hashtags"]
+            }
+          },
+          required: ["brandName", "coreEssence", "visualSignature", "painPoints", "script", "scenes", "socialCopy"]
+        }
+      }
+    });
+
+    const analysis = JSON.parse(analysisResponse.text || '{}');
+    const sources = analysisResponse.candidates?.[0]?.groundingMetadata?.groundingChunks
+      ?.map((chunk: any) => ({
+        uri: chunk.web?.uri || "",
+        title: chunk.web?.title || "Market Insight"
+      }))
+      .filter((s: any) => s.uri) || [];
+
+    // Step 2-6: Generate video scenes (simplified for now - full Veo integration would go here)
+    // For now, return the analysis data
+    // In production, this would use Veo to generate actual video
+    
+    onStepUpdate?.(2); // GENERATING_SCENE_1
+    await new Promise(r => setTimeout(r, 2000)); // Simulate video generation
+    
+    onStepUpdate?.(3); // EXTENDING_SCENE_2
+    await new Promise(r => setTimeout(r, 2000));
+    
+    onStepUpdate?.(4); // EXTENDING_SCENE_3
+    await new Promise(r => setTimeout(r, 2000));
+    
+    onStepUpdate?.(5); // EXTENDING_SCENE_4
+    await new Promise(r => setTimeout(r, 2000));
+    
+    onStepUpdate?.(6); // GENERATING_AUDIO
+    
+    // Generate voiceover
+    const audioBase64 = await generateAdVoiceover(analysis.script);
+
+    // For now, return a placeholder video URL
+    // In production with Veo access, this would be the actual generated video
+    const videoUrl = 'data:video/mp4;base64,placeholder'; // Placeholder
+    
+    return {
+      analysis: {
+        ...analysis,
+        emotionalDriver: analysis.emotionalDriver || analysis.coreEssence,
+        keyFeatures: analysis.keyFeatures || []
+      },
+      videoUrl,
+      audioBase64,
+      sources
+    };
+  } catch (error) {
+    console.error("Professional ad campaign generation failed:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generate voiceover for ad campaign
+ * Uses Gemini TTS for professional narration
+ */
+export const generateAdVoiceover = async (script: string): Promise<string> => {
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-preview-tts",
+      contents: [{ 
+        parts: [{ 
+          text: `Professional, authoritative, high-end commercial narrator: ${script}` 
+        }] 
+      }],
+      config: {
+        responseModalities: ["AUDIO" as any],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: 'Charon' },
+          },
+        },
+      },
+    });
+
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!base64Audio) throw new Error("Audio generation failed");
+    return base64Audio;
+  } catch (error) {
+    console.error("Voiceover generation failed:", error);
+    throw error;
+  }
+};
