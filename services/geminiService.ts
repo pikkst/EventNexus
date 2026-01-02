@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { supabase } from './supabase';
 import { deductUserCredits, checkUserCredits } from './dbService';
 
@@ -876,30 +876,99 @@ export const generateProfessionalAdCampaign = async (
       }))
       .filter((s: any) => s.uri) || [];
 
-    // Step 2-6: Generate video scenes (simplified for now - full Veo integration would go here)
-    // For now, return the analysis data
-    // In production, this would use Veo to generate actual video
+    // Step 2-6: Generate video scenes with Veo 3.1
+    const { visualSignature, scenes } = analysis;
+    const globalContext = `Visual Style: ${visualSignature}. Movie-grade quality, strict continuity, anamorphic lens flares, high-end commercial lighting. Always keep the subjects and environment consistent with previous frames.`;
     
+    // Scene 1: Hook (10-12s)
     onStepUpdate?.(2); // GENERATING_SCENE_1
-    await new Promise(r => setTimeout(r, 2000)); // Simulate video generation
-    
+    let aiClient = getAI();
+    let op1 = await aiClient.models.generateVideos({
+      model: 'veo-3.1-generate-preview',
+      prompt: `${scenes.hook}. ${globalContext}`,
+      config: { numberOfVideos: 1, resolution: '720p', aspectRatio }
+    });
+    while (!op1.done) { 
+      await new Promise(r => setTimeout(r, 10000)); 
+      op1 = await aiClient.operations.getVideosOperation({ operation: op1 }); 
+    }
+    const v1 = op1.response?.generatedVideos?.[0]?.video;
+    if (!v1) throw new Error("Scene 1 generation failed.");
+
+    // Scene 2: Conflict (Extension to ~24s)
     onStepUpdate?.(3); // EXTENDING_SCENE_2
-    await new Promise(r => setTimeout(r, 2000));
-    
+    aiClient = getAI();
+    let op2 = await aiClient.models.generateVideos({
+      model: 'veo-3.1-generate-preview',
+      prompt: `Continuity: ${scenes.conflict}. Use same lighting and objects from Scene 1. Narrative progression. ${globalContext}`,
+      video: v1,
+      config: { numberOfVideos: 1, resolution: '720p', aspectRatio }
+    });
+    while (!op2.done) { 
+      await new Promise(r => setTimeout(r, 10000)); 
+      op2 = await aiClient.operations.getVideosOperation({ operation: op2 }); 
+    }
+    const v2 = op2.response?.generatedVideos?.[0]?.video;
+    if (!v2) throw new Error("Scene 2 generation failed.");
+
+    // Scene 3: Resolution (Extension to ~36s)
     onStepUpdate?.(4); // EXTENDING_SCENE_3
-    await new Promise(r => setTimeout(r, 2000));
-    
+    aiClient = getAI();
+    let op3 = await aiClient.models.generateVideos({
+      model: 'veo-3.1-generate-preview',
+      prompt: `Discovery: ${scenes.resolution}. Brighten lighting while maintaining style. Reveal the solution. ${globalContext}`,
+      video: v2,
+      config: { numberOfVideos: 1, resolution: '720p', aspectRatio }
+    });
+    while (!op3.done) { 
+      await new Promise(r => setTimeout(r, 10000)); 
+      op3 = await aiClient.operations.getVideosOperation({ operation: op3 }); 
+    }
+    const v3 = op3.response?.generatedVideos?.[0]?.video;
+    if (!v3) throw new Error("Scene 3 generation failed.");
+
+    // Scene 4: Power (Extension to ~48s)
     onStepUpdate?.(5); // EXTENDING_SCENE_4
-    await new Promise(r => setTimeout(r, 2000));
+    aiClient = getAI();
+    let op4 = await aiClient.models.generateVideos({
+      model: 'veo-3.1-generate-preview',
+      prompt: `Power shot: ${scenes.power}. High energy movement, consistent materials. Show the core benefit in action. ${globalContext}`,
+      video: v3,
+      config: { numberOfVideos: 1, resolution: '720p', aspectRatio }
+    });
+    while (!op4.done) { 
+      await new Promise(r => setTimeout(r, 10000)); 
+      op4 = await aiClient.operations.getVideosOperation({ operation: op4 }); 
+    }
+    const v4 = op4.response?.generatedVideos?.[0]?.video;
+    if (!v4) throw new Error("Scene 4 generation failed.");
+
+    // Scene 5: Closing (Extension to 60s)
+    aiClient = getAI();
+    let op5 = await aiClient.models.generateVideos({
+      model: 'veo-3.1-generate-preview',
+      prompt: `Finale: ${scenes.closing}. Fade to brand colors, cinematic logo environment. Stable and premium. ${globalContext}`,
+      video: v4,
+      config: { numberOfVideos: 1, resolution: '720p', aspectRatio }
+    });
+    while (!op5.done) { 
+      await new Promise(r => setTimeout(r, 10000)); 
+      op5 = await aiClient.operations.getVideosOperation({ operation: op5 }); 
+    }
+    
+    const finalVideo = op5.response?.generatedVideos?.[0]?.video;
+    if (!finalVideo) throw new Error("Scene 5 generation failed.");
     
     onStepUpdate?.(6); // GENERATING_AUDIO
     
     // Generate voiceover
     const audioBase64 = await generateAdVoiceover(analysis.script);
 
-    // For now, return a placeholder video URL
-    // In production with Veo access, this would be the actual generated video
-    const videoUrl = 'data:video/mp4;base64,placeholder'; // Placeholder
+    // Download final video as blob URL
+    const finalUri = finalVideo.uri;
+    const finalRes = await fetch(`${finalUri}&key=${process.env.API_KEY}`);
+    const blob = await finalRes.blob();
+    const videoUrl = URL.createObjectURL(blob);
     
     return {
       analysis: {
@@ -932,7 +1001,7 @@ export const generateAdVoiceover = async (script: string): Promise<string> => {
         }] 
       }],
       config: {
-        responseModalities: ["AUDIO" as any],
+        responseModalities: [Modality.AUDIO],
         speechConfig: {
           voiceConfig: {
             prebuiltVoiceConfig: { voiceName: 'Charon' },
