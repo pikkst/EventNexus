@@ -46,7 +46,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [searchRadius, setSearchRadius] = useState(5000); // Increased to 5000km for global view
+  const [searchRadius, setSearchRadius] = useState(25); // For proximity notifications only
   const [userLocation, setUserLocation] = useState<[number, number]>([59.4370, 24.7536]); // Default: Tallinn, Estonia
   const [selectedEvent, setSelectedEvent] = useState<EventNexusEvent | null>(null);
   const [isFollowingUser, setIsFollowingUser] = useState(true);
@@ -81,21 +81,28 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
     }
   }, []);
 
+  // Show ALL events on map (only filter by category, not distance)
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
+      return !activeCategory || event.category === activeCategory;
+    });
+  }, [events, activeCategory]);
+
+  // Find nearest event within search radius (for proximity notifications)
+  const nearestEvent = useMemo(() => {
+    const eventsWithinRadius = events.filter(event => {
       const dist = calculateDistance(userLocation[0], userLocation[1], event.location.lat, event.location.lng);
       return dist <= searchRadius && (!activeCategory || event.category === activeCategory);
     });
-  }, [events, activeCategory, searchRadius, userLocation]);
-
-  const nearestEvent = useMemo(() => {
-    if (filteredEvents.length === 0) return null;
-    return [...filteredEvents].sort((a, b) => {
+    
+    if (eventsWithinRadius.length === 0) return null;
+    
+    return [...eventsWithinRadius].sort((a, b) => {
       const distA = calculateDistance(userLocation[0], userLocation[1], a.location.lat, a.location.lng);
       const distB = calculateDistance(userLocation[0], userLocation[1], b.location.lat, b.location.lng);
       return distA - distB;
     })[0];
-  }, [filteredEvents, userLocation]);
+  }, [events, activeCategory, searchRadius, userLocation]);
 
   const eventIcon = (price: number, isFeatured: boolean) => L.divIcon({
     className: 'custom-marker',
