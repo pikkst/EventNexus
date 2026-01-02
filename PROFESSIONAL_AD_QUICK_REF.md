@@ -96,7 +96,7 @@ const hasAccess =
 /admin/platform-ads
 
 // User route (modal in Dashboard)
-/#/dashboard → Marketing Studio tab → "Create Video Ad" button
+/dashboard → Marketing Studio tab → "Create Video Ad" button
 ```
 
 ## Testing Commands
@@ -170,8 +170,8 @@ VITE_SUPABASE_ANON_KEY=your_anon_key
 ## Platform URLs
 
 - **Production**: https://www.eventnexus.eu
-- **Admin Ads**: https://www.eventnexus.eu/#/admin/platform-ads
-- **Dashboard**: https://www.eventnexus.eu/#/dashboard
+- **Admin Ads**: https://www.eventnexus.eu/admin/platform-ads
+- **Dashboard**: https://www.eventnexus.eu/dashboard
 
 ## Support
 
