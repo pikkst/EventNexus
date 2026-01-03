@@ -811,40 +811,40 @@ export const generateProfessionalAdCampaign = async (
          - Build excitement and FOMO
          - Make viewers feel "I need to be there"
       
-      STRUCTURE (5 segments × 10s = 50s total):
-      You must create 5 cinematic 10-second scene descriptions that form ONE epic story:
+      STRUCTURE (5 segments × 3s = 15s total):
+      You must create 5 ultra-short, impactful scene descriptions:
       
-      HOOK (Segment 1, 0-10s): Open with the most captivating moment - establish visual DNA and energy
-      BUILD (Segment 2, 10-20s): Show the atmosphere, experience, and why people come
-      EMOTION (Segment 3, 20-30s): Build emotional connection - the feeling of being there
-      CLIMAX (Segment 4, 30-40s): Peak excitement - show the unforgettable moments
-      CALL-TO-ACTION (Segment 5, 40-50s): Event name/date reveal + compelling CTA
+      HOOK (Segment 1, 0-3s): Grab attention instantly - establish visual DNA
+      BUILD (Segment 2, 3-6s): Show atmosphere and energy
+      EMOTION (Segment 3, 6-9s): Build connection - the feeling
+      CLIMAX (Segment 4, 9-12s): Peak excitement moment
+      CALL-TO-ACTION (Segment 5, 12-15s): Event reveal + CTA
       
-      Each 10-second segment must:
-      - Have a clear beginning, middle, and end
-      - Include specific camera movements (e.g., "slow dolly forward", "aerial descent")
-      - Describe action that fills 10 seconds (not just a static shot)
+      Each 3-second segment must:
+      - Be ONE clear visual idea (3s is very short!)
+      - Simple camera movements only (static, slow pan, or zoom)
+      - Focus on emotion and energy, not complex action
       - Include the Visual DNA consistently
       - Use actual event details (name, type, atmosphere)
       - Flow logically from previous segment
       
       Respond in strict JSON format.`
-      : `You are an award-winning creative director at a top-tier advertising agency. Create a professional 50-second video ad campaign for the platform:
+      : `You are an award-winning creative director at a top-tier advertising agency. Create a professional 15-second video ad campaign for the platform:
       
       PLATFORM: ${url}
       TARGET: ${platform}
       MISSION: Connect people through unforgettable events (EventNexus)
       
-      CRITICAL REQUIREMENTS (10-second video segments with Sora 2):
+      CRITICAL REQUIREMENTS (3-second video segments):
       1. LANGUAGE: English only - all text and descriptions
-      2. VIDEO TECHNICAL: Each scene = 10 seconds (Sora 2 high-quality AI video)
+      2. VIDEO TECHNICAL: Each scene = 3 seconds (ModelScope/Zeroscope AI video)
       3. VISUAL CONSISTENCY: Define ONE unified "Visual DNA" that applies to EVERY frame
          - Exact lighting setup (e.g., "neon glow with deep shadows")
          - Color palette (EventNexus brand colors: purple #6B46C1, blue #3B82F6 gradients)
-         - Camera style (smooth cinematic, modern tech aesthetic)
+         - Camera style (simple movements - static, slow pan, or zoom only)
          - Environment consistency (same design language throughout)
       4. PROFESSIONAL AGENCY STANDARD: This must look like a premium SaaS commercial
-         - Each 10s segment showcases platform value
+         - Each 3s segment showcases ONE clear idea
          - Smooth transitions between segments
          - Shows real platform benefits
          - Professional, modern, innovative vibe
@@ -855,19 +855,19 @@ export const generateProfessionalAdCampaign = async (
          - Build trust and credibility
          - Modern, innovative, user-friendly
       
-      STRUCTURE (5 segments × 10s = 50s total):
-      Create 5 cinematic 10-second scenes that tell the EventNexus story:
+      STRUCTURE (5 segments × 3s = 15s total):
+      Create 5 ultra-short scenes that tell the EventNexus story:
       
-      HOOK (Segment 1, 0-10s): Show the platform's unique value instantly - establish tech aesthetic
-      PROBLEM (Segment 2, 10-20s): Current event discovery pain points, solved elegantly
-      FEATURES (Segment 3, 20-30s): Showcase key platform capabilities with smooth UI animations
-      IMPACT (Segment 4, 30-40s): Real-world success stories, happy users, growing community
-      CALL-TO-ACTION (Segment 5, 40-50s): EventNexus brand reveal + compelling CTA
+      HOOK (Segment 1, 0-3s): Platform's unique value - establish tech aesthetic
+      PROBLEM (Segment 2, 3-6s): Event discovery pain point (quick visual)
+      FEATURES (Segment 3, 6-9s): Key platform capability (ONE feature)
+      IMPACT (Segment 4, 9-12s): Happy users or success moment
+      CALL-TO-ACTION (Segment 5, 12-15s): EventNexus branding + CTA
       
-      Each 10-second segment must:
-      - Have dynamic action that fills 10 seconds
-      - Include camera movements (e.g., "smooth zoom into UI", "orbit around user")
-      - Show specific platform features
+      Each 3-second segment must:
+      - Show ONE simple, clear visual idea
+      - Use simple camera work (3s is too short for complex moves)
+      - Focus on emotion and impact, not detailed action
       - Maintain Visual DNA
       - Flow into next segment
       
@@ -957,7 +957,9 @@ export const generateProfessionalAdCampaign = async (
         console.log(`Segment ${i + 1}/${segments.length} (${segment.phase}): ${segment.visualPrompt.substring(0, 100)}...`);
         
         // Use Sora 2 via Edge Function
-        const videoBlob = await generateVideoWithSora(segment.visualPrompt, i, aspectRatio);
+        // Use Zeroscope XL for key moments (0,2,4), ModelScope for others
+        const useHighQuality = [0, 2, 4].includes(i);
+        const videoBlob = await generateVideoWithHuggingFace(segment.visualPrompt, i, useHighQuality);
         videoBlobs.push(videoBlob);
         
         console.log(`✅ Segment ${i + 1} complete: ${(videoBlob.size / 1024 / 1024).toFixed(2)} MB`);
@@ -999,9 +1001,9 @@ export const generateProfessionalAdCampaign = async (
       metadata: {
         totalSegments: segments.length,
         successfulSegments: videoBlobs.length,
-        estimatedDuration: `${segments.length * 10}s`, // 5 segments × 10s = 50s
+        estimatedDuration: `${segments.length * 3}s`, // 5 segments × 3s = 15s
         visualDNA: visualDNA,
-        videoModel: 'Sora 2'
+        videoModel: 'ModelScope + Zeroscope XL'
       }
     };
   } catch (error) {
@@ -1048,18 +1050,39 @@ export const generateAdVoiceover = async (script: string): Promise<string> => {
  * Server-side generation with secure API key management
  * Creates 10-second high-quality video segments
  */
-const generateVideoWithSora = async (
+const generateVideoWithHuggingFace = async (
   prompt: string,
   sceneIndex: number,
-  aspectRatio: '16:9' | '9:16' = '16:9'
+  useHighQuality: boolean = false
 ): Promise<Blob> => {
   try {
-    const { data, error } = await supabase.functions.invoke('generate-video-sora', {
-      body: { prompt, sceneIndex, aspectRatio }
+    const { data, error } = await supabase.functions.invoke('generate-video-hf', {
+      body: { prompt, sceneIndex, useHighQuality }
     });
 
     if (error) throw error;
-    if (!data.success) throw new Error(data.error || 'Sora 2 video generation failed');
+    
+    // Handle model loading - retry after 20s
+    if (data.loading) {
+      console.log(`Model loading for segment ${sceneIndex}, waiting...`);
+      await new Promise(resolve => setTimeout(resolve, 20000));
+      
+      const { data: retryData, error: retryError } = await supabase.functions.invoke('generate-video-hf', {
+        body: { prompt, sceneIndex, useHighQuality }
+      });
+      
+      if (retryError) throw retryError;
+      if (!retryData.success) throw new Error(retryData.error || 'Retry failed');
+      
+      const binaryString = atob(retryData.video);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return new Blob([bytes], { type: 'video/mp4' });
+    }
+    
+    if (!data.success) throw new Error(data.error || 'Video generation failed');
 
     // Convert base64 back to blob
     const binaryString = atob(data.video);
@@ -1068,9 +1091,9 @@ const generateVideoWithSora = async (
       bytes[i] = binaryString.charCodeAt(i);
     }
     
-    return new Blob([bytes], { type: data.mimeType || 'video/mp4' });
+    return new Blob([bytes], { type: 'video/mp4' });
   } catch (error) {
-    console.error("Sora 2 video generation failed:", error);
+    console.error(`Video generation failed for segment ${sceneIndex}:`, error);
     throw error;
   }
 };
