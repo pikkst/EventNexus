@@ -12,7 +12,7 @@ import {
   UserX, Ban, AlertTriangle, MessageSquare, Send, Bug, EyeOff,
   Lock, Unlock, KeyRound, AlertOctagon, Github, Cloud, Key, Link as LinkIcon,
   Wifi, Server, Code, Globe2 as MapIcon, HardDrive, Mail as MailIcon,
-  MonitorOff, Power, ShieldX, Shield, Bot, Play, Film
+  MonitorOff, Power, ShieldX, Shield, Bot, Play
 } from 'lucide-react';
 import { 
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, 
@@ -32,7 +32,6 @@ import BetaInvitationManager from './BetaInvitationManager';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import AdminContentManager from './AdminContentManager';
 import AdminMediaManager from './AdminMediaManager';
-import { ProfessionalAdCampaignCreator } from './ProfessionalAdCampaignCreator';
 import { 
   getEvents, 
   getAllUsers, 
@@ -128,9 +127,6 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [isDiagnosticRunning, setIsDiagnosticRunning] = useState(false);
   const [diagnosticResults, setDiagnosticResults] = useState<any>(null);
   const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
-
-  // Platform Video Ads State
-  const [showPlatformVideoCreator, setShowPlatformVideoCreator] = useState(false);
 
   // Production Transition State
   const [showProductionModal, setShowProductionModal] = useState(false);
@@ -958,12 +954,6 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                     <p className="text-slate-500 text-sm font-medium">Manage platform growth campaigns with AI-powered generation.</p>
                  </div>
                  <div className="flex gap-3">
-                   <button 
-                     onClick={() => setShowPlatformVideoCreator(true)}
-                     className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center gap-2 transition-all active:scale-95 shadow-xl shadow-purple-600/20"
-                   >
-                      <Film size={14} /> Platform Video Ads
-                   </button>
                    <button 
                      onClick={() => { setEditingCampaign(null); setIsCampaignModalOpen(true); }}
                      className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center gap-2 transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
@@ -1942,19 +1932,6 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
 
       {/* Campaign Scheduler Modal */}
       <SchedulerModal />
-
-      {/* Platform Video Ads Modal */}
-      {showPlatformVideoCreator && (
-        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="w-full h-full max-w-[95vw] max-h-[95vh] overflow-hidden">
-            <ProfessionalAdCampaignCreator
-              user={user}
-              isAdmin={true}
-              onClose={() => setShowPlatformVideoCreator(false)}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Production Transition Modal */}
       <ProductionTransitionModal
