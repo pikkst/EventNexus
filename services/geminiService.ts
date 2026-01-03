@@ -784,50 +784,93 @@ export const generateProfessionalAdCampaign = async (
     onStepUpdate?.(1); // ANALYZING
     
     const analysisPrompt = eventName 
-      ? `Perform an elite "Brand DNA & 60s Narrative Architecture" analysis for this event:
-      Event Name: ${eventName}
-      Event Description: ${eventDescription}
-      Event URL: ${url}
-      Target Platform: ${platform}
+      ? `You are an award-winning creative director at a top-tier advertising agency. Create a professional 45-second video ad campaign for:
       
-      STRICT REQUIREMENTS:
-      1. LANGUAGE: English only.
-      2. DURATION: 60-second epic story arc.
-      3. VISUAL ANCHORING: Define a consistent "Visual Signature" (e.g., "Vibrant concert hall with dynamic lighting", "Outdoor festival with golden hour glow").
-      4. STORY COHERENCE: The video must tell a compelling story. Every scene must lead logically to the next.
-      5. EVENT FOCUS: Highlight the event's unique atmosphere, energy, and why people should attend.
+      EVENT: "${eventName}"
+      DESCRIPTION: ${eventDescription}
+      PLATFORM: ${platform}
+      URL: ${url}
       
-      Output Schema:
-      - VisualSignature: Detailed description of lighting, colors, and textures for ALL video frames.
-      - CoreEssence: The deepest value proposition of attending this event.
-      - 5-Scene Storyboard (Total 60s):
-        - Scene 1 (Hook): Cinematic opening that captures the event's energy.
-        - Scene 2 (Contrast): Life without this experience (moody but consistent style).
-        - Scene 3 (Transition): The moment of discovery/anticipation.
-        - Scene 4 (Power): High-energy demonstration of the event atmosphere.
-        - Scene 5 (Legacy): Clean brand reveal with strong call-to-action.
+      CRITICAL REQUIREMENTS (2-3 second video segments):
+      1. LANGUAGE: English only - all text and descriptions
+      2. VIDEO TECHNICAL: Each scene = 2-3 seconds (Wan-AI/Wan2.2-TI2V-5B model)
+      3. VISUAL CONSISTENCY: Define ONE unified "Visual DNA" that applies to EVERY frame
+         - Exact lighting setup (e.g., "golden hour warmth, soft shadows")
+         - Color palette (specific hex codes or detailed descriptions)
+         - Camera style (handheld/steady, wide/close, film grain/clean)
+         - Environment consistency (same location theme throughout)
+      4. PROFESSIONAL AGENCY STANDARD: This must look like a $50k commercial
+         - Smooth narrative flow, not random clips
+         - Each 2-3s segment advances the story meaningfully
+         - No jarring style changes between segments
+         - Matches the event's actual atmosphere and target audience
       
-      Respond strictly in JSON format.`
-      : `Perform an elite "Brand DNA & 60s Narrative Architecture" analysis for the website: ${url}.
-      Target Platform: ${platform}.
+      5. EVENT-SPECIFIC STORYTELLING:
+         - Use actual event details (name, description, vibe)
+         - Show what attendees will experience
+         - Build excitement and FOMO
+         - Make viewers feel "I need to be there"
       
-      STRICT REQUIREMENTS:
-      1. LANGUAGE: English only.
-      2. DURATION: 60-second epic story arc.
-      3. VISUAL ANCHORING: Define a consistent "Visual Signature" (e.g., "Minimalist white studio with floating glass UI", "Neon-lit cyber industrial with orange accents").
-      4. STORY COHERENCE: The video must not be "confusing". Every scene must lead logically to the next.
+      STRUCTURE (15 segments × 3s = 45s total):
+      You must create 15 ultra-short (2-3s) scene descriptions that form ONE cohesive story:
       
-      Output Schema:
-      - VisualSignature: A detailed description of the lighting, colors, and textures to be used in ALL video frames.
-      - CoreEssence: The deepest value prop.
-      - 5-Scene Storyboard (Total 60s):
-        - Scene 1 (Hook): Cinematic metaphor of the core benefit.
-        - Scene 2 (Contrast): The world without this solution (moody but consistent style).
-        - Scene 3 (Transition): The moment of discovery/interface interaction.
-        - Scene 4 (Impact): Dynamic, high-energy demonstration.
-        - Scene 5 (Legacy): Clean, premium brand reveal with CTA.
+      HOOK (Segments 1-3, 0-9s): Grab attention with event's most exciting moment
+      CONTEXT (Segments 4-6, 9-18s): Show the atmosphere and experience
+      DESIRE (Segments 7-9, 18-27s): Build emotional connection and anticipation  
+      CLIMAX (Segments 10-12, 27-36s): Peak energy and excitement
+      CALL-TO-ACTION (Segments 13-15, 36-45s): Event name reveal + clear CTA
       
-      Respond strictly in JSON format.`;
+      Each segment description must:
+      - Be 1-2 sentences max (fits 2-3s video)
+      - Include the Visual DNA (lighting, color, camera)
+      - Logically flow from previous segment
+      - Use specific event details
+      - Maintain professional commercial aesthetic
+      
+      Respond in strict JSON format.`
+      : `You are an award-winning creative director at a top-tier advertising agency. Create a professional 45-second video ad campaign for the platform:
+      
+      PLATFORM: ${url}
+      TARGET: ${platform}
+      MISSION: Connect people through unforgettable events (EventNexus)
+      
+      CRITICAL REQUIREMENTS (2-3 second video segments):
+      1. LANGUAGE: English only - all text and descriptions
+      2. VIDEO TECHNICAL: Each scene = 2-3 seconds (Wan-AI/Wan2.2-TI2V-5B model)
+      3. VISUAL CONSISTENCY: Define ONE unified "Visual DNA" that applies to EVERY frame
+         - Exact lighting setup (e.g., "neon glow with deep shadows")
+         - Color palette (EventNexus brand colors: purple, blue gradients)
+         - Camera style (smooth cinematic, modern tech aesthetic)
+         - Environment consistency (same design language throughout)
+      4. PROFESSIONAL AGENCY STANDARD: This must look like a premium SaaS commercial
+         - Smooth narrative flow showing platform value
+         - Each 2-3s segment advances the story
+         - No style inconsistencies
+         - Shows real platform benefits
+      
+      5. PLATFORM-SPECIFIC STORYTELLING:
+         - Highlight EventNexus unique features (AI-powered discovery, seamless ticketing)
+         - Show how it connects organizers and attendees
+         - Build trust and credibility
+         - Professional, modern, innovative vibe
+      
+      STRUCTURE (15 segments × 3s = 45s total):
+      Create 15 ultra-short (2-3s) scene descriptions forming ONE cohesive brand story:
+      
+      HOOK (Segments 1-3, 0-9s): Show platform's unique value instantly
+      PROBLEM (Segments 4-6, 9-18s): Current event discovery pain points
+      SOLUTION (Segments 7-9, 18-27s): How EventNexus solves it elegantly
+      IMPACT (Segments 10-12, 27-36s): Real-world success and community
+      CALL-TO-ACTION (Segments 13-15, 36-45s): Brand reveal + strong CTA
+      
+      Each segment description must:
+      - Be 1-2 sentences max (fits 2-3s video)
+      - Include the Visual DNA
+      - Flow naturally from previous segment
+      - Show actual platform features
+      - Maintain premium tech commercial aesthetic
+      
+      Respond in strict JSON format.`;
 
     const analysisResponse = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
@@ -838,23 +881,35 @@ export const generateProfessionalAdCampaign = async (
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            brandName: { type: Type.STRING },
-            coreEssence: { type: Type.STRING },
-            visualSignature: { type: Type.STRING, description: "Detailed visual style guide for AI image/video consistency" },
-            painPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
-            emotionalDriver: { type: Type.STRING },
-            keyFeatures: { type: Type.ARRAY, items: { type: Type.STRING } },
-            script: { type: Type.STRING },
-            scenes: {
-              type: Type.OBJECT,
-              properties: {
-                hook: { type: Type.STRING },
-                conflict: { type: Type.STRING },
-                resolution: { type: Type.STRING },
-                power: { type: Type.STRING },
-                closing: { type: Type.STRING }
+            brandName: { type: Type.STRING, description: "Event name or EventNexus platform name" },
+            coreEssence: { type: Type.STRING, description: "Core value proposition in one sentence" },
+            visualDNA: { 
+              type: Type.STRING, 
+              description: "CRITICAL: Exact visual style used in EVERY single 2-3s segment. Include: lighting (e.g. 'golden hour warmth'), colors (e.g. 'deep purple #6B46C1 and electric blue #3B82F6'), camera style (e.g. 'smooth handheld, shallow depth of field'), environment (e.g. 'modern event venue with LED walls'). This MUST be consistent across all 15 segments." 
+            },
+            targetAudience: { type: Type.STRING, description: "Who this ad is for" },
+            emotionalDriver: { type: Type.STRING, description: "Primary emotion to evoke" },
+            keyFeatures: { type: Type.ARRAY, items: { type: Type.STRING }, description: "3-5 key selling points" },
+            script: { type: Type.STRING, description: "45-second voiceover script matching the visual narrative" },
+            segments: {
+              type: Type.ARRAY,
+              description: "EXACTLY 15 segments, each 2-3 seconds. CRITICAL: Each segment MUST include the visualDNA and flow logically from the previous one.",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.NUMBER, description: "Segment number 1-15" },
+                  duration: { type: Type.STRING, description: "e.g. '0-3s', '3-6s'" },
+                  phase: { type: Type.STRING, description: "HOOK/CONTEXT/DESIRE/CLIMAX/CTA" },
+                  visualPrompt: { 
+                    type: Type.STRING, 
+                    description: "CRITICAL: 1-2 sentence scene description. MUST start with the visualDNA, then describe specific action/subject for this 2-3s clip. Example: 'Golden hour warmth, deep purple tones. Wide shot of excited crowd entering modern venue with LED walls.' NO generic descriptions." 
+                  },
+                  storyContext: { type: Type.STRING, description: "Why this segment matters in the story" }
+                },
+                required: ["id", "duration", "phase", "visualPrompt", "storyContext"]
               },
-              required: ["hook", "conflict", "resolution", "power", "closing"]
+              minItems: 15,
+              maxItems: 15
             },
             socialCopy: {
               type: Type.OBJECT,
@@ -867,7 +922,7 @@ export const generateProfessionalAdCampaign = async (
               required: ["headline", "body", "cta", "hashtags"]
             }
           },
-          required: ["brandName", "coreEssence", "visualSignature", "painPoints", "script", "scenes", "socialCopy"]
+          required: ["brandName", "coreEssence", "visualDNA", "targetAudience", "emotionalDriver", "keyFeatures", "script", "segments", "socialCopy"]
         }
       }
     });
@@ -880,51 +935,35 @@ export const generateProfessionalAdCampaign = async (
       }))
       .filter((s: any) => s.uri) || [];
 
-    // Step 2-8: Generate video with Hugging Face StoryMem
+    // Validate we have 15 segments
+    if (!analysis.segments || analysis.segments.length !== 15) {
+      throw new Error(`Expected 15 segments, got ${analysis.segments?.length || 0}`);
+    }
+
+    // Step 2-8: Generate 15 video segments (each 2-3 seconds)
     const videoBlobs: Blob[] = [];
-    const { visualSignature, scenes } = analysis;
-    const globalContext = `${visualSignature}. High-quality cinematic commercial, professional lighting.`;
+    const { visualDNA, segments } = analysis;
+    
+    console.log(`Starting video generation with Visual DNA: ${visualDNA}`);
+    console.log(`Generating ${segments.length} segments...`);
 
-    // Generate 15 short segments (each ~4s = ~60 seconds total)
-    const scenePrompts = [
-      // Scenes 1-3: Hook (0-12s)
-      `${scenes.hook}. ${globalContext}`,
-      `Continue ${scenes.hook}. ${globalContext}`,
-      `${scenes.hook} climax. ${globalContext}`,
-      
-      // Scenes 4-6: Conflict (12-24s)
-      `${scenes.conflict}. ${globalContext}`,
-      `Continue ${scenes.conflict}. ${globalContext}`,
-      `${scenes.conflict} transition. ${globalContext}`,
-      
-      // Scenes 7-9: Resolution (24-36s)
-      `${scenes.resolution}. ${globalContext}`,
-      `Continue ${scenes.resolution}. ${globalContext}`,
-      `${scenes.resolution} reveal. ${globalContext}`,
-      
-      // Scenes 10-12: Power (36-48s)
-      `${scenes.power}. ${globalContext}`,
-      `Continue ${scenes.power}. ${globalContext}`,
-      `${scenes.power} intensity. ${globalContext}`,
-      
-      // Scenes 13-15: Closing (48-60s)
-      `${scenes.closing}. ${globalContext}`,
-      `Continue ${scenes.closing}. Brand reveal. ${globalContext}`,
-      `${scenes.closing} finale with call-to-action. ${globalContext}`
-    ];
-
-    for (let i = 0; i < scenePrompts.length; i++) {
-      onStepUpdate?.(2 + Math.floor(i / 3)); // Update progress every 3 scenes
+    // Generate each 2-3s segment with the exact prompt from Gemini
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      onStepUpdate?.(2 + Math.floor(i / 2)); // Update progress every 2 segments
       
       try {
-        const videoBlob = await generateVideoWithHuggingFace(scenePrompts[i], i);
+        console.log(`Segment ${i + 1}/${segments.length} (${segment.phase}): ${segment.visualPrompt.substring(0, 80)}...`);
+        
+        // Use the exact visualPrompt from Gemini (already includes visualDNA)
+        const videoBlob = await generateVideoWithHuggingFace(segment.visualPrompt, i);
         videoBlobs.push(videoBlob);
         
-        // Small delay to avoid rate limiting
-        await new Promise(r => setTimeout(r, 1500));
+        // Small delay to avoid overwhelming the service
+        await new Promise(r => setTimeout(r, 1000));
       } catch (error) {
-        console.error(`Scene ${i + 1} generation failed:`, error);
-        // Continue with other scenes even if one fails
+        console.error(`Segment ${i + 1} generation failed:`, error);
+        // Continue with other segments even if one fails
       }
     }
 
@@ -932,6 +971,7 @@ export const generateProfessionalAdCampaign = async (
       throw new Error("All video generation attempts failed");
     }
     
+    console.log(`Successfully generated ${videoBlobs.length}/15 video segments`);
     onStepUpdate?.(6); // GENERATING_AUDIO
     
     // Generate voiceover
@@ -943,12 +983,25 @@ export const generateProfessionalAdCampaign = async (
     return {
       analysis: {
         ...analysis,
-        emotionalDriver: analysis.emotionalDriver || analysis.coreEssence,
-        keyFeatures: analysis.keyFeatures || []
+        visualSignature: analysis.visualDNA, // Keep backward compatibility
+        painPoints: [], // Not needed in new structure
+        scenes: {
+          hook: segments.slice(0, 3).map(s => s.visualPrompt).join(' '),
+          conflict: segments.slice(3, 6).map(s => s.visualPrompt).join(' '),
+          resolution: segments.slice(6, 9).map(s => s.visualPrompt).join(' '),
+          power: segments.slice(9, 12).map(s => s.visualPrompt).join(' '),
+          closing: segments.slice(12, 15).map(s => s.visualPrompt).join(' ')
+        }
       },
       videoUrl,
       audioBase64,
-      sources
+      sources,
+      metadata: {
+        totalSegments: segments.length,
+        successfulSegments: videoBlobs.length,
+        estimatedDuration: `${segments.length * 3}s`,
+        visualDNA: visualDNA
+      }
     };
   } catch (error) {
     console.error("Professional ad campaign generation failed:", error);
