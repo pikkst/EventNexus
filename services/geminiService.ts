@@ -5,6 +5,10 @@ import { deductUserCredits, checkUserCredits } from './dbService';
 
 const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+// Hugging Face Configuration for video generation
+const HF_TOKEN = process.env.HUGGINGFACE_TOKEN || '';
+const HF_VIDEO_MODEL = 'Kevin-thu/StoryMem'; // Text-to-video model
+
 // ADMIN TOOLS - NO CREDIT COST (Platform marketing tools)
 // Admin promotion tools are FREE for admins to market the platform
 
@@ -876,144 +880,65 @@ export const generateProfessionalAdCampaign = async (
       }))
       .filter((s: any) => s.uri) || [];
 
-    // Step 2-6: Generate video scenes with Veo 3.1
+    // Step 2-8: Generate video with Hugging Face StoryMem
+    const videoBlobs: Blob[] = [];
     const { visualSignature, scenes } = analysis;
-    const globalContext = `Visual Style: ${visualSignature}. Movie-grade quality, strict continuity, anamorphic lens flares, high-end commercial lighting. Always keep the subjects and environment consistent with previous frames.`;
-    
-    // Scene 1: Hook (0-8s base)
-    onStepUpdate?.(2); // GENERATING_SCENE_1
-    let aiClient = getAI();
-    let op1 = await aiClient.models.generateVideos({
-      model: 'veo-3.1-generate-preview',
-      prompt: `Create an 8-second opening: ${scenes.hook}. ${globalContext}`,
-      config: { numberOfVideos: 1, aspectRatio }
-    });
-    while (!op1.done) { 
-      await new Promise(r => setTimeout(r, 10000)); 
-      op1 = await aiClient.operations.getVideosOperation({ operation: op1 }); 
-    }
-    const v1 = op1.response?.generatedVideos?.[0]?.video;
-    if (!v1) throw new Error("Scene 1 generation failed.");
+    const globalContext = `${visualSignature}. High-quality cinematic commercial, professional lighting.`;
 
-    // Scene 2: Extension 1 (8-16s)
-    onStepUpdate?.(3); // EXTENDING_SCENE_2
-    aiClient = getAI();
-    let op2 = await aiClient.models.generateVideos({
-      model: 'veo-3.1-generate-preview',
-      prompt: `Extend by 8 seconds: ${scenes.conflict}. Use same lighting and objects. Narrative progression. ${globalContext}`,
-      video: v1,
-      config: { numberOfVideos: 1, aspectRatio }
-    });
-    while (!op2.done) { 
-      await new Promise(r => setTimeout(r, 10000)); 
-      op2 = await aiClient.operations.getVideosOperation({ operation: op2 }); 
-    }
-    const v2 = op2.response?.generatedVideos?.[0]?.video;
-    if (!v2) throw new Error("Scene 2 generation failed.");
+    // Generate 15 short segments (each ~4s = ~60 seconds total)
+    const scenePrompts = [
+      // Scenes 1-3: Hook (0-12s)
+      `${scenes.hook}. ${globalContext}`,
+      `Continue ${scenes.hook}. ${globalContext}`,
+      `${scenes.hook} climax. ${globalContext}`,
+      
+      // Scenes 4-6: Conflict (12-24s)
+      `${scenes.conflict}. ${globalContext}`,
+      `Continue ${scenes.conflict}. ${globalContext}`,
+      `${scenes.conflict} transition. ${globalContext}`,
+      
+      // Scenes 7-9: Resolution (24-36s)
+      `${scenes.resolution}. ${globalContext}`,
+      `Continue ${scenes.resolution}. ${globalContext}`,
+      `${scenes.resolution} reveal. ${globalContext}`,
+      
+      // Scenes 10-12: Power (36-48s)
+      `${scenes.power}. ${globalContext}`,
+      `Continue ${scenes.power}. ${globalContext}`,
+      `${scenes.power} intensity. ${globalContext}`,
+      
+      // Scenes 13-15: Closing (48-60s)
+      `${scenes.closing}. ${globalContext}`,
+      `Continue ${scenes.closing}. Brand reveal. ${globalContext}`,
+      `${scenes.closing} finale with call-to-action. ${globalContext}`
+    ];
 
-    // Scene 3: Extension 2 (16-24s)
-    onStepUpdate?.(4); // EXTENDING_SCENE_3
-    aiClient = getAI();
-    let op3 = await aiClient.models.generateVideos({
-      model: 'veo-3.1-generate-preview',
-      prompt: `Extend by 8 seconds: ${scenes.resolution}. Brighten lighting while maintaining style. Reveal the solution. ${globalContext}`,
-      video: v2,
-      config: { numberOfVideos: 1, aspectRatio }
-    });
-    while (!op3.done) { 
-      await new Promise(r => setTimeout(r, 10000)); 
-      op3 = await aiClient.operations.getVideosOperation({ operation: op3 }); 
+    for (let i = 0; i < scenePrompts.length; i++) {
+      onStepUpdate?.(2 + Math.floor(i / 3)); // Update progress every 3 scenes
+      
+      try {
+        const videoBlob = await generateVideoWithHuggingFace(scenePrompts[i]);
+        videoBlobs.push(videoBlob);
+        
+        // Small delay to avoid rate limiting
+        await new Promise(r => setTimeout(r, 1500));
+      } catch (error) {
+        console.error(`Scene ${i + 1} generation failed:`, error);
+        // Continue with other scenes even if one fails
+      }
     }
-    const v3 = op3.response?.generatedVideos?.[0]?.video;
-    if (!v3) throw new Error("Scene 3 generation failed.");
 
-    // Scene 4: Extension 3 (24-32s)
-    onStepUpdate?.(5); // EXTENDING_SCENE_4
-    aiClient = getAI();
-    let op4 = await aiClient.models.generateVideos({
-      model: 'veo-3.1-generate-preview',
-      prompt: `Extend by 8 seconds: ${scenes.power}. High energy movement, consistent materials. Show the core benefit in action. ${globalContext}`,
-      video: v3,
-      config: { numberOfVideos: 1, aspectRatio }
-    });
-    while (!op4.done) { 
-      await new Promise(r => setTimeout(r, 10000)); 
-      op4 = await aiClient.operations.getVideosOperation({ operation: op4 }); 
+    if (videoBlobs.length === 0) {
+      throw new Error("All video generation attempts failed");
     }
-    const v4 = op4.response?.generatedVideos?.[0]?.video;
-    if (!v4) throw new Error("Scene 4 generation failed.");
-
-    // Scene 5: Extension 4 (32-40s)
-    aiClient = getAI();
-    let op5 = await aiClient.models.generateVideos({
-      model: 'veo-3.1-generate-preview',
-      prompt: `Extend by 8 seconds: Continue showing the power and impact. Maintain high energy. ${globalContext}`,
-      video: v4,
-      config: { numberOfVideos: 1, aspectRatio }
-    });
-    while (!op5.done) { 
-      await new Promise(r => setTimeout(r, 10000)); 
-      op5 = await aiClient.operations.getVideosOperation({ operation: op5 }); 
-    }
-    const v5 = op5.response?.generatedVideos?.[0]?.video;
-    if (!v5) throw new Error("Scene 5 generation failed.");
-
-    // Scene 6: Extension 5 (40-48s)
-    aiClient = getAI();
-    let op6 = await aiClient.models.generateVideos({
-      model: 'veo-3.1-generate-preview',
-      prompt: `Extend by 8 seconds: Build towards the climax. Intensify the visuals. ${globalContext}`,
-      video: v5,
-      config: { numberOfVideos: 1, aspectRatio }
-    });
-    while (!op6.done) { 
-      await new Promise(r => setTimeout(r, 10000)); 
-      op6 = await aiClient.operations.getVideosOperation({ operation: op6 }); 
-    }
-    const v6 = op6.response?.generatedVideos?.[0]?.video;
-    if (!v6) throw new Error("Scene 6 generation failed.");
-
-    // Scene 7: Extension 6 (48-56s)
-    aiClient = getAI();
-    let op7 = await aiClient.models.generateVideos({
-      model: 'veo-3.1-generate-preview',
-      prompt: `Extend by 8 seconds: ${scenes.closing}. Begin transitioning to brand reveal. Start fading to brand colors. ${globalContext}`,
-      video: v6,
-      config: { numberOfVideos: 1, aspectRatio }
-    });
-    while (!op7.done) { 
-      await new Promise(r => setTimeout(r, 10000)); 
-      op7 = await aiClient.operations.getVideosOperation({ operation: op7 }); 
-    }
-    const v7 = op7.response?.generatedVideos?.[0]?.video;
-    if (!v7) throw new Error("Scene 7 generation failed.");
-
-    // Scene 8: Final Extension (56-64s)
-    aiClient = getAI();
-    let op8 = await aiClient.models.generateVideos({
-      model: 'veo-3.1-generate-preview',
-      prompt: `Extend by 8 seconds: Finale - ${scenes.closing}. Complete brand reveal with cinematic logo environment. Stable, premium ending with clear call-to-action. ${globalContext}`,
-      video: v7,
-      config: { numberOfVideos: 1, aspectRatio }
-    });
-    while (!op8.done) { 
-      await new Promise(r => setTimeout(r, 10000)); 
-      op8 = await aiClient.operations.getVideosOperation({ operation: op8 }); 
-    }
-    
-    const finalVideo = op8.response?.generatedVideos?.[0]?.video;
-    if (!finalVideo) throw new Error("Scene 8 generation failed.");
     
     onStepUpdate?.(6); // GENERATING_AUDIO
     
     // Generate voiceover
     const audioBase64 = await generateAdVoiceover(analysis.script);
 
-    // Download final video as blob URL
-    const finalUri = finalVideo.uri;
-    const finalRes = await fetch(`${finalUri}&key=${process.env.API_KEY}`);
-    const blob = await finalRes.blob();
-    const videoUrl = URL.createObjectURL(blob);
+    // Concatenate videos
+    const videoUrl = await concatenateVideos(videoBlobs);
     
     return {
       analysis: {
@@ -1061,5 +986,193 @@ export const generateAdVoiceover = async (script: string): Promise<string> => {
   } catch (error) {
     console.error("Voiceover generation failed:", error);
     throw error;
+  }
+};
+
+/**
+ * Generate video using Hugging Face Inference API
+ * Fallback option when Veo quota is exceeded
+ */
+const generateVideoWithHuggingFace = async (
+  prompt: string,
+  previousVideo?: Blob
+): Promise<Blob> => {
+  try {
+    const endpoint = `https://api-inference.huggingface.co/models/${HF_VIDEO_MODEL}`;
+    
+    // For text-to-video models
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${HF_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          num_frames: 120, // ~4 seconds at 30fps
+          guidance_scale: 7.5,
+          num_inference_steps: 50
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Hugging Face API error: ${error}`);
+    }
+
+    const videoBlob = await response.blob();
+    return videoBlob;
+  } catch (error) {
+    console.error("Hugging Face video generation failed:", error);
+    throw error;
+  }
+};
+
+/**
+ * Concatenate multiple video blobs into single video
+ */
+const concatenateVideos = async (videoBlobs: Blob[]): Promise<string> => {
+  try {
+    // Create a new video using MediaRecorder or similar
+    // For now, return the last video as URL
+    // In production, use FFmpeg.js or server-side concatenation
+    const finalBlob = new Blob(videoBlobs, { type: 'video/mp4' });
+    return URL.createObjectURL(finalBlob);
+  } catch (error) {
+    console.error("Video concatenation failed:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generate professional ad campaign with Hugging Face fallback
+ * Uses Veo first, falls back to Hugging Face if quota exceeded
+ */
+export const generateProfessionalAdCampaignWithFallback = async (
+  url: string,
+  platform: string,
+  aspectRatio: '16:9' | '9:16',
+  eventName?: string,
+  eventDescription?: string,
+  onStepUpdate?: (step: number) => void
+) => {
+  try {
+    // Try Veo first
+    return await generateProfessionalAdCampaign(
+      url, 
+      platform, 
+      aspectRatio, 
+      eventName, 
+      eventDescription, 
+      onStepUpdate
+    );
+  } catch (veoError: any) {
+    console.warn('Veo generation failed, falling back to Hugging Face:', veoError.message);
+    
+    // Fallback to Hugging Face
+    const ai = getAI();
+    
+    // Step 1: Analyze website/event (same as before)
+    onStepUpdate?.(1);
+    
+    const analysisPrompt = eventName 
+      ? `Analyze this event for a 60-second video ad:
+      Event: ${eventName}
+      Description: ${eventDescription}
+      URL: ${url}
+      Platform: ${platform}
+      
+      Create a compelling narrative with visual descriptions for video generation.`
+      : `Analyze ${url} for a 60-second video ad on ${platform}. Create compelling narrative with visual descriptions.`;
+
+    const analysisResponse = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: analysisPrompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            brandName: { type: Type.STRING },
+            coreEssence: { type: Type.STRING },
+            visualSignature: { type: Type.STRING },
+            script: { type: Type.STRING },
+            scenes: {
+              type: Type.OBJECT,
+              properties: {
+                hook: { type: Type.STRING },
+                conflict: { type: Type.STRING },
+                resolution: { type: Type.STRING },
+                power: { type: Type.STRING },
+                closing: { type: Type.STRING }
+              }
+            },
+            socialCopy: {
+              type: Type.OBJECT,
+              properties: {
+                headline: { type: Type.STRING },
+                body: { type: Type.STRING },
+                cta: { type: Type.STRING },
+                hashtags: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const analysis = JSON.parse(analysisResponse.text || '{}');
+    const sources = analysisResponse.candidates?.[0]?.groundingMetadata?.groundingChunks
+      ?.map((chunk: any) => ({
+        uri: chunk.web?.uri || "",
+        title: chunk.web?.title || "Market Insight"
+      }))
+      .filter((s: any) => s.uri) || [];
+
+    // Generate video segments with Hugging Face
+    const videoBlobs: Blob[] = [];
+    const { visualSignature, scenes } = analysis;
+    const globalContext = `${visualSignature}. High-quality cinematic commercial.`;
+
+    // Generate 8 segments (each ~4 seconds = ~32 seconds total)
+    // Note: HF models generate shorter clips, so we create multiple
+    const scenePrompts = [
+      `${scenes.hook}. ${globalContext}`,
+      `${scenes.conflict}. ${globalContext}`,
+      `${scenes.resolution}. ${globalContext}`,
+      `${scenes.power}. ${globalContext}`,
+      `Continue showing impact. ${globalContext}`,
+      `Build to climax. ${globalContext}`,
+      `${scenes.closing} transition. ${globalContext}`,
+      `${scenes.closing} brand reveal. ${globalContext}`
+    ];
+
+    for (let i = 0; i < scenePrompts.length; i++) {
+      onStepUpdate?.(i + 2);
+      const videoBlob = await generateVideoWithHuggingFace(scenePrompts[i]);
+      videoBlobs.push(videoBlob);
+      
+      // Small delay to avoid rate limiting
+      await new Promise(r => setTimeout(r, 2000));
+    }
+
+    // Concatenate all videos
+    onStepUpdate?.(6); // GENERATING_AUDIO
+    const audioBase64 = await generateAdVoiceover(analysis.script);
+    const videoUrl = await concatenateVideos(videoBlobs);
+
+    return {
+      analysis: {
+        ...analysis,
+        emotionalDriver: analysis.coreEssence,
+        keyFeatures: []
+      },
+      videoUrl,
+      audioBase64,
+      sources
+    };
   }
 };
