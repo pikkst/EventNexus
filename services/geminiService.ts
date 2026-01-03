@@ -880,12 +880,12 @@ export const generateProfessionalAdCampaign = async (
     const { visualSignature, scenes } = analysis;
     const globalContext = `Visual Style: ${visualSignature}. Movie-grade quality, strict continuity, anamorphic lens flares, high-end commercial lighting. Always keep the subjects and environment consistent with previous frames.`;
     
-    // Scene 1: Hook (10-12s)
+    // Scene 1: Hook (0-8s base)
     onStepUpdate?.(2); // GENERATING_SCENE_1
     let aiClient = getAI();
     let op1 = await aiClient.models.generateVideos({
       model: 'veo-3.1-generate-preview',
-      prompt: `${scenes.hook}. ${globalContext}`,
+      prompt: `Create an 8-second opening: ${scenes.hook}. ${globalContext}`,
       config: { numberOfVideos: 1, aspectRatio }
     });
     while (!op1.done) { 
@@ -895,12 +895,12 @@ export const generateProfessionalAdCampaign = async (
     const v1 = op1.response?.generatedVideos?.[0]?.video;
     if (!v1) throw new Error("Scene 1 generation failed.");
 
-    // Scene 2: Conflict (Extension to ~24s)
+    // Scene 2: Extension 1 (8-16s)
     onStepUpdate?.(3); // EXTENDING_SCENE_2
     aiClient = getAI();
     let op2 = await aiClient.models.generateVideos({
       model: 'veo-3.1-generate-preview',
-      prompt: `Continuity: ${scenes.conflict}. Use same lighting and objects from Scene 1. Narrative progression. ${globalContext}`,
+      prompt: `Extend by 8 seconds: ${scenes.conflict}. Use same lighting and objects. Narrative progression. ${globalContext}`,
       video: v1,
       config: { numberOfVideos: 1, aspectRatio }
     });
@@ -911,12 +911,12 @@ export const generateProfessionalAdCampaign = async (
     const v2 = op2.response?.generatedVideos?.[0]?.video;
     if (!v2) throw new Error("Scene 2 generation failed.");
 
-    // Scene 3: Resolution (Extension to ~36s)
+    // Scene 3: Extension 2 (16-24s)
     onStepUpdate?.(4); // EXTENDING_SCENE_3
     aiClient = getAI();
     let op3 = await aiClient.models.generateVideos({
       model: 'veo-3.1-generate-preview',
-      prompt: `Discovery: ${scenes.resolution}. Brighten lighting while maintaining style. Reveal the solution. ${globalContext}`,
+      prompt: `Extend by 8 seconds: ${scenes.resolution}. Brighten lighting while maintaining style. Reveal the solution. ${globalContext}`,
       video: v2,
       config: { numberOfVideos: 1, aspectRatio }
     });
@@ -927,12 +927,12 @@ export const generateProfessionalAdCampaign = async (
     const v3 = op3.response?.generatedVideos?.[0]?.video;
     if (!v3) throw new Error("Scene 3 generation failed.");
 
-    // Scene 4: Power (Extension to ~48s)
+    // Scene 4: Extension 3 (24-32s)
     onStepUpdate?.(5); // EXTENDING_SCENE_4
     aiClient = getAI();
     let op4 = await aiClient.models.generateVideos({
       model: 'veo-3.1-generate-preview',
-      prompt: `Power shot: ${scenes.power}. High energy movement, consistent materials. Show the core benefit in action. ${globalContext}`,
+      prompt: `Extend by 8 seconds: ${scenes.power}. High energy movement, consistent materials. Show the core benefit in action. ${globalContext}`,
       video: v3,
       config: { numberOfVideos: 1, aspectRatio }
     });
@@ -943,11 +943,11 @@ export const generateProfessionalAdCampaign = async (
     const v4 = op4.response?.generatedVideos?.[0]?.video;
     if (!v4) throw new Error("Scene 4 generation failed.");
 
-    // Scene 5: Closing (Extension to 60s)
+    // Scene 5: Extension 4 (32-40s)
     aiClient = getAI();
     let op5 = await aiClient.models.generateVideos({
       model: 'veo-3.1-generate-preview',
-      prompt: `Finale: ${scenes.closing}. Fade to brand colors, cinematic logo environment. Stable and premium. ${globalContext}`,
+      prompt: `Extend by 8 seconds: Continue showing the power and impact. Maintain high energy. ${globalContext}`,
       video: v4,
       config: { numberOfVideos: 1, aspectRatio }
     });
@@ -955,9 +955,54 @@ export const generateProfessionalAdCampaign = async (
       await new Promise(r => setTimeout(r, 10000)); 
       op5 = await aiClient.operations.getVideosOperation({ operation: op5 }); 
     }
+    const v5 = op5.response?.generatedVideos?.[0]?.video;
+    if (!v5) throw new Error("Scene 5 generation failed.");
+
+    // Scene 6: Extension 5 (40-48s)
+    aiClient = getAI();
+    let op6 = await aiClient.models.generateVideos({
+      model: 'veo-3.1-generate-preview',
+      prompt: `Extend by 8 seconds: Build towards the climax. Intensify the visuals. ${globalContext}`,
+      video: v5,
+      config: { numberOfVideos: 1, aspectRatio }
+    });
+    while (!op6.done) { 
+      await new Promise(r => setTimeout(r, 10000)); 
+      op6 = await aiClient.operations.getVideosOperation({ operation: op6 }); 
+    }
+    const v6 = op6.response?.generatedVideos?.[0]?.video;
+    if (!v6) throw new Error("Scene 6 generation failed.");
+
+    // Scene 7: Extension 6 (48-56s)
+    aiClient = getAI();
+    let op7 = await aiClient.models.generateVideos({
+      model: 'veo-3.1-generate-preview',
+      prompt: `Extend by 8 seconds: ${scenes.closing}. Begin transitioning to brand reveal. Start fading to brand colors. ${globalContext}`,
+      video: v6,
+      config: { numberOfVideos: 1, aspectRatio }
+    });
+    while (!op7.done) { 
+      await new Promise(r => setTimeout(r, 10000)); 
+      op7 = await aiClient.operations.getVideosOperation({ operation: op7 }); 
+    }
+    const v7 = op7.response?.generatedVideos?.[0]?.video;
+    if (!v7) throw new Error("Scene 7 generation failed.");
+
+    // Scene 8: Final Extension (56-64s)
+    aiClient = getAI();
+    let op8 = await aiClient.models.generateVideos({
+      model: 'veo-3.1-generate-preview',
+      prompt: `Extend by 8 seconds: Finale - ${scenes.closing}. Complete brand reveal with cinematic logo environment. Stable, premium ending with clear call-to-action. ${globalContext}`,
+      video: v7,
+      config: { numberOfVideos: 1, aspectRatio }
+    });
+    while (!op8.done) { 
+      await new Promise(r => setTimeout(r, 10000)); 
+      op8 = await aiClient.operations.getVideosOperation({ operation: op8 }); 
+    }
     
-    const finalVideo = op5.response?.generatedVideos?.[0]?.video;
-    if (!finalVideo) throw new Error("Scene 5 generation failed.");
+    const finalVideo = op8.response?.generatedVideos?.[0]?.video;
+    if (!finalVideo) throw new Error("Scene 8 generation failed.");
     
     onStepUpdate?.(6); // GENERATING_AUDIO
     
