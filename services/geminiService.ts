@@ -917,7 +917,7 @@ export const generateProfessionalAdCampaign = async (
       onStepUpdate?.(2 + Math.floor(i / 3)); // Update progress every 3 scenes
       
       try {
-        const videoBlob = await generateVideoWithHuggingFace(scenePrompts[i]);
+        const videoBlob = await generateVideoWithHuggingFace(scenePrompts[i], i);
         videoBlobs.push(videoBlob);
         
         // Small delay to avoid rate limiting
@@ -990,40 +990,29 @@ export const generateAdVoiceover = async (script: string): Promise<string> => {
 };
 
 /**
- * Generate video using Hugging Face Inference API
- * Fallback option when Veo quota is exceeded
+ * Generate video using Hugging Face via Supabase Edge Function
+ * Server-side generation with secure token management
  */
 const generateVideoWithHuggingFace = async (
   prompt: string,
-  previousVideo?: Blob
+  sceneIndex: number
 ): Promise<Blob> => {
   try {
-    const endpoint = `https://api-inference.huggingface.co/models/${HF_VIDEO_MODEL}`;
-    
-    // For text-to-video models
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${HF_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          num_frames: 120, // ~4 seconds at 30fps
-          guidance_scale: 7.5,
-          num_inference_steps: 50
-        }
-      })
+    const { data, error } = await supabase.functions.invoke('generate-video-hf', {
+      body: { prompt, sceneIndex }
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Hugging Face API error: ${error}`);
-    }
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error || 'Video generation failed');
 
-    const videoBlob = await response.blob();
-    return videoBlob;
+    // Convert base64 back to blob
+    const binaryString = atob(data.video);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    return new Blob([bytes], { type: data.mimeType || 'video/mp4' });
   } catch (error) {
     console.error("Hugging Face video generation failed:", error);
     throw error;

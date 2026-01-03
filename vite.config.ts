@@ -37,7 +37,6 @@ export default defineConfig(({ mode }) => {
         'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
         'process.env.API_KEY': JSON.stringify(geminiApiKey),
         'process.env.GEMINI_API_KEY': JSON.stringify(geminiApiKey),
-        'process.env.HUGGINGFACE_TOKEN': JSON.stringify(env.HUGGINGFACE_TOKEN || ''),
         'process.env.TICKET_HASH_SECRET': JSON.stringify(ticketHashSecret),
         'import.meta.env.VITE_GIT_COMMIT': JSON.stringify(gitCommit),
       },
