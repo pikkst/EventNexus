@@ -20,15 +20,17 @@ serve(async (req) => {
       throw new Error('HUGGINGFACE_TOKEN not configured')
     }
 
-    // Use SDXL for high quality images, SD 1.5 for speed
+    // Use Flux.1-schnell for high quality (very fast, free), or SD 1.5 for basic
     const model = useHighQuality 
-      ? 'stabilityai/stable-diffusion-xl-base-1.0'
-      : 'runwayml/stable-diffusion-v1-5'
+      ? 'black-forest-labs/FLUX.1-schnell'  // Fast, high quality, free
+      : 'CompVis/stable-diffusion-v1-4'  // Fast, reliable, free
 
     console.log(`Generating image with ${model} for scene ${sceneIndex}: ${prompt.substring(0, 50)}...`)
     
-    // Direct API call to HuggingFace Router
-    const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+    // Use Hugging Face Inference API (free tier)
+    const HF_API_URL = `https://api-inference.huggingface.co/models/${model}`
+    
+    const response = await fetch(HF_API_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${HF_TOKEN}`,
@@ -37,9 +39,7 @@ serve(async (req) => {
       body: JSON.stringify({
         inputs: prompt,
         parameters: {
-          negative_prompt: 'blurry, low quality, distorted, ugly, bad anatomy, watermark, text',
-          num_inference_steps: useHighQuality ? 50 : 30,
-          guidance_scale: 7.5,
+          num_inference_steps: useHighQuality ? 4 : 20,  // Flux is fast even at 4 steps
         },
       }),
     })
@@ -80,7 +80,7 @@ serve(async (req) => {
         success: true, 
         image: base64Image,
         sceneIndex,
-        model: useHighQuality ? 'SDXL' : 'SD 1.5',
+        model: useHighQuality ? 'FLUX.1-schnell' : 'SD 1.4',
         size: imageBuffer.byteLength,
       }),
       { 
