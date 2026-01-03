@@ -7,7 +7,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Download, Share2, Play, Pause, Film, ExternalLink, Upload, Image as ImageIcon, Languages, Palette, Calendar } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
-import { generateProfessionalAdCampaign, generateAdVoiceover } from '../services/geminiService';
+import { generateProfessionalAdCampaignWithFallback as generateProfessionalAdCampaign, generateAdVoiceover } from '../services/geminiService';
 import { deductUserCredits, checkUserCredits } from '../services/dbService';
 import { supabase } from '../services/supabase';
 
