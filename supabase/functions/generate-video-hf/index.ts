@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { InferenceClient } from 'npm:@huggingface/inference@latest'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,33 +21,21 @@ serve(async (req) => {
       throw new Error('HUGGINGFACE_TOKEN not configured')
     }
 
-    const HF_VIDEO_MODEL = 'Kevin-thu/StoryMem'
-    const endpoint = `https://api-inference.huggingface.co/models/${HF_VIDEO_MODEL}`
+    console.log(`Generating video for scene ${sceneIndex}: ${prompt.substring(0, 50)}...`)
     
-    // Generate video segment
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${HF_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          num_frames: 120, // ~4 seconds at 30fps
-          guidance_scale: 7.5,
-          num_inference_steps: 50
-        }
-      })
+    // Initialize InferenceClient with token
+    const client = new InferenceClient(HF_TOKEN)
+    
+    // Generate 3-second video using Replicate provider with Wan2.2 model
+    const videoBlob = await client.textToVideo({
+      provider: "replicate",
+      model: "Wan-AI/Wan2.2-TI2V-5B",
+      inputs: prompt,
     })
+    
+    console.log(`Video generated successfully for scene ${sceneIndex}, size: ${videoBlob.size} bytes`)
 
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Hugging Face API error: ${error}`)
-    }
-
-    // Return video blob
-    const videoBlob = await response.blob()
+    // Convert blob to base64 for transport
     const videoBuffer = await videoBlob.arrayBuffer()
     const base64Video = btoa(
       new Uint8Array(videoBuffer).reduce(
