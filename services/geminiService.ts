@@ -784,25 +784,25 @@ export const generateProfessionalAdCampaign = async (
     onStepUpdate?.(1); // ANALYZING
     
     const analysisPrompt = eventName 
-      ? `You are an award-winning creative director at a top-tier advertising agency. Create a professional 45-second video ad campaign for:
+      ? `You are an award-winning creative director at a top-tier advertising agency. Create a professional 50-second video ad campaign for:
       
       EVENT: "${eventName}"
       DESCRIPTION: ${eventDescription}
       PLATFORM: ${platform}
       URL: ${url}
       
-      CRITICAL REQUIREMENTS (2-3 second video segments):
+      CRITICAL REQUIREMENTS (10-second video segments with Sora 2):
       1. LANGUAGE: English only - all text and descriptions
-      2. VIDEO TECHNICAL: Each scene = 2-3 seconds (Wan-AI/Wan2.2-TI2V-5B model)
+      2. VIDEO TECHNICAL: Each scene = 10 seconds (Sora 2 high-quality AI video)
       3. VISUAL CONSISTENCY: Define ONE unified "Visual DNA" that applies to EVERY frame
          - Exact lighting setup (e.g., "golden hour warmth, soft shadows")
          - Color palette (specific hex codes or detailed descriptions)
-         - Camera style (handheld/steady, wide/close, film grain/clean)
+         - Camera style (cinematic movements, professional framing)
          - Environment consistency (same location theme throughout)
-      4. PROFESSIONAL AGENCY STANDARD: This must look like a $50k commercial
-         - Smooth narrative flow, not random clips
-         - Each 2-3s segment advances the story meaningfully
-         - No jarring style changes between segments
+      4. PROFESSIONAL AGENCY STANDARD: This must look like a $100k commercial
+         - Each 10s segment tells a mini-story
+         - Smooth transitions between segments
+         - No jarring style changes
          - Matches the event's actual atmosphere and target audience
       
       5. EVENT-SPECIFIC STORYTELLING:
@@ -811,64 +811,65 @@ export const generateProfessionalAdCampaign = async (
          - Build excitement and FOMO
          - Make viewers feel "I need to be there"
       
-      STRUCTURE (15 segments × 3s = 45s total):
-      You must create 15 ultra-short (2-3s) scene descriptions that form ONE cohesive story:
+      STRUCTURE (5 segments × 10s = 50s total):
+      You must create 5 cinematic 10-second scene descriptions that form ONE epic story:
       
-      HOOK (Segments 1-3, 0-9s): Grab attention with event's most exciting moment
-      CONTEXT (Segments 4-6, 9-18s): Show the atmosphere and experience
-      DESIRE (Segments 7-9, 18-27s): Build emotional connection and anticipation  
-      CLIMAX (Segments 10-12, 27-36s): Peak energy and excitement
-      CALL-TO-ACTION (Segments 13-15, 36-45s): Event name reveal + clear CTA
+      HOOK (Segment 1, 0-10s): Open with the most captivating moment - establish visual DNA and energy
+      BUILD (Segment 2, 10-20s): Show the atmosphere, experience, and why people come
+      EMOTION (Segment 3, 20-30s): Build emotional connection - the feeling of being there
+      CLIMAX (Segment 4, 30-40s): Peak excitement - show the unforgettable moments
+      CALL-TO-ACTION (Segment 5, 40-50s): Event name/date reveal + compelling CTA
       
-      Each segment description must:
-      - Be 1-2 sentences max (fits 2-3s video)
-      - Include the Visual DNA (lighting, color, camera)
-      - Logically flow from previous segment
-      - Use specific event details
-      - Maintain professional commercial aesthetic
+      Each 10-second segment must:
+      - Have a clear beginning, middle, and end
+      - Include specific camera movements (e.g., "slow dolly forward", "aerial descent")
+      - Describe action that fills 10 seconds (not just a static shot)
+      - Include the Visual DNA consistently
+      - Use actual event details (name, type, atmosphere)
+      - Flow logically from previous segment
       
       Respond in strict JSON format.`
-      : `You are an award-winning creative director at a top-tier advertising agency. Create a professional 45-second video ad campaign for the platform:
+      : `You are an award-winning creative director at a top-tier advertising agency. Create a professional 50-second video ad campaign for the platform:
       
       PLATFORM: ${url}
       TARGET: ${platform}
       MISSION: Connect people through unforgettable events (EventNexus)
       
-      CRITICAL REQUIREMENTS (2-3 second video segments):
+      CRITICAL REQUIREMENTS (10-second video segments with Sora 2):
       1. LANGUAGE: English only - all text and descriptions
-      2. VIDEO TECHNICAL: Each scene = 2-3 seconds (Wan-AI/Wan2.2-TI2V-5B model)
+      2. VIDEO TECHNICAL: Each scene = 10 seconds (Sora 2 high-quality AI video)
       3. VISUAL CONSISTENCY: Define ONE unified "Visual DNA" that applies to EVERY frame
          - Exact lighting setup (e.g., "neon glow with deep shadows")
-         - Color palette (EventNexus brand colors: purple, blue gradients)
+         - Color palette (EventNexus brand colors: purple #6B46C1, blue #3B82F6 gradients)
          - Camera style (smooth cinematic, modern tech aesthetic)
          - Environment consistency (same design language throughout)
       4. PROFESSIONAL AGENCY STANDARD: This must look like a premium SaaS commercial
-         - Smooth narrative flow showing platform value
-         - Each 2-3s segment advances the story
-         - No style inconsistencies
+         - Each 10s segment showcases platform value
+         - Smooth transitions between segments
          - Shows real platform benefits
-      
-      5. PLATFORM-SPECIFIC STORYTELLING:
-         - Highlight EventNexus unique features (AI-powered discovery, seamless ticketing)
-         - Show how it connects organizers and attendees
-         - Build trust and credibility
          - Professional, modern, innovative vibe
       
-      STRUCTURE (15 segments × 3s = 45s total):
-      Create 15 ultra-short (2-3s) scene descriptions forming ONE cohesive brand story:
+      5. PLATFORM-SPECIFIC STORYTELLING:
+         - Highlight EventNexus features (AI discovery, seamless ticketing, organizer tools)
+         - Show how it connects organizers and attendees
+         - Build trust and credibility
+         - Modern, innovative, user-friendly
       
-      HOOK (Segments 1-3, 0-9s): Show platform's unique value instantly
-      PROBLEM (Segments 4-6, 9-18s): Current event discovery pain points
-      SOLUTION (Segments 7-9, 18-27s): How EventNexus solves it elegantly
-      IMPACT (Segments 10-12, 27-36s): Real-world success and community
-      CALL-TO-ACTION (Segments 13-15, 36-45s): Brand reveal + strong CTA
+      STRUCTURE (5 segments × 10s = 50s total):
+      Create 5 cinematic 10-second scenes that tell the EventNexus story:
       
-      Each segment description must:
-      - Be 1-2 sentences max (fits 2-3s video)
-      - Include the Visual DNA
-      - Flow naturally from previous segment
-      - Show actual platform features
-      - Maintain premium tech commercial aesthetic
+      HOOK (Segment 1, 0-10s): Show the platform's unique value instantly - establish tech aesthetic
+      PROBLEM (Segment 2, 10-20s): Current event discovery pain points, solved elegantly
+      FEATURES (Segment 3, 20-30s): Showcase key platform capabilities with smooth UI animations
+      IMPACT (Segment 4, 30-40s): Real-world success stories, happy users, growing community
+      CALL-TO-ACTION (Segment 5, 40-50s): EventNexus brand reveal + compelling CTA
+      
+      Each 10-second segment must:
+      - Have dynamic action that fills 10 seconds
+      - Include camera movements (e.g., "smooth zoom into UI", "orbit around user")
+      - Show specific platform features
+      - Maintain Visual DNA
+      - Flow into next segment
       
       Respond in strict JSON format.`;
 
@@ -893,23 +894,23 @@ export const generateProfessionalAdCampaign = async (
             script: { type: Type.STRING, description: "45-second voiceover script matching the visual narrative" },
             segments: {
               type: Type.ARRAY,
-              description: "EXACTLY 15 segments, each 2-3 seconds. CRITICAL: Each segment MUST include the visualDNA and flow logically from the previous one.",
+              description: "EXACTLY 5 segments, each 10 seconds. CRITICAL: Each segment MUST include the visualDNA, camera movements, and 10 seconds of action.",
               items: {
                 type: Type.OBJECT,
                 properties: {
-                  id: { type: Type.NUMBER, description: "Segment number 1-15" },
-                  duration: { type: Type.STRING, description: "e.g. '0-3s', '3-6s'" },
-                  phase: { type: Type.STRING, description: "HOOK/CONTEXT/DESIRE/CLIMAX/CTA" },
+                  id: { type: Type.NUMBER, description: "Segment number 1-5" },
+                  duration: { type: Type.STRING, description: "e.g. '0-10s', '10-20s', '20-30s', '30-40s', '40-50s'" },
+                  phase: { type: Type.STRING, description: "HOOK/BUILD/EMOTION/CLIMAX/CTA" },
                   visualPrompt: { 
                     type: Type.STRING, 
-                    description: "CRITICAL: 1-2 sentence scene description. MUST start with the visualDNA, then describe specific action/subject for this 2-3s clip. Example: 'Golden hour warmth, deep purple tones. Wide shot of excited crowd entering modern venue with LED walls.' NO generic descriptions." 
+                    description: "CRITICAL: 2-4 sentence cinematic description for 10-second clip. MUST include: 1) Visual DNA (lighting, colors, camera style), 2) Camera movement (e.g. 'slow dolly forward', 'aerial descent', 'orbit around'), 3) Action that fills 10 seconds, 4) Specific event/platform details. Example: 'Golden hour warmth bathes the scene in soft orange light, deep purple accents #6B46C1. Slow dolly forward through excited crowd entering modern venue with LED walls displaying event name. Camera rises to reveal full scale of the space as attendees interact, dance, and celebrate together.'" 
                   },
-                  storyContext: { type: Type.STRING, description: "Why this segment matters in the story" }
+                  storyContext: { type: Type.STRING, description: "Why this 10-second segment matters in the overall 50s narrative" }
                 },
                 required: ["id", "duration", "phase", "visualPrompt", "storyContext"]
               },
-              minItems: 15,
-              maxItems: 15
+              minItems: 5,
+              maxItems: 5
             },
             socialCopy: {
               type: Type.OBJECT,
@@ -935,34 +936,33 @@ export const generateProfessionalAdCampaign = async (
       }))
       .filter((s: any) => s.uri) || [];
 
-    // Validate we have 15 segments
-    if (!analysis.segments || analysis.segments.length !== 15) {
-      throw new Error(`Expected 15 segments, got ${analysis.segments?.length || 0}`);
+    // Validate we have 5 segments
+    if (!analysis.segments || analysis.segments.length !== 5) {
+      throw new Error(`Expected 5 segments, got ${analysis.segments?.length || 0}`);
     }
 
-    // Step 2-8: Generate 15 video segments (each 2-3 seconds)
+    // Step 2-7: Generate 5 video segments (each 10 seconds with Sora 2)
     const videoBlobs: Blob[] = [];
     const { visualDNA, segments } = analysis;
     
-    console.log(`Starting video generation with Visual DNA: ${visualDNA}`);
-    console.log(`Generating ${segments.length} segments...`);
+    console.log(`Starting Sora 2 video generation with Visual DNA: ${visualDNA}`);
+    console.log(`Generating ${segments.length} × 10s segments...`);
 
-    // Generate each 2-3s segment with the exact prompt from Gemini
+    // Generate each 10s segment with Sora 2
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i];
-      onStepUpdate?.(2 + Math.floor(i / 2)); // Update progress every 2 segments
+      onStepUpdate?.(2 + i); // Update progress for each segment
       
       try {
-        console.log(`Segment ${i + 1}/${segments.length} (${segment.phase}): ${segment.visualPrompt.substring(0, 80)}...`);
+        console.log(`Segment ${i + 1}/${segments.length} (${segment.phase}): ${segment.visualPrompt.substring(0, 100)}...`);
         
-        // Use the exact visualPrompt from Gemini (already includes visualDNA)
-        const videoBlob = await generateVideoWithHuggingFace(segment.visualPrompt, i);
+        // Use Sora 2 via Edge Function
+        const videoBlob = await generateVideoWithSora(segment.visualPrompt, i, aspectRatio);
         videoBlobs.push(videoBlob);
         
-        // Small delay to avoid overwhelming the service
-        await new Promise(r => setTimeout(r, 1000));
+        console.log(`✅ Segment ${i + 1} complete: ${(videoBlob.size / 1024 / 1024).toFixed(2)} MB`);
       } catch (error) {
-        console.error(`Segment ${i + 1} generation failed:`, error);
+        console.error(`❌ Segment ${i + 1} generation failed:`, error);
         // Continue with other segments even if one fails
       }
     }
@@ -971,8 +971,8 @@ export const generateProfessionalAdCampaign = async (
       throw new Error("All video generation attempts failed");
     }
     
-    console.log(`Successfully generated ${videoBlobs.length}/15 video segments`);
-    onStepUpdate?.(6); // GENERATING_AUDIO
+    console.log(`Successfully generated ${videoBlobs.length}/5 video segments`);
+    onStepUpdate?.(7); // GENERATING_AUDIO
     
     // Generate voiceover
     const audioBase64 = await generateAdVoiceover(analysis.script);
@@ -999,8 +999,9 @@ export const generateProfessionalAdCampaign = async (
       metadata: {
         totalSegments: segments.length,
         successfulSegments: videoBlobs.length,
-        estimatedDuration: `${segments.length * 3}s`,
-        visualDNA: visualDNA
+        estimatedDuration: `${segments.length * 10}s`, // 5 segments × 10s = 50s
+        visualDNA: visualDNA,
+        videoModel: 'Sora 2'
       }
     };
   } catch (error) {
@@ -1043,20 +1044,22 @@ export const generateAdVoiceover = async (script: string): Promise<string> => {
 };
 
 /**
- * Generate video using Hugging Face via Supabase Edge Function
- * Server-side generation with secure token management
+ * Generate video using Sora 2 via Supabase Edge Function
+ * Server-side generation with secure API key management
+ * Creates 10-second high-quality video segments
  */
-const generateVideoWithHuggingFace = async (
+const generateVideoWithSora = async (
   prompt: string,
-  sceneIndex: number
+  sceneIndex: number,
+  aspectRatio: '16:9' | '9:16' = '16:9'
 ): Promise<Blob> => {
   try {
-    const { data, error } = await supabase.functions.invoke('generate-video-hf', {
-      body: { prompt, sceneIndex }
+    const { data, error } = await supabase.functions.invoke('generate-video-sora', {
+      body: { prompt, sceneIndex, aspectRatio }
     });
 
     if (error) throw error;
-    if (!data.success) throw new Error(data.error || 'Video generation failed');
+    if (!data.success) throw new Error(data.error || 'Sora 2 video generation failed');
 
     // Convert base64 back to blob
     const binaryString = atob(data.video);
@@ -1067,7 +1070,7 @@ const generateVideoWithHuggingFace = async (
     
     return new Blob([bytes], { type: data.mimeType || 'video/mp4' });
   } catch (error) {
-    console.error("Hugging Face video generation failed:", error);
+    console.error("Sora 2 video generation failed:", error);
     throw error;
   }
 };
