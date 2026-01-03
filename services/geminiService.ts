@@ -835,19 +835,22 @@ export const generateProfessionalAdCampaign = async (
       TARGET: ${platform}
       MISSION: Connect people through unforgettable events (EventNexus)
       
-      CRITICAL REQUIREMENTS (3-second video segments):
+      CRITICAL REQUIREMENTS (image-based video with voiceover):
       1. LANGUAGE: English only - all text and descriptions
-      2. VIDEO TECHNICAL: Each scene = 3 seconds (ModelScope/Zeroscope AI video)
-      3. VISUAL CONSISTENCY: Define ONE unified "Visual DNA" that applies to EVERY frame
+      2. VIDEO TECHNICAL: Each scene = ONE static/animated image shown for 3 seconds
+      3. IMAGE PROMPTS: Create detailed Stable Diffusion prompts for each scene
+         - Describe composition, lighting, colors, mood
+         - Style: "cinematic, professional photography, 8k, highly detailed"
+         - Negative prompts handled automatically (no text, no watermarks)
+      4. VOICEOVER SCRIPT: Write compelling narration (10-15 words per 3s segment)
+         - Natural speech pattern, engaging tone
+         - Emphasize key benefits and emotions
+         - Time narration to match image transitions
+      5. VISUAL CONSISTENCY: Define ONE unified "Visual DNA" for all images
          - Exact lighting setup (e.g., "neon glow with deep shadows")
          - Color palette (EventNexus brand colors: purple #6B46C1, blue #3B82F6 gradients)
-         - Camera style (simple movements - static, slow pan, or zoom only)
-         - Environment consistency (same design language throughout)
-      4. PROFESSIONAL AGENCY STANDARD: This must look like a premium SaaS commercial
-         - Each 3s segment showcases ONE clear idea
-         - Smooth transitions between segments
-         - Shows real platform benefits
-         - Professional, modern, innovative vibe
+         - Style consistency (same photographic/artistic style throughout)
+         - Environment consistency (same design language)
       
       5. PLATFORM-SPECIFIC STORYTELLING:
          - Highlight EventNexus features (AI discovery, seamless ticketing, organizer tools)
@@ -856,18 +859,18 @@ export const generateProfessionalAdCampaign = async (
          - Modern, innovative, user-friendly
       
       STRUCTURE (5 segments × 3s = 15s total):
-      Create 5 ultra-short scenes that tell the EventNexus story:
+      Create 5 compelling image+narration pairs:
       
-      HOOK (Segment 1, 0-3s): Platform's unique value - establish tech aesthetic
-      PROBLEM (Segment 2, 3-6s): Event discovery pain point (quick visual)
-      FEATURES (Segment 3, 6-9s): Key platform capability (ONE feature)
+      HOOK (Segment 1, 0-3s): Platform's unique value - establish aesthetic
+      PROBLEM (Segment 2, 3-6s): Event discovery pain point (visual metaphor)
+      FEATURES (Segment 3, 6-9s): Key platform capability (show UI/feature)
       IMPACT (Segment 4, 9-12s): Happy users or success moment
       CALL-TO-ACTION (Segment 5, 12-15s): EventNexus branding + CTA
       
-      Each 3-second segment must:
-      - Show ONE simple, clear visual idea
-      - Use simple camera work (3s is too short for complex moves)
-      - Focus on emotion and impact, not detailed action
+      For each segment provide:
+      - imagePrompt: Detailed Stable Diffusion prompt (focus on composition, lighting, mood, style)
+      - narration: Compelling voiceover script (10-15 words, natural speech)
+      - duration: 3 (seconds)
       - Maintain Visual DNA
       - Flow into next segment
       
@@ -886,28 +889,32 @@ export const generateProfessionalAdCampaign = async (
             coreEssence: { type: Type.STRING, description: "Core value proposition in one sentence" },
             visualDNA: { 
               type: Type.STRING, 
-              description: "CRITICAL: Exact visual style used in EVERY single 2-3s segment. Include: lighting (e.g. 'golden hour warmth'), colors (e.g. 'deep purple #6B46C1 and electric blue #3B82F6'), camera style (e.g. 'smooth handheld, shallow depth of field'), environment (e.g. 'modern event venue with LED walls'). This MUST be consistent across all 15 segments." 
+              description: "CRITICAL: Exact visual style for all images. Include: lighting (e.g. 'golden hour warmth'), colors (e.g. 'deep purple #6B46C1 and electric blue #3B82F6'), photography style (e.g. 'cinematic, professional photography, 8k'), mood (e.g. 'energetic, modern, innovative'). This MUST be consistent across all 5 segments." 
             },
             targetAudience: { type: Type.STRING, description: "Who this ad is for" },
             emotionalDriver: { type: Type.STRING, description: "Primary emotion to evoke" },
             keyFeatures: { type: Type.ARRAY, items: { type: Type.STRING }, description: "3-5 key selling points" },
-            script: { type: Type.STRING, description: "45-second voiceover script matching the visual narrative" },
+            fullScript: { type: Type.STRING, description: "Complete 15-second voiceover script (natural, engaging tone)" },
             segments: {
               type: Type.ARRAY,
-              description: "EXACTLY 5 segments, each 10 seconds. CRITICAL: Each segment MUST include the visualDNA, camera movements, and 10 seconds of action.",
+              description: "EXACTLY 5 segments, each 3 seconds with image + narration",
               items: {
                 type: Type.OBJECT,
                 properties: {
                   id: { type: Type.NUMBER, description: "Segment number 1-5" },
-                  duration: { type: Type.STRING, description: "e.g. '0-10s', '10-20s', '20-30s', '30-40s', '40-50s'" },
-                  phase: { type: Type.STRING, description: "HOOK/BUILD/EMOTION/CLIMAX/CTA" },
-                  visualPrompt: { 
+                  duration: { type: Type.NUMBER, description: "Duration in seconds (always 3)" },
+                  phase: { type: Type.STRING, description: "HOOK/PROBLEM/FEATURES/IMPACT/CTA" },
+                  imagePrompt: { 
                     type: Type.STRING, 
-                    description: "CRITICAL: 2-4 sentence cinematic description for 10-second clip. MUST include: 1) Visual DNA (lighting, colors, camera style), 2) Camera movement (e.g. 'slow dolly forward', 'aerial descent', 'orbit around'), 3) Action that fills 10 seconds, 4) Specific event/platform details. Example: 'Golden hour warmth bathes the scene in soft orange light, deep purple accents #6B46C1. Slow dolly forward through excited crowd entering modern venue with LED walls displaying event name. Camera rises to reveal full scale of the space as attendees interact, dance, and celebrate together.'" 
+                    description: "Detailed Stable Diffusion prompt for this scene. Include: visual DNA (lighting, colors, style), composition (what's in frame, foreground/background), mood, and specific details. Example: 'Cinematic professional photography, golden hour lighting with deep purple #6B46C1 and blue #3B82F6 accents, modern smartphone screen showing EventNexus app with beautiful event cards, shallow depth of field, 8k, highly detailed, premium tech aesthetic'" 
                   },
-                  storyContext: { type: Type.STRING, description: "Why this 10-second segment matters in the overall 50s narrative" }
+                  narration: { 
+                    type: Type.STRING, 
+                    description: "Voiceover script for this 3-second segment (10-15 words). Natural speech, engaging tone, emphasizes key benefit or emotion." 
+                  },
+                  storyContext: { type: Type.STRING, description: "Why this segment matters in the overall narrative" }
                 },
-                required: ["id", "duration", "phase", "visualPrompt", "storyContext"]
+                required: ["id", "duration", "phase", "imagePrompt", "narration", "storyContext"]
               },
               minItems: 5,
               maxItems: 5
@@ -923,7 +930,7 @@ export const generateProfessionalAdCampaign = async (
               required: ["headline", "body", "cta", "hashtags"]
             }
           },
-          required: ["brandName", "coreEssence", "visualDNA", "targetAudience", "emotionalDriver", "keyFeatures", "script", "segments", "socialCopy"]
+          required: ["brandName", "coreEssence", "visualDNA", "targetAudience", "emotionalDriver", "keyFeatures", "fullScript", "segments", "socialCopy"]
         }
       }
     });
@@ -941,46 +948,55 @@ export const generateProfessionalAdCampaign = async (
       throw new Error(`Expected 5 segments, got ${analysis.segments?.length || 0}`);
     }
 
-    // Step 2-7: Generate 5 video segments (each 10 seconds with Sora 2)
-    const videoBlobs: Blob[] = [];
-    const { visualDNA, segments } = analysis;
+    // Step 2-6: Generate 5 images (each 3 seconds)
+    const imageBase64Array: string[] = [];
+    const { visualDNA, segments, fullScript } = analysis;
     
-    console.log(`Starting Sora 2 video generation with Visual DNA: ${visualDNA}`);
-    console.log(`Generating ${segments.length} × 10s segments...`);
+    console.log(`Starting image generation with Visual DNA: ${visualDNA}`);
+    console.log(`Generating ${segments.length} images...`);
 
-    // Generate each 10s segment with Sora 2
+    // Generate each image
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i];
       onStepUpdate?.(2 + i); // Update progress for each segment
       
       try {
-        console.log(`Segment ${i + 1}/${segments.length} (${segment.phase}): ${segment.visualPrompt.substring(0, 100)}...`);
+        console.log(`Segment ${i + 1}/${segments.length} (${segment.phase}): ${segment.imagePrompt.substring(0, 100)}...`);
         
-        // Use Sora 2 via Edge Function
-        // Use Zeroscope XL for key moments (0,2,4), ModelScope for others
+        // Use SDXL for key moments (0,2,4), SD 1.5 for others
         const useHighQuality = [0, 2, 4].includes(i);
-        const videoBlob = await generateVideoWithHuggingFace(segment.visualPrompt, i, useHighQuality);
-        videoBlobs.push(videoBlob);
+        const imageBlob = await generateImageWithHuggingFace(segment.imagePrompt, i, useHighQuality);
         
-        console.log(`✅ Segment ${i + 1} complete: ${(videoBlob.size / 1024 / 1024).toFixed(2)} MB`);
+        // Convert blob to base64
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(imageBlob);
+        });
+        
+        imageBase64Array.push(base64);
+        console.log(`✅ Image ${i + 1} complete: ${(imageBlob.size / 1024).toFixed(2)} KB`);
       } catch (error) {
-        console.error(`❌ Segment ${i + 1} generation failed:`, error);
-        // Continue with other segments even if one fails
+        console.error(`❌ Image ${i + 1} generation failed:`, error);
+        // Continue with other images even if one fails
       }
     }
 
-    if (videoBlobs.length === 0) {
-      throw new Error("All video generation attempts failed");
+    if (imageBase64Array.length === 0) {
+      throw new Error("All image generation attempts failed");
     }
     
-    console.log(`Successfully generated ${videoBlobs.length}/5 video segments`);
+    console.log(`Successfully generated ${imageBase64Array.length}/5 images`);
     onStepUpdate?.(7); // GENERATING_AUDIO
     
-    // Generate voiceover
-    const audioBase64 = await generateAdVoiceover(analysis.script);
+    // Generate voiceover using Gemini TTS
+    const audioBase64 = await generateAdVoiceover(fullScript);
 
-    // Concatenate videos
-    const videoUrl = await concatenateVideos(videoBlobs);
+    onStepUpdate?.(8); // FINALIZING
+    
+    // Create video from images + audio
+    const videoUrl = await createVideoFromImages(imageBase64Array, audioBase64, 3);
     
     return {
       analysis: {
@@ -988,9 +1004,9 @@ export const generateProfessionalAdCampaign = async (
         visualSignature: analysis.visualDNA, // Keep backward compatibility
         painPoints: [], // Not needed in new structure
         scenes: {
-          hook: segments.slice(0, 3).map(s => s.visualPrompt).join(' '),
-          conflict: segments.slice(3, 6).map(s => s.visualPrompt).join(' '),
-          resolution: segments.slice(6, 9).map(s => s.visualPrompt).join(' '),
+          hook: segments[0]?.imagePrompt || '',
+          conflict: segments[1]?.imagePrompt || '',
+          resolution: segments[2]?.imagePrompt || '',
           power: segments.slice(9, 12).map(s => s.visualPrompt).join(' '),
           closing: segments.slice(12, 15).map(s => s.visualPrompt).join(' ')
         }
@@ -1041,6 +1057,85 @@ export const generateAdVoiceover = async (script: string): Promise<string> => {
     return base64Audio;
   } catch (error) {
     console.error("Voiceover generation failed:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generate image using Stable Diffusion via HuggingFace
+ * - SDXL for key moments (segments 0, 2, 4): Higher quality
+ * - SD 1.5 for supporting segments (1, 3): Faster, reliable
+ */
+const generateImageWithHuggingFace = async (
+  prompt: string,
+  sceneIndex: number,
+  useHighQuality: boolean = false
+): Promise<Blob> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-video-hf', {
+      body: { prompt, sceneIndex, useHighQuality }
+    });
+
+    if (error) throw error;
+    
+    // Handle model loading - retry after 20s
+    if (data.loading) {
+      console.log(`Model loading for segment ${sceneIndex}, waiting...`);
+      await new Promise(resolve => setTimeout(resolve, 20000));
+      
+      const { data: retryData, error: retryError } = await supabase.functions.invoke('generate-video-hf', {
+        body: { prompt, sceneIndex, useHighQuality }
+      });
+      
+      if (retryError) throw retryError;
+      if (!retryData.success) throw new Error(retryData.error || 'Retry failed');
+      
+      const binaryString = atob(retryData.image);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return new Blob([bytes], { type: 'image/png' });
+    }
+    
+    if (!data.success) throw new Error(data.error || 'Image generation failed');
+
+    // Convert base64 back to blob
+    const binaryString = atob(data.image);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    return new Blob([bytes], { type: 'image/png' });
+  } catch (error) {
+    console.error(`Image generation failed for segment ${sceneIndex}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Create video from images + audio using FFmpeg
+ */
+const createVideoFromImages = async (
+  images: string[],
+  audio: string,
+  duration: number = 3
+): Promise<string> => {
+  try {
+    console.log(`Creating video from ${images.length} images with audio...`);
+    
+    const { data, error } = await supabase.functions.invoke('create-video-from-images', {
+      body: { images, audio, duration }
+    });
+    
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error || 'Video creation failed');
+    
+    // Return as data URL
+    return `data:video/mp4;base64,${data.video}`;
+  } catch (error) {
+    console.error('Video creation from images failed:', error);
     throw error;
   }
 };
