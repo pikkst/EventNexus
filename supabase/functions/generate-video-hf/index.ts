@@ -27,8 +27,8 @@ serve(async (req) => {
 
     console.log(`Generating with ${model} for scene ${sceneIndex}: ${prompt.substring(0, 50)}...`)
     
-    // Direct API call to Hugging Face Inference
-    const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+    // Direct API call to Hugging Face Router
+    const response = await fetch(`https://router.huggingface.co/models/${model}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${HF_TOKEN}`,
