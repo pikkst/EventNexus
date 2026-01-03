@@ -1,5 +1,4 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { InferenceClient } from 'npm:@huggingface/inference@latest'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, sceneIndex } = await req.json()
+    const { prompt, sceneIndex, useHighQuality = false } = await req.json()
     
     // Get Hugging Face token from Supabase secrets
     const HF_TOKEN = Deno.env.get('HUGGINGFACE_TOKEN')
@@ -21,22 +20,58 @@ serve(async (req) => {
       throw new Error('HUGGINGFACE_TOKEN not configured')
     }
 
-    console.log(`Generating video for scene ${sceneIndex}: ${prompt.substring(0, 50)}...`)
-    
-    // Initialize InferenceClient with token
-    const client = new InferenceClient(HF_TOKEN)
-    
-    // Generate 3-second video using Replicate provider with Wan2.2 model
-    const videoBlob = await client.textToVideo({
-      provider: "replicate",
-      model: "Wan-AI/Wan2.2-TI2V-5B",
-      inputs: prompt,
-    })
-    
-    console.log(`Video generated successfully for scene ${sceneIndex}, size: ${videoBlob.size} bytes`)
+    // Use Zeroscope XL for key moments (better quality), ModelScope for others
+    const model = useHighQuality 
+      ? 'cerspense/zeroscope_v2_XL'  // 3s, 1024x576, high quality
+      : 'damo-vilab/text-to-video-ms-1.7b'  // 3s, faster, reliable
 
-    // Convert blob to base64 for transport
-    const videoBuffer = await videoBlob.arrayBuffer()
+    console.log(`Generating with ${model} for scene ${sceneIndex}: ${prompt.substring(0, 50)}...`)
+    
+    // Direct API call to Hugging Face Inference
+    const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${HF_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: useHighQuality ? {
+          num_frames: 24,
+          fps: 8,
+          guidance_scale: 9.0,
+          num_inference_steps: 40,
+        } : {
+          num_frames: 16,
+          fps: 8,
+          guidance_scale: 7.5,
+          num_inference_steps: 25,
+        },
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      
+      // Model loading - return special status
+      if (response.status === 503) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Model is loading, please retry in 20 seconds', 
+            success: false,
+            loading: true 
+          }),
+          { 
+            status: 503, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      throw new Error(`HuggingFace API error: ${response.status} - ${errorText}`)
+    }
+
+    const videoBuffer = await response.arrayBuffer()
     const base64Video = btoa(
       new Uint8Array(videoBuffer).reduce(
         (data, byte) => data + String.fromCharCode(byte),
@@ -44,12 +79,16 @@ serve(async (req) => {
       )
     )
 
+    console.log(`Video generated successfully for scene ${sceneIndex}, size: ${videoBuffer.byteLength} bytes`)
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         video: base64Video,
         sceneIndex,
-        mimeType: videoBlob.type
+        model: useHighQuality ? 'Zeroscope XL' : 'ModelScope',
+        size: videoBuffer.byteLength,
+        duration: 3,
       }),
       { 
         headers: { 
