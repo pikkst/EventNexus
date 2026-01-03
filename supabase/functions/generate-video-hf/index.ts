@@ -27,7 +27,7 @@ serve(async (req) => {
 
     console.log(`Generating image with ${model} for scene ${sceneIndex}: ${prompt.substring(0, 50)}...`)
     
-    // Use Hugging Face Router (new endpoint as of 2024)
+    // Use Hugging Face Router (NEW required endpoint)
     const HF_API_URL = `https://api-inference.huggingface.co/models/${model}`
     
     const response = await fetch(HF_API_URL, {
