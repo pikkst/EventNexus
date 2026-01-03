@@ -1073,14 +1073,48 @@ const generateVideoWithHuggingFace = async (
 };
 
 /**
- * Concatenate multiple video blobs into single video
+ * Concatenate multiple video blobs into single MP4 file
+ * Uses server-side FFmpeg via Supabase Edge Function
  */
 const concatenateVideos = async (videoBlobs: Blob[]): Promise<string> => {
   try {
-    // Create a new video using MediaRecorder or similar
-    // For now, return the last video as URL
-    // In production, use FFmpeg.js or server-side concatenation
-    const finalBlob = new Blob(videoBlobs, { type: 'video/mp4' });
+    console.log(`Converting ${videoBlobs.length} video segments to base64...`);
+    
+    // Convert all blobs to base64
+    const base64Videos = await Promise.all(
+      videoBlobs.map(async (blob) => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1]; // Remove data URL prefix
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      })
+    );
+    
+    console.log(`Calling concatenate-videos Edge Function...`);
+    
+    // Call Edge Function to concatenate with FFmpeg
+    const { data, error } = await supabase.functions.invoke('concatenate-videos', {
+      body: { videoSegments: base64Videos }
+    });
+
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error || 'Video concatenation failed');
+
+    console.log(`Concatenation successful: ${(data.size / 1024 / 1024).toFixed(2)} MB`);
+
+    // Convert base64 back to blob and create URL
+    const binaryString = atob(data.video);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    const finalBlob = new Blob([bytes], { type: 'video/mp4' });
     return URL.createObjectURL(finalBlob);
   } catch (error) {
     console.error("Video concatenation failed:", error);
