@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { HfInference } from 'https://esm.sh/@huggingface/inference@2.6.4'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,41 +21,55 @@ serve(async (req) => {
       throw new Error('HUGGINGFACE_TOKEN not configured')
     }
 
-    // Use Zeroscope XL for key moments (better quality), ModelScope for others
+    // Use SDXL for high quality images, SD 1.5 for speed
     const model = useHighQuality 
-      ? 'cerspense/zeroscope_v2_XL'  // 3s, 1024x576, high quality
-      : 'damo-vilab/text-to-video-ms-1.7b'  // 3s, faster, reliable
+      ? 'stabilityai/stable-diffusion-xl-base-1.0'  // High quality
+      : 'runwayml/stable-diffusion-v1-5'  // Fast, reliable
 
-    console.log(`Generating with ${model} for scene ${sceneIndex}: ${prompt.substring(0, 50)}...`)
+    console.log(`Generating image with ${model} for scene ${sceneIndex}: ${prompt.substring(0, 50)}...`)
     
-    // Direct API call to Hugging Face Router
-    const response = await fetch(`https://router.huggingface.co/models/${model}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${HF_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    // Use HuggingFace Inference SDK for image generation
+    const hf = new HfInference(HF_TOKEN)
+    
+    try {
+      const imageBlob = await hf.textToImage({
+        model: model,
         inputs: prompt,
-        parameters: useHighQuality ? {
-          num_frames: 24,
-          fps: 8,
-          guidance_scale: 9.0,
-          num_inference_steps: 40,
-        } : {
-          num_frames: 16,
-          fps: 8,
+        parameters: {
+          negative_prompt: 'blurry, low quality, distorted, ugly, bad anatomy, watermark, text',
+          num_inference_steps: useHighQuality ? 50 : 30,
           guidance_scale: 7.5,
-          num_inference_steps: 25,
         },
-      }),
-    })
+      })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      
-      // Model loading - return special status
-      if (response.status === 503) {
+      const imageBuffer = await imageBlob.arrayBuffer()
+      const base64Image = btoa(
+        new Uint8Array(imageBuffer).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ''
+        )
+      )
+
+      console.log(`Image generated successfully for scene ${sceneIndex}, size: ${imageBuffer.byteLength} bytes`)
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          image: base64Image,
+          sceneIndex,
+          model: useHighQuality ? 'SDXL' : 'SD 1.5',
+          size: imageBuffer.byteLength,
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      )
+    } catch (apiError: any) {
+      // If model is loading or unavailable
+      if (apiError.message?.includes('loading') || apiError.message?.includes('503')) {
         return new Response(
           JSON.stringify({ 
             error: 'Model is loading, please retry in 20 seconds', 
@@ -67,39 +82,11 @@ serve(async (req) => {
           }
         )
       }
-      
-      throw new Error(`HuggingFace API error: ${response.status} - ${errorText}`)
+      throw apiError
     }
 
-    const videoBuffer = await response.arrayBuffer()
-    const base64Video = btoa(
-      new Uint8Array(videoBuffer).reduce(
-        (data, byte) => data + String.fromCharCode(byte),
-        ''
-      )
-    )
-
-    console.log(`Video generated successfully for scene ${sceneIndex}, size: ${videoBuffer.byteLength} bytes`)
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        video: base64Video,
-        sceneIndex,
-        model: useHighQuality ? 'Zeroscope XL' : 'ModelScope',
-        size: videoBuffer.byteLength,
-        duration: 3,
-      }),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    )
-
   } catch (error) {
-    console.error('Video generation error:', error)
+    console.error('Image generation error:', error)
     return new Response(
       JSON.stringify({ 
         error: error.message,
