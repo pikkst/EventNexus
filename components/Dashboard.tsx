@@ -187,6 +187,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     loadEvents();
   }, [user.id, selectedEventId]);
 
+  // Auto-refresh events every 10 seconds for live updates
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const userEvents = await getOrganizerEvents(user.id);
+        setEvents(userEvents);
+      } catch (error) {
+        console.error('Error auto-refreshing events:', error);
+      }
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [user.id]);
+
   // Load revenue data
   useEffect(() => {
     const loadRevenue = async () => {
@@ -209,6 +223,27 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       }
     };
     loadRevenue();
+  }, [user.id]);
+
+  // Auto-refresh revenue data every 10 seconds for live updates
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const [summary, byEvent, attendance] = await Promise.all([
+          getOrganizerRevenueSummary(user.id),
+          getOrganizerRevenue(user.id),
+          getOrganizerAttendanceSummary(user.id)
+        ]);
+        setRevenueSummary(summary);
+        setRevenueByEvent(byEvent);
+        setAttendanceSummary(attendance);
+        setSalesData(generateSalesData(byEvent));
+      } catch (error) {
+        console.error('Error auto-refreshing revenue:', error);
+      }
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
   }, [user.id]);
 
   // Load connected social media accounts

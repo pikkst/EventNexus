@@ -66,6 +66,15 @@ const AnalyticsDashboard: React.FC = () => {
     loadMetrics();
   }, [dateRange]);
 
+  // Auto-refresh every 10 seconds for live updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadMetrics();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [dateRange]);
+
   const loadMetrics = async () => {
     setLoading(true);
     try {

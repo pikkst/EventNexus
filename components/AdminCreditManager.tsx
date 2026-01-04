@@ -68,6 +68,15 @@ const AdminCreditManager: React.FC<AdminCreditManagerProps> = ({ user }) => {
     loadData();
   }, []);
 
+  // Auto-refresh credit data every 10 seconds for live updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadData();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   const loadData = async () => {
     setLoading(true);
     try {

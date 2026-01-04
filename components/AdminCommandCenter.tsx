@@ -258,7 +258,48 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       }
     }, 10000);
 
-    return () => clearInterval(infraInterval);
+    // Auto-refresh platform stats every 10 seconds
+    const statsInterval = setInterval(async () => {
+      if (activeTab === 'analytics' || activeTab === 'overview') {
+        try {
+          const stats = await getPlatformStats();
+          setPlatformStats(stats);
+        } catch (error) {
+          console.error('Error refreshing platform stats:', error);
+        }
+      }
+    }, 10000);
+
+    // Auto-refresh financial data every 10 seconds
+    const financialInterval = setInterval(async () => {
+      if (activeTab === 'financials') {
+        try {
+          const ledger = await getFinancialLedger();
+          setFinancialLedger(ledger);
+        } catch (error) {
+          console.error('Error refreshing financial data:', error);
+        }
+      }
+    }, 10000);
+
+    // Auto-refresh users list every 10 seconds
+    const usersInterval = setInterval(async () => {
+      if (activeTab === 'users') {
+        try {
+          const users = await getAllUsers();
+          setPlatformUsers(users);
+        } catch (error) {
+          console.error('Error refreshing users:', error);
+        }
+      }
+    }, 10000);
+
+    return () => {
+      clearInterval(infraInterval);
+      clearInterval(statsInterval);
+      clearInterval(financialInterval);
+      clearInterval(usersInterval);
+    };
   }, [activeTab]);
 
   const requestMasterAuth = (operationName: string) => {
