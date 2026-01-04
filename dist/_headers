@@ -1,3 +1,12 @@
+# ⚠️ NOTE: GitHub Pages does NOT support custom _headers files
+# This file is for Netlify/Vercel deployments only.
+# For GitHub Pages static caching: 
+#  - Assets are cached by default for ~10 minutes by CDN
+#  - HTML is not cached (good for deployments)
+#  - Consider moving to Netlify for better cache control
+#
+# The following headers would work on Netlify/Vercel:
+
 # Security Headers
 /*
   X-Content-Type-Options: nosniff
