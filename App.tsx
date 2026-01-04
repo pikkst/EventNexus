@@ -77,6 +77,7 @@ import {
   signInUser,
   signOutUser
 } from './services/dbService';
+import { filterActiveEvents } from './utils/eventUtils';
 
 const GA_MEASUREMENT_ID = 'G-JD7P5ZKF4L';
 
@@ -363,9 +364,11 @@ const App: React.FC = () => {
         // Load events - use getAllEvents for authenticated users, getEvents for guests
         if (events.length === 0 || !sessionStorage.getItem('eventnexus-events-cache')) {
           const eventsData = session?.user ? await getAllEvents() : await getEvents();
+          // Filter out expired events
+          const activeEvents = filterActiveEvents(eventsData);
           if (mounted) {
-            setEvents(eventsData);
-            cacheEvents(eventsData);
+            setEvents(activeEvents);
+            cacheEvents(activeEvents);
           }
         }
       } catch (error) {
@@ -416,9 +419,10 @@ const App: React.FC = () => {
             });
             
             getAllEvents().then(eventsData => {
+              const activeEvents = filterActiveEvents(eventsData);
               if (mounted) {
-                setEvents(eventsData);
-                cacheEvents(eventsData);
+                setEvents(activeEvents);
+                cacheEvents(activeEvents);
               }
             });
             
@@ -460,9 +464,10 @@ const App: React.FC = () => {
             }
             
             const eventsData = await getAllEvents();
+            const activeEvents = filterActiveEvents(eventsData);
             if (mounted) {
-              setEvents(eventsData);
-              cacheEvents(eventsData);
+              setEvents(activeEvents);
+              cacheEvents(activeEvents);
             }
           }
         } catch (userError) {
@@ -481,9 +486,10 @@ const App: React.FC = () => {
         
         // Reload only public events for guests
         const eventsData = await getEvents();
+        const activeEvents = filterActiveEvents(eventsData);
         if (mounted) {
-          setEvents(eventsData);
-          cacheEvents(eventsData);
+          setEvents(activeEvents);
+          cacheEvents(activeEvents);
         }
       } else if (event === 'USER_UPDATED' && session?.user && mounted) {
         console.log('User updated, reloading data...');
@@ -597,9 +603,11 @@ const App: React.FC = () => {
     try {
       console.log('🔄 Reloading events after event creation...');
       const eventsData = user ? await getAllEvents() : await getEvents();
-      setEvents(eventsData);
-      cacheEvents(eventsData);
-      console.log(`✅ Events reloaded: ${eventsData.length} total`);
+      // Filter out expired events
+      const activeEvents = filterActiveEvents(eventsData);
+      setEvents(activeEvents);
+      cacheEvents(activeEvents);
+      console.log(`✅ Events reloaded: ${activeEvents.length} active of ${eventsData.length} total`);
     } catch (error) {
       console.error('Error reloading events:', error);
     }

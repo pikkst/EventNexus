@@ -22,6 +22,7 @@ import {
 import { getEvents, getEventById, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates, isEventCompleted } from '../services/dbService';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
+import { isEventExpired } from '../utils/eventUtils';
 
 interface EventDetailProps {
   user: User | null;
@@ -90,9 +91,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         const templates = await getTicketTemplates(id);
         setTicketTemplates(templates);
         
-        // Check if event is completed
+        // Check if event is completed (either from DB status or from date/time)
         const completed = await isEventCompleted(id);
-        setEventCompleted(completed);
+        const expired = isEventExpired(foundEvent);
+        setEventCompleted(completed || expired);
         
         // Load organizer name and payment status
         try {
@@ -229,6 +231,12 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
     if (!user) {
       alert('Please sign in to purchase tickets. It only takes a moment!');
       onOpenAuth?.();
+      return;
+    }
+
+    // Check if event has expired
+    if (event && isEventExpired(event)) {
+      alert('⚠️ This event has already ended. Ticket sales are no longer available.');
       return;
     }
 
