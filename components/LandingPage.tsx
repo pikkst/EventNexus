@@ -7,6 +7,7 @@ import { getCampaigns, getTopOrganizers, OrganizerRatingStats, getSuccessStories
 import { supabase } from '../services/supabase';
 import { SUBSCRIPTION_TIERS } from '../constants';
 import { sanitizeUrl, sanitizeVideoUrl } from '../utils/security';
+import { resetToHomepageSEO } from '../utils/seoUtils';
 
 interface LandingPageProps {
   user: User | null;
@@ -26,6 +27,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [demoVideo, setDemoVideo] = useState<PlatformMedia | null>(null);
+
+  // Reset to homepage SEO on mount
+  useEffect(() => {
+    resetToHomepageSEO();
+  }, []);
 
   useEffect(() => {
     const loadActiveCampaign = async () => {
