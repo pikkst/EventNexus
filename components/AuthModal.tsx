@@ -223,7 +223,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
               </h2>
               <p className="text-slate-400 text-xs sm:text-sm font-medium">Join the global Nexus network.</p>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 transition-colors flex-shrink-0">
+            <button onClick={onClose} aria-label="Close dialog" className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 transition-colors flex-shrink-0">
               <X className="w-5 h-5" />
             </button>
           </div>

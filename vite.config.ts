@@ -48,6 +48,7 @@ export default defineConfig(({ mode }) => {
       build: {
         chunkSizeWarningLimit: 2500,
         sourcemap: false, // Disable sourcemaps for production (saves bandwidth)
+        reportCompressedSize: true,
         rollupOptions: {
           output: {
             manualChunks(id) {
@@ -78,8 +79,13 @@ export default defineConfig(({ mode }) => {
             drop_console: true, // Remove console.log in production
             drop_debugger: true,
             pure_funcs: ['console.log', 'console.debug', 'console.trace']
+          },
+          output: {
+            comments: false
           }
-        }
+        },
+        // Enable gzip compression
+        cssCodeSplit: true
       }
     };
 });
