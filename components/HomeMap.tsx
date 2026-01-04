@@ -11,6 +11,7 @@ import L from 'leaflet';
 import { CATEGORIES } from '../constants';
 import { EventNexusEvent } from '../types';
 import { getEvents } from '../services/dbService';
+import { filterActiveEvents } from '../utils/eventUtils';
 
 // Distance calculation helper (Haversine formula)
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -57,7 +58,9 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
     const loadEvents = async () => {
       try {
         const eventsData = await getEvents();
-        setEvents(eventsData);
+        // Filter out expired events automatically
+        const activeEvents = filterActiveEvents(eventsData);
+        setEvents(activeEvents);
       } catch (error) {
         console.error('Error loading events:', error);
       } finally {
