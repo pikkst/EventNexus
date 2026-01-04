@@ -904,7 +904,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                             <option value="attendee">Attendees</option>
                             <option value="agency">Agencies</option>
                          </select>
-                         <button className="p-2.5 md:p-3 bg-slate-800 rounded-lg md:rounded-xl text-slate-400 hover:text-white transition-all"><Filter size={16}/></button>
+                         <button aria-label="Apply filters" className="p-2.5 md:p-3 bg-slate-800 rounded-lg md:rounded-xl text-slate-400 hover:text-white transition-all"><Filter size={16}/></button>
                       </div>
                    </div>
 

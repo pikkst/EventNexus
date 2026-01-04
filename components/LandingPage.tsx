@@ -188,7 +188,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             </div>
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
-                <h3 className="text-xl md:text-2xl font-bold text-amber-50">Testing Phase Active</h3>
+                <h2 className="text-xl md:text-2xl font-bold text-amber-50">Testing Phase Active</h2>
                 <span className="bg-amber-500 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-amber-950">Beta</span>
               </div>
               <p className="text-amber-100/90 text-sm md:text-base leading-relaxed">
@@ -220,7 +220,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 <div className="inline-flex items-center gap-2 bg-purple-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white mb-3">
                   🚀 Join the Beta
                 </div>
-                <h3 className="text-2xl md:text-3xl font-bold mb-2">Become a Beta Tester</h3>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">Become a Beta Tester</h2>
                 <p className="text-slate-300">Get 1000 credits, early access to features, and help shape EventNexus</p>
               </div>
               <div className="flex items-center gap-3 whitespace-nowrap">
