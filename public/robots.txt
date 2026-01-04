@@ -11,7 +11,7 @@ Disallow: /notifications
 Crawl-delay: 1
 
 # Sitemap
-Sitemap: https://www.eventnexus.eu/sitemap.xml
+Sitemap: https://eventnexus.eu/sitemap.xml
 
 # Allow specific crawlers
 User-agent: Googlebot
