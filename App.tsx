@@ -850,6 +850,7 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
               alt="EventNexus Logo"
               width="40"
               height="40"
+              decoding="async"
               className="h-10 w-auto object-contain"
             />
             <span className="hidden sm:inline">EventNexus</span>
