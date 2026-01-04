@@ -1048,9 +1048,33 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                      <h3 className="text-2xl font-black text-white flex items-center gap-3">
                         <Sparkles className="text-yellow-400" /> Advanced Attendee Analytics
                      </h3>
-                     <p className="text-slate-400 font-medium text-sm mt-2">Premium-only deep insights and behavioral patterns</p>
+                     <p className="text-slate-400 font-medium text-sm mt-2">Real-time insights calculated from your live database</p>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400 bg-yellow-500/10 px-4 py-2 rounded-full">Premium Feature</span>
+                  <div className="flex items-center gap-2">
+                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-full">Live Database</span>
+                  </div>
+               </div>
+               
+               {isLoadingRevenue ? (
+                  <div className="flex items-center justify-center py-12">
+                     <Loader2 className="animate-spin text-yellow-400" size={32} />
+                  </div>
+               ) : !revenueSummary || revenueSummary.total_events === 0 ? (
+                  <div className="text-center py-12 space-y-4">
+                     <BarChart3 className="mx-auto text-slate-600" size={48} />
+                     <p className="text-slate-400 font-medium">No event data yet. Create your first event to see analytics.</p>
+                     <p className="text-xs text-slate-500">All metrics are calculated from your live database in real-time</p>
+                  </div>
+               ) : (
+                  <>
+               {/* Header with data source info */}
+               <div className="bg-slate-900/30 border border-slate-800/50 rounded-xl p-4 flex items-center gap-3">
+                  <Database className="text-emerald-400" size={20} />
+                  <div>
+                     <p className="text-sm font-bold text-white">Real Database Metrics</p>
+                     <p className="text-xs text-slate-400">Calculated from {revenueSummary.total_tickets_sold} ticket sales across {revenueSummary.total_events} events</p>
+                  </div>
                </div>
                
                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -1061,12 +1085,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                          ? (revenueSummary.total_gross / revenueSummary.total_tickets_sold).toFixed(2)
                          : '0.00'}
                      </h4>
-                     <p className="text-xs text-slate-400 font-medium">Per ticket sold</p>
+                     <p className="text-xs text-slate-400 font-medium">Per ticket sold (from DB)</p>
                   </div>
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Events</p>
                      <h4 className="text-3xl font-black text-white">{revenueSummary?.total_events || 0}</h4>
-                     <p className="text-xs text-slate-400 font-medium">Events created</p>
+                     <p className="text-xs text-slate-400 font-medium">Events created (from DB)</p>
                   </div>
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Net Margin</p>
@@ -1075,18 +1099,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                          ? ((revenueSummary.total_net / revenueSummary.total_gross) * 100).toFixed(1)
                          : '0.0'}%
                      </h4>
-                     <p className="text-xs text-emerald-400 font-bold">After fees</p>
+                     <p className="text-xs text-emerald-400 font-bold">After fees (calculated)</p>
                   </div>
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Tickets Sold</p>
                      <h4 className="text-3xl font-black text-white">{revenueSummary?.total_tickets_sold || 0}</h4>
-                     <p className="text-xs text-indigo-400 font-bold">All events</p>
+                     <p className="text-xs text-indigo-400 font-bold">All events (from DB)</p>
                   </div>
                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-4">
-                     <h4 className="font-black text-white">Event Categories</h4>
+                     <div className="flex items-center justify-between">
+                        <h4 className="font-black text-white">Event Categories</h4>
+                        <span className="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded font-bold">LIVE</span>
+                     </div>
                      <div className="space-y-3">
                         {(() => {
                           const categoryRevenue: Record<string, number> = {};
@@ -1097,7 +1124,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                           }, 0);
                           
                           const colors = ['bg-indigo-500', 'bg-violet-500', 'bg-blue-500', 'bg-emerald-500'];
-                          return Object.entries(categoryRevenue)
+                          const entries = Object.entries(categoryRevenue);
+                          
+                          if (entries.length === 0) {
+                            return <p className="text-xs text-slate-500">No category data available</p>;
+                          }
+                          
+                          return entries
                             .sort(([,a], [,b]) => b - a)
                             .slice(0, 4)
                             .map(([category, revenue], i) => {
@@ -1119,7 +1152,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                   </div>
 
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-4">
-                     <h4 className="font-black text-white">Revenue by Status</h4>
+                     <div className="flex items-center justify-between">
+                        <h4 className="font-black text-white">Revenue by Status</h4>
+                        <span className="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded font-bold">LIVE</span>
+                     </div>
                      <div className="space-y-3">
                         {(() => {
                           const statusRevenue: Record<string, { revenue: number; color: string }> = {
@@ -1136,27 +1172,34 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                             return sum + event.net_revenue;
                           }, 0);
                           
-                          return Object.entries(statusRevenue)
+                          const filteredEntries = Object.entries(statusRevenue)
                             .filter(([, data]) => data.revenue > 0)
-                            .sort(([,a], [,b]) => b.revenue - a.revenue)
-                            .map(([status, data], i) => {
-                              const percent = total > 0 ? Math.round((data.revenue / total) * 100) : 0;
-                              return (
-                                <div key={i} className="space-y-2">
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-slate-400 font-medium capitalize">{status}</span>
-                                    <span className="text-white font-black">{percent}%</span>
-                                  </div>
-                                  <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                                    <div className={`h-full ${data.color}`} style={{ width: `${percent}%` }} />
-                                  </div>
+                            .sort(([,a], [,b]) => b.revenue - a.revenue);
+                          
+                          if (filteredEntries.length === 0) {
+                            return <p className="text-xs text-slate-500">No revenue data available</p>;
+                          }
+                          
+                          return filteredEntries.map(([status, data], i) => {
+                            const percent = total > 0 ? Math.round((data.revenue / total) * 100) : 0;
+                            return (
+                              <div key={i} className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-slate-400 font-medium capitalize">{status}</span>
+                                  <span className="text-white font-black">{percent}%</span>
                                 </div>
-                              );
-                            });
+                                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                                  <div className={`h-full ${data.color}`} style={{ width: `${percent}%` }} />
+                                </div>
+                              </div>
+                            );
+                          });
                         })()}
                      </div>
                   </div>
                </div>
+               </>
+               )}
             </div>
           )}
         </div>
