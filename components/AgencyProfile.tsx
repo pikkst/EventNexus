@@ -15,6 +15,7 @@ import { User, EventNexusEvent } from '../types';
 import { getEvents, getUserBySlug, getOrganizerRatings, OrganizerRatingStats } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import Footer from './Footer';
+import { generateAgencySEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 
 interface AgencyProfileProps {
   user: User | null;
@@ -137,6 +138,19 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
     }, 8000);
     return () => clearInterval(interval);
   }, [isEnterprise, organizer?.branding?.pageConfig]);
+
+  // Update SEO meta tags when organizer loads
+  useEffect(() => {
+    if (organizer) {
+      const seoTags = generateAgencySEO(organizer, agencyEvents.length);
+      updatePageMeta(seoTags);
+    }
+
+    // Cleanup: reset to homepage SEO when component unmounts
+    return () => {
+      cleanupSEO();
+    };
+  }, [organizer, agencyEvents.length]);
   
   // Loading state
   if (isLoading) {

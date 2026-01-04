@@ -12,6 +12,7 @@ import { CATEGORIES } from '../constants';
 import { EventNexusEvent } from '../types';
 import { getEvents } from '../services/dbService';
 import { filterActiveEvents } from '../utils/eventUtils';
+import { generateMapSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 
 // Distance calculation helper (Haversine formula)
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -48,6 +49,17 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchRadius, setSearchRadius] = useState(1); // 1km radius for urban proximity notifications
+
+  // Update SEO meta tags on mount
+  useEffect(() => {
+    const seoTags = generateMapSEO();
+    updatePageMeta(seoTags);
+
+    // Cleanup: reset to homepage SEO when component unmounts
+    return () => {
+      cleanupSEO();
+    };
+  }, []);
   const [userLocation, setUserLocation] = useState<[number, number]>([59.4370, 24.7536]); // Default: Tallinn, Estonia
   const [selectedEvent, setSelectedEvent] = useState<EventNexusEvent | null>(null);
   const [isFollowingUser, setIsFollowingUser] = useState(true);

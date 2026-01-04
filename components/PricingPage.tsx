@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Check, Zap, Sparkles, ShieldCheck, Globe, BarChart3, Star, Rocket, Loader2, Briefcase } from 'lucide-react';
 import { User } from '../types';
 import { createSubscriptionCheckout, checkCheckoutSuccess, clearCheckoutStatus } from '../services/stripeService';
+import { generatePricingSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 
 const PLANS = [
   {
@@ -82,6 +83,17 @@ interface PricingPageProps {
 const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade, onOpenAuth }) => {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Update SEO meta tags on mount
+  useEffect(() => {
+    const seoTags = generatePricingSEO();
+    updatePageMeta(seoTags);
+
+    // Cleanup: reset to homepage SEO when component unmounts
+    return () => {
+      cleanupSEO();
+    };
+  }, []);
 
   // Check if returning from successful checkout
   useEffect(() => {

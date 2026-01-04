@@ -23,6 +23,7 @@ import { getEvents, getEventById, likeEvent, unlikeEvent, checkIfUserLikedEvent,
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
 import { isEventExpired } from '../utils/eventUtils';
+import { generateEventSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 
 interface EventDetailProps {
   user: User | null;
@@ -131,6 +132,19 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   useEffect(() => {
     loadEvent();
   }, [loadEvent]);
+
+  // Update SEO meta tags when event loads
+  useEffect(() => {
+    if (event) {
+      const seoTags = generateEventSEO(event, organizerName);
+      updatePageMeta(seoTags);
+    }
+
+    // Cleanup: reset to homepage SEO when component unmounts
+    return () => {
+      cleanupSEO();
+    };
+  }, [event, organizerName]);
 
   // Check for successful purchase on mount and verify with Stripe
   useEffect(() => {

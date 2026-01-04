@@ -37,6 +37,7 @@ import { generatePrintablePoster, PosterDesign } from '../services/posterService
 import { supabase } from '../services/supabase';
 import PayoutsHistory from './PayoutsHistory';
 import EnterpriseSuccessManager from './EnterpriseSuccessManager';
+import { generateDashboardSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 // Lazy-load heavy social media SDK helpers when needed to reduce main bundle size
 const loadSocialMediaService = () => import('../services/socialMediaService');
 
@@ -111,6 +112,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [posterDesign, setPosterDesign] = useState<PosterDesign | null>(null);
   const [selectedAdForPoster, setSelectedAdForPoster] = useState<any>(null);
+
+  // Update SEO meta tags on mount
+  useEffect(() => {
+    const seoTags = generateDashboardSEO();
+    updatePageMeta(seoTags);
+
+    // Cleanup: reset to homepage SEO when component unmounts
+    return () => {
+      cleanupSEO();
+    };
+  }, []);
 
   // Check for Stripe Connect return and verify onboarding status
   useEffect(() => {

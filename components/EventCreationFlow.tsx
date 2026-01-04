@@ -30,6 +30,7 @@ import { trackEventCreation } from '../services/analyticsService';
 import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
 import { FEATURE_UNLOCK_COSTS } from '../services/featureUnlockService';
 import { User, EventNexusEvent } from '../types';
+import { generateCreateEventSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 
 // Fix Leaflet default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -97,6 +98,17 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   ]);
 
   const navigate = useNavigate();
+
+  // Update SEO meta tags on mount
+  useEffect(() => {
+    const seoTags = generateCreateEventSEO();
+    updatePageMeta(seoTags);
+
+    // Cleanup: reset to homepage SEO when component unmounts
+    return () => {
+      cleanupSEO();
+    };
+  }, []);
 
   // Image handling functions
   const compressImage = async (file: File): Promise<File> => {
