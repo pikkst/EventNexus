@@ -35,6 +35,7 @@ import {
 import LandingPage from './components/LandingPage';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
+import { DashboardSkeleton, PageSkeleton } from './components/LoadingSkeleton';
 
 // Heavy components - lazy load on demand
 const HomeMap = lazy(() => import('./components/HomeMap'));
@@ -728,14 +729,7 @@ const App: React.FC = () => {
         <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} user={user} />
         
         <main className="pt-16 flex-grow">
-          <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-slate-950">
-              <div className="text-center space-y-4">
-                <div className="w-12 h-12 mx-auto border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-slate-400 text-sm animate-pulse">Loading...</p>
-              </div>
-            </div>
-          }>
+          <Suspense fallback={<DashboardSkeleton />}>
             <Routes>
               <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/map" element={<HomeMap theme={mapTheme} onToggleTheme={handleToggleMapTheme} />} />
@@ -847,7 +841,7 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
     <nav className="fixed top-0 left-0 right-0 z-[1000] h-16 border-b bg-slate-950/80 border-slate-800 backdrop-blur-md text-white">
       <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={toggleSidebar} className="p-2 hover:bg-slate-800/20 rounded-lg">
+          <button onClick={toggleSidebar} aria-label="Toggle navigation menu" className="p-2 hover:bg-slate-800/20 rounded-lg">
             <Menu className="w-6 h-6" />
           </button>
           <Link to="/" className="flex items-center gap-2 font-bold text-xl tracking-tighter">

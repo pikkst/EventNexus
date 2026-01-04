@@ -1,6 +1,26 @@
+# Static assets - cache for 1 year
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML - don't cache, serve fresh
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+  Content-Type: text/html; charset=utf-8
+
+# API responses - cache for 5 minutes
+/api/*
+  Cache-Control: public, max-age=300
+
+# Sitemap and robots
 /sitemap.xml
   Content-Type: application/xml; charset=utf-8
   X-Content-Type-Options: nosniff
+  Cache-Control: public, max-age=86400
 
 /robots.txt
   Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=86400
+
+# Default for other files
+/*
+  Cache-Control: public, max-age=3600
