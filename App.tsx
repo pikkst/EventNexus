@@ -847,7 +847,9 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
           <Link to="/" className="flex items-center gap-2 font-bold text-xl tracking-tighter">
             <img 
               src="/logo for eventnexus.png" 
-              alt="EventNexus Logo" 
+              alt="EventNexus Logo"
+              width="40"
+              height="40"
               className="h-10 w-auto object-contain"
             />
             <span className="hidden sm:inline">EventNexus</span>
