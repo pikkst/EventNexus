@@ -32,6 +32,15 @@ export default function OrganizerStats({ organizerId }: OrganizerStatsProps) {
     loadStats();
   }, [organizerId, selectedPeriod]);
 
+  // Auto-refresh every 10 seconds for live updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadStats();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [organizerId, selectedPeriod]);
+
   const loadStats = async () => {
     try {
       setLoading(true);

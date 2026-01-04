@@ -41,6 +41,16 @@ const AdminInbox: React.FC = () => {
     loadStats();
   }, [filterStatus]);
 
+  // Auto-refresh inbox messages and stats every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadMessages();
+      loadStats();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [filterStatus]);
+
   const loadMessages = async () => {
     setIsLoading(true);
     try {
