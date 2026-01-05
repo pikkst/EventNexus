@@ -13,7 +13,7 @@ import {
   Cpu, Database, Key, ShieldCheck, Headphones, Smartphone, Paintbrush,
   Link2, Settings2, Bot, Layers, Terminal, Activity, Github, Play,
   ChevronRight, Box, User as UserIcon, Palette, Image as ImageIcon,
-  Chrome, CheckCircle, Smartphone as TikTok, X, Globe2, Volume2, Lightbulb, Clock, Copy, Trash2
+  Chrome, CheckCircle, Smartphone as TikTok, X, Globe2, Volume2, Lightbulb, Clock, Copy, Trash2, Archive
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, EventNexusEvent, Notification, AgencyService, AffiliateStats, AffiliateReferralActivity } from '../types';
@@ -27,6 +27,7 @@ import {
   RevenueSummary,
   verifyConnectOnboarding,
   safeDeleteEvent,
+  archiveEvent,
   AttendanceSummaryItem,
   createAffiliatePartner,
   getAffiliateStats,
@@ -339,6 +340,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [revenueByEvent, setRevenueByEvent] = useState<RevenueByEvent[]>([]);
   const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
   const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummaryItem[]>([]);
+  const [isProcessingPayouts, setIsProcessingPayouts] = useState(false);
+  const [payoutProcessingResult, setPayoutProcessingResult] = useState<any>(null);
 
   // Affiliate State
   const [affiliateStats, setAffiliateStats] = useState<AffiliateStats | null>(null);
@@ -648,6 +651,53 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     }
   };
 
+  const processPendingPayouts = async () => {
+    setIsProcessingPayouts(true);
+    setPayoutProcessingResult(null);
+    
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-scheduled-payouts`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setPayoutProcessingResult(result);
+      
+      // Refresh revenue data to show updated payout statuses
+      const [summary, byEvent] = await Promise.all([
+        getOrganizerRevenueSummary(user.id),
+        getOrganizerRevenue(user.id)
+      ]);
+      setRevenueSummary(summary);
+      setRevenueByEvent(byEvent);
+      
+      // Show success message
+      if (result.successful > 0) {
+        alert(`✅ Successfully processed ${result.successful} payout(s)!`);
+      } else if (result.skipped > 0) {
+        alert(`ℹ️ No payouts to process. ${result.skipped} event(s) skipped (no Connect account, no paid tickets, or already processed).`);
+      } else {
+        alert('ℹ️ No eligible payouts found. Events must be 2+ days past and have paid tickets.');
+      }
+    } catch (error) {
+      console.error('Error processing payouts:', error);
+      alert(`❌ Error processing payouts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsProcessingPayouts(false);
+    }
+  };
+
   const primaryColor = isEnterprise && user.branding ? user.branding.primaryColor : '#6366f1';
 
   return (
@@ -852,6 +902,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                 </div>
               </div>
 
+              {/* Payout Eligibility Info */}
+              {revenueSummary.pending_amount > 0 && (
+                <div className="bg-blue-900/20 border border-blue-800/50 rounded-2xl p-4 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-blue-300 mb-1">Pending Payouts: €{revenueSummary.pending_amount.toFixed(2)}</p>
+                    <p className="text-xs text-blue-400 leading-relaxed">
+                      Payouts are automatically processed 2 days after your event ends. You can also manually trigger processing using the button above.
+                      {!user.stripe_connect_onboarding_complete && ' Complete your Stripe Connect setup to receive payouts.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-6">
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
                   <div className="flex items-center justify-between">
@@ -874,7 +938,29 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
               {/* Per-Event Revenue Table */}
               {revenueByEvent.length > 0 && (
                 <div className="mt-8 space-y-4">
-                  <h4 className="font-black text-white text-lg">Revenue by Event</h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-black text-white text-lg">Revenue by Event</h4>
+                    {user.stripe_connect_onboarding_complete && (
+                      <button
+                        onClick={processPendingPayouts}
+                        disabled={isProcessingPayouts}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Manually trigger payout processing for events that ended 2+ days ago"
+                      >
+                        {isProcessingPayouts ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <DollarSign className="w-4 h-4" />
+                            Process Payouts
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full">
@@ -916,53 +1002,144 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                               <td className="px-6 py-4 text-right text-blue-400 font-bold">-€{event.stripe_fee_amount.toFixed(2)}</td>
                               <td className="px-6 py-4 text-right text-emerald-400 font-black">€{event.net_revenue.toFixed(2)}</td>
                               <td className="px-6 py-4 text-center">
-                                {event.payout_status === 'paid' && (
-                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase">
-                                    <CheckCircle className="w-3 h-3" /> Paid
-                                  </span>
-                                )}
-                                {event.payout_status === 'pending' && (
-                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-[10px] font-black uppercase">
-                                    <Clock className="w-3 h-3" /> Pending
-                                  </span>
-                                )}
-                                {event.payout_status === 'processing' && (
-                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase">
-                                    <RefreshCcw className="w-3 h-3" /> Processing
-                                  </span>
-                                )}
+                                {(() => {
+                                  const eventDate = new Date(event.event_date);
+                                  const now = new Date();
+                                  const daysSinceEvent = Math.floor((now.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
+                                  const isEligible = daysSinceEvent >= 2;
+                                  const eligibleDate = new Date(eventDate);
+                                  eligibleDate.setDate(eligibleDate.getDate() + 2);
+                                  
+                                  if (event.payout_status === 'paid') {
+                                    return (
+                                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase">
+                                        <CheckCircle className="w-3 h-3" /> Paid
+                                      </span>
+                                    );
+                                  }
+                                  
+                                  if (event.payout_status === 'processing') {
+                                    return (
+                                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase">
+                                        <RefreshCcw className="w-3 h-3" /> Processing
+                                      </span>
+                                    );
+                                  }
+                                  
+                                  // Pending status - show if eligible or waiting
+                                  if (isEligible && event.tickets_sold > 0) {
+                                    return (
+                                      <div className="flex flex-col items-center gap-1">
+                                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase">
+                                          <CheckCircle className="w-3 h-3" /> Ready
+                                        </span>
+                                        <span className="text-[9px] text-emerald-500 font-medium">Can process</span>
+                                      </div>
+                                    );
+                                  } else if (event.tickets_sold > 0) {
+                                    return (
+                                      <div className="flex flex-col items-center gap-1">
+                                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-[10px] font-black uppercase">
+                                          <Clock className="w-3 h-3" /> Waiting
+                                        </span>
+                                        <span className="text-[9px] text-yellow-500 font-medium">
+                                          {eligibleDate.toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                                        </span>
+                                      </div>
+                                    );
+                                  } else {
+                                    return (
+                                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-500/10 text-slate-400 text-[10px] font-black uppercase">
+                                        <AlertCircle className="w-3 h-3" /> No Sales
+                                      </span>
+                                    );
+                                  }
+                                })()}
                               </td>
                               <td className="px-6 py-4 text-center">
-                                {event.tickets_sold === 0 ? (
-                                  <button
-                                    onClick={async () => {
-                                      if (!confirm(`Delete "${event.event_name}"?\n\nThis action cannot be undone.`)) return;
-                                      
-                                      const result = await safeDeleteEvent(event.event_id);
-                                      if (result.success) {
-                                        alert('✅ Event deleted successfully');
-                                        // Reload revenue data
-                                        const newRevenue = await getOrganizerRevenue(user.id);
-                                        setRevenueByEvent(newRevenue);
-                                      } else {
-                                        alert(`❌ ${result.message}`);
-                                      }
-                                    }}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-400 hover:text-red-300 transition-all text-xs font-bold"
-                                    title="Delete event (no tickets sold)"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                    Delete
-                                  </button>
-                                ) : (
-                                  <span 
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-slate-600 text-xs font-bold cursor-not-allowed"
-                                    title={`Cannot delete: ${event.tickets_sold} ticket${event.tickets_sold > 1 ? 's' : ''} sold`}
-                                  >
-                                    <Lock className="w-3.5 h-3.5" />
-                                    Locked
-                                  </span>
-                                )}
+                                {(() => {
+                                  // No tickets sold - allow delete
+                                  if (event.tickets_sold === 0) {
+                                    return (
+                                      <button
+                                        onClick={async () => {
+                                          if (!confirm(`Delete "${event.event_name}"?\n\nThis action cannot be undone.`)) return;
+                                          
+                                          const result = await safeDeleteEvent(event.event_id);
+                                          if (result.success) {
+                                            alert('✅ Event deleted successfully');
+                                            const newRevenue = await getOrganizerRevenue(user.id);
+                                            setRevenueByEvent(newRevenue);
+                                          } else {
+                                            alert(`❌ ${result.message}`);
+                                          }
+                                        }}
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-400 hover:text-red-300 transition-all text-xs font-bold"
+                                        title="Delete event (no tickets sold)"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        Delete
+                                      </button>
+                                    );
+                                  }
+                                  
+                                  // Payout completed - allow archive or delete
+                                  if (event.payout_status === 'paid') {
+                                    return (
+                                      <div className="flex items-center gap-2 justify-center">
+                                        <button
+                                          onClick={async () => {
+                                            if (!confirm(`Archive "${event.event_name}"?\n\nYou can restore it later from archived events.`)) return;
+                                            
+                                            const result = await archiveEvent(event.event_id, user.id);
+                                            if (result.success) {
+                                              alert('✅ Event archived successfully');
+                                              const newRevenue = await getOrganizerRevenue(user.id);
+                                              setRevenueByEvent(newRevenue);
+                                            } else {
+                                              alert(`❌ ${result.message}`);
+                                            }
+                                          }}
+                                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 hover:text-blue-300 transition-all text-xs font-bold"
+                                          title="Archive event (can be restored)"
+                                        >
+                                          <Archive className="w-3.5 h-3.5" />
+                                          Archive
+                                        </button>
+                                        <button
+                                          onClick={async () => {
+                                            if (!confirm(`Delete "${event.event_name}"?\n\n⚠️ This action cannot be undone.\nPayout has been completed, but all event data and tickets will be permanently removed.`)) return;
+                                            
+                                            const result = await safeDeleteEvent(event.event_id);
+                                            if (result.success) {
+                                              alert('✅ Event deleted successfully');
+                                              const newRevenue = await getOrganizerRevenue(user.id);
+                                              setRevenueByEvent(newRevenue);
+                                            } else {
+                                              alert(`❌ ${result.message}`);
+                                            }
+                                          }}
+                                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-400 hover:text-red-300 transition-all text-xs font-bold"
+                                          title="Delete event permanently"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                          Delete
+                                        </button>
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  // Tickets sold but payout not completed - locked
+                                  return (
+                                    <span 
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 text-slate-600 text-xs font-bold cursor-not-allowed"
+                                      title={`Locked: Payout pending for ${event.tickets_sold} ticket${event.tickets_sold > 1 ? 's' : ''}`}
+                                    >
+                                      <Lock className="w-3.5 h-3.5" />
+                                      Locked
+                                    </span>
+                                  );
+                                })()}
                               </td>
                             </tr>
                           ))}
