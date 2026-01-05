@@ -19,3 +19,19 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+# Ktor - ignore Java Management API (not available on Android)
+-dontwarn java.lang.management.**
+-keep class io.ktor.util.debug.** { *; }
+
+# Keep serialization for Supabase models
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+
+# Keep all model classes for serialization
+-keep,includedescriptorclasses class eu.eventnexus.livemap.data.model.**$$serializer { *; }
+-keepclassmembers class eu.eventnexus.livemap.data.model.** {
+    *** Companion;
+}
+-keepclasseswithmembers class eu.eventnexus.livemap.data.model.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
