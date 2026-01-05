@@ -135,10 +135,10 @@ fun TicketDetailContent(
             .verticalScroll(rememberScrollState())
     ) {
         // Event image
-        if (ticket.event_image_url != null) {
+        if (ticket.eventImageUrl != null) {
             AsyncImage(
-                model = ticket.event_image_url,
-                contentDescription = ticket.event_name,
+                model = ticket.eventImageUrl,
+                contentDescription = ticket.eventName,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp),
@@ -149,7 +149,7 @@ fun TicketDetailContent(
         Column(modifier = Modifier.padding(16.dp)) {
             // Event name
             Text(
-                text = ticket.event_name ?: "Event",
+                text = ticket.eventName ?: "Event",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -169,26 +169,21 @@ fun TicketDetailContent(
             )
             
             TicketDetailRow(
-                label = "Ticket ID",
-                value = ticket.id.take(8)
+                label = "Ticket Code",
+                value = ticket.ticketCode
             )
             
             TicketDetailRow(
-                label = "Type",
-                value = ticket.ticket_type
-            )
-            
-            TicketDetailRow(
-                label = "Price",
-                value = "€%.2f".format(ticket.price)
+                label = "Status",
+                value = ticket.status.uppercase()
             )
             
             TicketDetailRow(
                 label = "Purchased",
-                value = ticket.purchased_at
+                value = ticket.purchaseDate
             )
             
-            ticket.used_at?.let {
+            ticket.usedAt?.let {
                 TicketDetailRow(
                     label = "Used",
                     value = it
@@ -206,21 +201,14 @@ fun TicketDetailContent(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
             
-            ticket.event_date?.let {
+            ticket.eventDate?.let {
                 TicketDetailRow(
                     label = "Date",
                     value = it
                 )
             }
             
-            ticket.event_time?.let {
-                TicketDetailRow(
-                    label = "Time",
-                    value = it
-                )
-            }
-            
-            ticket.event_location?.let {
+            ticket.eventLocation?.let {
                 TicketDetailRow(
                     label = "Location",
                     value = it
@@ -292,8 +280,8 @@ fun QRCodeView(
     ticket: Ticket,
     onClose: () -> Unit
 ) {
-    val qrBitmap = remember(ticket.qr_code) {
-        generateQRCode(ticket.qr_code, 512)
+    val qrBitmap = remember(ticket.ticketCode) {
+        generateQRCode(ticket.ticketCode, 512)
     }
     
     Box(
@@ -314,7 +302,7 @@ fun QRCodeView(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = ticket.event_name ?: "Event Ticket",
+                        text = ticket.eventName ?: "Event Ticket",
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )

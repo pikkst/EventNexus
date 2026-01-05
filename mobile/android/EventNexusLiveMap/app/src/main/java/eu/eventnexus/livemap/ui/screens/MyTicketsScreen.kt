@@ -189,10 +189,10 @@ fun TicketCard(
                 .padding(12.dp)
         ) {
             // Event image
-            if (ticket.event_image_url != null) {
+            if (ticket.eventImageUrl != null) {
                 AsyncImage(
-                    model = ticket.event_image_url,
-                    contentDescription = ticket.event_name,
+                    model = ticket.eventImageUrl,
+                    contentDescription = ticket.eventName,
                     modifier = Modifier
                         .size(80.dp)
                         .padding(end = 12.dp),
@@ -216,7 +216,7 @@ fun TicketCard(
                     .padding(vertical = 4.dp)
             ) {
                 Text(
-                    text = ticket.event_name ?: "Event",
+                    text = ticket.eventName ?: "Event",
                     style = MaterialTheme.typography.titleMedium
                 )
                 
@@ -233,7 +233,7 @@ fun TicketCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = ticket.event_date ?: "",
+                        text = ticket.eventDate ?: "",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -252,7 +252,7 @@ fun TicketCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = ticket.event_location ?: "",
+                        text = ticket.eventLocation ?: "",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
