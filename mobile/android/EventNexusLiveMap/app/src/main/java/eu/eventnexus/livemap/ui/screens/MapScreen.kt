@@ -154,47 +154,55 @@ fun MapScreen(
             // OpenStreetMap using osmdroid
             AndroidView(
                 factory = { ctx ->
-                    Configuration.getInstance().userAgentValue = ctx.packageName
-                    MapView(ctx).apply {
-                        setTileSource(TileSourceFactory.MAPNIK)
-                        setMultiTouchControls(true)
-                        controller.setZoom(12.0)
-                        controller.setCenter(
-                            userLocation ?: GeoPoint(59.437, 24.7536) // Tallinn default
-                        )
-                        mapView = this
+                    try {
+                        MapView(ctx).apply {
+                            setTileSource(TileSourceFactory.MAPNIK)
+                            setMultiTouchControls(true)
+                            controller.setZoom(12.0)
+                            controller.setCenter(
+                                userLocation ?: GeoPoint(59.437, 24.7536) // Tallinn default
+                            )
+                            mapView = this
+                        }
+                    } catch (e: Exception) {
+                        error = "Map initialization failed: ${e.message}"
+                        MapView(ctx) // Return empty map on error
                     }
                 },
                 modifier = Modifier.fillMaxSize(),
                 update = { view ->
-                    // Clear existing markers
-                    view.overlays.clear()
-                    
-                    // Add user location marker
-                    userLocation?.let { location ->
-                        val marker = Marker(view).apply {
-                            position = location
-                            title = "Your Location"
-                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                        }
-                        view.overlays.add(marker)
-                    }
-                    
-                    // Add event markers
-                    events.forEach { event ->
-                        val marker = Marker(view).apply {
-                            position = GeoPoint(event.latitude, event.longitude)
-                            title = event.name
-                            snippet = event.category
-                            setOnMarkerClickListener { _, _ ->
-                                onEventClick(event.id)
-                                true
+                    try {
+                        // Clear existing markers
+                        view.overlays.clear()
+                        
+                        // Add user location marker
+                        userLocation?.let { location ->
+                            val marker = Marker(view).apply {
+                                position = location
+                                title = "Your Location"
+                                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                             }
+                            view.overlays.add(marker)
                         }
-                        view.overlays.add(marker)
+                        
+                        // Add event markers
+                        events.forEach { event ->
+                            val marker = Marker(view).apply {
+                                position = GeoPoint(event.latitude, event.longitude)
+                                title = event.name
+                                snippet = event.category
+                                setOnMarkerClickListener { _, _ ->
+                                    onEventClick(event.id)
+                                    true
+                                }
+                            }
+                            view.overlays.add(marker)
+                        }
+                        
+                        view.invalidate()
+                    } catch (e: Exception) {
+                        error = "Map update failed: ${e.message}"
                     }
-                    
-                    view.invalidate()
                 }
             )
             
