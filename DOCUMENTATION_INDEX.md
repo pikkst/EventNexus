@@ -1,39 +1,68 @@
 # EventNexus Platform - Documentation Index
 
-## 📱 Mobile Scanner Apps (NEW!)
+## 📱 Mobile Apps (NEW!)
 
 ### Quick Start
-1. **[mobile/IMPLEMENTATION_SUMMARY.md](mobile/IMPLEMENTATION_SUMMARY.md)** ⭐ START HERE
-   - Complete overview of mobile apps
-   - iOS and Android implementation
-   - Backend integration
-   - Deployment steps
+1. **[docs/MOBILE_APPS_BACKEND_SYNC.md](docs/MOBILE_APPS_BACKEND_SYNC.md)** ⭐ START HERE FOR BACKEND SETUP
+   - Database permissions and RLS policies
+   - Supabase configuration
+   - Authentication flow
+   - Testing and troubleshooting
+
+2. **[mobile/LIVE_MAP_APPS.md](mobile/LIVE_MAP_APPS.md)** 🗺️ LIVE MAP APP
+   - Event discovery mobile app
+   - Android and iOS implementation
+   - Location-based search
+   - In-app ticket management
+
+3. **[MOBILE_SCANNER_APPS_DELIVERY.md](MOBILE_SCANNER_APPS_DELIVERY.md)** 🎫 SCANNER APP
+   - Ticket scanning app for event staff
+   - QR code validation
+   - Scanner code authentication
+   - Real-time statistics
 
 ### Mobile Documentation
-2. **[mobile/README.md](mobile/README.md)**
-   - Architecture overview
+4. **[mobile/README.md](mobile/README.md)**
+   - Architecture overview for both apps
    - Features and capabilities
    - API integration
    - Deployment guides
 
-3. **[mobile/QUICK_REFERENCE.md](mobile/QUICK_REFERENCE.md)**
+5. **[mobile/QUICK_REFERENCE.md](mobile/QUICK_REFERENCE.md)**
    - Quick reference guide
    - Common tasks
    - API endpoints
    - Troubleshooting
 
 ### Platform-Specific
-4. **[mobile/ios/README.md](mobile/ios/README.md)** 📱
-   - iOS app setup
-   - Requirements
-   - Building and deployment
+6. **[mobile/ios/EventNexusLiveMap/README.md](mobile/ios/EventNexusLiveMap/README.md)** 📱 iOS Live Map
+   - iOS Live Map app setup
+   - SwiftUI implementation
+   - MapKit integration
    - TestFlight distribution
 
-5. **[mobile/android/README.md](mobile/android/README.md)** 🤖
-   - Android app setup
+7. **[mobile/android/EventNexusLiveMap/README.md](mobile/android/EventNexusLiveMap/README.md)** 🤖 Android Live Map
+   - Android Live Map app setup
+   - Jetpack Compose UI
+   - Google Maps integration
+   - APK distribution
+
+8. **[mobile/ios/EventNexusScanner/README.md](mobile/ios/EventNexusScanner/README.md)** 📱 iOS Scanner
+   - iOS Scanner app setup
    - Requirements
    - Building and deployment
-   - Play Store distribution
+
+9. **[mobile/android/EventNexusScanner/README.md](mobile/android/EventNexusScanner/README.md)** 🤖 Android Scanner
+   - Android Scanner app setup
+   - Requirements
+   - Building and deployment
+
+### Backend Integration
+10. **[supabase/migrations/20260105100000_mobile_apps_permissions.sql](supabase/migrations/20260105100000_mobile_apps_permissions.sql)**
+    - Essential SQL migration for mobile apps
+    - RLS policies for events, tickets, notifications
+    - Permission grants
+    - Verification queries
 
 ---
 
