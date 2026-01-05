@@ -32,7 +32,10 @@ data class Ticket(
     val eventDate: String? = null,
     
     @SerialName("event_location")
-    val eventLocation: String? = null
+    val eventLocation: String? = null,
+    
+    @SerialName("event_image")
+    val eventImageUrl: String? = null
 )
 
 @Serializable
