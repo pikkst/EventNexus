@@ -53,7 +53,7 @@ class AuthRepository {
                     limit(1)
                 }.decodeList<User>()
             
-            val user = userResult.decodeAs<User>()
+            val user = users.firstOrNull() ?: throw Exception("User not found")
             Result.success(user)
         } catch (e: Exception) {
             Result.failure(e)
