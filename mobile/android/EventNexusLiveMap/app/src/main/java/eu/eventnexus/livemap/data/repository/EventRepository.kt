@@ -19,20 +19,9 @@ class EventRepository {
     ): Result<List<Event>> = withContext(Dispatchers.IO) {
         try {
             // Build query
-            val query = client.from("events")
-                .select()
-            
-            // Apply filters if provided
-            val result = if (latitude != null && longitude != null) {
-                // Use PostGIS proximity search via RPC
-                client.from("events")
-                    .select()
-                    .execute()
-            } else {
-                query.execute()
-            }
-            
-            val events = result.decodeList<Event>()
+            val events = client.from("events")
+                .select(Columns.ALL)
+                .decodeList<Event>()
             
             // Filter by category if provided
             val filtered = if (category != null && category != "All") {
@@ -58,13 +47,15 @@ class EventRepository {
     
     suspend fun getEventById(id: String): Result<EventDetail> = withContext(Dispatchers.IO) {
         try {
-            val result = client.from("events")
-                .select()
-                .eq("id", id)
-                .single()
-                .execute()
+            val events = client.from("events")
+                .select(Columns.ALL) {
+                    filter {
+                        eq("id", id)
+                    }
+                    limit(1)
+                }.decodeList<EventDetail>()
             
-            val event = result.decodeAs<EventDetail>()
+            val event = events.firstOrNull() ?: throw Exception("Event not found")
             Result.success(event)
         } catch (e: Exception) {
             Result.failure(e)
@@ -73,12 +64,13 @@ class EventRepository {
     
     suspend fun searchEvents(query: String): Result<List<Event>> = withContext(Dispatchers.IO) {
         try {
-            val result = client.from("events")
-                .select()
-                .ilike("name", "%$query%")
-                .execute()
+            val events = client.from("events")
+                .select(Columns.ALL) {
+                    filter {
+                        ilike("name", "%$query%")
+                    }
+                }.decodeList<Event>()
             
-            val events = result.decodeList<Event>()
             Result.success(events)
         } catch (e: Exception) {
             Result.failure(e)

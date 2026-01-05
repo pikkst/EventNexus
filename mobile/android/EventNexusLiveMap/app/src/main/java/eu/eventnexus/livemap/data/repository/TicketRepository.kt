@@ -11,15 +11,13 @@ class TicketRepository {
     
     suspend fun getUserTickets(userId: String): Result<List<Ticket>> = withContext(Dispatchers.IO) {
         try {
-            val result = client.from("tickets")
-                .select {
+            val tickets = client.from("tickets")
+                .select(io.github.jan.supabase.postgrest.query.Columns.ALL) {
                     filter {
                         eq("user_id", userId)
                     }
-                }
-                .execute()
+                }.decodeList<Ticket>()
             
-            val tickets = result.decodeList<Ticket>()
             Result.success(tickets)
         } catch (e: Exception) {
             Result.failure(e)
@@ -28,13 +26,15 @@ class TicketRepository {
     
     suspend fun getTicketById(id: String): Result<Ticket> = withContext(Dispatchers.IO) {
         try {
-            val result = client.from("tickets")
-                .select()
-                .eq("id", id)
-                .single()
-                .execute()
+            val tickets = client.from("tickets")
+                .select(io.github.jan.supabase.postgrest.query.Columns.ALL) {
+                    filter {
+                        eq("id", id)
+                    }
+                    limit(1)
+                }.decodeList<Ticket>()
             
-            val ticket = result.decodeAs<Ticket>()
+            val ticket = tickets.firstOrNull() ?: throw Exception("Ticket not found")
             Result.success(ticket)
         } catch (e: Exception) {
             Result.failure(e)
@@ -49,17 +49,15 @@ class TicketRepository {
         try {
             // Call Edge Function for ticket purchase
             // This should handle payment, ticket generation, etc.
-            val result = client.from("tickets")
+            val tickets = client.from("tickets")
                 .insert(mapOf(
                     "event_id" to eventId,
                     "user_id" to userId,
                     "ticket_type_id" to ticketTypeId,
                     "status" to "valid"
-                ))
-                .single()
-                .execute()
+                )).decodeList<Ticket>()
             
-            val ticket = result.decodeAs<Ticket>()
+            val ticket = tickets.firstOrNull() ?: throw Exception("Failed to create ticket")
             Result.success(ticket)
         } catch (e: Exception) {
             Result.failure(e)
