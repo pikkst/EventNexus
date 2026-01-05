@@ -85,7 +85,7 @@ jobs:
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '15.2'
+          xcode-version: '16.0'
       
       - name: Install CocoaPods
         run: |
@@ -152,43 +152,23 @@ jobs:
           name: eventnexus-livemap-release
           path: ./apk-release
       
-      - name: Rename APKs for website downloads
+      - name: Rename APK for release
         run: |
-          mkdir -p downloads
-          cp ./apk-release/app-release.apk ./downloads/EventNexusLiveMap.apk
+          mkdir -p release-files
+          cp ./apk-release/app-release.apk ./release-files/EventNexusLiveMap.apk
           echo "✅ Renamed release APK to EventNexusLiveMap.apk"
-          ls -lh ./downloads/EventNexusLiveMap.apk
+          ls -lh ./release-files/
       
-      - name: Copy APKs to website public/downloads
-        run: |
-          mkdir -p public/downloads
-          cp ./downloads/EventNexusLiveMap.apk public/downloads/EventNexusLiveMap.apk
-          echo "✅ Copied EventNexusLiveMap.apk to public/downloads/"
-          ls -lh public/downloads/EventNexusLiveMap.apk
-      
-      - name: Commit and push APKs to repository
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -f public/downloads/EventNexusLiveMap.apk
-          git status
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "🤖 Update EventNexusLiveMap APK [skip ci]"
-            git push
-          fi
-          tag_name: livemap-v${{ steps.version.outputs.version }}-${{ github.run_number }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: livemap-v${{ steps.version.outputs.version }}-${{ github.sha }}
           name: EventNexus Live Map v${{ steps.version.outputs.version }}
           body: |
-            ## EventNexus Live Map Mobile Apps
+            ## EventNexus Live Map Mobile App
             
-            ### Android
-            - **Debug APK**: For testing with debug features
-            - **Release APK**: Production-ready version
-            
-            ### iOS
-            - iOS build artifacts available for TestFlight deployment
+            ### Android APK
+            - **EventNexusLiveMap.apk**: Production-ready release version
             
             ### Features
             - 🗺️ Interactive event map with location-based filtering
@@ -196,16 +176,13 @@ jobs:
             - 🎫 In-app ticket viewing with QR codes
             - 🔐 Secure authentication with Supabase
             - 🌐 Deep linking to web platform for ticket purchase
-            - 📱 Native performance on both platforms
+            - 📱 Native performance
             
             ### Installation
-            **Android**: Download and install the APK file
-            **iOS**: Requires Xcode to build and install
+            **Android**: Download and install EventNexusLiveMap.apk
             
             Built with ❤️ for EventNexus
-          files: |
-            ./apk-debug/*.apk
-            ./apk-release/*.apk
+          files: ./release-files/EventNexusLiveMap.apk
           draft: false
           prerelease: false
         env:
