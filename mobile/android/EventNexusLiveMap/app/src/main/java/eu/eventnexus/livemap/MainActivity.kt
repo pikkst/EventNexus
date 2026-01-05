@@ -3,30 +3,33 @@ package eu.eventnexus.livemap
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.webkit.WebChromeClient
-import android.webkit.GeolocationPermissions
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import eu.eventnexus.livemap.data.SupabaseClient
+import eu.eventnexus.livemap.ui.navigation.AppNavigation
+import eu.eventnexus.livemap.ui.theme.EventNexusTheme
 
 class MainActivity : ComponentActivity() {
-    private lateinit var webView: WebView
     
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
-            // Location permission granted, WebView will use it
-            webView.reload()
-        }
+        // Location permission result handled in MapScreen
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Request location permissions
+        // Initialize Supabase client
+        SupabaseClient.initialize(this)
+        
+        // Request location permissions if not granted
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -40,44 +43,15 @@ class MainActivity : ComponentActivity() {
             )
         }
         
-        // Setup WebView
-        webView = WebView(this).apply {
-            settings.apply {
-                javaScriptEnabled = true
-                domStorageEnabled = true
-                databaseEnabled = true
-                setGeolocationEnabled(true)
-                allowFileAccess = true
-                allowContentAccess = true
-                setSupportZoom(true)
-                builtInZoomControls = false
-                displayZoomControls = false
-                loadWithOverviewMode = true
-                useWideViewPort = true
-            }
-            
-            webViewClient = WebViewClient()
-            
-            webChromeClient = object : WebChromeClient() {
-                override fun onGeolocationPermissionsShowPrompt(
-                    origin: String?,
-                    callback: GeolocationPermissions.Callback?
+        setContent {
+            EventNexusTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
                 ) {
-                    callback?.invoke(origin, true, false)
+                    AppNavigation()
                 }
             }
-            
-            loadUrl("https://www.eventnexus.eu/map")
-        }
-        
-        setContentView(webView)
-    }
-    
-    override fun onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            super.onBackPressed()
         }
     }
 }

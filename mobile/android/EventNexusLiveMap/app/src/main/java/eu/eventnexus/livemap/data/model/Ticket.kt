@@ -1,25 +1,38 @@
 package eu.eventnexus.livemap.data.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Ticket(
     val id: String,
-    val event_id: String,
-    val user_id: String,
-    val ticket_type: String,
-    val price: Double,
-    val qr_code: String,
-    val status: String, // "valid", "used", "expired"
-    val purchased_at: String,
-    val used_at: String? = null,
     
-    // Event details (joined)
-    val event_name: String? = null,
-    val event_date: String? = null,
-    val event_time: String? = null,
-    val event_location: String? = null,
-    val event_image_url: String? = null
+    @SerialName("event_id")
+    val eventId: String,
+    
+    @SerialName("user_id")
+    val userId: String,
+    
+    @SerialName("ticket_code")
+    val ticketCode: String,
+    
+    val status: String = "valid", // "valid", "used", "cancelled"
+    
+    @SerialName("purchase_date")
+    val purchaseDate: String,
+    
+    @SerialName("used_at")
+    val usedAt: String? = null,
+    
+    // Joined event details (if query includes them)
+    @SerialName("event_name")
+    val eventName: String? = null,
+    
+    @SerialName("event_date")
+    val eventDate: String? = null,
+    
+    @SerialName("event_location")
+    val eventLocation: String? = null
 )
 
 @Serializable
