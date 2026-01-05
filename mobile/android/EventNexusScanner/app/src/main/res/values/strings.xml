@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">EventNexus Scanner</string>
+    <string name="scanner_title">Ticket Scanner</string>
+    <string name="scan_instruction">Point camera at QR code</string>
+    <string name="enter_code">Enter Code</string>
+    <string name="scan_success">Ticket Valid ✓</string>
+    <string name="scan_error">Invalid Ticket</string>
+</resources>
