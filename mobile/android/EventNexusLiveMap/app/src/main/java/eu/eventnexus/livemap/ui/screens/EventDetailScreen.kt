@@ -179,9 +179,9 @@ fun EventDetailContent(
             .verticalScroll(rememberScrollState())
     ) {
         // Event image
-        if (event.image_url != null) {
+        if (event.imageUrl != null) {
             AsyncImage(
-                model = event.image_url,
+                model = event.imageUrl,
                 contentDescription = event.name,
                 modifier = Modifier
                     .fillMaxWidth()
