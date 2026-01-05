@@ -26,6 +26,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { generateMarketingTagline, translateDescription, generateAdImage } from '../services/geminiService';
 import { createEvent, getEvents, getUser, deductUserCredits, uploadEventImage } from '../services/dbService';
+import { createScannerCode } from '../services/scannerCodeService';
 import { trackEventCreation } from '../services/analyticsService';
 import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
 import { FEATURE_UNLOCK_COSTS } from '../services/featureUnlockService';
@@ -59,6 +60,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isEventUnlocked, setIsEventUnlocked] = useState(false);
+  const [createdScannerCode, setCreatedScannerCode] = useState<string | null>(null);
+  const [isCreatingScannerCode, setIsCreatingScannerCode] = useState(false);
   const [mapTheme] = useState<'dark' | 'light'>(() => {
     try {
       const saved = localStorage.getItem('eventnexus-map-theme');
@@ -719,12 +722,39 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             // Don't fail the whole event creation if tickets fail
           }
         }
+
+        // Create default scanner code for mobile apps
+        console.log('📱 Creating scanner code for mobile apps...');
+        setIsCreatingScannerCode(true);
+        try {
+          const scannerCode = await createScannerCode(
+            created.id,
+            user.id,
+            'Default Scanner',
+            undefined // No expiration
+          );
+          
+          if (scannerCode) {
+            setCreatedScannerCode(scannerCode.code);
+            console.log('✅ Scanner code created:', scannerCode.code);
+          } else {
+            console.warn('⚠️ Failed to create scanner code');
+          }
+        } catch (scannerError) {
+          console.error('⚠️ Scanner code creation failed:', scannerError);
+          // Don't fail event creation if scanner code fails
+        } finally {
+          setIsCreatingScannerCode(false);
+        }
         
         console.log('🎉 Navigating to dashboard...');
         const translationCount = Object.keys(translations).length;
+        const scannerMessage = createdScannerCode 
+          ? `\n\n📱 Scanner Code for Mobile App: ${createdScannerCode}\n(Use this code in the EventNexus Scanner mobile app)`
+          : '';
         const successMessage = translationCount > 0 
-          ? `Event created successfully!\n\n🌐 Auto-translated into ${translationCount} languages: ${Object.keys(translations).join(', ').toUpperCase()}`
-          : 'Event created successfully!';
+          ? `Event created successfully!\n\n🌐 Auto-translated into ${translationCount} languages: ${Object.keys(translations).join(', ').toUpperCase()}${scannerMessage}`
+          : `Event created successfully!${scannerMessage}`;
         alert(successMessage);
         // Notify parent to reload events
         if (onEventCreated) {

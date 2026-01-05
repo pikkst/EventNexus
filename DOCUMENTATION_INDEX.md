@@ -1,9 +1,46 @@
-# Social Media Hub Fix - Documentation Index
+# EventNexus Platform - Documentation Index
 
-## 📋 Quick Links
+## 📱 Mobile Scanner Apps (NEW!)
+
+### Quick Start
+1. **[mobile/IMPLEMENTATION_SUMMARY.md](mobile/IMPLEMENTATION_SUMMARY.md)** ⭐ START HERE
+   - Complete overview of mobile apps
+   - iOS and Android implementation
+   - Backend integration
+   - Deployment steps
+
+### Mobile Documentation
+2. **[mobile/README.md](mobile/README.md)**
+   - Architecture overview
+   - Features and capabilities
+   - API integration
+   - Deployment guides
+
+3. **[mobile/QUICK_REFERENCE.md](mobile/QUICK_REFERENCE.md)**
+   - Quick reference guide
+   - Common tasks
+   - API endpoints
+   - Troubleshooting
+
+### Platform-Specific
+4. **[mobile/ios/README.md](mobile/ios/README.md)** 📱
+   - iOS app setup
+   - Requirements
+   - Building and deployment
+   - TestFlight distribution
+
+5. **[mobile/android/README.md](mobile/android/README.md)** 🤖
+   - Android app setup
+   - Requirements
+   - Building and deployment
+   - Play Store distribution
+
+---
+
+## 📋 Social Media Hub Fix
 
 ### For Quick Overview
-1. **[SOCIAL_MEDIA_FIX_SUMMARY.md](SOCIAL_MEDIA_FIX_SUMMARY.md)** ⭐ START HERE
+1. **[SOCIAL_MEDIA_FIX_SUMMARY.md](SOCIAL_MEDIA_FIX_SUMMARY.md)**
    - What was the problem?
    - What was fixed?
    - How to test?
