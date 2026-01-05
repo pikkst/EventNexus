@@ -151,11 +151,12 @@ jobs:
         with:
           name: eventnexus-livemap-release
           path: ./apk-release
-            - name: Rename APKs for website downloads
-              run: |
-                mkdir -p downloads
-                cp ./apk-release/app-release.apk ./downloads/EventNexusLiveMap.apk
-                echo "✅ Renamed release APK to EventNexusLiveMap.apk"
+      
+      - name: Rename APKs for website downloads
+        run: |
+          mkdir -p downloads
+          cp ./apk-release/app-release.apk ./downloads/EventNexusLiveMap.apk
+          echo "✅ Renamed release APK to EventNexusLiveMap.apk"
           ls -lh ./downloads/EventNexusLiveMap.apk
       
       - name: Copy APKs to website public/downloads
