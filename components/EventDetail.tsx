@@ -17,13 +17,17 @@ import {
   UserPlus,
   UserMinus,
   Star,
-  Edit3
+  Edit3,
+  Smartphone,
+  ExternalLink,
+  QrCode
 } from 'lucide-react';
 import { getEvents, getEventById, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates, isEventCompleted } from '../services/dbService';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
 import { isEventExpired } from '../utils/eventUtils';
 import { generateEventSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
+import ScannerCodeManager from './ScannerCodeManager';
 
 interface EventDetailProps {
   user: User | null;
@@ -457,6 +461,45 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                 </button>
               </div>
             </div>
+
+            {user && user.id === event.organizerId && (
+              <div className="space-y-4">
+                <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Smartphone className="w-6 h-6 text-indigo-400" />
+                    <div>
+                      <h3 className="text-lg font-bold">Mobile Scanner App</h3>
+                      <p className="text-sm text-slate-400">Download and connect the scanner app directly to this event.</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <a
+                      href="/downloads/EventNexusScanner.apk"
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-white font-semibold transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Download Android APK
+                    </a>
+                    <a
+                      href="/mobile"
+                      className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-white font-semibold transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      iOS Install Guide
+                    </a>
+                    <a
+                      href="/mobile"
+                      className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-white font-semibold transition-colors"
+                    >
+                      <QrCode className="w-4 h-4" />
+                      How scanner codes work
+                    </a>
+                  </div>
+                </div>
+
+                <ScannerCodeManager event={event} organizerId={event.organizerId} />
+              </div>
+            )}
 
             <div className="bg-slate-900 border border-slate-800 rounded-xl sm:rounded-2xl md:rounded-[32px] p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-xl">
               <div className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 flex-col sm:flex-row">
