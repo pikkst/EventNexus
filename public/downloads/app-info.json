@@ -1,0 +1,41 @@
+{
+  "app_name": "EventNexus Scanner",
+  "version": "1.0.0",
+  "platform": "Android",
+  "min_android_version": "8.0 (API 26)",
+  "target_android_version": "14.0 (API 34)",
+  "package_name": "eu.eventnexus.scanner",
+  "build_date": "2026-01-05",
+  "features": [
+    "QR code scanning",
+    "Real-time ticket validation",
+    "Scanner code authentication",
+    "Session tracking",
+    "Live statistics",
+    "Dark mode UI"
+  ],
+  "permissions": [
+    "CAMERA - For QR code scanning",
+    "INTERNET - For ticket validation"
+  ],
+  "size": "~15 MB",
+  "download_url": "/downloads/EventNexusScanner.apk",
+  "installation_instructions": [
+    "Download APK file",
+    "Enable 'Install from Unknown Sources' in Android Settings > Security",
+    "Open Downloads folder",
+    "Tap APK file to install",
+    "Launch EventNexus Scanner",
+    "Enter scanner code from your event organizer"
+  ],
+  "requirements": [
+    "Android 8.0 or later",
+    "Camera permission",
+    "Internet connection"
+  ],
+  "support": {
+    "email": "huntersest@gmail.com",
+    "website": "https://eventnexus.eu",
+    "help_center": "https://eventnexus.eu/help"
+  }
+}

@@ -28,7 +28,8 @@ import {
   Edit,
   Mail,
   Gift,
-  Coins
+  Coins,
+  Smartphone
 } from 'lucide-react';
 
 // Lightweight components - load immediately
@@ -47,6 +48,7 @@ const EventEditPage = lazy(() => import('./components/EventEditPage'));
 const TicketScanner = lazy(() => import('./components/TicketScanner'));
 const TicketViewPage = lazy(() => import('./components/TicketViewPage'));
 const PricingPage = lazy(() => import('./components/PricingPage'));
+const MobileAppsPage = lazy(() => import('./components/MobileAppsPage'));
 const AgencyProfile = lazy(() => import('./components/AgencyProfile'));
 const AdminCommandCenter = lazy(() => import('./components/AdminCommandCenter'));
 const SimplifiedSocialMediaManager = lazy(() => import('./components/SimplifiedSocialMediaManager').then(m => ({ default: m.SimplifiedSocialMediaManager })));
@@ -744,6 +746,7 @@ const App: React.FC = () => {
               <Route path="/ticket" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/ticket/:id" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription_tier: t, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/mobile" element={<MobileAppsPage />} />
               <Route path="/beta" element={<BetaInvitation />} />
               <Route path="/beta-signup" element={<BetaInvitation />} />
               <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
@@ -1020,6 +1023,7 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
           <SidebarItem icon={<TicketIcon />} label="My Tickets" to="/profile" onClick={closeSidebar} />
           <SidebarItem icon={<Radar />} label="Nexus Radar" to="/notifications" onClick={closeSidebar} />
           <SidebarItem icon={<Gift />} label="Redeem Code" to="/redeem" onClick={closeSidebar} />
+          <SidebarItem icon={<Smartphone />} label="Mobile Apps" to="/mobile" onClick={closeSidebar} />
           <SidebarItem icon={<Zap />} label="Pricing" to="/pricing" onClick={closeSidebar} />
           
           <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">User</div>
