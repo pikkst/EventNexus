@@ -15,15 +15,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.*
 import eu.eventnexus.livemap.data.model.Event
 import eu.eventnexus.livemap.data.repository.EventRepository
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,19 +40,13 @@ fun MapScreen(
     var events by remember { mutableStateOf<List<Event>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var userLocation by remember { mutableStateOf<LatLng?>(null) }
+    var userLocation by remember { mutableStateOf<GeoPoint?>(null) }
     var hasLocationPermission by remember { mutableStateOf(false) }
     var showFilters by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var radiusKm by remember { mutableStateOf(50f) }
-    
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(
-            userLocation ?: LatLng(59.437, 24.7536), // Tallinn default
-            12f
-        )
-    }
+    var mapView by remember { mutableStateOf<MapView?>(null) }
     
     // Location permission launcher
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -64,11 +61,11 @@ fun MapScreen(
                     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
                     val location = fusedLocationClient.lastLocation.await()
                     location?.let {
-                        userLocation = LatLng(it.latitude, it.longitude)
-                        cameraPositionState.position = CameraPosition.fromLatLngZoom(
-                            LatLng(it.latitude, it.longitude),
-                            12f
-                        )
+                        userLocation = GeoPoint(it.latitude, it.longitude)
+                        mapView?.controller?.apply {
+                            setZoom(12.0)
+                            setCenter(GeoPoint(it.latitude, it.longitude))
+                        }
                     }
                 } catch (e: SecurityException) {
                     error = "Location permission denied"
@@ -96,7 +93,7 @@ fun MapScreen(
                 val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
                 val location = fusedLocationClient.lastLocation.await()
                 location?.let {
-                    userLocation = LatLng(it.latitude, it.longitude)
+                    userLocation = GeoPoint(it.latitude, it.longitude)
                 }
             } catch (e: SecurityException) {
                 error = "Location permission denied"
@@ -153,41 +150,52 @@ fun MapScreen(
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Google Map
-            GoogleMap(
+            // OpenStreetMap using osmdroid
+            AndroidView(
+                factory = { ctx ->
+                    Configuration.getInstance().userAgentValue = ctx.packageName
+                    MapView(ctx).apply {
+                        setTileSource(TileSourceFactory.MAPNIK)
+                        setMultiTouchControls(true)
+                        controller.setZoom(12.0)
+                        controller.setCenter(
+                            userLocation ?: GeoPoint(59.437, 24.7536) // Tallinn default
+                        )
+                        mapView = this
+                    }
+                },
                 modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                properties = MapProperties(
-                    isMyLocationEnabled = hasLocationPermission
-                ),
-                uiSettings = MapUiSettings(
-                    myLocationButtonEnabled = true,
-                    zoomControlsEnabled = false
-                )
-            ) {
-                // User location marker
-                userLocation?.let {
-                    Marker(
-                        state = MarkerState(position = it),
-                        title = "Your Location"
-                    )
-                }
-                
-                // Event markers
-                events.forEach { event ->
-                    Marker(
-                        state = MarkerState(
-                            position = LatLng(event.latitude, event.longitude)
-                        ),
-                        title = event.name,
-                        snippet = event.category,
-                        onClick = {
-                            onEventClick(event.id)
-                            true
+                update = { view ->
+                    // Clear existing markers
+                    view.overlays.clear()
+                    
+                    // Add user location marker
+                    userLocation?.let { location ->
+                        val marker = Marker(view).apply {
+                            position = location
+                            title = "Your Location"
+                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                         }
-                    )
+                        view.overlays.add(marker)
+                    }
+                    
+                    // Add event markers
+                    events.forEach { event ->
+                        val marker = Marker(view).apply {
+                            position = GeoPoint(event.latitude, event.longitude)
+                            title = event.name
+                            snippet = event.category
+                            setOnMarkerClickListener { _, _ ->
+                                onEventClick(event.id)
+                                true
+                            }
+                        }
+                        view.overlays.add(marker)
+                    }
+                    
+                    view.invalidate()
                 }
-            }
+            )
             
             // Search bar at top
             Card(
