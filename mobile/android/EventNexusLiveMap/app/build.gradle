@@ -78,6 +78,9 @@ dependencies {
     // OpenStreetMap (Leaflet alternative for Android)
     implementation 'org.osmdroid:osmdroid-android:6.1.18'
     implementation 'com.google.android.gms:play-services-location:21.1.0'
+    
+    // Coroutines support for play-services (for tasks.await())
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3'
 
     // Supabase
     implementation 'io.github.jan-tennert.supabase:postgrest-kt:2.1.3'
