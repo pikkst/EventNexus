@@ -1,5 +1,6 @@
 package eu.eventnexus.livemap.data.repository
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -10,6 +11,7 @@ import eu.eventnexus.livemap.data.model.User
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -33,20 +35,23 @@ class AuthRepository {
                 this.password = password
             }
             
-            val userId = result.id ?: throw Exception("No user ID")
+            val session = client.auth.currentSessionOrNull()
+            val userId = session?.user?.id ?: throw Exception("No user ID")
             
             // Save session
             context.dataStore.edit { prefs ->
                 prefs[PreferencesKeys.USER_ID] = userId
-                result.accessToken?.let { prefs[PreferencesKeys.ACCESS_TOKEN] = it }
+                session.accessToken.let { prefs[PreferencesKeys.ACCESS_TOKEN] = it }
             }
             
             // Get user profile
-            val userResult = client.from("users")
-                .select()
-                .eq("id", userId)
-                .single()
-                .execute()
+            val users = client.from("users")
+                .select(Columns.ALL) {
+                    filter {
+                        eq("id", userId)
+                    }
+                    limit(1)
+                }.decodeList<User>()
             
             val user = userResult.decodeAs<User>()
             Result.success(user)
@@ -62,7 +67,8 @@ class AuthRepository {
                 this.password = password
             }
             
-            val userId = result.id ?: throw Exception("No user ID")
+            val session = client.auth.currentSessionOrNull()
+            val userId = session?.user?.id ?: throw Exception("No user ID")
             
             // Create user profile
             client.from("users")
@@ -71,12 +77,11 @@ class AuthRepository {
                     "email" to email,
                     "name" to name
                 ))
-                .execute()
             
             // Save session
             context.dataStore.edit { prefs ->
                 prefs[PreferencesKeys.USER_ID] = userId
-                result.accessToken?.let { prefs[PreferencesKeys.ACCESS_TOKEN] = it }
+                session.accessToken.let { prefs[PreferencesKeys.ACCESS_TOKEN] = it }
             }
             
             val user = User(
@@ -115,13 +120,15 @@ class AuthRepository {
                 return@withContext Result.success(null)
             }
             
-            val result = client.from("users")
-                .select()
-                .eq("id", userId)
-                .single()
-                .execute()
+            val users = client.from("users")
+                .select(Columns.ALL) {
+                    filter {
+                        eq("id", userId)
+                    }
+                    limit(1)
+                }.decodeList<User>()
             
-            val user = result.decodeAs<User>()
+            val user = users.firstOrNull()
             Result.success(user)
         } catch (e: Exception) {
             Result.success(null)

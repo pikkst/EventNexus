@@ -26,13 +26,13 @@ private val LightColorScheme = lightColorScheme(
     secondary = EventNexusSecondary,
     tertiary = EventNexusAccent,
     
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
+    background = androidx.compose.ui.graphics.Color(0xFFFFFBFE),
+    surface = androidx.compose.ui.graphics.Color(0xFFFFFBFE),
+    onPrimary = androidx.compose.ui.graphics.Color.White,
+    onSecondary = androidx.compose.ui.graphics.Color.White,
+    onTertiary = androidx.compose.ui.graphics.Color.White,
+    onBackground = androidx.compose.ui.graphics.Color(0xFF1C1B1F),
+    onSurface = androidx.compose.ui.graphics.Color(0xFF1C1B1F),
 )
 
 @Composable
