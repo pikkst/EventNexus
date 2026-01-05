@@ -222,21 +222,21 @@ fun EventDetailContent(
                 )
             }
             
-            EventDetailRow(
-                icon = Icons.Filled.LocationOn,
-                label = "Location",
-                value = event.location
-            )
-            
-            event.organizer_name?.let {
+            event.location?.city?.let {
                 EventDetailRow(
-                    icon = Icons.Filled.Person,
-                    label = "Organizer",
+                    icon = Icons.Filled.LocationOn,
+                    label = "Location",
                     value = it
                 )
             }
             
-            event.tickets_available?.let {
+            // Calculate available tickets
+            val availableTickets = event.maxCapacity?.let { max ->
+                val attendees = event.attendeesCount ?: 0
+                max - attendees
+            }
+            
+            availableTickets?.let {
                 EventDetailRow(
                     icon = Icons.Filled.ConfirmationNumber,
                     label = "Tickets Available",
@@ -244,11 +244,11 @@ fun EventDetailContent(
                 )
             }
             
-            event.ticket_price?.let {
+            if (event.price > 0.0) {
                 EventDetailRow(
                     icon = Icons.Filled.Euro,
                     label = "Price",
-                    value = "€%.2f".format(it)
+                    value = "€%.2f".format(event.price)
                 )
             }
             
