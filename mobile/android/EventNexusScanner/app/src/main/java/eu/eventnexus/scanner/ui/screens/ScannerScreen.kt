@@ -329,7 +329,7 @@ fun StatItem(
 @Composable
 fun ScanResultOverlay(
     result: ScanResult,
-    onDismiss: () -> Void
+    onDismiss: () -> Unit
 ) {
     Box(
         modifier = Modifier
