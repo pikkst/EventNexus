@@ -9,8 +9,8 @@ echo "🤖 Building EventNexus Scanner for Android..."
 
 # Configuration
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ANDROID_DIR="$PROJECT_DIR/mobile/android/EventNexusScanner"
-BUILD_DIR="$PROJECT_DIR/mobile/builds/android"
+ANDROID_DIR="$PROJECT_DIR/android/EventNexusScanner"
+BUILD_DIR="$PROJECT_DIR/builds/android"
 APP_NAME="EventNexusScanner"
 
 # Colors
