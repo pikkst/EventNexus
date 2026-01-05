@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,10 +20,12 @@ import eu.eventnexus.livemap.ui.screens.MyTicketsScreen
 import eu.eventnexus.livemap.ui.screens.ProfileScreen
 import eu.eventnexus.livemap.ui.screens.EventDetailScreen
 import eu.eventnexus.livemap.ui.screens.TicketDetailScreen
+import eu.eventnexus.livemap.ui.screens.RadarScreen
 
 sealed class Screen(val route: String, val title: String) {
     object Map : Screen("map", "Map")
-    object MyTickets : Screen("my_tickets", "My Tickets")
+    object Radar : Screen("radar", "Radar")
+    object MyTickets : Screen("my_tickets", "Tickets")
     object Profile : Screen("profile", "Profile")
     object EventDetail : Screen("event/{eventId}", "Event Details")
     object TicketDetail : Screen("ticket/{ticketId}", "Ticket")
@@ -37,13 +40,17 @@ fun AppNavigation() {
     
     val bottomNavItems = listOf(
         BottomNavItem(Screen.Map.route, "Map", Icons.Filled.Map),
+        BottomNavItem(Screen.Radar.route, "Radar", Icons.Filled.Radar),
         BottomNavItem(Screen.MyTickets.route, "Tickets", Icons.Filled.ConfirmationNumber),
         BottomNavItem(Screen.Profile.route, "Profile", Icons.Filled.AccountCircle)
     )
     
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ) {
                 bottomNavItems.forEach { item ->
                     NavigationBarItem(
                         icon = { Icon(item.icon, contentDescription = item.label) },
@@ -74,6 +81,10 @@ fun AppNavigation() {
                         navController.navigate("event/$eventId")
                     }
                 )
+            }
+            
+            composable(Screen.Radar.route) {
+                RadarScreen()
             }
             
             composable(Screen.MyTickets.route) {

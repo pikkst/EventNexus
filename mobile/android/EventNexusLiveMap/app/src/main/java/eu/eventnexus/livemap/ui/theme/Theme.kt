@@ -19,8 +19,8 @@ private val DarkColorScheme = darkColorScheme(
     primary = androidx.compose.ui.graphics.Color(0xFF6366f1),
     secondary = androidx.compose.ui.graphics.Color(0xFF818cf8),
     tertiary = androidx.compose.ui.graphics.Color(0xFFa5b4fc),
-    background = androidx.compose.ui.graphics.Color(0xFF0f172a),
-    surface = androidx.compose.ui.graphics.Color(0xFF1e293b),
+    background = androidx.compose.ui.graphics.Color(0xFF020617), // Updated dark background
+    surface = androidx.compose.ui.graphics.Color(0xFF0f172a),   // Updated surface color
     onPrimary = androidx.compose.ui.graphics.Color.White,
     onSecondary = androidx.compose.ui.graphics.Color.White,
     onTertiary = androidx.compose.ui.graphics.Color.White,
@@ -44,8 +44,8 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun EventNexusTheme(
-    darkTheme: Boolean = true,
-    dynamicColor: Boolean = false,
+    darkTheme: Boolean = true, // Force dark theme by default as requested
+    dynamicColor: Boolean = false, // Disable dynamic color to maintain brand consistency
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -61,8 +61,8 @@ fun EventNexusTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            window.statusBarColor = colorScheme.background.toArgb() // Match background
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 

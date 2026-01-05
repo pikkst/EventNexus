@@ -10,15 +10,13 @@ Native Android application for EventNexus platform with interactive map, ticket 
 - Android Studio Hedgehog (2023.1.1+)
 - JDK 17
 - Android SDK 34
-- Google Maps API Key
 
 ### Setup
 1. Clone repository
 2. Open in Android Studio: `mobile/android/EventNexusLiveMap`
-3. Create `local.properties`:
+3. Create `local.properties` (if not created automatically):
    ```properties
    sdk.dir=/path/to/Android/sdk
-   MAPS_API_KEY=your_google_maps_api_key_here
    ```
 4. Sync project with Gradle
 5. Run on device/emulator
@@ -50,7 +48,7 @@ app/
 │   │   │   ├── repository/     # Data access layer
 │   │   │   └── SupabaseClient.kt
 │   │   ├── ui/
-│   │   │   ├── screens/        # Main screens
+│   │   │   ├── screens/        # Main screens (Map, Radar, Tickets, Profile)
 │   │   │   ├── navigation/     # Navigation setup
 │   │   │   └── theme/          # Material Design 3
 │   │   ├── LiveMapApplication.kt
@@ -62,7 +60,8 @@ app/
 
 ## Features
 
-✅ Interactive Google Maps with event markers  
+✅ Interactive OpenStreetMap with event markers  
+✅ **Nexus Radar** - Real-time event detection  
 ✅ Location-based event discovery  
 ✅ Radius filtering (1-200km)  
 ✅ Category filtering  
@@ -70,7 +69,7 @@ app/
 ✅ Ticket management with QR codes  
 ✅ Supabase authentication  
 ✅ Deep linking  
-✅ Material Design 3  
+✅ Material Design 3 Dark Mode  
 
 ## Configuration
 
@@ -78,12 +77,6 @@ app/
 Configured in `SupabaseClient.kt`:
 - URL: `https://anlivujgkjmajkcgbaxw.supabase.co`
 - Uses Supabase Kotlin SDK v2.1.3
-
-### Google Maps
-Add API key in `local.properties` or `gradle.properties`:
-```
-MAPS_API_KEY=your_key_here
-```
 
 ### Deep Links
 ```
@@ -94,7 +87,7 @@ https://www.eventnexus.eu/events/{eventId}
 ## Dependencies
 
 - Jetpack Compose (UI)
-- Google Maps Compose
+- osmdroid (OpenStreetMap)
 - Supabase Kotlin (postgrest, auth, storage, realtime)
 - ZXing (QR codes)
 - Coil (image loading)
@@ -144,9 +137,8 @@ KEY_PASSWORD=your_key_password
 - Invalidate caches: Android Studio → File → Invalidate Caches
 
 **Map not loading**
-- Verify Google Maps API key
+- Check internet connection (required for map tiles)
 - Check location permissions in Manifest
-- Enable "Maps SDK for Android" in Google Cloud Console
 
 **Supabase connection fails**
 - Check internet connection
