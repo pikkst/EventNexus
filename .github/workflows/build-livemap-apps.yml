@@ -1,0 +1,209 @@
+name: Build Live Map Mobile Apps
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'mobile/android/EventNexusLiveMap/**'
+      - 'mobile/ios/EventNexusLiveMap/**'
+      - '.github/workflows/build-livemap-apps.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'mobile/android/EventNexusLiveMap/**'
+      - 'mobile/ios/EventNexusLiveMap/**'
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android Live Map App
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      
+      - name: Grant execute permission for gradlew
+        run: chmod +x mobile/android/EventNexusLiveMap/gradlew
+      
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      
+      - name: Build Debug APK
+        run: |
+          cd mobile/android/EventNexusLiveMap
+          ./gradlew assembleDebug
+        env:
+          MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+      
+      - name: Build Release APK
+        run: |
+          cd mobile/android/EventNexusLiveMap
+          ./gradlew assembleRelease
+        env:
+          MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+      
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: eventnexus-livemap-debug
+          path: mobile/android/EventNexusLiveMap/app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+      
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: eventnexus-livemap-release
+          path: mobile/android/EventNexusLiveMap/app/build/outputs/apk/release/*.apk
+          retention-days: 90
+
+  build-ios:
+    name: Build iOS Live Map App
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.2'
+      
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+      
+      - name: Install Swift Package Dependencies
+        run: |
+          cd mobile/ios/EventNexusLiveMap
+          xcodebuild -resolvePackageDependencies -project EventNexusLiveMap.xcodeproj -scheme EventNexusLiveMap
+      
+      - name: Build iOS App
+        run: |
+          cd mobile/ios/EventNexusLiveMap
+          xcodebuild -project EventNexusLiveMap.xcodeproj \
+            -scheme EventNexusLiveMap \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.2' \
+            clean build
+      
+      - name: Archive iOS App
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cd mobile/ios/EventNexusLiveMap
+          xcodebuild -project EventNexusLiveMap.xcodeproj \
+            -scheme EventNexusLiveMap \
+            -configuration Release \
+            -archivePath $PWD/build/EventNexusLiveMap.xcarchive \
+            archive
+      
+      - name: Upload iOS Build Artifacts
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: eventnexus-livemap-ios
+          path: mobile/ios/EventNexusLiveMap/build/EventNexusLiveMap.xcarchive
+          retention-days: 90
+
+  create-release:
+    name: Create Release with APKs
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(grep "versionName" mobile/android/EventNexusLiveMap/app/build.gradle | awk '{print $2}' | tr -d '"')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Download Android Debug APK
+        uses: actions/download-artifact@v4
+        with:
+          name: eventnexus-livemap-debug
+          path: ./apk-debug
+      
+      - name: Download Android Release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: eventnexus-livemap-release
+          path: ./apk-release
+            - name: Rename APKs for website downloads
+              run: |
+                mkdir -p downloads
+                cp ./apk-release/app-release.apk ./downloads/EventNexusLiveMap.apk
+                echo "✅ Renamed release APK to EventNexusLiveMap.apk"
+      
+            - name: Copy APKs to website public/downloads
+              run: |
+                mkdir -p public/downloads
+                cp ./downloads/EventNexusLiveMap.apk public/downloads/EventNexusLiveMap.apk
+                echo "✅ Copied EventNexusLiveMap.apk to public/downloads/"
+      
+            - name: Commit and push APKs to repository
+              run: |
+                git config --local user.email "github-actions[bot]@users.noreply.github.com"
+                git config --local user.name "github-actions[bot]"
+                git add public/downloads/EventNexusLiveMap.apk
+                git commit -m "🤖 Auto-deploy: Update EventNexusLiveMap.apk [skip ci]" || echo "No changes to commit"
+                git push
+      
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: livemap-v${{ steps.version.outputs.version }}-${{ github.run_number }}
+          name: EventNexus Live Map v${{ steps.version.outputs.version }}
+          body: |
+            ## EventNexus Live Map Mobile Apps
+            
+            ### Android
+            - **Debug APK**: For testing with debug features
+            - **Release APK**: Production-ready version
+            
+            ### iOS
+            - iOS build artifacts available for TestFlight deployment
+            
+            ### Features
+            - 🗺️ Interactive event map with location-based filtering
+            - 📍 Proximity search with customizable radius
+            - 🎫 In-app ticket viewing with QR codes
+            - 🔐 Secure authentication with Supabase
+            - 🌐 Deep linking to web platform for ticket purchase
+            - 📱 Native performance on both platforms
+            
+            ### Installation
+            **Android**: Download and install the APK file
+            **iOS**: Requires Xcode to build and install
+            
+            Built with ❤️ for EventNexus
+          files: |
+            ./apk-debug/*.apk
+            ./apk-release/*.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,86 @@
+<resources>
+    <string name="app_name">EventNexus Live Map</string>
+    
+    <!-- Navigation -->
+    <string name="nav_map">Map</string>
+    <string name="nav_tickets">My Tickets</string>
+    <string name="nav_profile">Profile</string>
+    
+    <!-- Map Screen -->
+    <string name="search_events">Search events…</string>
+    <string name="filter_by_category">Filter by category</string>
+    <string name="all_categories">All Categories</string>
+    <string name="radius">Radius</string>
+    <string name="km">km</string>
+    <string name="apply_filters">Apply Filters</string>
+    <string name="clear_filters">Clear Filters</string>
+    <string name="location_permission_required">Location permission required</string>
+    <string name="location_permission_rationale">Location access is needed to show nearby events</string>
+    <string name="grant_permission">Grant Permission</string>
+    
+    <!-- Event Details -->
+    <string name="event_details">Event Details</string>
+    <string name="date">Date</string>
+    <string name="time">Time</string>
+    <string name="location">Location</string>
+    <string name="organizer">Organizer</string>
+    <string name="category">Category</string>
+    <string name="description">Description</string>
+    <string name="tickets_available">Tickets Available</string>
+    <string name="buy_on_web">Buy on Website</string>
+    <string name="buy_in_app">Buy in App</string>
+    <string name="view_on_map">View on Map</string>
+    <string name="share_event">Share Event</string>
+    <string name="login_required">Login Required</string>
+    <string name="login_to_buy">Please login to purchase tickets in the app</string>
+    
+    <!-- My Tickets -->
+    <string name="my_tickets">My Tickets</string>
+    <string name="no_tickets">No tickets yet</string>
+    <string name="no_tickets_description">Purchase tickets to see them here</string>
+    <string name="ticket_valid">Valid</string>
+    <string name="ticket_used">Used</string>
+    <string name="ticket_expired">Expired</string>
+    <string name="show_qr_code">Show QR Code</string>
+    <string name="ticket_details">Ticket Details</string>
+    
+    <!-- QR Code -->
+    <string name="qr_code">QR Code</string>
+    <string name="qr_brightness_tip">Increase screen brightness for better scanning</string>
+    <string name="ticket_number">Ticket #%s</string>
+    
+    <!-- Auth -->
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="logout">Logout</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="already_have_account">Already have an account?</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up">Sign Up</string>
+    
+    <!-- Profile -->
+    <string name="profile">Profile</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="name">Name</string>
+    <string name="phone">Phone</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- Errors -->
+    <string name="error_loading_events">Error loading events</string>
+    <string name="error_loading_tickets">Error loading tickets</string>
+    <string name="error_login">Login failed</string>
+    <string name="error_register">Registration failed</string>
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="retry">Retry</string>
+    
+    <!-- General -->
+    <string name="ok">OK</string>
+    <string name="loading">Loading…</string>
+    <string name="refresh">Refresh</string>
+    <string name="close">Close</string>
+</resources>
