@@ -156,25 +156,27 @@ jobs:
                 mkdir -p downloads
                 cp ./apk-release/app-release.apk ./downloads/EventNexusLiveMap.apk
                 echo "✅ Renamed release APK to EventNexusLiveMap.apk"
+          ls -lh ./downloads/EventNexusLiveMap.apk
       
-            - name: Copy APKs to website public/downloads
-              run: |
-                mkdir -p public/downloads
-                cp ./downloads/EventNexusLiveMap.apk public/downloads/EventNexusLiveMap.apk
-                echo "✅ Copied EventNexusLiveMap.apk to public/downloads/"
+      - name: Copy APKs to website public/downloads
+        run: |
+          mkdir -p public/downloads
+          cp ./downloads/EventNexusLiveMap.apk public/downloads/EventNexusLiveMap.apk
+          echo "✅ Copied EventNexusLiveMap.apk to public/downloads/"
+          ls -lh public/downloads/EventNexusLiveMap.apk
       
-            - name: Commit and push APKs to repository
-              run: |
-                git config --local user.email "github-actions[bot]@users.noreply.github.com"
-                git config --local user.name "github-actions[bot]"
-                git add public/downloads/EventNexusLiveMap.apk
-                git commit -m "🤖 Auto-deploy: Update EventNexusLiveMap.apk [skip ci]" || echo "No changes to commit"
-                git push
-      
-      
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
+      - name: Commit and push APKs to repository
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -f public/downloads/EventNexusLiveMap.apk
+          git status
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "🤖 Update EventNexusLiveMap APK [skip ci]"
+            git push
+          fi
           tag_name: livemap-v${{ steps.version.outputs.version }}-${{ github.run_number }}
           name: EventNexus Live Map v${{ steps.version.outputs.version }}
           body: |

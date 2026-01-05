@@ -1,5 +1,15 @@
 # EventNexus Mobile Apps - Download Info
 
+**Download APKs from GitHub Releases:**
+- [Latest Scanner APK](https://github.com/pikkst/EventNexus/releases?q=scanner)
+- [Latest Live Map APK](https://github.com/pikkst/EventNexus/releases?q=livemap)
+
+Or use direct links (redirects to latest release):
+- Scanner: `https://eventnexus.eu/downloads/EventNexusScanner.apk`
+- Live Map: `https://eventnexus.eu/downloads/EventNexusLiveMap.apk`
+
+---
+
 ## EventNexus Scanner (For Event Staff)
 
 **Purpose:** Scan tickets at event entrances

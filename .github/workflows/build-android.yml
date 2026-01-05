@@ -52,11 +52,34 @@ jobs:
       run: |
         mkdir -p public/downloads
         cp mobile/android/EventNexusScanner/app/build/outputs/apk/debug/app-debug.apk public/downloads/EventNexusScanner.apk
+        ls -lh public/downloads/EventNexusScanner.apk
         
-    - name: Commit APK to repository
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        git add public/downloads/EventNexusScanner.apk
-        git diff --staged --quiet || git commit -m "chore: Update Android APK build [skip ci]"
-        git push
+    - name: Get short SHA
+      id: sha
+      run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        
+    - name: Create Release with APK
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: scanner-v1.0.0-${{ steps.sha.outputs.short }}
+        name: EventNexus Scanner APK (Build ${{ steps.sha.outputs.short }})
+        body: |
+          ## EventNexus Scanner - Latest Build
+          
+          **Download:** EventNexusScanner.apk (attached below)
+          
+          ### Installation
+          1. Download the APK
+          2. Enable "Install from Unknown Sources" on your Android device
+          3. Install and launch the app
+          4. Enter your scanner code from event organizer
+          
+          **Built:** ${{ github.run_number }}
+          **Commit:** ${{ github.sha }}
+          
+          Direct download link will be available at: https://eventnexus.eu/downloads/EventNexusScanner.apk
+        files: public/downloads/EventNexusScanner.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
