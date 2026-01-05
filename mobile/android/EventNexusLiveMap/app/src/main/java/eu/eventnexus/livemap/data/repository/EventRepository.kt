@@ -23,11 +23,14 @@ class EventRepository {
                 .select(Columns.ALL)
                 .decodeList<Event>()
             
+            // Filter active events only
+            val activeEvents = events.filter { it.attendeesCount != null }
+            
             // Filter by category if provided
             val filtered = if (category != null && category != "All") {
-                events.filter { it.category == category }
+                activeEvents.filter { it.category.equals(category, ignoreCase = true) }
             } else {
-                events
+                activeEvents
             }
             
             // Filter by radius if location provided

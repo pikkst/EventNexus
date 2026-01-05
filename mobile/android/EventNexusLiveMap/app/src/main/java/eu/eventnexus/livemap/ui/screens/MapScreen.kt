@@ -4,15 +4,19 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -146,9 +150,15 @@ fun MapScreen(
                     IconButton(onClick = { loadEvents() }) {
                         Icon(Icons.Filled.Refresh, "Refresh")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF1e293b),
+                    titleContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
             )
-        }
+        },
+        containerColor = Color(0xFF0f172a)
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             // OpenStreetMap using osmdroid
@@ -211,28 +221,37 @@ fun MapScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.TopCenter),
+                shape = RoundedCornerShape(15.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF1e293b)
+                )
             ) {
                 TextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search events...") },
-                    leadingIcon = { Icon(Icons.Filled.Search, "Search") },
+                    placeholder = { Text("Search events...", color = Color.Gray) },
+                    leadingIcon = { Icon(Icons.Filled.Search, "Search", tint = Color(0xFF6366f1)) },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = {
                                 searchQuery = ""
                                 loadEvents()
                             }) {
-                                Icon(Icons.Filled.Clear, "Clear")
+                                Icon(Icons.Filled.Clear, "Clear", tint = Color.Gray)
                             }
                         }
                     },
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        focusedContainerColor = Color(0xFF1e293b),
+                        unfocusedContainerColor = Color(0xFF1e293b),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color(0xFF6366f1),
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
                     )
                 )
             }
@@ -240,7 +259,9 @@ fun MapScreen(
             // Filters sheet
             if (showFilters) {
                 ModalBottomSheet(
-                    onDismissRequest = { showFilters = false }
+                    onDismissRequest = { showFilters = false },
+                    containerColor = Color(0xFF1e293b),
+                    contentColor = Color.White
                 ) {
                     FilterBottomSheet(
                         selectedCategory = selectedCategory,
@@ -263,7 +284,8 @@ fun MapScreen(
             // Loading indicator
             if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color(0xFF6366f1)
                 )
             }
             
@@ -275,9 +297,11 @@ fun MapScreen(
                         .padding(16.dp),
                     action = {
                         TextButton(onClick = { loadEvents() }) {
-                            Text("Retry")
+                            Text("Retry", color = Color(0xFF6366f1))
                         }
-                    }
+                    },
+                    containerColor = Color(0xFF1e293b),
+                    contentColor = Color.White
                 ) {
                     Text(errorMsg)
                 }
@@ -330,7 +354,13 @@ fun FilterBottomSheet(
                         onCategoryChange(if (category == "All") null else category)
                     },
                     label = { Text(category) },
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFF6366f1),
+                        selectedLabelColor = Color.White,
+                        containerColor = Color(0xFF0f172a),
+                        labelColor = Color.Gray
+                    )
                 )
             }
         }
@@ -349,7 +379,12 @@ fun FilterBottomSheet(
             onValueChange = onRadiusChange,
             valueRange = 1f..200f,
             steps = 199,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = SliderDefaults.colors(
+                thumbColor = Color(0xFF6366f1),
+                activeTrackColor = Color(0xFF6366f1),
+                inactiveTrackColor = Color.Gray
+            )
         )
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -361,14 +396,23 @@ fun FilterBottomSheet(
         ) {
             OutlinedButton(
                 onClick = onClear,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(15.dp)
             ) {
                 Text("Clear")
             }
             
             Button(
                 onClick = onApply,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF6366f1),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(15.dp)
             ) {
                 Text("Apply")
             }

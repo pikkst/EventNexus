@@ -16,9 +16,16 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = androidx.compose.ui.graphics.Color(0xFF6366f1),
+    secondary = androidx.compose.ui.graphics.Color(0xFF818cf8),
+    tertiary = androidx.compose.ui.graphics.Color(0xFFa5b4fc),
+    background = androidx.compose.ui.graphics.Color(0xFF0f172a),
+    surface = androidx.compose.ui.graphics.Color(0xFF1e293b),
+    onPrimary = androidx.compose.ui.graphics.Color.White,
+    onSecondary = androidx.compose.ui.graphics.Color.White,
+    onTertiary = androidx.compose.ui.graphics.Color.White,
+    onBackground = androidx.compose.ui.graphics.Color.White,
+    onSurface = androidx.compose.ui.graphics.Color.White,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -37,8 +44,8 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun EventNexusTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
