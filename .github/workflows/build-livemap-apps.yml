@@ -50,15 +50,11 @@ jobs:
         run: |
           cd mobile/android/EventNexusLiveMap
           ./gradlew assembleDebug
-        env:
-          MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
       
       - name: Build Release APK
         run: |
           cd mobile/android/EventNexusLiveMap
           ./gradlew assembleRelease
-        env:
-          MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
       
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
