@@ -19,6 +19,7 @@ import eu.eventnexus.livemap.BuildConfig
 import eu.eventnexus.livemap.data.model.EventDetail
 import eu.eventnexus.livemap.data.repository.AuthRepository
 import eu.eventnexus.livemap.data.repository.EventRepository
+import eu.eventnexus.livemap.data.repository.TicketRepository
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,12 +32,15 @@ fun EventDetailScreen(
     val scope = rememberCoroutineScope()
     val eventRepository = remember { EventRepository() }
     val authRepository = remember { AuthRepository() }
+    val ticketRepository = remember { TicketRepository() }
     
     var event by remember { mutableStateOf<EventDetail?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var isProcessingPayment by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var isLoggedIn by remember { mutableStateOf(false) }
     var showLoginDialog by remember { mutableStateOf(false) }
+    var showPurchaseDialog by remember { mutableStateOf(false) }
     
     LaunchedEffect(eventId) {
         isLoading = true
@@ -116,6 +120,7 @@ fun EventDetailScreen(
                     EventDetailContent(
                         event = event!!,
                         isLoggedIn = isLoggedIn,
+                        isProcessingPayment = isProcessingPayment,
                         onBuyOnWeb = {
                             val intent = Intent(Intent.ACTION_VIEW, 
                                 Uri.parse("${BuildConfig.WEB_PLATFORM_URL}/events/${event!!.id}"))
@@ -123,8 +128,7 @@ fun EventDetailScreen(
                         },
                         onBuyInApp = {
                             if (isLoggedIn) {
-                                // Navigate to ticket purchase in app
-                                // TODO: Implement in-app purchase
+                                showPurchaseDialog = true
                             } else {
                                 showLoginDialog = true
                             }
@@ -148,7 +152,7 @@ fun EventDetailScreen(
                         TextButton(
                             onClick = {
                                 showLoginDialog = false
-                                // Navigate to profile/login screen
+                                // Navigate to profile/login screen (simplified here)
                             }
                         ) {
                             Text("Login")
@@ -156,6 +160,63 @@ fun EventDetailScreen(
                     },
                     dismissButton = {
                         TextButton(onClick = { showLoginDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
+            // Purchase confirmation dialog
+            if (showPurchaseDialog) {
+                AlertDialog(
+                    onDismissRequest = { showPurchaseDialog = false },
+                    title = { Text("Purchase Ticket") },
+                    text = { 
+                        Column {
+                            Text("Event: ${event?.name}")
+                            Text("Price: €${event?.price ?: 0.0}")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("You will be redirected to Stripe to complete the payment securely.")
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showPurchaseDialog = false
+                                scope.launch {
+                                    isProcessingPayment = true
+                                    try {
+                                        val currentUser = authRepository.getCurrentUser().getOrNull()
+                                        if (currentUser != null && event != null) {
+                                            val result = ticketRepository.purchaseTicket(
+                                                eventId = event!!.id,
+                                                ticketTypeId = "general", // Using default for now
+                                                userId = currentUser.id,
+                                                ticketCount = 1,
+                                                pricePerTicket = event!!.price,
+                                                eventName = event!!.name
+                                            )
+                                            
+                                            result.onSuccess { checkoutUrl ->
+                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(checkoutUrl))
+                                                context.startActivity(intent)
+                                            }.onFailure { e ->
+                                                error = e.message ?: "Failed to start checkout"
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        error = e.message
+                                    } finally {
+                                        isProcessingPayment = false
+                                    }
+                                }
+                            }
+                        ) {
+                            Text("Proceed to Payment")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showPurchaseDialog = false }) {
                             Text("Cancel")
                         }
                     }
@@ -169,6 +230,7 @@ fun EventDetailScreen(
 fun EventDetailContent(
     event: EventDetail,
     isLoggedIn: Boolean,
+    isProcessingPayment: Boolean,
     onBuyOnWeb: () -> Unit,
     onBuyInApp: () -> Unit,
     onViewOnMap: () -> Unit
@@ -285,14 +347,30 @@ fun EventDetailContent(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            if (isLoggedIn) {
+            if (isProcessingPayment) {
+                Button(
+                    onClick = { },
+                    enabled = false,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Processing...")
+                }
+            } else if (isLoggedIn) {
                 Button(
                     onClick = onBuyInApp,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
                 ) {
                     Icon(Icons.Filled.ShoppingCart, "Buy", modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Buy in App")
+                    Text("Buy Ticket in App")
                 }
             } else {
                 OutlinedButton(

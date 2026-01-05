@@ -140,25 +140,7 @@ fun MapScreen(
     }
     
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("EventNexus Live Map") },
-                actions = {
-                    IconButton(onClick = { showFilters = !showFilters }) {
-                        Icon(Icons.Filled.FilterList, "Filters")
-                    }
-                    IconButton(onClick = { loadEvents() }) {
-                        Icon(Icons.Filled.Refresh, "Refresh")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1e293b),
-                    titleContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
-            )
-        },
-        containerColor = Color(0xFF0f172a)
+        containerColor = Color(0xFF020617) // Consistent dark background
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             // OpenStreetMap using osmdroid
@@ -168,6 +150,7 @@ fun MapScreen(
                         MapView(ctx).apply {
                             setTileSource(TileSourceFactory.MAPNIK)
                             setMultiTouchControls(true)
+                            setBuiltInZoomControls(false) // Hide default zoom buttons
                             controller.setZoom(12.0)
                             controller.setCenter(
                                 userLocation ?: GeoPoint(59.437, 24.7536) // Tallinn default
@@ -191,6 +174,7 @@ fun MapScreen(
                                 position = location
                                 title = "Your Location"
                                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                // Customize user marker if needed
                             }
                             view.overlays.add(marker)
                         }
@@ -222,17 +206,18 @@ fun MapScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
                     .align(Alignment.TopCenter),
-                shape = RoundedCornerShape(15.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1e293b)
-                )
+                    containerColor = Color(0xFF0F172A)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 TextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search events...", color = Color.Gray) },
-                    leadingIcon = { Icon(Icons.Filled.Search, "Search", tint = Color(0xFF6366f1)) },
+                    placeholder = { Text("Explore events...", color = Color.Gray) },
+                    leadingIcon = { Icon(Icons.Filled.Search, "Search", tint = Color(0xFF6366F1)) },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = {
@@ -245,8 +230,8 @@ fun MapScreen(
                     },
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFF1e293b),
-                        unfocusedContainerColor = Color(0xFF1e293b),
+                        focusedContainerColor = Color(0xFF0F172A),
+                        unfocusedContainerColor = Color(0xFF0F172A),
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
                         cursorColor = Color(0xFF6366f1),
@@ -256,11 +241,51 @@ fun MapScreen(
                 )
             }
             
+            // Map controls overlay
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .padding(bottom = 80.dp), // Adjust for bottom nav
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Filters button
+                FloatingActionButton(
+                    onClick = { showFilters = !showFilters },
+                    containerColor = Color(0xFF0F172A),
+                    contentColor = Color.White
+                ) {
+                    Icon(Icons.Filled.FilterList, "Filters")
+                }
+                
+                // My Location button
+                FloatingActionButton(
+                    onClick = {
+                        userLocation?.let { loc ->
+                            mapView?.controller?.animateTo(loc)
+                            mapView?.controller?.setZoom(15.0)
+                        } ?: run {
+                            // Request location if not available
+                            locationPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        }
+                    },
+                    containerColor = Color(0xFF6366F1),
+                    contentColor = Color.White
+                ) {
+                    Icon(Icons.Filled.MyLocation, "My Location")
+                }
+            }
+            
             // Filters sheet
             if (showFilters) {
                 ModalBottomSheet(
                     onDismissRequest = { showFilters = false },
-                    containerColor = Color(0xFF1e293b),
+                    containerColor = Color(0xFF0F172A),
                     contentColor = Color.White
                 ) {
                     FilterBottomSheet(
@@ -294,10 +319,11 @@ fun MapScreen(
                 Snackbar(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(16.dp),
+                        .padding(16.dp)
+                        .padding(bottom = 80.dp),
                     action = {
                         TextButton(onClick = { loadEvents() }) {
-                            Text("Retry", color = Color(0xFF6366f1))
+                            Text("Retry", color = Color(0xFF6366F1))
                         }
                     },
                     containerColor = Color(0xFF1e293b),
@@ -320,8 +346,7 @@ fun FilterBottomSheet(
     onClear: () -> Unit
 ) {
     val categories = listOf(
-        "All", "Music", "Sports", "Arts", "Food", "Technology", 
-        "Business", "Education", "Health", "Other"
+        "All", "Concert", "Festival", "Workshop", "Party", "Conference", "Meetup", "Sports"
     )
     
     Column(
@@ -348,18 +373,25 @@ fun FilterBottomSheet(
                 .weight(1f, fill = false)
         ) {
             items(categories) { category ->
+                val isSelected = if (category == "All") selectedCategory == null else selectedCategory == category
                 FilterChip(
-                    selected = if (category == "All") selectedCategory == null else selectedCategory == category,
+                    selected = isSelected,
                     onClick = {
                         onCategoryChange(if (category == "All") null else category)
                     },
                     label = { Text(category) },
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color(0xFF6366f1),
+                        selectedContainerColor = Color(0xFF6366F1),
                         selectedLabelColor = Color.White,
-                        containerColor = Color(0xFF0f172a),
+                        containerColor = Color(0xFF1E293B),
                         labelColor = Color.Gray
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isSelected,
+                        borderColor = if (isSelected) Color(0xFF6366F1) else Color.Transparent,
+                        borderWidth = 1.dp
                     )
                 )
             }
@@ -381,9 +413,9 @@ fun FilterBottomSheet(
             steps = 199,
             modifier = Modifier.fillMaxWidth(),
             colors = SliderDefaults.colors(
-                thumbColor = Color(0xFF6366f1),
-                activeTrackColor = Color(0xFF6366f1),
-                inactiveTrackColor = Color.Gray
+                thumbColor = Color(0xFF6366F1),
+                activeTrackColor = Color(0xFF6366F1),
+                inactiveTrackColor = Color(0xFF1E293B)
             )
         )
         
@@ -400,7 +432,7 @@ fun FilterBottomSheet(
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(15.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Clear")
             }
@@ -409,10 +441,10 @@ fun FilterBottomSheet(
                 onClick = onApply,
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6366f1),
+                    containerColor = Color(0xFF6366F1),
                     contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(15.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Apply")
             }

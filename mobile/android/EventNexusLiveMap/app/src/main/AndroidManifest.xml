@@ -40,13 +40,14 @@
             android:exported="true"
             android:theme="@style/Theme.EventNexusLiveMap"
             android:windowSoftInputMode="adjustResize"
-            android:configChanges="orientation|screenSize">
+            android:configChanges="orientation|screenSize"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep links for event details -->
+            <!-- Deep links for event details (Web) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -55,6 +56,16 @@
                     android:scheme="https"
                     android:host="www.eventnexus.eu"
                     android:pathPrefix="/events" />
+            </intent-filter>
+
+            <!-- Deep links for checkout (App Scheme) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="eventnexus"
+                    android:host="checkout" />
             </intent-filter>
         </activity>
         

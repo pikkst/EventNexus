@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.22'
 }
 
 android {
@@ -23,6 +24,7 @@ android {
         buildConfigField "String", "SUPABASE_URL", "\"https://anlivujgkjmajkcgbaxw.supabase.co\""
         buildConfigField "String", "SUPABASE_ANON_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFubGl2dWpna2ptYWprY2diYXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5OTY0OTQsImV4cCI6MjA4MTU3MjQ5NH0.5SzkZg_PMqgdMClS1ftg4ZT_Ddyq1zOi-ZOLe1yuRgY\""
         buildConfigField "String", "WEB_PLATFORM_URL", "\"https://www.eventnexus.eu\""
+        buildConfigField "String", "GOOGLE_WEB_CLIENT_ID", "\"987747455392-mp2a9cr2pgep0cqb4uv5tom0toqgfu93.apps.googleusercontent.com\""
     }
 
     buildTypes {
@@ -51,7 +53,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion '1.5.8'
+        kotlinCompilerExtensionVersion '1.5.10'
     }
 
     packaging {
@@ -67,9 +69,14 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
     implementation 'androidx.activity:activity-compose:1.8.2'
     implementation 'androidx.fragment:fragment-ktx:1.6.2'
+    
+    // Credential Manager (for Google Sign-In)
+    implementation "androidx.credentials:credentials:1.2.0"
+    implementation "androidx.credentials:credentials-play-services-auth:1.2.0"
+    implementation "com.google.android.libraries.identity.googleid:googleid:1.1.0"
 
     // Compose
-    implementation platform('androidx.compose:compose-bom:2024.01.00')
+    implementation platform('androidx.compose:compose-bom:2024.06.00')
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
@@ -86,14 +93,17 @@ dependencies {
     // Coroutines support for play-services (for tasks.await())
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3'
 
-    // Supabase
-    implementation 'io.github.jan-tennert.supabase:postgrest-kt:2.1.3'
-    implementation 'io.github.jan-tennert.supabase:realtime-kt:2.1.3'
-    implementation 'io.github.jan-tennert.supabase:storage-kt:2.1.3'
-    implementation 'io.github.jan-tennert.supabase:gotrue-kt:2.1.3'
-    implementation 'io.ktor:ktor-client-android:2.3.7'
-    implementation 'io.ktor:ktor-client-core:2.3.7'
-    implementation 'io.ktor:ktor-utils:2.3.7'
+    // Supabase - Updating to 2.5.0 for better Auth support
+    implementation 'io.github.jan-tennert.supabase:postgrest-kt:2.5.0'
+    implementation 'io.github.jan-tennert.supabase:realtime-kt:2.5.0'
+    implementation 'io.github.jan-tennert.supabase:storage-kt:2.5.0'
+    implementation 'io.github.jan-tennert.supabase:gotrue-kt:2.5.0'
+    implementation 'io.github.jan-tennert.supabase:compose-auth:2.5.0'
+    implementation 'io.github.jan-tennert.supabase:compose-auth-ui:2.5.0'
+    implementation 'io.github.jan-tennert.supabase:functions-kt:2.5.0' // Added functions module
+    implementation 'io.ktor:ktor-client-android:2.3.12'
+    implementation 'io.ktor:ktor-client-core:2.3.12'
+    implementation 'io.ktor:ktor-utils:2.3.12'
 
     // QR Code
     implementation 'com.google.zxing:core:3.5.3'
@@ -103,7 +113,7 @@ dependencies {
     implementation 'io.coil-kt:coil-compose:2.5.0'
 
     // JSON
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'
 
     // DataStore
     implementation 'androidx.datastore:datastore-preferences:1.0.0'
@@ -112,7 +122,7 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-    androidTestImplementation platform('androidx.compose:compose-bom:2024.01.00')
+    androidTestImplementation platform('androidx.compose:compose-bom:2024.06.00')
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
