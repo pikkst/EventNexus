@@ -64,21 +64,6 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
-                    android:scheme="https"
-                    android:host="www.eventnexus.eu"
-                    android:pathPrefix="/events" />
-            </intent-filter>
-
-            <!-- App link scheme -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="eventnexus"
-                    android:host="event" />
-            </intent-filter>
-        </activity>
 
     </application>
 
