@@ -42,6 +42,38 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: npm run build
 
+      - name: Download Scanner APK
+        continue-on-error: true
+        run: |
+          mkdir -p dist/downloads
+          # Download latest Scanner APK from releases
+          SCANNER_URL=$(curl -s https://api.github.com/repos/pikkst/EventNexus/releases | \
+            jq -r '.[] | select(.tag_name | contains("scanner")) | .assets[] | select(.name == "EventNexusScanner.apk") | .browser_download_url' | \
+            head -1)
+          if [ ! -z "$SCANNER_URL" ]; then
+            echo "Downloading Scanner APK from: $SCANNER_URL"
+            curl -L -o dist/downloads/EventNexusScanner.apk "$SCANNER_URL"
+            echo "✅ Scanner APK downloaded ($(du -h dist/downloads/EventNexusScanner.apk | cut -f1))"
+          else
+            echo "⚠️ No Scanner APK found in releases"
+          fi
+
+      - name: Download Live Map APK
+        continue-on-error: true
+        run: |
+          mkdir -p dist/downloads
+          # Download latest Live Map APK from releases
+          LIVEMAP_URL=$(curl -s https://api.github.com/repos/pikkst/EventNexus/releases | \
+            jq -r '.[] | select(.tag_name | contains("livemap")) | .assets[] | select(.name == "EventNexusLiveMap.apk") | .browser_download_url' | \
+            head -1)
+          if [ ! -z "$LIVEMAP_URL" ]; then
+            echo "Downloading Live Map APK from: $LIVEMAP_URL"
+            curl -L -o dist/downloads/EventNexusLiveMap.apk "$LIVEMAP_URL"
+            echo "✅ Live Map APK downloaded ($(du -h dist/downloads/EventNexusLiveMap.apk | cut -f1))"
+          else
+            echo "⚠️ No Live Map APK found in releases"
+          fi
+
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
