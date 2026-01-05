@@ -75,13 +75,12 @@ const MobileAppsPage: React.FC = () => {
   ];
 
   const handleDownload = (platform: 'ios' | 'android') => {
-    // In production, these would link to actual download URLs
     if (platform === 'android') {
-      // For now, link to Play Store or direct APK download
-      window.location.href = '/downloads/EventNexusScanner-debug.apk';
+      // Direct APK download
+      window.location.href = '/downloads/EventNexusScanner.apk';
     } else {
       // Link to TestFlight or App Store
-      alert('iOS version coming soon! Contact your event organizer for TestFlight access.');
+      alert('🍎 iOS App\n\nThe iOS version is coming soon!\n\nIf you are an event organizer, contact us at huntersest@gmail.com for TestFlight beta access.\n\nFor event staff: Ask your event organizer for the TestFlight invitation code.');
     }
   };
 
