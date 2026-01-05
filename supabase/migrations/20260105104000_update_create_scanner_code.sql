@@ -38,7 +38,7 @@ BEGIN
   RETURNING scanner_codes.id, scanner_codes.code, scanner_codes.name, scanner_codes.event_id
   INTO v_id, v_code, p_name, p_event_id;
 
-  RETURN QUERY SELECT v_id, v_code, p_name, p_event_id;
+  RETURN QUERY SELECT v_id AS id, v_code AS code, p_name AS name, p_event_id AS event_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
