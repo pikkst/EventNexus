@@ -286,37 +286,75 @@ const MobileAppsPage: React.FC = () => {
         </div>
 
         <div className="grid md:grid-cols-4 gap-8">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
-              1
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Get Scanner Code</h3>
-            <p className="text-slate-400">Organizer receives 8-character code when creating event</p>
-          </div>
+          {selectedApp === 'scanner' ? (
+            <>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
+                  1
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Get Scanner Code</h3>
+                <p className="text-slate-400">Organizer receives 8-character code when creating event</p>
+              </div>
 
-          <div className="text-center">
-            <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
-              2
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Download App</h3>
-            <p className="text-slate-400">Install EventNexus Scanner on iOS or Android device</p>
-          </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
+                  2
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Download App</h3>
+                <p className="text-slate-400">Install EventNexus Scanner on iOS or Android device</p>
+              </div>
 
-          <div className="text-center">
-            <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
-              3
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Enter Code</h3>
-            <p className="text-slate-400">Enter scanner code to sync with your event</p>
-          </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
+                  3
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Enter Code</h3>
+                <p className="text-slate-400">Enter scanner code to sync with your event</p>
+              </div>
 
-          <div className="text-center">
-            <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
-              4
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Start Scanning</h3>
-            <p className="text-slate-400">Scan tickets instantly at event entrance</p>
-          </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
+                  4
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Start Scanning</h3>
+                <p className="text-slate-400">Scan tickets instantly at event entrance</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
+                  1
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Download App</h3>
+                <p className="text-slate-400">Install EventNexus Live Map on iOS or Android device</p>
+              </div>
+
+              <div className="text-center">
+                <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
+                  2
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Explore Map</h3>
+                <p className="text-slate-400">Browse events on an interactive map near your location</p>
+              </div>
+
+              <div className="text-center">
+                <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
+                  3
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Purchase Tickets</h3>
+                <p className="text-slate-400">Sign in and buy tickets directly in the app</p>
+              </div>
+
+              <div className="text-center">
+                <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
+                  4
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Show Your Ticket</h3>
+                <p className="text-slate-400">Display QR code at event entrance for easy check-in</p>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -525,10 +563,12 @@ const MobileAppsPage: React.FC = () => {
         <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-3xl p-12 text-center">
           <Users className="w-16 h-16 text-white mx-auto mb-6" />
           <h2 className="text-3xl font-bold text-white mb-4">
-            Ready to Start Scanning?
+            {selectedApp === 'scanner' ? 'Ready to Start Scanning?' : 'Ready to Discover Events?'}
           </h2>
           <p className="text-xl text-indigo-100 mb-8">
-            Download the app now and start checking in attendees in minutes
+            {selectedApp === 'scanner'
+              ? 'Download the app now and start checking in attendees in minutes'
+              : 'Download the app now and start exploring events near you'}
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
