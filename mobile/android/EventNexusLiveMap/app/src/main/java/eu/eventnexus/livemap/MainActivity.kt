@@ -12,8 +12,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import eu.eventnexus.livemap.data.SupabaseClient
+import eu.eventnexus.livemap.data.repository.AnalyticsRepository
 import eu.eventnexus.livemap.ui.navigation.AppNavigation
 import eu.eventnexus.livemap.ui.theme.EventNexusTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     
@@ -25,7 +29,13 @@ class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log app open event
+        CoroutineScope(Dispatchers.IO).launch {
+            val analytics = AnalyticsRepository()
+            analytics.logEvent(AnalyticsRepository.EventType.APP_OPEN)
+        }
         
+        // 
         // Initialize Supabase client
         SupabaseClient.initialize(this)
         

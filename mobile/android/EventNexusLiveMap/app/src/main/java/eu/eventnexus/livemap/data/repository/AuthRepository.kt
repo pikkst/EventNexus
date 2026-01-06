@@ -22,6 +22,7 @@ import kotlinx.coroutines.withContext
 class AuthRepository {
     private val client = SupabaseClient.client
     private val context = SupabaseClient.getContext()
+    private val analytics = AnalyticsRepository()
     
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_prefs")
     
@@ -32,13 +33,18 @@ class AuthRepository {
     
     suspend fun signIn(email: String, password: String): Result<User> = withContext(Dispatchers.IO) {
         try {
+            analytics.logAuth(AnalyticsRepository.EventType.LOGIN_ATTEMPT, true, email)
+            
             client.auth.signInWith(Email) {
                 this.email = email
                 this.password = password
             }
             
+            analytics.logAuth(AnalyticsRepository.EventType.LOGIN_SUCCESS, true, email)
             handleAuthSuccess()
         } catch (e: Exception) {
+            analytics.logAuth(AnalyticsRepository.EventType.LOGIN_FAILURE, false, email)
+            
             // Return only the message to avoid leaking headers in UI
             val errorMessage = if (e.message?.contains("Invalid login credentials") == true) {
                 "Invalid email or password"
@@ -51,15 +57,20 @@ class AuthRepository {
     
     suspend fun signUp(email: String, password: String, name: String? = null): Result<User> = withContext(Dispatchers.IO) {
         try {
+            analytics.logAuth(AnalyticsRepository.EventType.SIGNUP_ATTEMPT, true, email)
+            
             client.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
             }
             
+            analytics.logAuth(AnalyticsRepository.EventType.SIGNUP_SUCCESS, true, email)
+            
             // Trigger will create profile automatically
             // Use handleAuthSuccess which will ensure profile exists
             handleAuthSuccess()
         } catch (e: Exception) {
+            analytics.logAuth(AnalyticsRepository.EventType.SIGNUP_ATTEMPT, false, email)
             Result.failure(e)
         }
     }
@@ -67,11 +78,14 @@ class AuthRepository {
     // Google Sign-In with pre-fetched ID Token
     suspend fun signInWithGoogle(idToken: String): Result<User> = withContext(Dispatchers.IO) {
         try {
+            analytics.logEvent(AnalyticsRepository.EventType.LOGIN_ATTEMPT, mapOf("method" to "google"))
+            
             client.auth.signInWith(IDToken) {
                 this.idToken = idToken
                 this.provider = Google
             }
             
+            analytics.logEvent(AnalyticsRepository.EventType.LOGIN_SUCCESS, mapOf("method" to "google"))
             handleAuthSuccess()
         } catch (e: Exception) {
             Result.failure(e)
@@ -119,6 +133,7 @@ class AuthRepository {
     
     suspend fun signOut(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            analytics.logEvent(AnalyticsRepository.EventType.LOGOUT)
             client.auth.signOut()
             context.dataStore.edit { prefs -> prefs.clear() }
             Result.success(Unit)
