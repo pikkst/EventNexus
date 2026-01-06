@@ -22,6 +22,45 @@ CREATE TABLE IF NOT EXISTS public.scanner_codes (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Add missing columns if they don't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_schema = 'public' 
+                   AND table_name = 'scanner_codes' 
+                   AND column_name = 'updated_at') THEN
+        ALTER TABLE public.scanner_codes ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_schema = 'public' 
+                   AND table_name = 'scanner_codes' 
+                   AND column_name = 'is_active') THEN
+        ALTER TABLE public.scanner_codes ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_schema = 'public' 
+                   AND table_name = 'scanner_codes' 
+                   AND column_name = 'last_used_at') THEN
+        ALTER TABLE public.scanner_codes ADD COLUMN last_used_at TIMESTAMPTZ;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_schema = 'public' 
+                   AND table_name = 'scanner_codes' 
+                   AND column_name = 'scan_count') THEN
+        ALTER TABLE public.scanner_codes ADD COLUMN scan_count INTEGER NOT NULL DEFAULT 0;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_schema = 'public' 
+                   AND table_name = 'scanner_codes' 
+                   AND column_name = 'device_info') THEN
+        ALTER TABLE public.scanner_codes ADD COLUMN device_info JSONB;
+    END IF;
+END $$;
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_scanner_codes_event_id ON public.scanner_codes(event_id);
 CREATE INDEX IF NOT EXISTS idx_scanner_codes_organizer_id ON public.scanner_codes(organizer_id);
@@ -46,7 +85,26 @@ BEGIN
 END;
 $$;
 
--- Step 3: Fix create_scanner_code function to handle NULL properly
+-- Step 3: Create trigger function to auto-update updated_at
+-- ============================================
+CREATE OR REPLACE FUNCTION public.update_scanner_code_updated_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
+-- Drop trigger if exists and recreate
+DROP TRIGGER IF EXISTS scanner_codes_updated_at ON public.scanner_codes;
+CREATE TRIGGER scanner_codes_updated_at
+    BEFORE UPDATE ON public.scanner_codes
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_scanner_code_updated_at();
+
+-- Step 4: Fix create_scanner_code function to handle NULL properly
 -- ============================================
 CREATE OR REPLACE FUNCTION public.create_scanner_code(
   p_event_id UUID,
