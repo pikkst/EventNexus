@@ -36,6 +36,7 @@ import {
 import { generateAdCampaign, generateAdImage, generatePosterDesign } from '../services/geminiService';
 import { generatePrintablePoster, PosterDesign } from '../services/posterService';
 import { supabase } from '../services/supabase';
+import OrganizerScannerHub from './OrganizerScannerHub';
 import PayoutsHistory from './PayoutsHistory';
 import EnterpriseSuccessManager from './EnterpriseSuccessManager';
 import { generateDashboardSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
@@ -90,7 +91,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [salesData, setSalesData] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'payouts' | 'marketing' | 'infra' | 'branding' | 'integrations' | 'affiliate'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'payouts' | 'marketing' | 'infra' | 'branding' | 'integrations' | 'affiliate' | 'scanner-codes'>('overview');
   const [isGeneratingAd, setIsGeneratingAd] = useState(false);
   const [genStage, setGenStage] = useState('');
   const [adCampaign, setAdCampaign] = useState<any[]>([]);
@@ -838,6 +839,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
          <TabBtn label="Insights" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<BarChart3 />} title="View revenue, attendance, and event performance metrics" />
          <TabBtn label="Payouts" active={activeTab === 'payouts'} onClick={() => setActiveTab('payouts')} icon={<DollarSign />} title="Track earnings and bank transfers from ticket sales" />
          <TabBtn label="Marketing Studio" active={activeTab === 'marketing'} onClick={() => setActiveTab('marketing')} icon={<Megaphone />} title="AI-powered campaign creation and social media automation" />
+         <TabBtn label="Scanner Codes" active={activeTab === 'scanner-codes'} onClick={() => setActiveTab('scanner-codes')} icon={<Smartphone />} title="Generate and manage scanner codes for your events" />
          {(user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && <TabBtn label="Affiliate Tools" active={activeTab === 'affiliate'} onClick={() => setActiveTab('affiliate')} icon={<Users />} title="Create referral links and track partner commissions" />}
          {isEnterprise && <TabBtn label="Service Hub" active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} icon={<Link2 />} title="Manage social media integrations and API connections" />}
          {isEnterprise && <TabBtn label="White-Labeling" active={activeTab === 'branding'} onClick={() => setActiveTab('branding')} icon={<Palette />} title="Customize your dashboard appearance and public profile" />}
@@ -2220,6 +2222,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                  <p className="text-slate-400 font-medium">Unable to load affiliate data. Please try again later.</p>
               </div>
            )}
+        </div>
+      )}
+
+      {activeTab === 'scanner-codes' && (
+        <div className="animate-in fade-in duration-500">
+          <OrganizerScannerHub organizerId={user.id} />
         </div>
       )}
 
