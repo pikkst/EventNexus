@@ -14,6 +14,7 @@ import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.gotrue.providers.builtin.IDToken
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.rpc
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -56,20 +57,8 @@ class AuthRepository {
                 this.password = password
             }
             
-            val session = client.auth.currentSessionOrNull()
-            val userId = session?.user?.id ?: throw Exception("No user ID")
-            
-            try {
-                client.from("users")
-                    .insert(mapOf(
-                        "id" to userId,
-                        "email" to email,
-                        "name" to name
-                    ))
-            } catch (e: Exception) {
-                // Ignore if profile already exists
-            }
-            
+            // Trigger will create profile automatically
+            // Use handleAuthSuccess which will ensure profile exists
             handleAuthSuccess()
         } catch (e: Exception) {
             Result.failure(e)
@@ -98,20 +87,43 @@ class AuthRepository {
             prefs[PreferencesKeys.USER_ID] = userId
             session.accessToken.let { prefs[PreferencesKeys.ACCESS_TOKEN] = it }
         }
-        
-        val users = client.from("users").select(Columns.ALL) {
-            filter {
-                eq("id", userId)
+        // Use database function to ensure profile exists and get it
+        try {
+            val users = client.postgrest.rpc("get_or_create_user_profile")
+                .decodeList<User>()
+            
+            val user = users.firstOrNull() ?: throw Exception("Failed to get user profile")
+            return Result.success(user)
+        } catch (e: Exception) {
+            // Fallback: try direct query
+            try {
+                val users = client.from("users").select(Columns.ALL) {
+                    filter {
+                        eq("id", userId)
+                    }
+                    limit(1)
+                }.decodeList<User>()
+                
+                val user = users.firstOrNull() ?: User(
+                    id = userId,
+                    email = session.user?.email ?: "",
+                    name = session.user?.userMetadata?.get("full_name")?.toString() 
+                        ?: session.user?.userMetadata?.get("name")?.toString()
+                        ?: session.user?.email?.split("@")?.get(0) ?: "User"
+                )
+                
+                return Result.success(user)
+            } catch (e2: Exception) {
+                // Last resort: return basic user object
+                return Result.success(User(
+                    id = userId,
+                    email = session.user?.email ?: "",
+                    name = session.user?.userMetadata?.get("full_name")?.toString()
+                        ?: session.user?.userMetadata?.get("name")?.toString()
+                        ?: session.user?.email?.split("@")?.get(0) ?: "User"
+                ))
             }
-            limit(1)
-        }.decodeList<User>()
-        
-        val user = users.firstOrNull() ?: User(
-            id = userId,
-            email = session.user?.email ?: "",
-            name = session.user?.userMetadata?.get("full_name")?.toString()
-        )
-        
+        }
         return Result.success(user)
     }
     
