@@ -141,7 +141,7 @@ const OrganizerScannerHub: React.FC<OrganizerScannerHubProps> = ({ organizerId }
                   <div className="flex-1 text-left">
                     <p className="font-semibold text-white">{event.name}</p>
                     <p className="text-xs text-slate-400">
-                      {new Date(event.start_datetime).toLocaleDateString()} • {event.location}
+                      {new Date(event.start_datetime).toLocaleDateString()} • {typeof event.location === 'object' ? event.location.city || event.location.address || 'Location TBA' : event.location || 'Location TBA'}
                     </p>
                   </div>
                   {selectedEvent?.id === event.id && (
