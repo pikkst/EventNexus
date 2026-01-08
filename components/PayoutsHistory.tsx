@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/services/supabase';
 import { DollarSign, Calendar, CheckCircle, XCircle, Clock, TrendingUp, ExternalLink, AlertCircle } from 'lucide-react';
 import { createConnectAccount, checkConnectStatus, getConnectDashboardLink, verifyConnectOnboarding } from '@/services/dbService';
+import logger from '@/utils/logger';
 
 interface Payout {
   id: string;
@@ -50,7 +51,7 @@ export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId, user }) 
   // Update connect status when user object changes (from parent Dashboard after verification)
   useEffect(() => {
     if (user) {
-      console.log('PayoutsHistory: User object updated, refreshing connect status...');
+      logger.log('PayoutsHistory: User object updated, refreshing connect status...');
       fetchConnectStatus();
     }
   }, [user?.stripe_connect_onboarding_complete, user?.stripe_connect_charges_enabled, user?.stripe_connect_payouts_enabled]);
@@ -62,14 +63,14 @@ export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId, user }) 
       const connectParam = params.get('connect');
       
       if (connectParam === 'success' || connectParam === 'refresh') {
-        console.log('PayoutsHistory: Returned from Stripe Connect onboarding, verifying status...');
+        logger.log('PayoutsHistory: Returned from Stripe Connect onboarding, verifying status...');
         setIsConnectLoading(true);
         
         try {
           const result = await verifyConnectOnboarding(userId);
           
           if (result?.success) {
-            console.log('PayoutsHistory: Connect verification result:', result);
+            logger.log('PayoutsHistory: Connect verification result:', result);
             
             // Update connect status with latest from Stripe
             setConnectStatus({
@@ -82,10 +83,10 @@ export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId, user }) 
             // Refresh payouts list
             fetchPayouts();
           } else {
-            console.warn('PayoutsHistory: Connect verification returned no result');
+            logger.warn('PayoutsHistory: Connect verification returned no result');
           }
         } catch (error) {
-          console.error('PayoutsHistory: Error verifying Connect status:', error);
+          logger.error('PayoutsHistory: Error verifying Connect status:', error);
         } finally {
           setIsConnectLoading(false);
         }
@@ -119,7 +120,7 @@ export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId, user }) 
         alert('Failed to create Connect account. Please try again.');
       }
     } catch (error) {
-      console.error('Error starting onboarding:', error);
+      logger.error('Error starting onboarding:', error);
       alert('An error occurred. Please try again.');
     } finally {
       setIsConnectLoading(false);
@@ -136,7 +137,7 @@ export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId, user }) 
         alert('Unable to access dashboard. Please try again.');
       }
     } catch (error) {
-      console.error('Error opening dashboard:', error);
+      logger.error('Error opening dashboard:', error);
       alert('An error occurred. Please try again.');
     } finally {
       setIsConnectLoading(false);
@@ -174,7 +175,7 @@ export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId, user }) 
         setStats({ totalEarned, pendingAmount, successfulPayouts });
       }
     } catch (error) {
-      console.error('Error fetching payouts:', error);
+      logger.error('Error fetching payouts:', error);
     } finally {
       setLoading(false);
     }

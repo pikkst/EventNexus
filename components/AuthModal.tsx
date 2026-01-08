@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { X, Mail, Lock, Github, Chrome, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import { signInUser, signUpUser, getUser, updateUser, claimCampaignIncentive, signInWithGoogle } from '../services/dbService';
 import { User } from '../types';
+import logger from '../utils/logger';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -35,13 +36,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
     }, 12000); // 12 second timeout
     
     try {
-      console.log('Starting authentication...', mode);
+      logger.log('Starting authentication...', mode);
       
       if (mode === 'login') {
-        console.log('Attempting login for:', email);
+        logger.log('Attempting login for:', email);
         const { user: authUser, error: authError } = await signInUser(email, password);
         
-        console.log('Login response:', { user: authUser?.id, error: authError });
+        logger.log('Login response:', { user: authUser?.id, error: authError });
         
         if (authError) {
           clearTimeout(timeoutId);
@@ -62,20 +63,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
           return;
         }
         
-        console.log('📧 Fetching user profile...');
+        logger.log('Fetching user profile...');
         const profileStart = Date.now();
         const userData = await getUser(authUser.id);
         const profileDuration = Date.now() - profileStart;
-        console.log(`📧 Profile fetch completed in ${profileDuration}ms`);
-        console.log('📧 User profile result:', userData ? `✅ ${userData.email}` : '❌ null');
+        logger.log(`Profile fetch completed in ${profileDuration}ms`);
+        logger.log('User profile result:', userData ? `✅ ${userData.email}` : '❌ null');
         
         if (timeoutOccurred) {
-          console.log('⏱️ Login attempt timed out, skipping');
+          logger.log('Login attempt timed out, skipping');
           return;
         }
         
         if (userData) {
-          console.log('✅ Login successful, setting user state');
+          logger.log('Login successful, setting user state');
           clearTimeout(timeoutId);
           setIsLoading(false);
           onLogin(userData);
@@ -89,10 +90,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
         }
       } else {
         // Registration flow
-        console.log('Attempting registration for:', email);
+        logger.log('Attempting registration for:', email);
         const { user: authUser, error: authError } = await signUpUser(email, password);
         
-        console.log('Registration response:', { user: authUser?.id, error: authError });
+        logger.log('Registration response:', { user: authUser?.id, error: authError });
         
         if (authError) {
           clearTimeout(timeoutId);
@@ -142,11 +143,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
           const pendingCampaignId = localStorage.getItem('pendingCampaignClaim');
           if (pendingCampaignId) {
             try {
-              console.log('🎁 Claiming campaign incentive...', pendingCampaignId);
+              logger.log('Claiming campaign incentive...', pendingCampaignId);
               const claimResult = await claimCampaignIncentive(authUser.id, pendingCampaignId);
               
               if (claimResult?.success) {
-                console.log('✅ Campaign incentive claimed:', claimResult);
+                logger.log('Campaign incentive claimed:', claimResult);
                 // Refresh user data to get updated credits
                 const updatedUser = await getUser(authUser.id);
                 if (updatedUser) {
@@ -155,10 +156,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
                 // Clear the pending claim
                 localStorage.removeItem('pendingCampaignClaim');
               } else {
-                console.error('❌ Failed to claim campaign incentive:', claimResult?.error);
+                logger.error('Failed to claim campaign incentive:', claimResult?.error);
               }
             } catch (claimErr) {
-              console.error('Campaign claim error:', claimErr);
+              logger.error('Campaign claim error:', claimErr);
             }
           }
           
@@ -177,7 +178,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
       clearTimeout(timeoutId);
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
-      console.error('Auth error:', err);
+      logger.error('Auth error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -188,21 +189,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
     setError('');
     
     try {
-      console.log('Starting Google OAuth...');
+      logger.log('Starting Google OAuth...');
       const { data, error: oauthError } = await signInWithGoogle();
       
       if (oauthError) {
-        console.error('Google OAuth error:', oauthError);
+        logger.error('Google OAuth error:', oauthError);
         setError('Failed to sign in with Google. Please try again.');
         setOauthLoading(false);
         return;
       }
       
       // OAuth redirect will happen automatically
-      console.log('Google OAuth initiated, redirecting...');
+      logger.log('Google OAuth initiated, redirecting...');
       // Don't set loading to false - user will be redirected
     } catch (err) {
-      console.error('Google sign-in error:', err);
+      logger.error('Google sign-in error:', err);
       setError('Failed to sign in with Google. Please try again.');
       setOauthLoading(false);
     }
@@ -252,6 +253,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                aria-label="Email address"
+                aria-required="true"
+                aria-invalid={error && !error.includes('successful') ? "true" : "false"}
+                aria-describedby={error ? "auth-error-message" : undefined}
                 className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-12 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all"
               />
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-500 transition-colors">
@@ -266,6 +271,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                aria-label="Password"
+                aria-required="true"
+                aria-invalid={error && !error.includes('successful') ? "true" : "false"}
+                aria-describedby={error ? "auth-error-message" : undefined}
                 className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-12 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all"
               />
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-500 transition-colors">
@@ -274,7 +283,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
             </div>
 
             {error && (
-              <div className={`border rounded-xl p-3 text-sm text-center ${
+              <div 
+                id="auth-error-message"
+                role="alert"
+                aria-live="polite"
+                className={`border rounded-xl p-3 text-sm text-center ${
                 error.includes('successful') || error.includes('check your email')
                   ? 'bg-green-500/10 border-green-500/20 text-green-400'
                   : 'bg-red-500/10 border-red-500/20 text-red-400'

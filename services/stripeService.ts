@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './supabase';
+import logger from '../utils/logger';
 
 // Get Stripe keys from environment or Supabase config
 const getStripePublicKey = async (): Promise<string> => {
@@ -33,7 +34,7 @@ export const createSubscriptionCheckout = async (
   try {
     const publicKey = await getStripePublicKey();
     if (!publicKey) {
-      console.error('Stripe public key not configured');
+      logger.error('Stripe public key not configured');
       return null;
     }
 
@@ -60,18 +61,18 @@ export const createSubscriptionCheckout = async (
     });
 
     if (error) {
-      console.error('Error creating checkout session:', error);
+      logger.error('Error creating checkout session:', error);
       throw new Error(error.message || 'Failed to create checkout session');
     }
 
     if (!data?.url) {
-      console.error('No checkout URL returned:', data);
+      logger.error('No checkout URL returned:', data);
       throw new Error(data?.error || 'No checkout URL received from payment system');
     }
 
     return data.url;
   } catch (error) {
-    console.error('Stripe checkout error:', error);
+    logger.error('Stripe checkout error:', error);
     throw error;
   }
 };
@@ -92,7 +93,7 @@ export const createTicketCheckout = async (
   try {
     const publicKey = await getStripePublicKey();
     if (!publicKey) {
-      console.error('Stripe public key not configured');
+      logger.error('Stripe public key not configured');
       return null;
     }
 
@@ -117,13 +118,13 @@ export const createTicketCheckout = async (
     });
 
     if (error) {
-      console.error('Error creating ticket checkout session:', error);
+      logger.error('Error creating ticket checkout session:', error);
       return null;
     }
 
     return data?.url || null;
   } catch (error) {
-    console.error('Stripe ticket checkout error:', error);
+    logger.error('Stripe ticket checkout error:', error);
     return null;
   }
 };
@@ -141,7 +142,7 @@ export const getUserSubscriptionStatus = async (userId: string) => {
 
     return user;
   } catch (error) {
-    console.error('Error getting subscription status:', error);
+    logger.error('Error getting subscription status:', error);
     return null;
   }
 };
@@ -156,13 +157,13 @@ export const cancelSubscription = async (userId: string): Promise<boolean> => {
     });
 
     if (error) {
-      console.error('Error cancelling subscription:', error);
+      logger.error('Error cancelling subscription:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Subscription cancellation error:', error);
+    logger.error('Subscription cancellation error:', error);
     return false;
   }
 };
@@ -183,7 +184,7 @@ export const checkCheckoutSuccess = (): boolean => {
 export const verifyCheckoutPayment = async (sessionId: string): Promise<boolean> => {
   try {
     if (!sessionId) {
-      console.warn('No session ID provided to verify');
+      logger.warn('No session ID provided to verify');
       return false;
     }
 
@@ -193,14 +194,14 @@ export const verifyCheckoutPayment = async (sessionId: string): Promise<boolean>
     });
 
     if (error) {
-      console.error('Error verifying checkout:', error);
+      logger.error('Error verifying checkout:', error);
       return false;
     }
 
     // If verification returned success, payment was confirmed
     return data?.paid === true || data?.verified === true;
   } catch (error) {
-    console.error('Verify checkout error:', error);
+    logger.error('Verify checkout error:', error);
     return false;
   }
 };

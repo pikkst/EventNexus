@@ -134,13 +134,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       
       if (connectStatus === 'success' || connectStatus === 'refresh') {
         setIsVerifyingConnect(true);
-        console.log('Returned from Stripe Connect onboarding, verifying status...');
+        logger.log('Returned from Stripe Connect onboarding, verifying status...');
         
         try {
           const result = await verifyConnectOnboarding(user.id);
           
           if (result?.success) {
-            console.log('Connect verification result:', result);
+            logger.log('Connect verification result:', result);
             
             // Update user state with new Connect status
             onUpdateUser({
@@ -155,10 +155,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
               setTimeout(() => setShowConnectSuccess(false), 8000);
             }
           } else {
-            console.warn('Connect verification returned no result');
+            logger.warn('Connect verification returned no result');
           }
         } catch (error) {
-          console.error('Error verifying Connect status:', error);
+          logger.error('Error verifying Connect status:', error);
         } finally {
           setIsVerifyingConnect(false);
           
@@ -181,7 +181,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
           setSelectedEventId(userEvents[0].id);
         }
       } catch (error) {
-        console.error('Error loading events:', error);
+        logger.error('Error loading events:', error);
       } finally {
         setIsLoadingEvents(false);
       }
@@ -219,7 +219,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
         // Generate sales chart data from real revenue
         setSalesData(generateSalesData(byEvent));
       } catch (error) {
-        console.error('Error loading revenue:', error);
+        logger.error('Error loading revenue:', error);
       } finally {
         setIsLoadingRevenue(false);
       }
@@ -262,7 +262,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
         if (error) throw error;
         setConnectedAccounts(data || []);
       } catch (error) {
-        console.error('Error loading connected accounts:', error);
+        logger.error('Error loading connected accounts:', error);
       } finally {
         setLoadingAccounts(false);
       }
@@ -723,8 +723,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
               <button 
                 onClick={() => setShowConnectSuccess(false)}
                 className="text-white/80 hover:text-white transition-colors"
+                aria-label="Close notification"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -756,15 +757,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
             <button 
               onClick={() => setIsSuccessManagerOpen(true)} 
               className="flex items-center justify-center gap-2 px-4 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 active:scale-95 relative overflow-hidden group"
+              aria-label="Open 24/7 success manager"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-              <Sparkles className="w-4 h-4 relative z-10" /> 
+              <Sparkles className="w-4 h-4 relative z-10" aria-hidden="true" /> 
               <span className="relative z-10">Success Manager</span>
               <span className="text-[8px] bg-emerald-500 px-2 py-0.5 rounded-full relative z-10">24/7</span>
             </button>
           )}
-          <button onClick={() => navigate('/scanner')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95">
-            <Scan className="w-4 h-4" /> Entry Control
+          <button onClick={() => navigate('/scanner')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95" aria-label="Open ticket scanner for entry control">
+            <Scan className="w-4 h-4" aria-hidden="true" /> Entry Control
           </button>
         </div>
       </div>
@@ -837,13 +839,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       )}
 
       <div className={`flex gap-2 sm:gap-4 overflow-x-auto pb-2 border-b border-slate-800 scrollbar-hide snap-x snap-mandatory ${isGated ? 'opacity-20 pointer-events-none' : ''}`}>
-         <TabBtn label="Insights" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<BarChart3 />} title="View revenue, attendance, and event performance metrics" />
-         <TabBtn label="Payouts" active={activeTab === 'payouts'} onClick={() => setActiveTab('payouts')} icon={<DollarSign />} title="Track earnings and bank transfers from ticket sales" />
-         <TabBtn label="Marketing Studio" active={activeTab === 'marketing'} onClick={() => setActiveTab('marketing')} icon={<Megaphone />} title="AI-powered campaign creation and social media automation" />
-         <TabBtn label="Scanner Codes" active={activeTab === 'scanner-codes'} onClick={() => setActiveTab('scanner-codes')} icon={<Smartphone />} title="Generate and manage scanner codes for your events" />
-         {(user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && <TabBtn label="Affiliate Tools" active={activeTab === 'affiliate'} onClick={() => setActiveTab('affiliate')} icon={<Users />} title="Create referral links and track partner commissions" />}
-         {isEnterprise && <TabBtn label="Service Hub" active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} icon={<Link2 />} title="Manage social media integrations and API connections" />}
-         {isEnterprise && <TabBtn label="White-Labeling" active={activeTab === 'branding'} onClick={() => setActiveTab('branding')} icon={<Palette />} title="Customize your dashboard appearance and public profile" />}
+         <TabBtn label="Insights" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<BarChart3 aria-hidden="true" />} title="View revenue, attendance, and event performance metrics" aria-label="View revenue insights and analytics" aria-selected={activeTab === 'overview'} />
+         <TabBtn label="Payouts" active={activeTab === 'payouts'} onClick={() => setActiveTab('payouts')} icon={<DollarSign aria-hidden="true" />} title="Track earnings and bank transfers from ticket sales" aria-label="View payouts and bank transfers" aria-selected={activeTab === 'payouts'} />
+         <TabBtn label="Marketing Studio" active={activeTab === 'marketing'} onClick={() => setActiveTab('marketing')} icon={<Megaphone aria-hidden="true" />} title="AI-powered campaign creation and social media automation" aria-label="Open AI-powered marketing campaign creator" aria-selected={activeTab === 'marketing'} />
+         <TabBtn label="Scanner Codes" active={activeTab === 'scanner-codes'} onClick={() => setActiveTab('scanner-codes')} icon={<Smartphone aria-hidden="true" />} title="Generate and manage scanner codes for your events" aria-label="Manage ticket scanner codes" aria-selected={activeTab === 'scanner-codes'} />
+         {(user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && <TabBtn label="Affiliate Tools" active={activeTab === 'affiliate'} onClick={() => setActiveTab('affiliate')} icon={<Users aria-hidden="true" />} title="Create referral links and track partner commissions" aria-label="Manage affiliate referrals and commissions" aria-selected={activeTab === 'affiliate'} />}
+         {isEnterprise && <TabBtn label="Service Hub" active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} icon={<Link2 aria-hidden="true" />} title="Manage social media integrations and API connections" aria-label="Manage integrations and API connections" aria-selected={activeTab === 'integrations'} />}
+         {isEnterprise && <TabBtn label="White-Labeling" active={activeTab === 'branding'} onClick={() => setActiveTab('branding')} icon={<Palette aria-hidden="true" />} title="Customize your dashboard appearance and public profile" aria-label="Customize branding and public appearance" aria-selected={activeTab === 'branding'} />}
       </div>
 
       {activeTab === 'overview' && (
@@ -949,15 +951,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                         disabled={isProcessingPayouts}
                         className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Manually trigger payout processing for events that ended 2+ days ago"
+                        aria-label="Process pending payouts for completed events"
                       >
                         {isProcessingPayouts ? (
                           <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                             Processing...
                           </>
                         ) : (
                           <>
-                            <DollarSign className="w-4 h-4" />
+                            <DollarSign className="w-4 h-4" aria-hidden="true" />
                             Process Payouts
                           </>
                         )}
@@ -1232,11 +1235,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
              <div className="flex justify-between items-center">
                 <h3 className="text-xl font-black tracking-tight text-white">Experience Sales Velocity</h3>
                 <div className="flex gap-2">
-                   <button className="px-4 py-2 bg-slate-800 rounded-xl text-[10px] font-black uppercase text-slate-400">7D</button>
-                   <button className="px-4 py-2 bg-indigo-600 rounded-xl text-[10px] font-black uppercase text-white">30D</button>
+                   <button className="px-4 py-2 bg-slate-800 rounded-xl text-[10px] font-black uppercase text-slate-400" aria-label="Show 7-day data" aria-pressed="false">7D</button>
+                   <button className="px-4 py-2 bg-indigo-600 rounded-xl text-[10px] font-black uppercase text-white" aria-label="Show 30-day data" aria-pressed="true">30D</button>
                 </div>
              </div>
-             <div className="h-[350px]">
+             <div className="h-[350px]" role="img" aria-label="Sales velocity chart showing ticket sales over time">
                 <ResponsiveContainer width="100%" height="100%">
                    <AreaChart data={salesData}>
                       <defs>
@@ -1574,8 +1577,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                          onClick={handleGenerateCampaign}
                          disabled={isGeneratingAd}
                          className="w-full bg-indigo-600 hover:bg-indigo-700 py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-xl shadow-indigo-600/20 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                         aria-label="Generate AI-powered ad campaign"
                        >
-                          {isGeneratingAd ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Sparkles size={18} /> Generate Ads</>}
+                          {isGeneratingAd ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : <><Sparkles size={18} aria-hidden="true" /> Generate Ads</>}
                        </button>
                     </div>
                  </div>
@@ -1619,23 +1623,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                                    className={`flex-1 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
                                      ad.deployed ? 'bg-emerald-600 text-white cursor-not-allowed' : ad.deploying ? 'bg-slate-800 text-slate-500 cursor-wait' : 'bg-slate-800 hover:bg-slate-700 text-white'
                                    }`}
+                                   aria-label={ad.deployed ? 'Ad already published' : 'Deploy ad to social media'}
                                  >
-                                    {ad.deploying ? <Loader2 size={12} className="animate-spin" /> : ad.deployed ? <><CheckCircle size={12}/> Published</> : <><CloudUpload size={12}/> Deploy Ad</>}
+                                    {ad.deploying ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : ad.deployed ? <><CheckCircle size={12} aria-hidden="true" /> Published</> : <><CloudUpload size={12} aria-hidden="true" /> Deploy Ad</>}
                                  </button>
                                  <button 
                                    onClick={() => handleGeneratePoster(ad)}
                                    disabled={isGeneratingPoster}
                                    className="p-4 bg-slate-950 border border-slate-800 hover:border-orange-600 rounded-xl text-slate-500 hover:text-orange-400 transition-all"
                                    title="Generate printable poster with QR code"
+                                   aria-label="Generate printable poster with QR code"
                                  >
-                                   {isGeneratingPoster ? <Loader2 size={14} className="animate-spin" /> : <Download size={14}/>}
+                                   {isGeneratingPoster ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Download size={14} aria-hidden="true" />}
                                  </button>
                                  <button 
                                    onClick={() => handleShareAd(ad)}
                                    className="p-4 bg-slate-950 border border-slate-800 rounded-xl text-slate-500 hover:text-white transition-all"
                                    title="Copy event link"
+                                   aria-label="Copy event link to clipboard"
                                  >
-                                   <Share2 size={14}/>
+                                   <Share2 size={14} aria-hidden="true" />
                                  </button>
                               </div>
                            </div>

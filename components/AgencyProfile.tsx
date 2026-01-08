@@ -14,6 +14,7 @@ import {
 import { User, EventNexusEvent } from '../types';
 import { getEvents, getUserBySlug, getOrganizerRatings, OrganizerRatingStats } from '../services/dbService';
 import { supabase } from '../services/supabase';
+import logger from '../utils/logger';
 import Footer from './Footer';
 import { generateAgencySEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 
@@ -54,12 +55,12 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
       setIsLoading(true);
       setError(null);
       try {
-        console.log('🔍 AgencyProfile: Loading organizer with slug:', slug);
+        logger.log('AgencyProfile: Loading organizer with slug:', slug);
         
         // First, try to get organizer by slug
         const fetchedOrganizer = await getUserBySlug(slug!);
         
-        console.log('📦 AgencyProfile: Fetched organizer:', fetchedOrganizer ? {
+        logger.log('AgencyProfile: Fetched organizer:', fetchedOrganizer ? {
           id: fetchedOrganizer.id,
           name: fetchedOrganizer.name,
           tier: fetchedOrganizer.subscription_tier,
@@ -68,7 +69,7 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
         } : 'NULL');
         
         if (!fetchedOrganizer) {
-          console.error('❌ AgencyProfile: Organizer not found for slug:', slug);
+          logger.error('AgencyProfile: Organizer not found for slug:', slug);
           setError('Organizer not found');
           setIsLoading(false);
           return;
@@ -85,9 +86,9 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
         // Then load all events
         const allEvents = await getEvents();
         setEvents(allEvents);
-        console.log(`✅ AgencyProfile: Loaded ${allEvents.length} events`);
+        logger.log(`AgencyProfile: Loaded ${allEvents.length} events`);
       } catch (error) {
-        console.error('Error loading data:', error);
+        logger.error('Error loading data:', error);
         setError('Failed to load organizer data');
       } finally {
         setIsLoading(false);
@@ -516,24 +517,23 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                         message: message,
                         type: 'partnership'
                       };
-                      
-                      console.log('🤝 Submitting partnership inquiry:', payload);
+                      logger.log('Submitting partnership inquiry:', payload);
                       
                       const { data, error } = await supabase.functions.invoke('send-contact-email', {
                         body: payload
                       });
                       
-                      console.log('📨 Edge Function response:', { data, error });
+                      logger.log('Edge Function response:', { data, error });
                       
                       if (error || !data?.success) {
-                        console.error('❌ Error sending partnership inquiry:', error);
+                        logger.error('Error sending partnership inquiry:', error);
                         alert(`⚠️ Failed to send inquiry: ${error?.message || 'Unknown error'}. Please try again.`);
                       } else {
-                        console.log('✅ Partnership email sent! ID:', data.emailId);
+                        logger.log('Partnership email sent! ID:', data.emailId);
                         alert('✓ Partnership inquiry sent! The organizer will contact you soon.');
                       }
                     } catch (error) {
-                      console.error('❌ Exception:', error);
+                      logger.error('Exception:', error);
                       alert(`⚠️ Failed to send inquiry: ${error instanceof Error ? error.message : 'Unknown error'}.`);
                     }
                   }}
@@ -808,29 +808,28 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                     message: formData.get('message') as string,
                     type: 'contact'
                   };
-                  
-                  console.log('📧 Submitting contact form:', payload);
+                  logger.log('Submitting contact form:', payload);
                   
                   // Call Supabase Edge Function
                   const { data, error } = await supabase.functions.invoke('send-contact-email', {
                     body: payload
                   });
                   
-                  console.log('📨 Edge Function response:', { data, error });
+                  logger.log('Edge Function response:', { data, error });
                   
                   if (error) {
-                    console.error('❌ Error sending contact form:', error);
+                    logger.error('Error sending contact form:', error);
                     alert(`⚠️ Failed to send message: ${error.message || 'Unknown error'}. Please try again or contact the organizer directly.`);
                   } else if (data?.success) {
-                    console.log('✅ Email sent successfully! ID:', data.emailId);
+                    logger.log('Email sent successfully! ID:', data.emailId);
                     alert('✓ Message sent successfully! The organizer will receive your inquiry via email.');
                     setShowContactForm(false);
                   } else {
-                    console.warn('⚠️ Unexpected response:', data);
+                    logger.warn('Unexpected response:', data);
                     alert('⚠️ Failed to send message. Please try again.');
                   }
                 } catch (error) {
-                  console.error('❌ Exception sending contact form:', error);
+                  logger.error('Exception sending contact form:', error);
                   alert(`⚠️ An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again later.`);
                 } finally {
                   setIsSubmittingForm(false);

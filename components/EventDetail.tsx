@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import logger from '../utils/logger';
 import { 
   MapPin, 
   Calendar, 
@@ -112,7 +113,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
             setCheckingOrganizerStatus(false);
           }
         } catch (err) {
-          console.error('Error loading organizer:', err);
+          logger.error('Error loading organizer:', err);
           setCheckingOrganizerStatus(false);
         }
       }
@@ -123,7 +124,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         setIsLiked(liked);
       }
     } catch (error) {
-      console.error('Error loading event:', error);
+      logger.error('Error loading event:', error);
     } finally {
       setIsLoading(false);
     }
@@ -164,7 +165,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
             // Refresh event data to get updated attendee count
             loadEvent();
           } else {
-            console.warn('Payment verification failed for session:', sessionId);
+            logger.warn('Payment verification failed for session:', sessionId);
           }
         } else {
           // Fallback: just show success if URL params indicate it
@@ -234,7 +235,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         }
       }
     } catch (error) {
-      console.error('Error toggling like:', error);
+      logger.error('Error toggling like:', error);
     } finally {
       setIsLiking(false);
     }
@@ -324,7 +325,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           setShowSuccess(true);
           setCurrentAttendees(prev => prev + ticketCount);
         } catch (error) {
-          console.error('Free ticket registration failed:', error);
+          logger.error('Free ticket registration failed:', error);
           alert('Failed to register for event. Please try again.');
         } finally {
           setIsPurchasing(false);

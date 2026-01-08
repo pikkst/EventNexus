@@ -34,7 +34,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
   const [setupStatus, setSetupStatus] = useState('');
 
   useEffect(() => {
-    console.log('👤 User changed, loading accounts...', { userId: user.id, userEmail: user.email });
+    logger.log('User changed, loading accounts...', { userId: user.id, userEmail: user.email });
     loadAccounts();
   }, [user.id]);
 
@@ -42,7 +42,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
     try {
       setLoadingAccounts(true);
       setLoadError(null);
-      console.log('📱 Loading social media accounts for user:', user.id);
+      logger.log('Loading social media accounts for user:', user.id);
       
       const { data, error } = await supabase
         .from('social_media_accounts')
@@ -50,18 +50,18 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('❌ Supabase error:', error);
+        logger.error('Supabase error:', error);
         setLoadError(`Error loading accounts: ${error.message}`);
         throw error;
       }
       
-      console.log('✅ Loaded accounts:', data?.length || 0, 'records');
+      logger.log('Loaded accounts:', data?.length || 0, 'records');
       data?.forEach(acc => {
-        console.log(`  - ${acc.platform}: ${acc.account_name} (expires: ${acc.expires_at})`);
+        logger.log(`  - ${acc.platform}: ${acc.account_name} (expires: ${acc.expires_at})`);
       });
       setAccounts(data || []);
     } catch (error) {
-      console.error('❌ Failed to load accounts:', error);
+      logger.error('Failed to load accounts:', error);
       setLoadError(`Failed to load accounts: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setAccounts([]);
     } finally {
@@ -129,10 +129,10 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
         });
 
       if (fbError) {
-        console.error('❌ Facebook insert error:', fbError);
+        logger.error('Facebook insert error:', fbError);
         throw new Error(`Failed to save Facebook account: ${fbError.message}`);
       }
-      console.log('✅ Facebook account saved successfully');
+      logger.log('Facebook account saved successfully');
 
       // Step 5: Insert Instagram (if found)
       if (instagramAccountId) {
@@ -156,20 +156,20 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
           });
 
         if (igError) {
-          console.error('❌ Instagram insert error:', igError);
+          logger.error('Instagram insert error:', igError);
           throw new Error(`Failed to save Instagram account: ${igError.message}`);
         }
-        console.log('✅ Instagram account saved successfully');
+        logger.log('Instagram account saved successfully');
         setSetupStatus('✅ Instagram connected!');
       } else {
-        console.log('⚠️ No Instagram Business Account found on this page');
+        logger.log('No Instagram Business Account found on this page');
         setSetupStatus('✅ Facebook connected!\n⚠️ No Instagram Business Account found on this page.');
       }
 
       // Reload accounts
-      console.log('🔄 Reloading accounts...');
+      logger.log('Reloading accounts...');
       await loadAccounts();
-      console.log('✅ Accounts reloaded successfully');
+      logger.log('Accounts reloaded successfully');
       
       setTimeout(() => {
         setSetupStatus('');
@@ -179,7 +179,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
       }, 3000);
 
     } catch (error) {
-      console.error('Setup failed:', error);
+      logger.error('Setup failed:', error);
       setSetupStatus(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);

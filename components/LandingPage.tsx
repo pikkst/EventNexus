@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import logger from '../utils/logger';
 import { Compass, Zap, Shield, Globe, Map as MapIcon, ChevronRight, Star, Plus, ArrowRight, Gift, Award, TrendingUp, Quote, Newspaper, ExternalLink, Users, Calendar, Ticket, Play, Check, Mail, Send, ChevronDown, DollarSign, Sparkles } from 'lucide-react';
 import { User, PlatformCampaign, SuccessStory, PressMention, PlatformMedia } from '../types';
 import { getCampaigns, getTopOrganizers, OrganizerRatingStats, getSuccessStories, getPressMentions, getPlatformStats, getPlatformMedia } from '../services/dbService';
@@ -53,7 +54,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           }
         }
       } catch (error) {
-        console.error('Error loading campaign:', error);
+        logger.error('Error loading campaign:', error);
       }
     };
 
@@ -67,7 +68,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         const organizers = await getTopOrganizers(6, 'enterprise'); // Top 6 Enterprise organizers
         setTopOrganizers(organizers);
       } catch (error) {
-        console.error('Error loading top organizers:', error);
+        logger.error('Error loading top organizers:', error);
       } finally {
         setLoadingOrganizers(false);
       }
@@ -89,7 +90,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         setPlatformStats(stats);
         setDemoVideo(videos && videos.length > 0 ? videos[0] : null);
       } catch (error) {
-        console.error('Error loading landing content:', error);
+        logger.error('Error loading landing content:', error);
       }
     };
     loadLandingContent();
@@ -100,7 +101,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
       // Validate UUID format before making RPC call
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!campaignId || !uuidRegex.test(campaignId)) {
-        console.warn('Invalid campaign ID format:', campaignId);
+        logger.warn('Invalid campaign ID format:', campaignId);
         return;
       }
 
@@ -111,7 +112,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
       });
       if (error) throw error;
     } catch (error) {
-      console.error('Error tracking campaign view:', error);
+      logger.error('Error tracking campaign view:', error);
     }
   };
 
@@ -120,7 +121,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
       // Validate UUID format before making RPC call
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!campaignId || !uuidRegex.test(campaignId)) {
-        console.warn('Invalid campaign ID format:', campaignId);
+        logger.warn('Invalid campaign ID format:', campaignId);
         return;
       }
 
@@ -131,7 +132,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
       });
       if (error) throw error;
     } catch (error) {
-      console.error('Error tracking campaign click:', error);
+      logger.error('Error tracking campaign click:', error);
     }
   };
 
@@ -169,7 +170,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
       setNewsletterEmail('');
       setTimeout(() => setNewsletterStatus('idle'), 3000);
     } catch (error) {
-      console.error('Newsletter signup error:', error);
+      logger.error('Newsletter signup error:', error);
       setNewsletterStatus('error');
       setTimeout(() => setNewsletterStatus('idle'), 3000);
     }

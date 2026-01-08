@@ -5,6 +5,7 @@
 
 import { supabase } from './supabase';
 import { generateAdImage } from './geminiService';
+import logger from '../utils/logger';
 
 // Publicly hosted fallback image to avoid Graph API 324 errors when an asset is missing
 const FALLBACK_AD_IMAGE_URL = 'https://www.eventnexus.eu/EventNexus/logo%20for%20eventnexus.png';
@@ -78,14 +79,14 @@ const uploadDataUrlToSupabase = async (dataUrl: string): Promise<string | null> 
       });
 
     if (uploadError) {
-      console.error('Supabase upload error:', uploadError);
+      logger.error('Supabase upload error:', uploadError);
       return null;
     }
 
     const { data } = supabase.storage.from('social-media').getPublicUrl(filePath);
     return data?.publicUrl || null;
   } catch (error) {
-    console.error('Failed to upload image to Supabase:', error);
+    logger.error('Failed to upload image to Supabase:', error);
     return null;
   }
 };
@@ -165,7 +166,7 @@ export const generateSocialMediaContentWithImages = async (
   const linkedinUrl = `${baseUrl}?utm_source=linkedin&utm_campaign=${linkedinTrackingCode}`;
   
   // Generate images for each platform in optimal size
-  console.log('🎨 Generating platform-specific images...');
+  logger.log('🎨 Generating platform-specific images...');
   const [facebookImage, instagramImage, twitterImage, linkedinImage] = await Promise.all([
     generateAdImage(visualPrompt, '16:9', true), // Facebook - landscape
     generateAdImage(visualPrompt, '1:1', true),  // Instagram - square
@@ -251,7 +252,7 @@ export const postToFacebook = async (
 ): Promise<{ success: boolean; postId?: string; error?: string }> => {
   // Validate and fix image URL if needed
   if (imageUrl && !isValidInstagramImageUrl(imageUrl)) {
-    console.warn('⚠️ Invalid Facebook image URL detected, using fallback:', imageUrl);
+    logger.warn('⚠️ Invalid Facebook image URL detected, using fallback:', imageUrl);
     imageUrl = FALLBACK_AD_IMAGE_URL;
   }
 
@@ -275,7 +276,7 @@ export const postToFacebook = async (
         photoData.link = eventUrl;
       }
 
-      console.log('📤 Posting photo URL to Facebook...', { pageId, photoUrl });
+      logger.log('📤 Posting photo URL to Facebook...', { pageId, photoUrl });
       const response = await fetch(
         `https://graph.facebook.com/v18.0/${pageId}/photos`,
         {
@@ -288,7 +289,7 @@ export const postToFacebook = async (
       const result = await response.json();
 
       if (result.error) {
-        console.error('❌ Facebook API error:', result.error);
+        logger.error('❌ Facebook API error:', result.error);
         return {
           success: false,
           errorCode: result.error.code,
@@ -297,7 +298,7 @@ export const postToFacebook = async (
         };
       }
 
-      console.log('✅ Posted photo to Facebook with tracking link:', result.id);
+      logger.log('✅ Posted photo to Facebook with tracking link:', result.id);
       return { success: true, postId: result.id };
     } catch (error) {
       return {
@@ -318,7 +319,7 @@ export const postToFacebook = async (
         postData.link = eventUrl;
       }
 
-      console.log('📤 Posting to Facebook /feed endpoint (text only)...');
+      logger.log('📤 Posting to Facebook /feed endpoint (text only)...');
       const response = await fetch(
         `https://graph.facebook.com/v18.0/${pageId}/feed`,
         {
@@ -331,7 +332,7 @@ export const postToFacebook = async (
       const result = await response.json();
 
       if (result.error) {
-        console.error('❌ Facebook API error details:', result.error);
+        logger.error('❌ Facebook API error details:', result.error);
         return {
           success: false,
           errorCode: result.error.code,
@@ -340,7 +341,7 @@ export const postToFacebook = async (
         };
       }
 
-      console.log('✅ Posted to Facebook:', result.id);
+      logger.log('✅ Posted to Facebook:', result.id);
       return { success: true, postId: result.id };
     } catch (error) {
       return {
@@ -351,7 +352,7 @@ export const postToFacebook = async (
   };
 
   try {
-    console.log('📘 Facebook posting (NEW API):', { pageId, hasImage: !!imageUrl, hasEventUrl: !!eventUrl });
+    logger.log('📘 Facebook posting (NEW API):', { pageId, hasImage: !!imageUrl, hasEventUrl: !!eventUrl });
 
     if (!pageId) {
       throw new Error('Facebook Page ID is required');
@@ -364,7 +365,7 @@ export const postToFacebook = async (
         const primaryResult = await postPhoto(resolvedImageUrl);
 
         if (!primaryResult.success && !isFallback && isImageError(primaryResult.errorCode, primaryResult.errorMessage)) {
-          console.warn('⚠️ Facebook image rejected, retrying with fallback logo');
+          logger.warn('⚠️ Facebook image rejected, retrying with fallback logo');
           const fallbackResult = await postPhoto(FALLBACK_AD_IMAGE_URL);
           if (fallbackResult.success) {
             return { success: true, postId: fallbackResult.postId };
@@ -387,7 +388,7 @@ export const postToFacebook = async (
       ? { success: true, postId: textResult.postId }
       : { success: false, error: textResult.errorMessage || 'Facebook posting failed' };
   } catch (error) {
-    console.error('❌ Facebook posting error (caught):', {
+    logger.error('❌ Facebook posting error (caught):', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
@@ -418,14 +419,14 @@ export const postToInstagram = async (
 
   // Validate image URL before attempting to post
   if (!isValidInstagramImageUrl(imageUrl)) {
-    console.warn('⚠️ Invalid Instagram image URL:', imageUrl);
-    console.log('🔄 Using fallback image:', FALLBACK_AD_IMAGE_URL);
+    logger.warn('⚠️ Invalid Instagram image URL:', imageUrl);
+    logger.log('🔄 Using fallback image:', FALLBACK_AD_IMAGE_URL);
     imageUrl = FALLBACK_AD_IMAGE_URL;
   }
 
   const publishInstagram = async (photoUrl: string): Promise<InstagramResult> => {
     try {
-      console.log('📸 Instagram posting:', { accountId, photoUrl });
+      logger.log('📸 Instagram posting:', { accountId, photoUrl });
 
       // Step 1: Create media container
       const containerResponse = await fetch(
@@ -444,7 +445,7 @@ export const postToInstagram = async (
       const containerResult = await containerResponse.json();
 
       if (containerResult.error) {
-        console.error('Instagram container creation error:', containerResult.error);
+        logger.error('Instagram container creation error:', containerResult.error);
         return {
           success: false,
           errorCode: containerResult.error.code,
@@ -452,10 +453,10 @@ export const postToInstagram = async (
         };
       }
 
-      console.log('✅ Instagram container created:', containerResult.id);
+      logger.log('✅ Instagram container created:', containerResult.id);
 
       // Step 2: Wait for container to be ready (Instagram needs time to process image)
-      console.log('⏳ Waiting for Instagram to process media container...');
+      logger.log('⏳ Waiting for Instagram to process media container...');
       await new Promise(resolve => setTimeout(resolve, 3000));
 
       // Step 2.5: Check container status
@@ -463,7 +464,7 @@ export const postToInstagram = async (
         `https://graph.facebook.com/v18.0/${containerResult.id}?fields=status_code&access_token=${accessToken}`
       );
       const statusResult = await statusResponse.json();
-      console.log('📊 Container status:', statusResult);
+      logger.log('📊 Container status:', statusResult);
 
       if (statusResult.error) {
         return {
@@ -481,7 +482,7 @@ export const postToInstagram = async (
       }
 
       // Step 3: Publish the media container
-      console.log('📤 Publishing Instagram post...');
+      logger.log('📤 Publishing Instagram post...');
       const publishResponse = await fetch(
         `https://graph.facebook.com/v18.0/${accountId}/media_publish`,
         {
@@ -497,7 +498,7 @@ export const postToInstagram = async (
       const publishResult = await publishResponse.json();
 
       if (publishResult.error) {
-        console.error('❌ Instagram publish error:', publishResult.error);
+        logger.error('❌ Instagram publish error:', publishResult.error);
         return {
           success: false,
           errorCode: publishResult.error.code,
@@ -505,7 +506,7 @@ export const postToInstagram = async (
         };
       }
 
-      console.log('✅ Posted to Instagram:', publishResult.id);
+      logger.log('✅ Posted to Instagram:', publishResult.id);
       return { success: true, postId: publishResult.id };
     } catch (error) {
       return {
@@ -529,7 +530,7 @@ export const postToInstagram = async (
     const firstAttempt = await publishInstagram(finalImageUrl);
 
     if (!firstAttempt.success && !isFallback && isImageError(firstAttempt.errorCode, firstAttempt.errorMessage)) {
-      console.warn('⚠️ Instagram image rejected, retrying with fallback logo');
+      logger.warn('⚠️ Instagram image rejected, retrying with fallback logo');
       const fallbackAttempt = await publishInstagram(FALLBACK_AD_IMAGE_URL);
 
       if (fallbackAttempt.success) {
@@ -546,7 +547,7 @@ export const postToInstagram = async (
       ? { success: true, postId: firstAttempt.postId }
       : { success: false, error: firstAttempt.errorMessage || 'Failed to publish Instagram post' };
   } catch (error) {
-    console.error('Instagram posting error:', error);
+    logger.error('Instagram posting error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -565,7 +566,7 @@ export const postToTwitter = async (
   try {
     // This would call Twitter API v2
     // POST https://api.twitter.com/2/tweets
-    console.log('Twitter posting would happen here:', { tweet, imageUrl });
+    logger.log('Twitter posting would happen here:', { tweet, imageUrl });
     
     return {
       success: true,
@@ -573,7 +574,7 @@ export const postToTwitter = async (
       error: undefined
     };
   } catch (error) {
-    console.error('Twitter posting error:', error);
+    logger.error('Twitter posting error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -593,7 +594,7 @@ export const postToLinkedIn = async (
   try {
     // This would call LinkedIn API
     // POST https://api.linkedin.com/v2/ugcPosts
-    console.log('LinkedIn posting would happen here:', { personUrn, content, imageUrl });
+    logger.log('LinkedIn posting would happen here:', { personUrn, content, imageUrl });
     
     return {
       success: true,
@@ -601,7 +602,7 @@ export const postToLinkedIn = async (
       error: undefined
     };
   } catch (error) {
-    console.error('LinkedIn posting error:', error);
+    logger.error('LinkedIn posting error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -633,7 +634,7 @@ export const scheduleSocialPost = async (
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error scheduling social post:', error);
+    logger.error('Error scheduling social post:', error);
     return false;
   }
 };
@@ -661,7 +662,7 @@ export const getConnectedAccounts = async (userId: string): Promise<SocialMediaA
       isConnected: account.is_connected
     }));
   } catch (error) {
-    console.error('Error fetching connected accounts:', error);
+    logger.error('Error fetching connected accounts:', error);
     return [];
   }
 };

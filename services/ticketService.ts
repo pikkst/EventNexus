@@ -10,6 +10,7 @@
 
 import { supabase } from './supabase';
 import QRCode from 'qrcode';
+import logger from '../utils/logger';
 
 // Access environment variable with proper typing
 declare const process: {
@@ -144,7 +145,7 @@ export const createTicketWithQR = async (
       .single();
 
     if (error || !ticket) {
-      console.error('Error creating ticket:', error);
+      logger.error('Error creating ticket:', error);
       return null;
     }
 
@@ -159,7 +160,7 @@ export const createTicketWithQR = async (
       .eq('id', ticket.id);
 
     if (updateError) {
-      console.error('Error updating ticket QR code:', updateError);
+      logger.error('Error updating ticket QR code:', updateError);
       // Still return the ticket data even if update fails
     }
 
@@ -169,7 +170,7 @@ export const createTicketWithQR = async (
       qrImage: qrImage,
     };
   } catch (error) {
-    console.error('Error in createTicketWithQR:', error);
+    logger.error('Error in createTicketWithQR:', error);
     return null;
   }
 };
@@ -308,7 +309,7 @@ export const validateAndScanTicket = async (
       .eq('id', ticket.id);
 
     if (updateError) {
-      console.error('Error updating ticket status:', updateError);
+      logger.error('Error updating ticket status:', updateError);
       return {
         valid: false,
         message: 'Database error - Please try again',
@@ -337,7 +338,7 @@ export const validateAndScanTicket = async (
       },
     };
   } catch (error) {
-    console.error('Error validating ticket:', error);
+    logger.error('Error validating ticket:', error);
     return {
       valid: false,
       message: 'System error during validation',
@@ -368,7 +369,7 @@ export const getUserTicketsWithQR = async (userId: string): Promise<any[]> => {
       .order('purchase_date', { ascending: false });
 
     if (error || !tickets) {
-      console.error('Error fetching tickets:', error);
+      logger.error('Error fetching tickets:', error);
       return [];
     }
 
@@ -386,7 +387,7 @@ export const getUserTicketsWithQR = async (userId: string): Promise<any[]> => {
             qrImage,
           };
         } catch (error) {
-          console.error('Error generating QR for ticket:', ticket.id, error);
+          logger.error('Error generating QR for ticket:', ticket.id, error);
           return {
             ...ticket,
             qrImage: null,
@@ -397,7 +398,7 @@ export const getUserTicketsWithQR = async (userId: string): Promise<any[]> => {
 
     return ticketsWithQR;
   } catch (error) {
-    console.error('Error in getUserTicketsWithQR:', error);
+    logger.error('Error in getUserTicketsWithQR:', error);
     return [];
   }
 };
@@ -489,7 +490,7 @@ export const getEventTicketStats = async (
       cancelledTickets: tickets.filter(t => t.status === 'cancelled').length,
     };
   } catch (error) {
-    console.error('Error getting ticket stats:', error);
+    logger.error('Error getting ticket stats:', error);
     return null;
   }
 };

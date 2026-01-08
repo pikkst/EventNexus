@@ -42,6 +42,7 @@ import {
 import { User, EventNexusEvent } from '../types';
 import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, verifyConnectOnboarding, deleteEvent, archiveTicket, restoreTicket, getArchivedTickets, archiveEvent, restoreEvent, getArchivedEvents } from '../services/dbService';
 import { supabase } from '../services/supabase';
+import logger from '../utils/logger';
 import TicketCard from './TicketCard';
 // TicketViewModal removed; using dedicated TicketViewPage route
 import { SimplifiedSocialMediaManager } from './SimplifiedSocialMediaManager';
@@ -134,18 +135,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
       const connectParam = params.get('connect');
       
       if (connectParam === 'success' || connectParam === 'refresh') {
-        console.log('🔄 UserProfile: Returned from Stripe Connect, param:', connectParam);
-        console.log('📍 Current URL:', window.location.href);
+        logger.log('UserProfile: Returned from Stripe Connect, param:', connectParam);
+        logger.log('Current URL:', window.location.href);
         setIsConnectLoading(true);
         
         try {
-          console.log('📞 Calling verifyConnectOnboarding for user:', user.id);
+          logger.log('Calling verifyConnectOnboarding for user:', user.id);
           const result = await verifyConnectOnboarding(user.id);
           
-          console.log('📥 verifyConnectOnboarding response:', result);
+          logger.log('verifyConnectOnboarding response:', result);
           
           if (result?.success) {
-            console.log('✅ Connect verification successful:', {
+            logger.log('Connect verification successful:', {
               hasAccount: result.hasAccount,
               onboardingComplete: result.onboardingComplete,
               chargesEnabled: result.chargesEnabled,
@@ -167,24 +168,24 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
             
             // Reload connect status from database after a short delay to ensure sync
             setTimeout(async () => {
-              console.log('🔄 Reloading connect status from database...');
+              logger.log('Reloading connect status from database...');
               const status = await checkConnectStatus(user.id);
               if (status) {
-                console.log('✅ Connect status refreshed:', status);
+                logger.log('Connect status refreshed:', status);
                 setConnectStatus(status);
               }
             }, 2000);
           } else {
-            console.warn('⚠️ Connect verification returned no success flag');
+            logger.warn('Connect verification returned no success flag');
           }
         } catch (error) {
-          console.error('❌ Error verifying Connect status:', error);
+          logger.error('Error verifying Connect status:', error);
           alert('Failed to verify payment setup status. Please try refreshing the page.');
         } finally {
           setIsConnectLoading(false);
           
           // Clean up URL
-          console.log('🧹 Cleaning up URL query params');
+          logger.log('Cleaning up URL query params');
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       }
@@ -216,7 +217,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         alert('Failed to delete event. Please try again.');
       }
     } catch (error) {
-      console.error('Error deleting event:', error);
+      logger.error('Error deleting event:', error);
       alert('Failed to delete event. Please try again.');
     } finally {
       setIsDeletingEvent(null);
@@ -242,7 +243,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         alert(result.message || 'Failed to archive ticket');
       }
     } catch (error) {
-      console.error('Error archiving ticket:', error);
+      logger.error('Error archiving ticket:', error);
       alert('Failed to archive ticket. Please try again.');
     }
   };
@@ -266,7 +267,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         alert(result.message || 'Failed to restore ticket');
       }
     } catch (error) {
-      console.error('Error restoring ticket:', error);
+      logger.error('Error restoring ticket:', error);
       alert('Failed to restore ticket. Please try again.');
     }
   };
@@ -290,7 +291,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         alert(result.message || 'Failed to archive event');
       }
     } catch (error) {
-      console.error('Error archiving event:', error);
+      logger.error('Error archiving event:', error);
       alert('Failed to archive event. Please try again.');
     }
   };
@@ -314,7 +315,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         alert(result.message || 'Failed to restore event');
       }
     } catch (error) {
-      console.error('Error restoring event:', error);
+      logger.error('Error restoring event:', error);
       alert('Failed to restore event. Please try again.');
     }
   };
@@ -323,11 +324,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
     setIsConnectLoading(true);
     try {
       // Always verify status with Stripe first to get latest data
-      console.log('🔄 Verifying Connect status with Stripe before opening dashboard...');
+      logger.log('Verifying Connect status with Stripe before opening dashboard...');
       const verifyResult = await verifyConnectOnboarding(user.id);
       
       if (verifyResult && verifyResult.success) {
-        console.log('📥 Verified Connect status from Stripe:', verifyResult);
+        logger.log('Verified Connect status from Stripe:', verifyResult);
         const latestStatus = {
           hasAccount: verifyResult.hasAccount,
           onboardingComplete: verifyResult.onboardingComplete,
@@ -346,7 +347,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         
         if (!currentStatus.hasAccount) {
           // Need to start onboarding first
-          console.log('📝 Creating new Connect account...');
+          logger.log('Creating new Connect account...');
           const { data: userData } = await supabase.auth.getUser();
           if (!userData.user?.email) {
             alert('Unable to retrieve email. Please try again.');
@@ -355,14 +356,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
 
           const result = await createConnectAccount(user.id, userData.user.email);
           if (result?.url) {
-            console.log('🔗 Redirecting to Stripe onboarding...');
+            logger.log('Redirecting to Stripe onboarding...');
             window.location.href = result.url;
           } else {
             alert('Failed to create Connect account. Please try again.');
           }
         } else if (!currentStatus.onboardingComplete) {
           // Account exists but onboarding not complete - create new onboarding link
-          console.log('⚠️ Account exists but onboarding incomplete, creating new link...');
+          logger.log('Account exists but onboarding incomplete, creating new link...');
           const { data: userData } = await supabase.auth.getUser();
           if (!userData.user?.email) {
             alert('Unable to retrieve email. Please try again.');
@@ -371,14 +372,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
 
           const result = await createConnectAccount(user.id, userData.user.email);
           if (result?.url) {
-            console.log('🔗 Redirecting to continue Stripe onboarding...');
+            logger.log('Redirecting to continue Stripe onboarding...');
             window.location.href = result.url;
           } else {
             alert('Failed to create onboarding link. Please try again.');
           }
         } else {
           // Onboarding complete - open dashboard
-          console.log('✅ Opening Stripe Dashboard (onboarding complete)...');
+          logger.log('Opening Stripe Dashboard (onboarding complete)...');
           const url = await getConnectDashboardLink(user.id);
           if (url) {
             window.open(url, '_blank');
@@ -388,7 +389,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         }
       } else {
         // Verification failed, fall back to database status
-        console.warn('⚠️ Verification failed, falling back to database check...');
+        logger.warn('Verification failed, falling back to database check...');
         const dbStatus = await checkConnectStatus(user.id);
         if (dbStatus) {
           setConnectStatus(dbStatus);
@@ -413,7 +414,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         }
       }
     } catch (error) {
-      console.error('Error with Stripe Connect:', error);
+      logger.error('Error with Stripe Connect:', error);
       alert('An error occurred. Please try again.');
     } finally {
       setIsConnectLoading(false);
@@ -453,7 +454,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         alert('Failed to upload image');
       }
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+      logger.error('Error uploading avatar:', error);
       alert('Failed to upload image');
     } finally {
       setIsUploadingAvatar(false);
@@ -525,7 +526,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                   lastModified: Date.now(),
                 });
                 
-                console.log(`Image compressed: ${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`);
+                logger.log(`Image compressed: ${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`);
                 resolve(compressedFile);
               },
               'image/jpeg',
@@ -582,7 +583,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         alert('Failed to upload banner image');
       }
     } catch (error) {
-      console.error('Error uploading banner:', error);
+      logger.error('Error uploading banner:', error);
       alert('Failed to upload banner image');
     } finally {
       setIsUploadingBanner(false);
@@ -654,7 +655,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                   lastModified: Date.now(),
                 });
                 
-                console.log(`Banner compressed: ${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`);
+                logger.log(`Banner compressed: ${(file.size / 1024).toFixed(0)}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`);
                 resolve(compressedFile);
               },
               'image/jpeg',
@@ -1349,7 +1350,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                         setIsSubscriptionModalOpen(false);
                         window.location.reload();
                       } catch (error) {
-                        console.error('Cancel error:', error);
+                        logger.error('Cancel error:', error);
                         alert('Failed to cancel subscription. Please contact support.');
                       } finally {
                         setIsCancelling(false);

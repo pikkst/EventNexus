@@ -216,58 +216,58 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       };
       reader.readAsDataURL(compressed);
     } catch (error) {
-      console.error('Error compressing image:', error);
+      logger.error('Error compressing image:', error);
       alert('Failed to process image. Please try another file.');
     }
   };
 
   const handleGenerateAIImage = async () => {
-    console.log('🎨 AI Image generation started');
-    console.log('📝 Event name:', formData.name);
-    console.log('📝 Description:', formData.description);
-    console.log('📝 Tagline:', formData.tagline);
-    console.log('🏷️ Category:', formData.category);
+    logger.log('AI Image generation started');
+    logger.log('Event name:', formData.name);
+    logger.log('Description:', formData.description);
+    logger.log('Tagline:', formData.tagline);
+    logger.log('Category:', formData.category);
     
     // Use tagline as description if description is empty
     const descriptionText = formData.description || formData.tagline || formData.name;
     
     if (!formData.name || !descriptionText) {
-      console.warn('⚠️ Missing name or description/tagline');
+      logger.warn('Missing name or description/tagline');
       alert('Please fill in event name and tagline first (use AI Generate to create a tagline)');
       return;
     }
 
     // AI features included in the 15 credit event unlock for free tier
     if (user.subscription_tier === 'free' && !isEventUnlocked) {
-      console.warn('🔒 Event not unlocked for free tier user');
+      logger.warn('Event not unlocked for free tier user');
       alert('AI image generation is included when you unlock event creation (15 credits). Unlock to use AI features!');
       return;
     }
 
-    console.log('✅ Validation passed, generating image...');
+    logger.log('Validation passed, generating image...');
     setIsGeneratingImage(true);
     try {
       const prompt = `${formData.name}: ${descriptionText}. Category: ${formData.category}`;
-      console.log('🎯 Calling generateAdImage with prompt:', prompt.substring(0, 100) + '...');
+      logger.log('Calling generateAdImage with prompt:', prompt.substring(0, 100) + '...');
       
       // Don't save to storage (avoid Upload error) - use base64 directly
       const imageData = await generateAdImage(prompt, '16:9', false);
       
-      console.log('📦 Image data received:', imageData ? `${imageData.substring(0, 50)}... (${imageData.length} chars)` : 'null');
+      logger.log('Image data received:', imageData ? `${imageData.substring(0, 50)}... (${imageData.length} chars)` : 'null');
       
       if (imageData) {
-        console.log('✅ Setting image preview');
+        logger.log('Setting image preview');
         // Just set the preview - no need to convert to File since we're not uploading
         setImagePreview(imageData);
         // Clear any previously uploaded file
         setImageFile(null);
-        console.log('✅ AI image generation complete!');
+        logger.log('AI image generation complete!');
       } else {
-        console.error('❌ No image data returned');
+        logger.error('No image data returned');
         alert('Failed to generate AI image. Please try again or upload manually.');
       }
     } catch (error) {
-      console.error('💥 Error generating AI image:', error);
+      logger.error('Error generating AI image:', error);
       alert('AI image generation failed. Please try again or upload manually.');
     } finally {
       setIsGeneratingImage(false);
@@ -301,7 +301,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         }));
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
+      logger.error('Geocoding error:', error);
     } finally {
       setIsGeocoding(false);
     }
@@ -315,7 +315,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         const filtered = allEvents.filter(e => e.organizerId === user.id);
         setUserEvents(filtered);
       } catch (error) {
-        console.error('Error loading events:', error);
+        logger.error('Error loading events:', error);
       } finally {
         setIsLoadingEvents(false);
       }
@@ -332,7 +332,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           setUserCredits(freshUser.credits);
         }
       } catch (error) {
-        console.error('Error refreshing credits:', error);
+        logger.error('Error refreshing credits:', error);
       }
     };
     refreshCredits();
@@ -380,7 +380,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           alert('Failed to unlock feature. Please check your connection and try again.');
         }
       } catch (error) {
-        console.error('Unlock error:', error);
+        logger.error('Unlock error:', error);
         alert('Error unlocking feature. Please refresh the page and try again.');
       }
     };
@@ -543,25 +543,25 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   };
 
   const nextStep = () => {
-    console.log(`📍 Moving from step ${step} to step ${step + 1}`);
-    console.log('📋 Form data at step change:', formData);
-    console.log('🖼️ Image preview exists:', !!imagePreview);
-    console.log('📁 Image file exists:', !!imageFile);
+    logger.log(`Moving from step ${step} to step ${step + 1}`);
+    logger.log('Form data at step change:', formData);
+    logger.log('Image preview exists:', !!imagePreview);
+    logger.log('Image file exists:', !!imageFile);
     setStep(s => Math.min(s + 1, 5));
   };
   
   const prevStep = () => {
-    console.log(`📍 Moving back from step ${step} to step ${step - 1}`);
+    logger.log(`Moving back from step ${step} to step ${step - 1}`);
     setStep(s => Math.max(s - 1, 1));
   };
 
   const handlePublish = async () => {
-    console.log('🚀 Publish button clicked');
-    console.log('📋 Form data:', formData);
-    console.log('🖼️ Image preview:', imagePreview ? 'exists' : 'none');
+    logger.log('Publish button clicked');
+    logger.log('Form data:', formData);
+    logger.log('Image preview:', imagePreview ? 'exists' : 'none');
     
     if (!formData.name || !formData.category || !formData.date || !formData.time) {
-      console.error('❌ Missing required fields:', {
+      logger.error('Missing required fields:', {
         name: !!formData.name,
         category: !!formData.category,
         date: !!formData.date,
@@ -571,41 +571,41 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       return;
     }
 
-    console.log('✅ Validation passed, creating event...');
+    logger.log('Validation passed, creating event...');
     setIsCreating(true);
     try {
       // Upload image to Storage if available (AI-generated or user uploaded)
       let uploadedImageUrl = '';
       if (imagePreview) {
-        console.log('🖼️ Image preview found, uploading to Storage...');
+        logger.log('Image preview found, uploading to Storage...');
         setIsUploadingImage(true);
         
         try {
           // Convert base64 data URL to Blob
           if (imagePreview.startsWith('data:')) {
-            console.log(`📦 Converting base64 image (${imagePreview.length} chars) to Blob...`);
+            logger.log(`Converting base64 image (${imagePreview.length} chars) to Blob...`);
             const response = await fetch(imagePreview);
             const blob = await response.blob();
-            console.log(`✅ Blob created: ${blob.size} bytes, type: ${blob.type}`);
+            logger.log(`Blob created: ${blob.size} bytes, type: ${blob.type}`);
             
             // Create File from Blob for upload
             const tempEventId = crypto.randomUUID();
             const file = new File([blob], `${tempEventId}.png`, { type: blob.type || 'image/png' });
-            console.log(`📤 Uploading to Storage as ${file.name}...`);
+            logger.log(`Uploading to Storage as ${file.name}...`);
             
             // Upload to Supabase Storage
             uploadedImageUrl = await uploadEventImage(tempEventId, file) || '';
-            console.log(`✅ Image uploaded to Storage: ${uploadedImageUrl ? 'success' : 'failed'}`);
+            logger.log(`Image uploaded to Storage: ${uploadedImageUrl ? 'success' : 'failed'}`);
           }
         } catch (uploadError) {
-          console.error('❌ Image upload failed:', uploadError);
+          logger.error('Image upload failed:', uploadError);
           // Continue without image if upload fails
           uploadedImageUrl = '';
         } finally {
           setIsUploadingImage(false);
         }
       } else {
-        console.log('ℹ️ No image preview, creating event without image');
+        logger.log('No image preview, creating event without image');
       }
 
       // AUTO-TRANSLATE FOR MULTILINGUAL EVENTS (Pro+ tier only)
@@ -620,11 +620,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       );
       
       if (formData.is_multilingual && user.subscription_tier !== 'free') {
-        console.log(`🌐 Auto-translating multilingual event from ${originalLanguage}...`);
+        logger.log(`Auto-translating multilingual event from ${originalLanguage}...`);
         
         // Get target languages based on tier
         const targetLangs = getAutoTranslationLanguages(user.subscription_tier, originalLanguage);
-        console.log('📝 Target languages:', targetLangs);
+        logger.log('Target languages:', targetLangs);
         
         const languageNames: { [key: string]: string } = {
           en: 'English', et: 'Estonian', fi: 'Finnish', sv: 'Swedish',
@@ -637,7 +637,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             .map(async (code) => {
               try {
                 const name = languageNames[code];
-                console.log(`🔄 Translating to ${name}...`);
+                logger.log(`Translating to ${name}...`);
                 
                 // Translate name, description, and aboutText
                 const [translatedName, translatedDesc, translatedAbout] = await Promise.all([
@@ -646,7 +646,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   formData.aboutText ? translateDescription(formData.aboutText, name, user.id, user.subscription_tier) : Promise.resolve('')
                 ]);
                 
-                console.log(`✅ ${name} translation complete`);
+                logger.log(`${name} translation complete`);
                 return {
                   lang: code,
                   data: {
@@ -656,7 +656,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   }
                 };
               } catch (error) {
-                console.error(`⚠️ ${languageNames[code]} translation failed:`, error);
+                logger.error(`${languageNames[code]} translation failed:`, error);
                 // Fallback to original
                 return {
                   lang: code,
@@ -681,18 +681,18 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             aboutText: formData.aboutText || undefined
           };
           
-          console.log('✅ All translations complete:', Object.keys(translations));
+          logger.log('All translations complete:', Object.keys(translations));
         } catch (error) {
-          console.error('⚠️ Translation process failed, continuing without translations:', error);
+          logger.error('Translation process failed, continuing without translations:', error);
           translations = {};
         }
       } else if (formData.is_multilingual && user.subscription_tier === 'free') {
-        console.log('⚠️ Free tier cannot enable multilingual - ignoring flag');
+        logger.log('Free tier cannot enable multilingual - ignoring flag');
       } else {
-        console.log('ℹ️ Multilingual not enabled - skipping translation');
+        logger.log('Multilingual not enabled - skipping translation');
       }
 
-      console.log('📦 Preparing event data...');
+      logger.log('Preparing event data...');
       const eventData: Omit<EventNexusEvent, 'id'> = {
         name: formData.name,
         category: formData.category,
@@ -724,22 +724,22 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         } : undefined
       };
 
-      console.log('📤 Calling createEvent()...');
+      logger.log('Calling createEvent()...');
       const created = await createEvent(eventData);
-      console.log('📥 createEvent() response:', created ? 'success' : 'failed');
+      logger.log('createEvent() response:', created ? 'success' : 'failed');
       
       if (created) {
-        console.log('✅ Event created successfully!');
+        logger.log('Event created successfully!');
 
         try {
           await trackEventCreation(created, user?.id || null);
         } catch (trackingError) {
-          console.warn('⚠️ Analytics tracking failed:', trackingError);
+          logger.warn('Analytics tracking failed:', trackingError);
         }
         
         // Create ticket templates if any were defined
         if (ticketTemplates && ticketTemplates.length > 0) {
-          console.log(`🎫 Creating ${ticketTemplates.length} ticket templates...`);
+          logger.log(`Creating ${ticketTemplates.length} ticket templates...`);
           try {
             const { createTicketTemplates } = await import('../services/dbService');
             const templates = ticketTemplates.map(template => ({
@@ -754,15 +754,15 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             }));
             
             await createTicketTemplates(created.id, templates);
-            console.log('✅ Ticket templates created successfully!');
+            logger.log('Ticket templates created successfully!');
           } catch (ticketError) {
-            console.error('⚠️ Failed to create ticket templates:', ticketError);
+            logger.error('Failed to create ticket templates:', ticketError);
             // Don't fail the whole event creation if tickets fail
           }
         }
 
         // Create default scanner code for mobile apps
-        console.log('📱 Creating scanner code for mobile apps...');
+        logger.log('Creating scanner code for mobile apps...');
         setIsCreatingScannerCode(true);
         try {
           const scannerCode = await createScannerCode(
@@ -774,18 +774,18 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           
           if (scannerCode) {
             setCreatedScannerCode(scannerCode.code);
-            console.log('✅ Scanner code created:', scannerCode.code);
+            logger.log('Scanner code created:', scannerCode.code);
           } else {
-            console.warn('⚠️ Failed to create scanner code');
+            logger.warn('Failed to create scanner code');
           }
         } catch (scannerError) {
-          console.error('⚠️ Scanner code creation failed:', scannerError);
+          logger.error('Scanner code creation failed:', scannerError);
           // Don't fail event creation if scanner code fails
         } finally {
           setIsCreatingScannerCode(false);
         }
         
-        console.log('🎉 Navigating to dashboard...');
+        logger.log('Navigating to dashboard...');
         const translationCount = Object.keys(translations).length;
         const scannerMessage = createdScannerCode 
           ? `\n\n📱 Scanner Code for Mobile App: ${createdScannerCode}\n(Use this code in the EventNexus Scanner mobile app)`
@@ -800,14 +800,14 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         }
         navigate('/dashboard');
       } else {
-        console.error('❌ Event creation failed');
+        logger.error('Event creation failed');
         alert('Failed to create event. Please try again.');
       }
     } catch (error) {
-      console.error('💥 Error creating event:', error);
+      logger.error('Error creating event:', error);
       alert('Error creating event. Please try again.');
     } finally {
-      console.log('🏁 Event creation process finished');
+      logger.log('Event creation process finished');
       setIsCreating(false);
     }
   };
@@ -823,6 +823,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 <label className="block text-sm font-medium text-slate-400 mb-1.5">Event Name</label>
                 <input 
                   type="text" 
+                  aria-label="Event name"
+                  aria-required="true"
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all outline-none" 
                   placeholder="e.g. Neon nights music festival"
                   value={formData.name}
@@ -836,6 +838,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                     <button 
                       key={cat}
                       onClick={() => setFormData({...formData, category: cat})}
+                      aria-label={`Select ${cat} category`}
+                      aria-pressed={formData.category === cat}
                       className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
                         formData.category === cat ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
                       }`}
@@ -851,14 +855,17 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   <button 
                     onClick={handleGeminiTagline}
                     disabled={isGenerating || !formData.name || !formData.category}
+                    aria-label="Generate AI tagline"
                     className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 disabled:opacity-50"
                     title="AI will generate a catchy tagline based on your event name and category"
                   >
-                    <Sparkles className="w-3 h-3" /> AI Generate
+                    <Sparkles className="w-3 h-3" aria-hidden="true" /> AI Generate
                   </button>
                 </div>
                 <input 
                   type="text" 
+                  aria-label="Event tagline"
+                  aria-readonly="true"
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 transition-all outline-none" 
                   placeholder="Let AI create an engaging tagline for your event..."
                   value={isGenerating ? "Gemini is thinking..." : formData.tagline}
@@ -878,9 +885,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-slate-400 mb-1.5">Start Date</label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
                     <input 
                       type="date" 
+                      aria-label="Event start date"
+                      aria-required="true"
                       value={formData.date}
                       onChange={(e) => setFormData({...formData, date: e.target.value})}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
@@ -890,9 +899,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-slate-400 mb-1.5">Start Time</label>
                   <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
                     <input 
                       type="time" 
+                      aria-label="Event start time"
+                      aria-required="true"
                       value={formData.time}
                       onChange={(e) => setFormData({...formData, time: e.target.value})}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
@@ -905,9 +916,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-slate-400 mb-1.5">End Date <span className="text-slate-600">(optional)</span></label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
                     <input 
                       type="date" 
+                      aria-label="Event end date (optional)"
                       value={formData.end_date}
                       onChange={(e) => setFormData({...formData, end_date: e.target.value})}
                       min={formData.date}
@@ -918,9 +930,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-slate-400 mb-1.5">End Time <span className="text-slate-600">(optional)</span></label>
                   <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
                     <input 
                       type="time" 
+                      aria-label="Event end time (optional)"
                       value={formData.end_time}
                       onChange={(e) => setFormData({...formData, end_time: e.target.value})}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
@@ -932,9 +945,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1.5">Venue Location</label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" aria-hidden="true" />
                   <input 
                     type="text" 
+                    aria-label="Venue location"
+                    aria-required="true"
                     placeholder="Search address or venue name (e.g., Põltsamaa lossi 61)" 
                     value={formData.location}
                     onChange={(e) => setFormData({...formData, location: e.target.value})}
@@ -950,9 +965,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                     type="button"
                     onClick={() => geocodeAddress(formData.location)}
                     disabled={isGeocoding}
+                    aria-label="Search for location"
                     className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                   >
-                    <Search className="w-3.5 h-3.5" />
+                    <Search className="w-3.5 h-3.5" aria-hidden="true" />
                     {isGeocoding ? 'Searching...' : 'Search'}
                   </button>
                 </div>
@@ -1215,13 +1231,15 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 Add detailed information about your event. This will be displayed prominently on your event page (schedule, lineup, FAQs, etc.)
               </p>
               <textarea
+                aria-label="Detailed event description"
+                aria-describedby="about-event-help"
                 value={formData.aboutText}
                 onChange={(e) => setFormData({...formData, aboutText: e.target.value})}
                 placeholder="Example:&#10;&#10;🎵 EVENT SCHEDULE&#10;18:00 - Doors Open&#10;19:00 - Opening Act&#10;20:30 - Main Performance&#10;&#10;📍 VENUE INFO&#10;Located in the heart of the city...&#10;&#10;❓ FAQ&#10;Q: Is there parking?&#10;A: Yes, free parking available..."
                 rows={12}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none resize-none font-mono"
               />
-              <p className="text-[10px] text-slate-500">
+              <p id="about-event-help" className="text-[10px] text-slate-500">
                 💡 Tip: Use line breaks and emojis to organize information. This text will be shown in "About this event" section.
               </p>
             </div>
