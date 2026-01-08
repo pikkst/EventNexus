@@ -173,16 +173,16 @@ ALTER TABLE public.events
   ADD COLUMN IF NOT EXISTS canonical_event_id UUID REFERENCES public.events(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS start_time TIMESTAMPTZ;
 
--- Disable ALL triggers on events table during migration UPDATE
-ALTER TABLE public.events DISABLE TRIGGER ALL;
+-- Disable USER triggers on events table during migration UPDATE (excludes system triggers)
+ALTER TABLE public.events DISABLE TRIGGER USER;
 
 -- Update start_time from existing date+time columns for existing rows
 UPDATE public.events 
 SET start_time = (date + time)::timestamptz 
 WHERE start_time IS NULL AND date IS NOT NULL AND time IS NOT NULL;
 
--- Re-enable all triggers
-ALTER TABLE public.events ENABLE TRIGGER ALL;
+-- Re-enable user triggers
+ALTER TABLE public.events ENABLE TRIGGER USER;
 
 -- Add generated geography column using existing location_point
 ALTER TABLE public.events
