@@ -1,0 +1,328 @@
+// AI Agent: City Bootstrap Service
+// Automatically discovers event sources and seeds initial events for new cities
+
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+const GEMINI_MODEL = 'gemini-2.0-flash-exp'
+
+interface CityBootstrapRequest {
+  city_id?: string;
+  city_name: string;
+  country: string;
+  languages?: string[];
+  timezone?: string;
+  auto_discover?: boolean;
+  seed_events?: boolean;
+}
+
+interface EventSource {
+  name: string;
+  url: string;
+  type: 'api' | 'rss' | 'html' | 'ical';
+  source_score: number;
+  description?: string;
+}
+
+async function discoverCitySources(cityName: string, country: string): Promise<EventSource[]> {
+  const prompt = `You are an expert at finding official public event data sources for cities.
+
+Find official event sources for ${cityName}, ${country}.
+
+Return ONLY valid JSON array of sources with this structure:
+[
+  {
+    "name": "Official City Events Portal",
+    "url": "https://...",
+    "type": "html" or "rss" or "api" or "ical",
+    "source_score": 0.8,
+    "description": "Official city government events"
+  }
+]
+
+Prioritize:
+1. Official city/municipality websites
+2. Tourism boards
+3. Cultural institutions (museums, theaters)
+4. Open data portals
+5. iCal/RSS feeds from venues
+
+Return 3-10 sources. Be conservative - only return sources you're confident exist.
+NO markdown, NO explanations, ONLY the JSON array.`
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 2048,
+        }
+      })
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`Gemini API error: ${response.status}`)
+  }
+
+  const data = await response.json()
+  const text = data.candidates[0]?.content?.parts[0]?.text || '[]'
+
+  // Extract JSON from markdown if present
+  const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/```\n?([\s\S]*?)\n?```/)
+  const jsonText = jsonMatch ? jsonMatch[1] : text
+
+  try {
+    const sources = JSON.parse(jsonText)
+    return Array.isArray(sources) ? sources : []
+  } catch (error) {
+    console.error('Failed to parse source discovery response:', text)
+    return []
+  }
+}
+
+async function validateSource(url: string): Promise<boolean> {
+  try {
+    const response = await fetch(url, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000),
+      headers: {
+        'User-Agent': 'EventNexus-Bot/1.0 (https://www.eventnexus.eu)'
+      }
+    })
+    return response.ok
+  } catch (error) {
+    console.error(`Source validation failed for ${url}:`, error)
+    return false
+  }
+}
+
+async function bootstrapCity(
+  supabase: any,
+  request: CityBootstrapRequest
+): Promise<{ success: boolean; city_id: string; sources_added: number; events_seeded: number; error?: string }> {
+  
+  const { city_name, country, languages = ['en'], timezone = 'UTC', auto_discover = true, seed_events = true } = request
+  
+  try {
+    // 1. Create or get city config
+    let cityId = request.city_id
+
+    if (!cityId) {
+      const { data: existingCity } = await supabase
+        .from('city_configs')
+        .select('city_id')
+        .eq('city_name', city_name)
+        .eq('country', country)
+        .single()
+
+      if (existingCity) {
+        cityId = existingCity.city_id
+      } else {
+        const { data: newCity, error: cityError } = await supabase
+          .from('city_configs')
+          .insert({
+            city_name,
+            country,
+            languages,
+            timezone,
+            active: true,
+            bootstrap_status: 'discovering_sources'
+          })
+          .select()
+          .single()
+
+        if (cityError) throw cityError
+        cityId = newCity.city_id
+      }
+    }
+
+    // Update bootstrap status
+    await supabase
+      .from('city_configs')
+      .update({ bootstrap_status: 'discovering_sources' })
+      .eq('city_id', cityId)
+
+    // 2. Discover sources with AI
+    let sourcesAdded = 0
+
+    if (auto_discover) {
+      console.log(`Discovering sources for ${city_name}, ${country}...`)
+      const discoveredSources = await discoverCitySources(city_name, country)
+
+      for (const source of discoveredSources) {
+        // Validate source availability
+        const isValid = await validateSource(source.url)
+
+        if (isValid) {
+          const { error: sourceError } = await supabase
+            .from('event_sources')
+            .insert({
+              city_id: cityId,
+              name: source.name,
+              type: source.type,
+              url: source.url,
+              source_score: source.source_score,
+              active: true,
+            })
+            .select()
+
+          if (!sourceError) {
+            sourcesAdded++
+          }
+        } else {
+          console.log(`Skipping invalid source: ${source.url}`)
+        }
+      }
+    }
+
+    // 3. Update bootstrap status
+    await supabase
+      .from('city_configs')
+      .update({ bootstrap_status: 'seeding_events' })
+      .eq('city_id', cityId)
+
+    // 4. Seed initial events
+    let eventsSeeded = 0
+
+    if (seed_events && sourcesAdded > 0) {
+      console.log(`Seeding initial events for ${city_name}...`)
+      
+      // Trigger fetch-sources for this city
+      const { data: fetchResult, error: fetchError } = await supabase.functions.invoke('fetch-sources', {
+        body: { city_id: cityId }
+      })
+
+      if (!fetchError && fetchResult?.results?.fetched > 0) {
+        // Trigger parse pipeline
+        await supabase.functions.invoke('parse-event-ai')
+        await supabase.functions.invoke('validate-event')
+        await supabase.functions.invoke('publish-event')
+
+        // Count seeded events
+        const { count } = await supabase
+          .from('events')
+          .select('*', { count: 'exact', head: true })
+          .eq('city_id', cityId)
+
+        eventsSeeded = count || 0
+      }
+    }
+
+    // 5. Activate city if sufficient events
+    const finalStatus = eventsSeeded >= 5 ? 'active' : 'failed'
+    const errorMessage = eventsSeeded < 5 ? `Only ${eventsSeeded} events discovered. Minimum 5 required.` : null
+
+    await supabase
+      .from('city_configs')
+      .update({
+        bootstrap_status: finalStatus,
+        bootstrap_error: errorMessage
+      })
+      .eq('city_id', cityId)
+
+    // Log completion
+    await supabase
+      .from('ai_decision_log')
+      .insert({
+        decision_type: 'city_bootstrap_completed',
+        decision_result: finalStatus,
+        reasoning: {
+          city_id: cityId,
+          city_name,
+          country,
+          sources_added: sourcesAdded,
+          events_seeded: eventsSeeded
+        },
+        ai_model: GEMINI_MODEL,
+      })
+
+    return {
+      success: finalStatus === 'active',
+      city_id: cityId,
+      sources_added: sourcesAdded,
+      events_seeded: eventsSeeded,
+      error: errorMessage || undefined
+    }
+
+  } catch (error) {
+    // Update city status to failed
+    if (cityId) {
+      await supabase
+        .from('city_configs')
+        .update({
+          bootstrap_status: 'failed',
+          bootstrap_error: error.message
+        })
+        .eq('city_id', cityId)
+    }
+
+    throw error
+  }
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    const request: CityBootstrapRequest = await req.json()
+
+    if (!request.city_name || !request.country) {
+      return new Response(
+        JSON.stringify({ error: 'city_name and country are required' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
+    }
+
+    const result = await bootstrapCity(supabaseClient, request)
+
+    return new Response(
+      JSON.stringify({
+        success: result.success,
+        message: result.success
+          ? `✅ City ${request.city_name} bootstrapped successfully!`
+          : `⚠️ City bootstrap completed with warnings`,
+        ...result,
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: result.success ? 200 : 206,
+      }
+    )
+  } catch (error) {
+    console.error('Error in bootstrap-city:', error)
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
+    )
+  }
+})

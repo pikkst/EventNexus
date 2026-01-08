@@ -564,3 +564,233 @@ export interface AffiliateReferralActivity extends AffiliateReferral {
   referred_user_email: string;
   days_ago: string;
 }
+
+// ========================================
+// AI AGENT SYSTEM TYPES
+// ========================================
+
+export interface CityConfig {
+  city_id: string;
+  city_name: string;
+  country: string;
+  languages: string[];
+  check_interval: string;
+  active: boolean;
+  bootstrap_status: 'pending' | 'discovering_sources' | 'seeding_events' | 'active' | 'failed';
+  bootstrap_error?: string;
+  timezone: string;
+  geo_bounds?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventSource {
+  id: string;
+  city_id: string;
+  name: string;
+  type: 'api' | 'rss' | 'html' | 'ical';
+  url: string;
+  source_score: number;
+  active: boolean;
+  last_fetched_at?: string;
+  last_success_at?: string;
+  failure_count: number;
+  headers?: Record<string, string>;
+  auth_config?: Record<string, string>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RawEvent {
+  id: string;
+  source_id: string;
+  raw_content?: string;
+  raw_content_json?: any;
+  content_type?: 'html' | 'json' | 'xml' | 'text' | 'ical';
+  content_hash: string;
+  fetched_at: string;
+  processing_status: 'pending' | 'processing' | 'parsed' | 'failed';
+  error_message?: string;
+}
+
+export interface ParsedEvent {
+  id: string;
+  raw_event_id: string;
+  structured_json: {
+    title: string;
+    description: string;
+    start_time: string;
+    end_time?: string;
+    location_address: string;
+    location_lat?: number;
+    location_lng?: number;
+    category: string;
+    is_free: boolean;
+    original_language: string;
+    source_url?: string;
+    organizer?: string;
+    image_url?: string;
+  };
+  original_language: string;
+  translations?: Record<string, any>;
+  confidence_partial: number;
+  ai_model: string;
+  parsed_at: string;
+  validation_status: 'pending' | 'validating' | 'validated' | 'rejected';
+}
+
+export interface EventConfidence {
+  id: string;
+  event_id?: string;
+  parsed_event_id?: string;
+  source_score: number; // 0.00-1.00
+  data_completeness: number; // 0.00-1.00
+  time_validity: number; // 0.00-1.00
+  geo_accuracy: number; // 0.00-1.00
+  semantic_validity: number; // 0.00-1.00
+  final_score: number; // 0.00-100.00 (UI presentation)
+  calculation_metadata?: Record<string, any>;
+  calculated_at: string;
+}
+
+export interface EventVersion {
+  id: string;
+  event_id: string;
+  version_number: number; // Auto-incremented by trigger
+  changes_json: Record<string, any>;
+  changed_by?: string;
+  change_type: 'ai_update' | 'manual_edit' | 'claim' | 'promotion' | 'cancellation';
+  created_at: string;
+}
+
+export interface ReviewQueueItem {
+  id: string;
+  event_id?: string;
+  parsed_event_id?: string;
+  reason: string;
+  confidence_score?: number;
+  status: 'pending' | 'approved' | 'rejected' | 'needs_info';
+  reviewer_id?: string;
+  reviewed_at?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  event?: EventNexusEvent;
+  parsed_event?: ParsedEvent;
+}
+
+export interface AIDecisionLog {
+  id: string;
+  event_id?: string;
+  parsed_event_id?: string;
+  agent_id?: string;
+  decision_type: string;
+  decision_result: string;
+  reasoning: Record<string, any>;
+  confidence_score?: number;
+  ai_model: string;
+  processing_time_ms?: number;
+  created_at: string;
+  // Joined data
+  agent?: AIAgent;
+}
+
+export interface EventMatch {
+  id: string;
+  event_a_id: string;
+  event_b_id: string;
+  match_type: 'exact' | 'fuzzy' | 'geo_time' | 'organizer';
+  similarity_score: number; // 0.00-1.00
+  match_metadata?: Record<string, any>;
+  resolution?: 'merged' | 'kept_both' | 'rejected';
+  resolved_by?: string;
+  resolved_at?: string;
+  created_at: string;
+}
+
+export interface AIAgent {
+  id: string;
+  name: string;
+  role: string;
+  ai_provider: 'gemini' | 'openai' | 'local' | 'anthropic';
+  model: string;
+  temperature: number;
+  max_tokens?: number;
+  active: boolean;
+  cost_per_1k_tokens?: number;
+  description?: string;
+  config?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CityAgent {
+  id: string;
+  city_id: string;
+  agent_id: string;
+  role: string;
+  active: boolean;
+  config_override?: Record<string, any>;
+  created_at: string;
+  // Joined data
+  agent?: AIAgent;
+  city?: CityConfig;
+}
+
+export interface AIUsageLog {
+  id: string;
+  agent_name: string;
+  ai_model: string;
+  tokens_used?: number;
+  cost_estimate?: number;
+  related_event_id?: string;
+  related_parsed_event_id?: string;
+  operation_type?: string;
+  success: boolean;
+  created_at: string;
+}
+
+export interface CityHealthMetrics {
+  id: string;
+  city_id: string;
+  events_last_7d: number;
+  events_last_24h: number;
+  avg_confidence: number;
+  failed_sources: number;
+  active_sources: number;
+  freshness_score: number;
+  unclaimed_events: number;
+  claimed_events: number;
+  calculation_metadata?: Record<string, any>;
+  calculated_at: string;
+  // Joined data
+  city?: CityConfig;
+}
+
+export interface EventOptOut {
+  id: string;
+  source_url: string;
+  event_title?: string;
+  requested_by: string;
+  contact_email?: string;
+  reason: string;
+  status: 'pending' | 'processed' | 'rejected';
+  processed_by?: string;
+  processed_at?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// AI Agent Dashboard Stats
+export interface AIAgentStats {
+  total_cities: number;
+  active_sources: number;
+  events_discovered_24h: number;
+  events_published_24h: number;
+  pending_review: number;
+  avg_confidence: number;
+  total_tokens_used_7d: number;
+  estimated_cost_7d: number;
+}
