@@ -25,7 +25,7 @@ interface ValidationResult {
 }
 
 function calculateDataCompleteness(event: any): number {
-  const requiredFields = ['title', 'description', 'start_time', 'location_address', 'category']
+  const requiredFields = ['name', 'description', 'start_time', 'location_address', 'category']
   const optionalFields = ['end_time', 'location_lat', 'location_lng', 'organizer', 'image_url', 'source_url']
   
   let score = 0
