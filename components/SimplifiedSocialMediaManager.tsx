@@ -221,14 +221,16 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
             disabled={loadingAccounts}
             className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50"
             title="Refresh accounts"
+            aria-label={loadingAccounts ? "Loading accounts" : "Refresh social media accounts"}
           >
-            <RefreshCw className={`w-4 h-4 ${loadingAccounts ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loadingAccounts ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
           <button
             onClick={() => setShowSetup(!showSetup)}
             className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            aria-label={showSetup ? "Hide token setup form" : "Show token setup form"}
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-4 h-4" aria-hidden="true" />
             {showSetup ? 'Hide Setup' : 'Setup Tokens'}
           </button>
         </div>
@@ -241,6 +243,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
           <button
             onClick={() => loadAccounts()}
             className="mt-2 text-sm px-3 py-1 bg-red-200 text-red-900 rounded hover:bg-red-300"
+            aria-label="Retry loading social media accounts"
           >
             Retry
           </button>
@@ -279,6 +282,8 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
                 onChange={(e) => setAppId(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                 placeholder="Enter your App ID (e.g., 1527493881796179)"
+                aria-label="Facebook App ID"
+                aria-required="true"
               />
             </div>
 
@@ -292,6 +297,8 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
                 onChange={(e) => setAppSecret(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                 placeholder="Enter your Facebook App Secret"
+                aria-label="Facebook App Secret"
+                aria-required="true"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Get from: <a href="https://developers.facebook.com/apps/1527493881796179/settings/basic/" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">Facebook Developer Console</a>
@@ -308,6 +315,8 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm text-gray-900"
                 placeholder="EAAVtP2I4llM..."
+                aria-label="Facebook User Access Token"
+                aria-required="true"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Get from: <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">Graph API Explorer</a>
@@ -319,15 +328,16 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
               onClick={handleAutoSetup}
               disabled={loading || !appId || !appSecret || !userToken}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+              aria-label={loading ? "Setting up social media connections" : "Auto-connect Facebook and Instagram accounts"}
             >
               {loading ? (
                 <>
-                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  <RefreshCw className="w-5 h-5 animate-spin" aria-hidden="true" />
                   Setting up...
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="w-5 h-5" />
+                  <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
                   Auto-Connect Facebook & Instagram
                 </>
               )}
@@ -382,6 +392,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
               <button
                 onClick={() => handleDisconnect('facebook')}
                 className="w-full mt-3 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"
+                aria-label="Disconnect Facebook account"
               >
                 Disconnect
               </button>
@@ -425,6 +436,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
               <button
                 onClick={() => handleDisconnect('instagram')}
                 className="w-full mt-3 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"
+                aria-label="Disconnect Instagram account"
               >
                 Disconnect
               </button>
@@ -468,6 +480,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
               <button
                 onClick={() => handleDisconnect('linkedin')}
                 className="w-full mt-3 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"
+                aria-label="Disconnect LinkedIn account"
               >
                 Disconnect
               </button>
