@@ -656,6 +656,7 @@ Use professional but clear language. Be specific about URLs and repositories. Ac
 /**
  * Generate printable poster design with AI
  * Includes poster layout description, image prompt, and color scheme
+ * Automatically adapts to local market language based on event location
  * Free tier: costs credits | Paid tiers: included
  */
 export const generatePosterDesign = async (
@@ -664,13 +665,35 @@ export const generatePosterDesign = async (
   eventCategory: string,
   campaignTheme: string,
   userId?: string,
-  userTier?: string
+  userTier?: string,
+  eventLocation?: { city: string; address: string }
 ) => {
   // Check if user needs to pay with credits (Free tier only)
   if (userId && userTier === 'free') {
     const hasCredits = await checkUserCredits(userId, 25); // 25 credits for poster design
     if (!hasCredits) {
       throw new Error(`Insufficient credits. Need 25 credits for poster design`);
+    }
+  }
+
+  // Detect target market/language from location
+  let marketContext = "international English-speaking audience";
+  if (eventLocation) {
+    const city = eventLocation.city.toLowerCase();
+    const address = eventLocation.address.toLowerCase();
+    
+    if (city.includes('tallinn') || city.includes('tartu') || address.includes('estonia')) {
+      marketContext = "Estonian market (Eesti turg) - design should resonate with Estonian culture and aesthetics";
+    } else if (city.includes('helsinki') || city.includes('tampere') || address.includes('finland')) {
+      marketContext = "Finnish market (Suomen markkinat) - design should appeal to Finnish sensibilities";
+    } else if (city.includes('stockholm') || city.includes('göteborg') || address.includes('sweden')) {
+      marketContext = "Swedish market (Svensk marknad) - Scandinavian minimalist aesthetic preferred";
+    } else if (city.includes('berlin') || city.includes('münchen') || address.includes('germany')) {
+      marketContext = "German market (Deutscher Markt) - clean, professional design with strong typography";
+    } else if (city.includes('paris') || city.includes('lyon') || address.includes('france')) {
+      marketContext = "French market (Marché français) - elegant, artistic design with sophistication";
+    } else if (city.includes('madrid') || city.includes('barcelona') || address.includes('spain')) {
+      marketContext = "Spanish market (Mercado español) - vibrant, energetic design with warm colors";
     }
   }
 
@@ -685,42 +708,49 @@ EVENT DETAILS:
 - Category: ${eventCategory}
 - Description: ${eventDescription}
 - Campaign Focus: ${campaignTheme}
+- Target Market: ${marketContext}
 
 POSTER DESIGN REQUIREMENTS:
 1. Create a visually striking, high-impact design suitable for:
-   - Physical printing on A4/A3 paper
-   - Digital display on screens
-   - Wall mounting in public spaces
+   - Physical printing on A3 paper (297x420mm) for wall mounting
+   - High visibility in public spaces (cafes, community boards, venues)
+   - Professional presentation that commands attention
 
 2. Design Characteristics:
-   - Bold, readable typography (event name must be prominent from 2-3 meters away)
-   - Strong color contrast for visibility
-   - Clear visual hierarchy
-   - Professional and engaging aesthetic
-   - Balanced composition with event image on left, details+QR code on right
+   - Bold, readable typography (event name must be legible from 3-4 meters away)
+   - Strong color contrast for maximum visibility
+   - Clear visual hierarchy with event name as primary focus
+   - Professional and engaging aesthetic appropriate for ${marketContext}
+   - Balanced composition: vivid image on left (60%), event details on right (40%)
 
 3. Visual Elements:
-   - Main event imagery: Vivid, relevant to category and theme
-   - Color scheme: 3 colors (primary, secondary, accent) that work well together
-   - Must include space for QR code (bottom right corner, white background)
-   - Date, time, location clearly visible
-   - Call-to-action: "Scan QR Code to Book Tickets"
+   - Main event imagery: Vivid, category-appropriate, culturally relevant to target market
+   - Color scheme: 3 colors that work together AND suit the local market aesthetic
+   - Must include space for QR code (bottom right, white background for scanning)
+   - All text areas use high-contrast colors for readability
+   - Modern, clean design that looks professional when printed
 
-4. Technical Requirements:
-   - Image resolution: High quality (300 DPI ready)
-   - Text: Sans-serif font, clean and modern
-   - Avoid excessive text - focus on event name and key details
-   - Include event price prominently
+4. Cultural & Market Considerations:
+   - Color psychology should match ${marketContext}
+   - Visual style should resonate with local target audience
+   - Typography and layout should feel native to the market
+   - Avoid cultural elements that may not translate well
+
+5. Technical Requirements:
+   - Image resolution: High quality (suitable for 300 DPI printing)
+   - Text: Sans-serif font, bold and modern
+   - Focus on essential information only
+   - Design must work both digitally and in physical print
 
 Respond in JSON format with ONLY this structure:
 {
-  "title": "Poster design headline",
-  "description": "Detailed visual description of the poster layout and design elements",
-  "imageUrl": "A detailed description for AI image generation covering the main visual (left side)",
+  "title": "Poster design headline (in English)",
+  "description": "Detailed visual description of the poster layout, color psychology, and design elements optimized for ${marketContext}",
+  "imageUrl": "A detailed description for AI image generation: describe the main visual for the left side of the poster, including composition, mood, colors, and cultural relevance to ${marketContext}",
   "colorScheme": {
-    "primary": "#HEX_COLOR (dominant background/gradient start)",
+    "primary": "#HEX_COLOR (dominant background/gradient start - choose colors appropriate for ${marketContext})",
     "secondary": "#HEX_COLOR (gradient end or secondary areas)",
-    "accent": "#HEX_COLOR (highlights and text emphasis)"
+    "accent": "#HEX_COLOR (highlights and call-to-action emphasis)"
   }
 }`,
       config: {
