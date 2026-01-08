@@ -646,6 +646,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     { id: 'analytics-dashboard', label: 'GA & Meta Analytics', icon: <TrendingUp /> },
     { id: 'users', label: 'User Governance', icon: <Users /> },
     { id: 'inbox', label: 'Email Inbox', icon: <Mail /> },
+    { id: 'ai-agents', label: 'AI Agent System', icon: <Bot /> },
     { id: 'marketing', label: 'Campaign Engine', icon: <Rocket /> },
     { id: 'analytics-campaign', label: 'Campaign Analytics', icon: <Target /> },
     { id: 'ai-learning', label: 'AI Learning', icon: <Sparkles /> },
@@ -1202,6 +1203,35 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         {activeTab === 'inbox' && (
           <div className="animate-in fade-in duration-500">
             <AdminInbox />
+          </div>
+        )}
+
+        {activeTab === 'ai-agents' && (
+          <div className="animate-in fade-in duration-500">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl md:rounded-[48px] p-6 md:p-10 shadow-2xl">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center">
+                  <Bot className="text-white" size={24} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black tracking-tight">AI Agent System</h2>
+                  <p className="text-sm text-slate-400">Autonomous 24h event discovery & validation</p>
+                </div>
+              </div>
+              <div className="border border-indigo-600/20 bg-indigo-950/20 rounded-2xl p-4">
+                <p className="text-sm text-indigo-300 mb-3">
+                  <strong>Full Dashboard Access:</strong> Navigate to <code className="px-2 py-1 bg-indigo-900/50 rounded text-indigo-200">/admin/ai-agents</code> for complete AI Agent System management.
+                </p>
+                <a
+                  href="/admin/ai-agents"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold"
+                >
+                  <Bot size={20} />
+                  Open AI Agent Dashboard
+                  <ArrowUpRight size={16} />
+                </a>
+              </div>
+            </div>
           </div>
         )}
 
