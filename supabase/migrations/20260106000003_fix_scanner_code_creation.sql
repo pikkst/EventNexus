@@ -240,8 +240,80 @@ CREATE POLICY "Organizers can delete their own scanner codes"
 COMMENT ON TABLE public.scanner_codes IS 'Scanner codes for mobile app authentication';
 COMMENT ON FUNCTION public.generate_scanner_code() IS 'Generates a unique 8-character alphanumeric scanner code';
 COMMENT ON FUNCTION public.create_scanner_code(UUID, UUID, TEXT, TIMESTAMPTZ) IS 'Creates a new scanner code with automatic unique code generation and event ownership validation';
+COMMENT ON FUNCTION public.verify_scanner_code(TEXT) IS 'Verifies a scanner code and returns event details for mobile app (case-insensitive)';
+COMMENT ON FUNCTION public.record_scanner_usage(UUID, TEXT) IS 'Records scanner code usage with timestamp and optional location';
 
--- Step 6: Verification
+-- Step 6: Fix verify_scanner_code function to handle status case-insensitively
+-- ============================================
+CREATE OR REPLACE FUNCTION public.verify_scanner_code(p_code TEXT)
+RETURNS TABLE(
+  valid BOOLEAN,
+  event_id UUID,
+  event_name TEXT,
+  scanner_code_id UUID,
+  organizer_id UUID,
+  expires_at TIMESTAMPTZ
+) 
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    CASE 
+      WHEN sc.is_active 
+        AND (sc.expires_at IS NULL OR sc.expires_at > NOW())
+        AND UPPER(e.status) = 'ACTIVE' -- Case-insensitive comparison
+      THEN true
+      ELSE false
+    END as valid,
+    sc.event_id,
+    e.name as event_name,
+    sc.id as scanner_code_id,
+    sc.organizer_id,
+    sc.expires_at
+  FROM public.scanner_codes sc
+  JOIN public.events e ON e.id = sc.event_id
+  WHERE sc.code = UPPER(p_code); -- Case-insensitive code matching
+  
+  -- Return false result if code not found
+  IF NOT FOUND THEN
+    RETURN QUERY SELECT false, NULL::UUID, NULL::TEXT, NULL::UUID, NULL::UUID, NULL::TIMESTAMPTZ;
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.verify_scanner_code(TEXT) TO anon, authenticated;
+
+-- Step 7: Add record_scanner_usage function if missing
+-- ============================================
+CREATE OR REPLACE FUNCTION public.record_scanner_usage(
+  p_scanner_code_id UUID,
+  p_location TEXT DEFAULT NULL
+)
+RETURNS VOID 
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE public.scanner_codes
+  SET 
+    last_used_at = NOW(),
+    scan_count = scan_count + 1,
+    device_info = CASE 
+      WHEN p_location IS NOT NULL THEN 
+        COALESCE(device_info, '{}'::jsonb) || jsonb_build_object('last_location', p_location)
+      ELSE device_info
+    END
+  WHERE id = p_scanner_code_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.record_scanner_usage(UUID, TEXT) TO authenticated;
+
+-- Step 8: Verification
 -- ============================================
 DO $$ 
 BEGIN
@@ -249,6 +321,8 @@ BEGIN
     RAISE NOTICE '   - Table schema verified';
     RAISE NOTICE '   - Functions recreated';
     RAISE NOTICE '   - RLS policies applied';
+    RAISE NOTICE '   - verify_scanner_code fixed for case-insensitive matching';
+    RAISE NOTICE '   - record_scanner_usage function added';
     RAISE NOTICE '';
     RAISE NOTICE '📱 Test creating a scanner code:';
     RAISE NOTICE '   SELECT * FROM public.create_scanner_code(';
@@ -257,4 +331,7 @@ BEGIN
     RAISE NOTICE '     ''Test Scanner'',';
     RAISE NOTICE '     NULL';
     RAISE NOTICE '   );';
+    RAISE NOTICE '';
+    RAISE NOTICE '📱 Test verifying a scanner code:';
+    RAISE NOTICE '   SELECT * FROM public.verify_scanner_code(''TESTCODE'');';
 END $$;
