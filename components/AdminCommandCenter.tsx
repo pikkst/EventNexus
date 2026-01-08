@@ -676,8 +676,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
             <button
               onClick={() => { setIsSchedulerModalOpen(false); setSelectedCampaignForScheduling(null); }}
               className="p-2 hover:bg-slate-800 rounded-xl transition-all"
+              aria-label="Close campaign scheduler"
             >
-              <X size={24} className="text-slate-400" />
+              <X size={24} className="text-slate-400" aria-hidden="true" />
             </button>
           </div>
           <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
@@ -733,6 +734,8 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 setIsSidebarOpen(false); // Close sidebar on mobile after selection
               }} 
               className={`w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl transition-all min-h-[48px] ${activeTab === item.id ? 'bg-orange-600 text-white font-bold shadow-xl shadow-orange-600/10' : 'text-slate-400 hover:bg-slate-800 active:bg-slate-700'}`}
+              aria-label={`Navigate to ${item.label}`}
+              aria-current={activeTab === item.id ? 'page' : undefined}
             >
               {React.cloneElement(item.icon as React.ReactElement, { size: 18 })}
               <span className="text-sm">{item.label}</span>
@@ -744,8 +747,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
              onClick={handleRefreshAll}
              disabled={isRefreshing}
              className="w-full py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 text-white transition-all"
+             aria-label={isRefreshing ? "Syncing data" : "Sync all data"}
            >
-              <RefreshCw className={isRefreshing ? 'animate-spin' : ''} size={14} /> 
+              <RefreshCw className={isRefreshing ? 'animate-spin' : ''} size={14} aria-hidden="true" /> 
               {isRefreshing ? 'Syncing...' : 'Sync Cluster'}
            </button>
            <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
@@ -899,6 +903,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                            value={userSearch}
                            onChange={(e) => setUserSearch(e.target.value)}
                            className="w-full bg-slate-950 border border-slate-800 rounded-xl md:rounded-2xl pl-12 pr-4 py-2.5 md:py-3 text-xs md:text-sm focus:border-indigo-500 outline-none"
+                           aria-label="Search users by name, email, or ID"
                          />
                       </div>
                       <div className="flex gap-2 w-full md:w-auto">
@@ -906,6 +911,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                            value={userRoleFilter} 
                            onChange={(e) => setUserRoleFilter(e.target.value)}
                            className="flex-1 md:flex-none bg-slate-950 border border-slate-800 rounded-lg md:rounded-xl px-3 md:px-4 py-2 text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-400 outline-none"
+                           aria-label="Filter users by role"
                          >
                             <option value="all">All Roles</option>
                             <option value="organizer">Organizers</option>
@@ -955,9 +961,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                                   </td>
                                   <td className="px-4 md:px-8 py-4 md:py-5 text-right">
                                      <div className="flex justify-end gap-1 md:gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => setSelectedUser(u)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-indigo-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Message User"><MessageSquare size={14}/></button>
-                                        <button onClick={() => handleSuspendUser(u.id)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-yellow-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Suspend User"><AlertTriangle size={14}/></button>
-                                        <button onClick={() => handleBanUser(u.id)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-red-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Ban User"><Ban size={14}/></button>
+                                        <button onClick={() => setSelectedUser(u)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-indigo-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Message User" aria-label={`Send message to ${u.name}`}><MessageSquare size={14} aria-hidden="true" /></button>
+                                        <button onClick={() => handleSuspendUser(u.id)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-yellow-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Suspend User" aria-label={`Suspend user ${u.name}`}><AlertTriangle size={14} aria-hidden="true" /></button>
+                                        <button onClick={() => handleBanUser(u.id)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-red-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Ban User" aria-label={`Ban user ${u.name}`}><Ban size={14} aria-hidden="true" /></button>
                                      </div>
                                   </td>
                                </tr>
@@ -973,7 +979,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                    <div className="space-y-3 md:space-y-4">
                       <div className="flex bg-slate-950 rounded-xl p-1">
                          {(['all', 'organizers', 'attendees'] as const).map(t => (
-                            <button key={t} onClick={() => setBroadcastTarget(t)} className={`flex-1 py-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${broadcastTarget === t ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>{t}</button>
+                            <button key={t} onClick={() => setBroadcastTarget(t)} className={`flex-1 py-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${broadcastTarget === t ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`} aria-label={`Broadcast to ${t}`} aria-pressed={broadcastTarget === t}>{t}</button>
                          ))}
                       </div>
                       <textarea 
@@ -981,13 +987,16 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                         value={broadcastMsg}
                         onChange={(e) => setBroadcastMsg(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl md:rounded-2xl p-3 md:p-4 text-xs text-white outline-none focus:border-indigo-500 min-h-[120px] md:min-h-[150px] resize-none"
+                        aria-label="Broadcast message content"
+                        aria-required="true"
                       />
                       <button 
                         onClick={handleBroadcastNotification}
                         disabled={!broadcastMsg.trim()}
                         className="w-full py-3 md:py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl md:rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 md:gap-3 transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
+                        aria-label={!broadcastMsg.trim() ? "Enter message to send broadcast" : `Send broadcast to ${broadcastTarget}`}
                       >
-                         <Send size={14} /> Send Global Push
+                         <Send size={14} aria-hidden="true" /> Send Global Push
                       </button>
                    </div>
                 </div>
@@ -1006,8 +1015,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                    <button 
                      onClick={() => { setEditingCampaign(null); setIsCampaignModalOpen(true); }}
                      className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center gap-2 transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
+                     aria-label="Create new marketing campaign"
                    >
-                      <Plus size={14} /> New Campaign
+                      <Plus size={14} aria-hidden="true" /> New Campaign
                    </button>
                  </div>
               </div>
