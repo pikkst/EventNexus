@@ -1,13 +1,34 @@
 // AI Agent: Source Watcher Service
 // Fetches raw content from configured public event sources
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
-import { createHash } from 'https://deno.land/std@0.168.0/hash/mod.ts'
+import { serve } from 'https://deno.land/std@0.192.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Helper: Generate SHA-256 hash using Web Crypto API
+async function generateContentHash(content: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(content)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// Helper: Fetch content from source
+async function fetchSourceContent(source: any): Promise<string> {
+  const response = await fetch(source.url, {
+    headers: source.headers as Record<string, string> || {},
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+
+  return await response.text()
 }
 
 interface EventSource {

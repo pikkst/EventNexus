@@ -1,8 +1,8 @@
 // AI Agent: City Bootstrap Service
 // Automatically discovers event sources and seeds initial events for new cities
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { serve } from 'https://deno.land/std@0.192.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
