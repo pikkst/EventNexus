@@ -1441,6 +1441,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                            value={tempUser.name}
                            onChange={(e) => setTempUser({...tempUser, name: e.target.value})}
                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3 text-white outline-none focus:border-indigo-500"
+                           aria-label="Full name"
+                           aria-required="true"
                          />
                       </div>
                       <div className="space-y-2">
@@ -1451,6 +1453,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                            onChange={(e) => setTempUser({...tempUser, location: e.target.value})}
                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3 text-white outline-none focus:border-indigo-500"
                            placeholder="City, Country"
+                           aria-label="Location"
                          />
                       </div>
                    </div>
@@ -1463,6 +1466,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                      onChange={(e) => setTempUser({...tempUser, bio: e.target.value})}
                      className="w-full bg-slate-950 border border-slate-800 rounded-3xl px-6 py-4 text-white outline-none focus:border-indigo-500 min-h-[120px]"
                      placeholder="Tell the world about yourself..."
+                     aria-label="Biography"
                    />
                 </div>
 
@@ -1484,6 +1488,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                             value={tempUser.branding?.primaryColor || '#6366f1'}
                             onChange={(e) => setTempUser({...tempUser, branding: { ...tempUser.branding!, primaryColor: e.target.value, accentColor: tempUser.branding?.accentColor || '#818cf8' }})}
                             className="w-12 h-12 rounded-xl bg-transparent border-none cursor-pointer"
+                            aria-label="Select theme primary color"
                           />
                           <span className="font-mono text-xs text-slate-400">{tempUser.branding?.primaryColor}</span>
                         </div>
@@ -1526,6 +1531,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                          onChange={(e) => setTempUser({...tempUser, branding: { ...tempUser.branding!, tagline: e.target.value, primaryColor: tempUser.branding?.primaryColor || '#6366f1', accentColor: tempUser.branding?.accentColor || '#818cf8' }})}
                          className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3 text-white outline-none focus:border-indigo-500 text-sm"
                          placeholder="One line to define your brand"
+                         aria-label="Public tagline for your brand"
                        />
                     </div>
                   </div>
@@ -1540,14 +1546,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                   <button 
                     onClick={() => setIsEditModalOpen(false)}
                     className="flex-1 py-4 rounded-2xl bg-slate-800 text-slate-400 font-black text-xs uppercase tracking-widest"
+                    aria-label="Cancel profile changes"
                   >
                     Cancel
                   </button>
                   <button 
                     onClick={handleSaveProfile}
                     className="flex-1 py-4 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2"
+                    aria-label="Save profile changes"
                   >
-                    <Check className="w-4 h-4" /> Save Changes
+                    <Check className="w-4 h-4" aria-hidden="true" /> Save Changes
 
                         {/* Ticket modal removed; using dedicated route */}
                   </button>
