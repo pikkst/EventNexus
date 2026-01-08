@@ -10,7 +10,7 @@ const corsHeaders = {
 }
 
 const GEMINI_API_KEY = Deno.env.get('API_KEY') || Deno.env.get('GEMINI_API_KEY')
-const GEMINI_MODEL = 'gemini-2.0-flash'
+const GEMINI_MODEL = 'gemini-2.5-pro'
 
 interface ParsedEvent {
   name: string
@@ -72,7 +72,7 @@ ${rawContent.slice(0, 8000)}` // Limit content length
 
       if (response.status === 429 && attempt < retries) {
         // Rate limit - wait with exponential backoff
-        const waitTime = Math.pow(2, attempt) * 1000 // 1s, 2s, 4s
+        const waitTime = Math.pow(2, attempt) * 5000 // 5s, 10s, 20s
         console.log(`Rate limited, retrying in ${waitTime}ms (attempt ${attempt + 1}/${retries})`)
         await new Promise(resolve => setTimeout(resolve, waitTime))
         continue
@@ -228,9 +228,9 @@ serve(async (req) => {
 
         results.processed++
         
-        // Rate limit protection: wait 2s between events
+        // Rate limit protection: 150 RPM = 2.5 req/sec, use 1s delay to be safe
         if (rawEvents.length > 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          await new Promise(resolve => setTimeout(resolve, 1000))
         }
       } catch (error) {
         console.error(`Failed to parse event ${rawEvent.id}:`, error)
