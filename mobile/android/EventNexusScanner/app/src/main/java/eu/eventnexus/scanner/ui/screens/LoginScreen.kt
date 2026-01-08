@@ -146,13 +146,27 @@ fun LoginScreen(
                             errorMessage = null
                             scope.launch {
                                 try {
+                                    println("🔐 Starting authentication with code: $scannerCode")
                                     viewModel.authenticateWithCode(scannerCode)
+                                    println("✅ Authentication successful!")
                                     isAuthenticating = false
                                 } catch (e: Exception) {
+                                    println("❌ Authentication failed: ${e.message}")
+                                    e.printStackTrace()
                                     isAuthenticating = false
-                                    errorMessage = e.message ?: "Authentication failed"
+                                    errorMessage = when {
+                                        e.message?.contains("Failed to connect") == true -> 
+                                            "Connection failed. Check your internet."
+                                        e.message?.contains("Invalid scanner code") == true -> 
+                                            "Invalid or expired scanner code"
+                                        e.message?.contains("Authentication failed") == true -> 
+                                            e.message?.substringAfter(": ") ?: "Authentication failed"
+                                        else -> "Error: ${e.message ?: "Unknown error"}"
+                                    }
                                 }
                             }
+                        } else {
+                            errorMessage = "Scanner code must be 8 characters"
                         }
                     },
                     modifier = Modifier
