@@ -95,16 +95,36 @@ class ErrorBoundary extends Component<Props, State> {
                 </p>
               </div>
 
-              {/* Error Details (Development only) */}
-              {import.meta.env.MODE === 'development' && this.state.error && (
-                <details className="text-left bg-slate-950 border border-slate-800 rounded-xl p-4">
-                  <summary className="cursor-pointer text-sm font-bold text-slate-300 mb-2">
-                    Error Details (Development Only)
+              {/* Error Details - Always visible for debugging */}
+              {this.state.error && (
+                <details className="text-left bg-slate-950 border border-red-900/50 rounded-xl p-4" open>
+                  <summary className="cursor-pointer text-sm font-bold text-red-400 mb-3">
+                    ⚠️ Error Details (Click to collapse)
                   </summary>
-                  <pre className="text-xs text-red-400 overflow-auto max-h-40">
-                    {this.state.error.toString()}
-                    {this.state.errorInfo?.componentStack}
-                  </pre>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-xs font-bold text-slate-400 mb-1">Error Message:</div>
+                      <pre className="text-xs text-red-300 overflow-auto max-h-32 bg-slate-900 p-2 rounded">
+{this.state.error.toString()}
+                      </pre>
+                    </div>
+                    {this.state.error.stack && (
+                      <div>
+                        <div className="text-xs font-bold text-slate-400 mb-1">Stack Trace:</div>
+                        <pre className="text-xs text-slate-400 overflow-auto max-h-40 bg-slate-900 p-2 rounded">
+{this.state.error.stack}
+                        </pre>
+                      </div>
+                    )}
+                    {this.state.errorInfo?.componentStack && (
+                      <div>
+                        <div className="text-xs font-bold text-slate-400 mb-1">Component Stack:</div>
+                        <pre className="text-xs text-slate-500 overflow-auto max-h-40 bg-slate-900 p-2 rounded">
+{this.state.errorInfo.componentStack}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
                 </details>
               )}
 
