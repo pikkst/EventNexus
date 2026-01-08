@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import eu.eventnexus.scanner.ui.screens.LoginScreen
 import eu.eventnexus.scanner.ui.screens.ScannerScreen
@@ -17,8 +18,11 @@ import eu.eventnexus.scanner.viewmodel.ScannerViewModel
 fun EventNexusScannerApp() {
     val context = LocalContext.current
     val viewModel: ScannerViewModel = viewModel(
-        factory = androidx.lifecycle.viewmodel.initializer {
-            ScannerViewModel(context.applicationContext as android.app.Application)
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return ScannerViewModel(context.applicationContext as android.app.Application) as T
+            }
         }
     )
     

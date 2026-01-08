@@ -97,7 +97,7 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
                 _currentEvent.value = EventInfo(
                     id = savedEventId,
                     name = savedEventName,
-                    date = savedEventDate,
+                    date = savedEventDate ?: "",
                     location = savedEventLocation
                 )
             }
