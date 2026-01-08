@@ -419,8 +419,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                     onClick={() => navigate(`/events/${event.id}/edit`)}
                     className="p-3 sm:p-4 bg-slate-900 border border-slate-800 rounded-xl sm:rounded-2xl hover:bg-slate-800 transition-all shadow-xl text-indigo-400 hover:text-indigo-300"
                     title="Edit event"
+                    aria-label="Edit event details"
                   >
-                    <Edit3 className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <Edit3 className="w-5 h-5 sm:w-6 sm:h-6" aria-hidden="true" />
                   </button>
                 )}
                 
@@ -431,8 +432,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                     isLiked ? 'text-pink-500 bg-pink-500/10 border-pink-500/30' : 'text-pink-500'
                   }`}
                   title={isLiked ? 'Unlike this event' : 'Like this event'}
+                  aria-label={isLiked ? 'Unlike this event' : 'Like this event'}
+                  aria-pressed={isLiked}
                 >
-                  <Heart className={`w-5 h-5 sm:w-6 sm:h-6 ${isLiked ? 'fill-current' : ''}`} />
+                  <Heart className={`w-5 h-5 sm:w-6 sm:h-6 ${isLiked ? 'fill-current' : ''}`} aria-hidden="true" />
                 </button>
                 <button 
                   onClick={() => {
@@ -453,8 +456,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                   }}
                   className="p-3 sm:p-4 bg-slate-900 border border-slate-800 rounded-xl sm:rounded-2xl hover:bg-slate-800 transition-all text-indigo-400 shadow-xl"
                   title="Share this event"
+                  aria-label="Share event link"
                 >
-                  <Share2 className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <Share2 className="w-5 h-5 sm:w-6 sm:h-6" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -471,6 +475,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                       value={selectedLanguage}
                       onChange={(e) => setSelectedLanguage(e.target.value)}
                       className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-300 hover:border-indigo-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all outline-none cursor-pointer"
+                      aria-label="Select event description language"
                     >
                       {availableLanguages.map(({ code, name }) => (
                         <option key={code} value={code}>
@@ -648,6 +653,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                               }))}
                               disabled={quantity === 0}
                               className="w-9 h-9 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-sm transition-colors"
+                              aria-label={`Decrease ${template.name} ticket quantity`}
                             >-</button>
                             <span className="font-bold text-lg w-8 text-center">{quantity}</span>
                             <button 
@@ -661,6 +667,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                                   ? 'bg-amber-600 hover:bg-amber-700'
                                   : 'bg-indigo-600 hover:bg-indigo-700'
                               }`}
+                              aria-label={`Increase ${template.name} ticket quantity`}
                             >+</button>
                           </div>
                           
@@ -672,6 +679,17 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                                 ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600'
                                 : 'bg-indigo-600 hover:bg-indigo-700'
                             }`}
+                            aria-label={
+                              eventCompleted
+                                ? 'Event has ended, tickets unavailable'
+                                : !organizerPaymentReady
+                                  ? 'Tickets not available for purchase'
+                                  : quantity === 0
+                                    ? 'Select ticket quantity to purchase'
+                                    : isPurchasing
+                                      ? 'Processing payment'
+                                      : `Purchase ${quantity} ${template.name} ticket${quantity > 1 ? 's' : ''} for €${(template.price * quantity).toFixed(2)}`
+                            }
                           >
                             {eventCompleted
                               ? 'Event Ended'
@@ -725,8 +743,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
                   isFollowing ? 'bg-slate-800 text-slate-400' : 'bg-indigo-600 text-white'
                 }`}
+                aria-label={isFollowing ? `Unfollow ${organizerName}` : `Follow ${organizerName}`}
               >
-                {isFollowing ? <><UserMinus className="w-4 h-4" /> Following</> : <><UserPlus className="w-4 h-4" /> Follow</>}
+                {isFollowing ? <><UserMinus className="w-4 h-4" aria-hidden="true" /> Following</> : <><UserPlus className="w-4 h-4" aria-hidden="true" /> Follow</>}
               </button>
             </div>
           </div>
