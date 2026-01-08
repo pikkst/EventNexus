@@ -329,17 +329,14 @@ CREATE POLICY "Admins can read event sources" ON public.event_sources FOR SELECT
 CREATE POLICY "Admins can read raw events" ON public.raw_events FOR SELECT TO authenticated USING (
   EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
 );
-CREATE POLICY "Admins can read AI agents" ON public.ai_agents FOR SELECT TO authenticated USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
-);
 
--- Public can read high-quality unclaimed future events for organizer claiming
 CREATE POLICY "Admins can read parsed events" ON public.parsed_events FOR SELECT TO authenticated USING (
   EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
 );
 
 CREATE POLICY "Admins can read AI agents" ON public.ai_agents FOR SELECT TO authenticated USING (
   EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
+);
 
 CREATE POLICY "Admins can read event confidence" ON public.event_confidence FOR SELECT TO authenticated USING (
   EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
@@ -361,10 +358,7 @@ CREATE POLICY "Admins can read event matches" ON public.event_matches FOR SELECT
   EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
 );
 
--- Public can read unclaimed events for organizer claiming
-CREATE POLICY "Public can read unclaimed events" ON public.events FOR SELECT USING (status = 'unclaimed');
-
--- Service role polhigh-quality unclaimed future events for organizer claiming
+-- Public can read high-quality unclaimed future events for organizer claiming
 CREATE POLICY "Public can read unclaimed events" ON public.events FOR SELECT USING (
   status = 'unclaimed' 
   AND start_time > NOW() 
@@ -373,7 +367,10 @@ CREATE POLICY "Public can read unclaimed events" ON public.events FOR SELECT USI
 );
 
 -- Service role policies for Edge Functions
-CREATE POLICY "Service role can manage all AI agents" ON public.ai_agents FOR ALL TO service_role USING (true);raw events" ON public.raw_events FOR ALL TO service_role USING (true);
+CREATE POLICY "Service role can manage all city configs" ON public.city_configs FOR ALL TO service_role USING (true);
+CREATE POLICY "Service role can manage all event sources" ON public.event_sources FOR ALL TO service_role USING (true);
+CREATE POLICY "Service role can manage all raw events" ON public.raw_events FOR ALL TO service_role USING (true);
+CREATE POLICY "Service role can manage all AI agents" ON public.ai_agents FOR ALL TO service_role USING (true);
 CREATE POLICY "Service role can manage all parsed events" ON public.parsed_events FOR ALL TO service_role USING (true);
 CREATE POLICY "Service role can manage all event confidence" ON public.event_confidence FOR ALL TO service_role USING (true);
 CREATE POLICY "Service role can manage all event versions" ON public.event_versions FOR ALL TO service_role USING (true);
@@ -427,7 +424,13 @@ CREATE TABLE IF NOT EXISTS public.event_opt_outs (
   source_url TEXT NOT NULL,
   event_title TEXT,
   requested_by TEXT NOT NULL,
-  contact_email TEXT,W(),
+  contact_email TEXT,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  processed_by UUID REFERENCES public.users(id),
+  processed_at TIMESTAMPTZ,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -498,54 +501,6 @@ CREATE POLICY "Admins can read city agents" ON public.city_agents FOR SELECT TO 
 
 CREATE POLICY "Service role can manage city agents" ON public.city_agents FOR ALL TO service_role USING (true);
 
-COMMENT ON TABLE public.city_configs IS 'City-level configuration for autonomous event discovery with bootstrap state machine';
-COMMENT ON TABLE public.event_sources IS 'Public event data sources per city (APIs, RSS, HTML, iCal)';
-COMMENT ON TABLE public.raw_events IS 'Raw fetched content before AI parsing
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NO
-
--- AI Agent Registry (multi-model orchestration strategy)
-INSERT INTO public.ai_agents (name, role, ai_provider, model, temperature, max_tokens, cost_per_1k_tokens, description) VALUES
-  ('parser_primary', 'HTML/RSS event extraction', 'gemini', 'gemini-2.0-flash-exp', 0.1, 4096, 0.000075, 'Primary event parser using Gemini Flash for speed and cost efficiency'),
-  ('translator', 'Multi-language translation', 'gemini', 'gemini-2.0-flash-e. Supports HTML/JSON/XML/iCal via content_type discrimination';
-COMMENT ON TABLE public.parsed_events IS 'AI-extracted structured event data';
-COMMENT ON TABLE public.event_confidence IS 'Multi-factor confidence scoring (0-1 scale components, 0-100 final score for UI)';
-COMMENT ON TABLE public.event_versions IS 'Event change history and versioning (auto-incremented)';
-COMMENT ON TABLE public.review_queue IS 'Human review queue for low-confidence events';
-COMMENT ON TABLE public.ai_decision_log IS 'Audit log of AI agent decisions with agent traceability';
-COMMENT ON TABLE public.event_matches IS 'Deduplication match records (similarity 0-1 scale)';
-COMMENT ON TABLE public.ai_usage_log IS 'AI token usage tracking for cost control and B2G reporting';
-COMMENT ON TABLE public.city_health_metrics IS 'City-level SLA metrics and health monitoring (B2G pitch tool)';
-COMMENT ON TABLE public.event_opt_outs IS 'Legal takedown requests and GDPR opt-out tracking';
-COMMENT ON TABLE public.ai_agents IS 'AI agent registry for multi-model orchestration (Gemini + Local LLM strategy)';
-
-COMMENT ON COLUMN public.events.canonical_event_id IS 'Points to the canonical version if this is a duplicate. NULL = this IS the canonical event';
-COMMENT ON COLUMN public.events.freshness_score IS 'Event freshness (1.0 = new, decays over 30 days to 0.5). Auto-calculated by trigger';
-COMMENT ON COLUMN public.events.confidence_score IS 'Final confidence score 0-100 for UI display';
-COMMENT ON COLUMN public.event_confidence.source_score IS 'Component score 0.00-1.00 scale';
-COMMENT ON COLUMN public.event_confidence.final_score IS 'Weighted final score 0.00-100.00 for UI presentation';
-CREATE TRIGGER event_opt_outs_updated_at BEFORE UPDATE ON public.event_opt_outs FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
--- RLS for strategic tables
-ALTER TABLE public.ai_usage_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.city_health_metrics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.event_opt_outs ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins can read AI usage log" ON public.ai_usage_log FOR SELECT TO authenticated USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
-);
-
-CREATE POLICY "Admins can read city health metrics" ON public.city_health_metrics FOR SELECT TO authenticated USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
-);
-
-CREATE POLICY "Admins can manage opt-outs" ON public.event_opt_outs FOR ALL TO authenticated USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
-);
-
-CREATE POLICY "Service role can manage AI usage log" ON public.ai_usage_log FOR ALL TO service_role USING (true);
-CREATE POLICY "Service role can manage city health metrics" ON public.city_health_metrics FOR ALL TO service_role USING (true);
-CREATE POLICY "Service role can manage opt-outs" ON public.event_opt_outs FOR ALL TO service_role USING (true);
-
 -- Initial seed data for testing
 INSERT INTO public.city_configs (city_name, country, languages, timezone, geo_bounds, bootstrap_status) VALUES
   ('Tallinn', 'Estonia', ARRAY['et', 'en'], 'Europe/Tallinn', 
@@ -588,6 +543,7 @@ CREATE POLICY "Admins can read city agents" ON public.city_agents FOR SELECT TO 
 
 CREATE POLICY "Service role can manage city agents" ON public.city_agents FOR ALL TO service_role USING (true);
 
+-- Table comments
 COMMENT ON TABLE public.city_configs IS 'City-level configuration for autonomous event discovery with bootstrap state machine';
 COMMENT ON TABLE public.event_sources IS 'Public event data sources per city (APIs, RSS, HTML, iCal)';
 COMMENT ON TABLE public.raw_events IS 'Raw fetched content before AI parsing. Supports HTML/JSON/XML/iCal via content_type discrimination';
@@ -603,6 +559,7 @@ COMMENT ON TABLE public.event_opt_outs IS 'Legal takedown requests and GDPR opt-
 COMMENT ON TABLE public.ai_agents IS 'AI agent registry for multi-model orchestration (Gemini + Local LLM strategy)';
 COMMENT ON TABLE public.city_agents IS 'City-specific AI agent assignments for customized behavior (e.g., aggressive vs conservative crawling)';
 
+-- Column comments
 COMMENT ON COLUMN public.city_configs.bootstrap_status IS 'City initialization state: pending → discovering_sources → seeding_events → active';
 COMMENT ON COLUMN public.events.canonical_event_id IS 'Points to the canonical version if this is a duplicate. NULL = this IS the canonical event';
 COMMENT ON COLUMN public.events.freshness_score IS 'Event freshness (1.0 = new, decays over 30 days to 0.5). Auto-calculated by trigger';
