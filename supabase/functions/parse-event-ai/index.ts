@@ -9,7 +9,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+const GEMINI_API_KEY = Deno.env.get('API_KEY') || Deno.env.get('GEMINI_API_KEY')
 const GEMINI_MODEL = 'gemini-2.0-flash-exp'
 
 interface ParsedEvent {
