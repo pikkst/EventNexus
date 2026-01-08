@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { EventNexusEvent, User, Notification } from '../types';
+import logger from '../utils/logger';
 
 // Helper function to transform database event to EventNexusEvent
 const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
@@ -36,7 +37,7 @@ export const getEvents = async (): Promise<EventNexusEvent[]> => {
     .order('date', { ascending: true });
   
   if (error) {
-    console.error('Error fetching events:', error);
+    logger.error('Error fetching events:', error);
     return [];
   }
   
@@ -53,7 +54,7 @@ export const getAllEvents = async (): Promise<EventNexusEvent[]> => {
     .order('date', { ascending: true });
   
   if (error) {
-    console.error('Error fetching all events:', error);
+    logger.error('Error fetching all events:', error);
     return [];
   }
   
@@ -71,7 +72,7 @@ export const getEventById = async (eventId: string): Promise<EventNexusEvent | n
     .single();
   
   if (error) {
-    console.error('Error fetching event by ID:', error);
+    logger.error('Error fetching event by ID:', error);
     return null;
   }
   
@@ -88,7 +89,7 @@ export const getOrganizerEvents = async (organizerId: string): Promise<EventNexu
     .order('date', { ascending: true });
   
   if (error) {
-    console.error('Error fetching organizer events:', error);
+    logger.error('Error fetching organizer events:', error);
     return [];
   }
   

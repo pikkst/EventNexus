@@ -81,6 +81,7 @@ import {
   signOutUser
 } from './services/dbService';
 import { filterActiveEvents } from './utils/eventUtils';
+import logger from './utils/logger';
 
 const GA_MEASUREMENT_ID = 'G-JD7P5ZKF4L';
 
@@ -150,12 +151,12 @@ const App: React.FC = () => {
         // Use cache for immediate UI, but ALWAYS refresh from DB in background
         // Cache is now only for initial render speed, not as source of truth
         if (parsed.timestamp && Date.now() - parsed.timestamp < 60 * 60 * 1000) { // 1 hour max
-          console.log('⚡ Using cached user data (will refresh from DB)');
+          logger.log('Using cached user data (will refresh from DB)');
           return parsed.user;
         }
       }
     } catch (e) {
-      console.warn('Failed to load user cache:', e);
+      logger.warn('Failed to load user cache:', e);
     }
     return null;
   });
@@ -167,7 +168,7 @@ const App: React.FC = () => {
         return JSON.parse(cached);
       }
     } catch (e) {
-      console.warn('Failed to load notifications cache:', e);
+      logger.warn('Failed to load notifications cache:', e);
     }
     return [];
   });
@@ -181,12 +182,12 @@ const App: React.FC = () => {
         const parsed = JSON.parse(cached);
         // Check if cache is less than 2 minutes old
         if (parsed.timestamp && Date.now() - parsed.timestamp < 2 * 60 * 1000) {
-          console.log('⚡ Using cached events data');
+          logger.log('Using cached events data');
           return parsed.events;
         }
       }
     } catch (e) {
-      console.warn('Failed to load events cache:', e);
+      logger.warn('Failed to load events cache:', e);
     }
     return [];
   });
@@ -844,7 +845,12 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
     <nav className="fixed top-0 left-0 right-0 z-[1000] h-16 border-b bg-slate-950/80 border-slate-800 backdrop-blur-md text-white">
       <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={toggleSidebar} aria-label="Toggle navigation menu" className="p-2 hover:bg-slate-800/20 rounded-lg">
+          <button 
+            onClick={toggleSidebar} 
+            aria-label="Toggle navigation menu"
+            aria-expanded={sidebarOpen}
+            className="p-2 hover:bg-slate-800/20 rounded-lg"
+          >
             <Menu className="w-6 h-6" />
           </button>
           <Link to="/" className="flex items-center gap-2 font-bold text-xl tracking-tighter">
@@ -942,9 +948,12 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
               <div className="relative">
                 <button 
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  aria-label={`User menu for ${user.name}`}
+                  aria-expanded={showProfileMenu}
+                  aria-haspopup="true"
                   className="flex items-center gap-2 bg-slate-800/50 p-1 pr-3 rounded-full hover:bg-slate-800 transition-all border border-slate-700 group"
                 >
-                  <img src={user.avatar} className="w-8 h-8 rounded-full border border-indigo-500" alt="avatar" />
+                  <img src={user.avatar} className="w-8 h-8 rounded-full border border-indigo-500" alt={`${user.name}'s avatar`} />
                   <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
                 </button>
 

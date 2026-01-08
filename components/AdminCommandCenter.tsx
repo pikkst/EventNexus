@@ -21,6 +21,8 @@ import {
 import { User, Notification } from '../types';
 import { generatePlatformGrowthCampaign, generateAdImage } from '../services/geminiService';
 import { supabase } from '../services/supabase';
+import logger from '../utils/logger';
+import type { LogEntry } from '../utils/logger';
 import BrandProtectionMonitor from './BrandProtectionMonitor';
 import AdminInbox from './AdminInbox';
 import CampaignAnalyticsDashboard from './CampaignAnalyticsDashboard';
@@ -135,6 +137,11 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [currentEnvironment, setCurrentEnvironment] = useState<any>(null);
   const [transitionHistory, setTransitionHistory] = useState<any[]>([]);
 
+  // Console Monitor State
+  const [consoleLogs, setConsoleLogs] = useState<LogEntry[]>([]);
+  const [logFilter, setLogFilter] = useState<'all' | 'error' | 'warn' | 'info'>('all');
+  const [autoScroll, setAutoScroll] = useState(true);
+
   const filteredUsers = useMemo(() => {
     return platformUsers.filter(u => {
       const matchesSearch = u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase());
@@ -234,7 +241,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
           }));
         }
       } catch (error) {
-        console.error('Error loading data:', error);
+        logger.error('Error loading data:', error);
       } finally {
         setIsLoadingUsers(false);
         setIsLoadingStats(false);
@@ -253,7 +260,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
           const infra = await getInfrastructureStats();
           setInfrastructureStats(infra);
         } catch (error) {
-          console.error('Error refreshing infrastructure stats:', error);
+          logger.error('Error refreshing infrastructure stats:', error);
         }
       }
     }, 10000);
@@ -265,7 +272,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
           const stats = await getPlatformStats();
           setPlatformStats(stats);
         } catch (error) {
-          console.error('Error refreshing platform stats:', error);
+          logger.error('Error refreshing platform stats:', error);
         }
       }
     }, 10000);
@@ -277,7 +284,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
           const ledger = await getFinancialLedger();
           setFinancialLedger(ledger);
         } catch (error) {
-          console.error('Error refreshing financial data:', error);
+          logger.error('Error refreshing financial data:', error);
         }
       }
     }, 10000);
@@ -289,7 +296,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
           const users = await getAllUsers();
           setPlatformUsers(users);
         } catch (error) {
-          console.error('Error refreshing users:', error);
+          logger.error('Error refreshing users:', error);
         }
       }
     }, 10000);
@@ -340,9 +347,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       if (config.credit_value) setCreditValue(parseFloat(config.credit_value));
       if (config.maintenance_mode) setIsMaintenanceMode(config.maintenance_mode === 'true');
       
-      console.log('✅ Cluster sync completed - all data refreshed');
+      logger.log('Cluster sync completed - all data refreshed');
     } catch (error) {
-      console.error('❌ Cluster sync failed:', error);
+      logger.error('Cluster sync failed:', error);
       alert('Failed to sync cluster data. Please try again.');
     } finally {
       setTimeout(() => setIsRefreshing(false), 500);
@@ -355,7 +362,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       const infra = await getInfrastructureStats();
       setInfrastructureStats(infra);
     } catch (error) {
-      console.error('Error refreshing infrastructure stats:', error);
+      logger.error('Error refreshing infrastructure stats:', error);
     } finally {
       setTimeout(() => setIsRefreshing(false), 500);
     }
@@ -396,7 +403,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         alert('❌ Transition failed: ' + (result?.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Error transitioning to production:', error);
+      logger.error('Error transitioning to production:', error);
       alert('❌ Error: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsTransitioningToProduction(false);
@@ -418,7 +425,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       setDiagnosticResults(data);
       setShowDiagnosticModal(true);
     } catch (error) {
-      console.error('Diagnostic scan error:', error);
+      logger.error('Diagnostic scan error:', error);
       alert('Failed to run diagnostic scan. Check console for details.');
     } finally {
       setIsDiagnosticRunning(false);
@@ -461,7 +468,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
           tracking: { sources: { facebook: 0, x: 0, instagram: 0, direct: 0 } }
         });
       }
-    } catch (err) { console.error(err); } finally { setIsAiGenerating(false); }
+    } catch (err) { logger.error('AI campaign generation failed:', err); } finally { setIsAiGenerating(false); }
   };
 
   const handleDeleteCampaign = async (id: string) => {
@@ -587,7 +594,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         alert('❌ Failed to send message');
       }
     } catch (err) {
-      console.error('Error sending direct message:', err);
+      logger.error('Error sending direct message:', err);
       alert('❌ Error sending message');
     } finally {
       setIsSendingDirectMsg(false);
@@ -676,7 +683,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
             <CampaignScheduler
               campaignId={selectedCampaignForScheduling || undefined}
               onScheduled={(scheduleId) => {
-                console.log('Campaign scheduled:', scheduleId);
+                logger.log('Campaign scheduled:', scheduleId);
                 setIsSchedulerModalOpen(false);
                 setSelectedCampaignForScheduling(null);
                 alert('✅ Campaign scheduled successfully!');
@@ -1409,10 +1416,97 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                      <StatCard label="Storage Burn" value={`${infrastructureStats.storageBurn} GB`} change={infrastructureStats.storageBurn < 1 ? 'optimal' : 'growing'} trend={infrastructureStats.storageBurn < 1 ? 'up' : 'down'} icon={<Layers />} color="orange" />
                   </div>
                   
+                  {/* Console Monitor - Real-time Logs */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-2xl overflow-hidden">
+                    <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                      <div className="flex items-center gap-3">
+                        <Terminal size={20} className="text-indigo-400" />
+                        <div>
+                          <h3 className="font-black text-lg">Console Monitor</h3>
+                          <p className="text-xs text-slate-500 font-medium">Real-time application logs</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex gap-2">
+                          {(['all', 'error', 'warn', 'info'] as const).map(level => (
+                            <button
+                              key={level}
+                              onClick={() => setLogFilter(level)}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                logFilter === level
+                                  ? level === 'error' ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                  : level === 'warn' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                                  : level === 'info' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                  : 'bg-slate-700 text-white border border-slate-600'
+                                  : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-750'
+                              }`}
+                            >
+                              {level}
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => logger.clearLogs()}
+                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] font-black uppercase tracking-wider text-slate-400 transition-all border border-slate-700"
+                        >
+                          <X size={12} />
+                        </button>
+                        <button
+                          onClick={() => setAutoScroll(!autoScroll)}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border ${
+                            autoScroll 
+                              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
+                              : 'bg-slate-800 text-slate-400 border-slate-700'
+                          }`}
+                        >
+                          Auto
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-black/40 rounded-2xl p-4 font-mono text-xs max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                      {consoleLogs.length === 0 ? (
+                        <p className="text-slate-600 text-center py-8">No logs yet...</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {consoleLogs
+                            .filter(log => logFilter === 'all' || log.level === logFilter)
+                            .slice(-100) // Show last 100 logs
+                            .map(log => (
+                              <div key={log.id} className="flex gap-3 py-1 border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                                <span className="text-slate-600 flex-shrink-0 w-20 text-[10px]">
+                                  {log.timestamp.toLocaleTimeString()}
+                                </span>
+                                <span className={`flex-shrink-0 w-12 font-bold uppercase text-[10px] ${
+                                  log.level === 'error' ? 'text-red-400' :
+                                  log.level === 'warn' ? 'text-orange-400' :
+                                  log.level === 'info' ? 'text-blue-400' :
+                                  log.level === 'debug' ? 'text-purple-400' :
+                                  'text-slate-400'
+                                }`}>
+                                  [{log.level}]
+                                </span>
+                                <span className="flex-1 text-slate-300 break-all">{log.message}</span>
+                              </div>
+                            ))
+                          }
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="mt-4 flex items-center justify-between text-[10px] text-slate-500">
+                      <span>{consoleLogs.filter(log => logFilter === 'all' || log.level === logFilter).length} logs</span>
+                      <span className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${consoleLogs.length > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-700'}`} />
+                        {consoleLogs.length > 0 ? 'Active' : 'Idle'}
+                      </span>
+                    </div>
+                  </div>
+                  
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-2xl overflow-hidden font-mono text-xs">
                        <div className="flex items-center justify-between mb-6">
-                          <h3 className="font-bold flex items-center gap-2 text-slate-400"><Terminal size={16} /> Event Stream</h3>
+                          <h3 className="font-bold flex items-center gap-2 text-slate-400"><Server size={16} /> Infrastructure Events</h3>
                           <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> <span className="text-[10px] text-slate-500 font-black uppercase">Live</span></div>
                        </div>
                        <div className="space-y-2 max-h-[300px] overflow-y-auto scrollbar-hide">

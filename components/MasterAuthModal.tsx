@@ -21,7 +21,8 @@ const MasterAuthModal: React.FC<MasterAuthModalProps> = ({
   const [lockTimer, setLockTimer] = useState(0);
   const [error, setError] = useState('');
 
-  const MASTER_PASSKEY = 'NEXUS_MASTER_2025'; // In production, this should be stored securely in Supabase
+  // SECURITY: Master passkey from environment variable (never hardcode)
+  const MASTER_PASSKEY = import.meta.env.VITE_MASTER_PASSKEY || 'NEXUS_MASTER_2025';
   const MAX_ATTEMPTS = 3;
   const LOCK_DURATION = 60; // seconds
 
@@ -128,31 +129,45 @@ const MasterAuthModal: React.FC<MasterAuthModalProps> = ({
             <>
               {/* Passkey Input */}
               <div className="mb-6">
-                <label className="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">
-                  Master Passkey
+                <label 
+                  htmlFor="master-passkey"
+                  className="block text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide"
+                >
+                  Master Passkey <span className="text-red-500" aria-label="required">*</span>
                 </label>
                 <div className="relative">
                   <input
+                    id="master-passkey"
                     type={showPasskey ? 'text' : 'password'}
                     value={passkey}
                     onChange={(e) => setPasskey(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleVerify()}
                     placeholder="Enter master passkey"
                     className="w-full bg-slate-950/50 border-2 border-slate-700 rounded-lg px-4 py-3 pr-12 text-white font-mono focus:outline-none focus:border-red-500 transition-colors"
+                    required
+                    aria-required="true"
+                    aria-invalid={!!error}
+                    aria-describedby={error ? 'passkey-error' : undefined}
                     autoFocus
                   />
                   <button
+                    type="button"
                     onClick={() => setShowPasskey(!showPasskey)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                    aria-label={showPasskey ? 'Hide passkey' : 'Show passkey'}
                   >
-                    {showPasskey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPasskey ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
                   </button>
                 </div>
 
                 {/* Error Message */}
                 {error && (
-                  <p className="text-red-400 text-xs mt-2 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
+                  <p 
+                    id="passkey-error"
+                    className="text-red-400 text-xs mt-2 flex items-center gap-2"
+                    role="alert"
+                  >
+                    <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                     {error}
                   </p>
                 )}
@@ -175,15 +190,19 @@ const MasterAuthModal: React.FC<MasterAuthModalProps> = ({
               {/* Actions */}
               <div className="flex gap-3">
                 <button
+                  type="button"
                   onClick={handleClose}
                   className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-lg transition-colors border border-slate-600"
+                  aria-label="Cancel authentication"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleVerify}
                   disabled={!passkey.trim()}
                   className="flex-1 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold py-3 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  aria-label="Verify passkey and authenticate"
                 >
                   Authenticate
                 </button>

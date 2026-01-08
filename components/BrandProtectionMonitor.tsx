@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import type { BrandMonitoringAlert, MonitoringStats } from '@/types';
 import * as brandMonitoringService from '@/services/brandMonitoringService';
 import { generateBrandProtectionReport } from '@/services/geminiService';
+import logger from '@/utils/logger';
 
 interface BrandProtectionMonitorProps {
   user: any;
@@ -80,7 +81,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
       setStats(statsData || initialStats);
       setLastScan(statsData?.lastScanTime || new Date());
     } catch (error) {
-      console.error('Error loading monitoring data:', error);
+      logger.error('Error loading monitoring data:', error);
     } finally {
       setLoading(false);
     }
@@ -91,7 +92,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
       const info = await brandMonitoringService.getPrimaryDomainInfo();
       setDomainInfo(info);
     } catch (error) {
-      console.error('Error loading domain info:', error);
+      logger.error('Error loading domain info:', error);
     }
   };
 
@@ -107,7 +108,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
       }));
       setTrendData(formatted);
     } catch (error) {
-      console.error('Error loading trend data:', error);
+      logger.error('Error loading trend data:', error);
       setTrendData([]);
     }
   };
@@ -118,7 +119,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
       const historical = await brandMonitoringService.getHistoricalAlerts(['resolved', 'deleted']);
       setHistoricalAlerts(historical);
     } catch (error) {
-      console.error('Error loading historical data:', error);
+      logger.error('Error loading historical data:', error);
       setHistoricalAlerts([]);
     } finally {
       setLoading(false);
@@ -128,7 +129,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const runScan = async (scanType: string) => {
     setLoading(true);
     try {
-      console.log(`Running ${scanType} scan...`);
+      logger.log(`Running ${scanType} scan...`);
       
       let newAlerts: BrandMonitoringAlert[] = [];
       
@@ -158,7 +159,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
           setLastScan(result.stats.lastScanTime);
           return;
         default:
-          console.warn(`Unknown scan type: ${scanType}`);
+          logger.warn(`Unknown scan type: ${scanType}`);
       }
       
       // Reload all data after scan (including trends)
@@ -168,7 +169,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
         brandMonitoringService.snapshotDailyStats() // Update today's snapshot
       ]);
     } catch (error) {
-      console.error(`Error running ${scanType} scan:`, error);
+      logger.error(`Error running ${scanType} scan:`, error);
     } finally {
       setLoading(false);
     }
@@ -224,7 +225,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
       setSelectedAlerts(new Set());
       await loadMonitoringData();
     } catch (error) {
-      console.error('Bulk action failed:', error);
+      logger.error('Bulk action failed:', error);
     } finally {
       setLoading(false);
     }
@@ -240,7 +241,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
       const notes = await brandMonitoringService.getAlertNotes(alert.id);
       setAlertNotes(notes);
     } catch (error) {
-      console.error('Error loading notes:', error);
+      logger.error('Error loading notes:', error);
       setAlertNotes([]);
     }
   };
@@ -258,7 +259,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
         setNewNote('');
       }
     } catch (error) {
-      console.error('Error adding note:', error);
+      logger.error('Error adding note:', error);
     } finally {
       setLoading(false);
     }
@@ -283,7 +284,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
         setWhitelistReason('');
       }
     } catch (error) {
-      console.error('Whitelist error:', error);
+      logger.error('Whitelist error:', error);
     } finally {
       setLoading(false);
     }
@@ -296,7 +297,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
       setAiReport(report);
       setShowReport(true);
     } catch (error) {
-      console.error('Failed to generate report:', error);
+      logger.error('Failed to generate report:', error);
     } finally {
       setGeneratingReport(false);
     }
