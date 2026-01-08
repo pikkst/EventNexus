@@ -337,23 +337,26 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                   isFollowing ? 'bg-white text-slate-950' : 'bg-indigo-600 text-white shadow-indigo-600/40'
                 }`}
                 style={!isFollowing ? { backgroundColor: brandColor } : {}}
+                aria-label={isFollowing ? 'Unfollow organizer' : 'Follow organizer'}
               >
-                {isFollowing ? <><UserMinus size={20} /> Leave Movement</> : <><UserPlus size={20} /> Join Movement</>}
+                {isFollowing ? <><UserMinus size={20} aria-hidden="true" /> Leave Movement</> : <><UserPlus size={20} aria-hidden="true" /> Join Movement</>}
               </button>
               {organizer.branding?.videoReel && (
                 <button 
                   onClick={() => setShowVideoReel(true)}
                   className="px-12 py-6 rounded-3xl bg-slate-900/60 backdrop-blur-md border border-slate-800 font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-3 text-white"
+                  aria-label="Watch agency video reel"
                 >
-                   <Play size={20} /> Agency Reel
+                   <Play size={20} aria-hidden="true" /> Agency Reel
                 </button>
               )}
               {isEnterprise && organizer.branding?.pageConfig?.enableContactForm && (
                 <button 
                   onClick={() => setShowContactForm(true)}
                   className="px-12 py-6 rounded-3xl bg-slate-900/60 backdrop-blur-md border border-slate-800 font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-3 text-white"
+                  aria-label="Open contact form"
                 >
-                   <MessageCircle size={20} /> Contact Us
+                   <MessageCircle size={20} aria-hidden="true" /> Contact Us
                 </button>
               )}
            </div>
@@ -370,8 +373,9 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                    }}
                    className="w-10 h-10 rounded-full bg-slate-900/60 backdrop-blur-md border border-slate-800 flex items-center justify-center hover:bg-sky-500 hover:border-sky-500 transition-all group"
                    title="Share on X (Twitter)"
+                   aria-label="Share on X (Twitter)"
                  >
-                   <Twitter size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+                   <Twitter size={16} className="text-slate-400 group-hover:text-white transition-colors" aria-hidden="true" />
                  </button>
                  <button
                    onClick={() => {
@@ -380,8 +384,9 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                    }}
                    className="w-10 h-10 rounded-full bg-slate-900/60 backdrop-blur-md border border-slate-800 flex items-center justify-center hover:bg-blue-600 hover:border-blue-600 transition-all group"
                    title="Share on Facebook"
+                   aria-label="Share on Facebook"
                  >
-                   <Facebook size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+                   <Facebook size={16} className="text-slate-400 group-hover:text-white transition-colors" aria-hidden="true" />
                  </button>
                  <button
                    onClick={() => {
@@ -390,8 +395,9 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                    }}
                    className="w-10 h-10 rounded-full bg-slate-900/60 backdrop-blur-md border border-slate-800 flex items-center justify-center hover:bg-blue-700 hover:border-blue-700 transition-all group"
                    title="Share on LinkedIn"
+                   aria-label="Share on LinkedIn"
                  >
-                   <Linkedin size={16} className="text-slate-400 group-hover:text-white transition-colors" />
+                   <Linkedin size={16} className="text-slate-400 group-hover:text-white transition-colors" aria-hidden="true" />
                  </button>
                  <button
                    onClick={() => {
@@ -843,6 +849,8 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                   placeholder="Your Name" 
                   required
                   className="bg-slate-800 border border-slate-700 rounded-2xl px-6 py-4 text-white placeholder:text-slate-500 outline-none focus:border-indigo-500 transition-colors"
+                  aria-label="Your name"
+                  aria-required="true"
                 />
                 <input 
                   type="email" 
@@ -850,6 +858,8 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                   placeholder="Your Email" 
                   required
                   className="bg-slate-800 border border-slate-700 rounded-2xl px-6 py-4 text-white placeholder:text-slate-500 outline-none focus:border-indigo-500 transition-colors"
+                  aria-label="Your email address"
+                  aria-required="true"
                 />
               </div>
               <input 
@@ -858,6 +868,8 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                 placeholder="Subject" 
                 required
                 className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-6 py-4 text-white placeholder:text-slate-500 outline-none focus:border-indigo-500 transition-colors"
+                aria-label="Message subject"
+                aria-required="true"
               />
               <textarea 
                 name="message"
@@ -865,15 +877,18 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
                 rows={6}
                 required
                 className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-6 py-4 text-white placeholder:text-slate-500 outline-none focus:border-indigo-500 transition-colors resize-none"
+                aria-label="Your message"
+                aria-required="true"
               />
               <button 
                 type="submit"
                 disabled={isSubmittingForm}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white px-8 py-6 rounded-3xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
+                aria-label="Send contact message"
               >
                 {isSubmittingForm ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                     Sending...
                   </>
                 ) : (
