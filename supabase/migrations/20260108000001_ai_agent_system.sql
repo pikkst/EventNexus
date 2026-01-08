@@ -199,7 +199,7 @@ ALTER TABLE public.events
 CREATE INDEX IF NOT EXISTS idx_city_configs_active ON public.city_configs(active) WHERE active = true;
 CREATE INDEX IF NOT EXISTS idx_event_sources_city ON public.event_sources(city_id) WHERE active = true;
 CREATE INDEX IF NOT EXISTS idx_raw_events_status ON public.raw_events(processing_status) WHERE processing_status = 'pending';
-CREATE INDEX IF NOT EXISTS idx_events_start_time ON public.events(start_time) WHERE start_time > NOW();
+CREATE INDEX IF NOT EXISTS idx_events_start_time ON public.events(start_time);
 CREATE INDEX IF NOT EXISTS idx_events_canonical ON public.events(canonical_event_id) WHERE canonical_event_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_event_versions_event ON public.event_versions(event_id, version_number DESC);
 CREATE INDEX IF NOT EXISTS idx_ai_decision_log_created ON public.ai_decision_log(created_at DESC);
