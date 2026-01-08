@@ -18,19 +18,6 @@ async function generateContentHash(content: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-// Helper: Fetch content from source
-async function fetchSourceContent(source: any): Promise<string> {
-  const response = await fetch(source.url, {
-    headers: source.headers as Record<string, string> || {},
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-  }
-
-  return await response.text()
-}
-
 interface EventSource {
   id: string
   city_id: string
@@ -42,6 +29,7 @@ interface EventSource {
   auth_config?: Record<string, string>
 }
 
+// Helper: Fetch content from source
 async function fetchSourceContent(source: EventSource): Promise<string> {
   const headers: HeadersInit = {
     'User-Agent': 'EventNexus-Bot/1.0 (https://www.eventnexus.eu)',
@@ -59,12 +47,6 @@ async function fetchSourceContent(source: EventSource): Promise<string> {
   }
 
   return await response.text()
-}
-
-function generateContentHash(content: string): string {
-  const hash = createHash('sha256')
-  hash.update(content)
-  return hash.toString()
 }
 
 serve(async (req) => {
@@ -106,7 +88,7 @@ serve(async (req) => {
         console.log(`Fetching source: ${source.name} (${source.url})`)
 
         const content = await fetchSourceContent(source)
-        const contentHash = generateContentHash(content)
+        const contentHash = await generateContentHash(content)
 
         // Check if content already exists (unchanged)
         const { data: existing } = await supabaseClient
