@@ -125,6 +125,7 @@ export default function MyTickets({ userId }: MyTicketsProps) {
         <button
           onClick={() => setSelectedTicket(null)}
           className="mb-4 text-indigo-600 hover:text-indigo-700 font-medium"
+          aria-label="Back to my tickets list"
         >
           ← Back to My Tickets
         </button>
@@ -152,6 +153,8 @@ export default function MyTickets({ userId }: MyTicketsProps) {
                 ? 'bg-indigo-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
+            aria-label="Show all tickets"
+            aria-pressed={filter === 'all'}
           >
             All
           </button>
@@ -162,6 +165,8 @@ export default function MyTickets({ userId }: MyTicketsProps) {
                 ? 'bg-indigo-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
+            aria-label="Show upcoming tickets"
+            aria-pressed={filter === 'upcoming'}
           >
             Upcoming
           </button>
@@ -172,6 +177,8 @@ export default function MyTickets({ userId }: MyTicketsProps) {
                 ? 'bg-indigo-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
+            aria-label="Show past tickets"
+            aria-pressed={filter === 'past'}
           >
             Past
           </button>
@@ -185,6 +192,7 @@ export default function MyTickets({ userId }: MyTicketsProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search events..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            aria-label="Search tickets by event name or location"
           />
         </div>
       </div>
@@ -251,8 +259,8 @@ export default function MyTickets({ userId }: MyTicketsProps) {
                     <span className="text-sm text-gray-500">
                       ${ticket.price_paid.toFixed(2)}
                     </span>
-                    <button className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium text-sm group-hover:gap-3 transition-all">
-                      <QrCode className="w-4 h-4" />
+                    <button className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium text-sm group-hover:gap-3 transition-all" aria-label={`View ticket QR code for ${event.name}`}>
+                      <QrCode className="w-4 h-4" aria-hidden="true" />
                       View Ticket
                     </button>
                   </div>
