@@ -29,9 +29,11 @@
 ### 🤖 AI-Powered Features
 - **Marketing Campaign Generator** - AI-generated campaigns with Gemini 3 Flash
 - **Ad Image Generation** - Imagen 3 Fast for marketing visuals
+- **Localized Poster Generation** - Professional A3 printable posters with QR codes, auto-translated to local language (9 languages)
 - **Smart Taglines** - Auto-generated event taglines
 - **Multilingual Support** - AI translation for event descriptions
 - **NexusBot** - Context-aware chatbot with streaming responses
+- **Cultural Design Adaptation** - AI-designed posters optimized for local market aesthetics
 
 ### 📊 Admin & Analytics
 - **Command Center** - Comprehensive admin dashboard

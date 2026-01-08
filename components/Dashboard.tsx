@@ -522,14 +522,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     setSelectedAdForPoster(ad);
     
     try {
-      // Generate poster design using AI
+      // Generate poster design using AI with location context for localization
       const design = await generatePosterDesign(
         selectedEvent.name,
         selectedEvent.description,
         selectedEvent.category,
         campaignTheme || 'Professional event promotion',
         user.id,
-        user.subscription_tier
+        user.subscription_tier,
+        selectedEvent.location // Pass location for market-aware design
       );
 
       if (design && design.colorScheme) {
