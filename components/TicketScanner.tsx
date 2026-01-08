@@ -159,6 +159,7 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
           <button
             onClick={() => navigate('/dashboard')}
             className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold"
+            aria-label="Return to dashboard"
           >
             Back to Dashboard
           </button>
@@ -184,8 +185,8 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
             </p>
           </div>
         </div>
-        <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400">
-          <X className="w-6 h-6" />
+        <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400" aria-label="Close scanner and return to dashboard">
+          <X className="w-6 h-6" aria-hidden="true" />
         </button>
       </div>
 
@@ -200,6 +201,7 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
               onClick={startCamera} 
               className="px-6 py-3 rounded-xl font-bold text-sm text-white" 
               style={{ backgroundColor: brandColor }}
+              aria-label="Grant camera access to scan tickets"
             >
               Grant Access
             </button>
@@ -210,6 +212,7 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
             autoPlay 
             playsInline 
             className="w-full h-full object-cover opacity-60"
+            aria-label="Camera viewfinder for scanning QR codes"
           />
         )}
 
@@ -260,8 +263,8 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
                 </div>
               )}
               <div className="flex gap-3">
-                <button onClick={confirmCheckIn} className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold">Confirm Check-in</button>
-                <button onClick={cancelCheckIn} className="flex-1 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold">Cancel</button>
+                <button onClick={confirmCheckIn} className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold" aria-label="Confirm attendee check-in">Confirm Check-in</button>
+                <button onClick={cancelCheckIn} className="flex-1 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold" aria-label="Cancel and scan again">Cancel</button>
               </div>
             </div>
           </div>
@@ -311,6 +314,7 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
               <button 
                 onClick={() => setResult(null)} 
                 className="w-full py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold transition-all text-white"
+                aria-label="Continue scanning tickets"
               >
                 Scan Next
               </button>
@@ -321,9 +325,9 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
 
       {/* Footer Controls */}
       <div className="p-8 bg-slate-950 border-t border-slate-800 flex items-center justify-around">
-        <button className="flex flex-col items-center gap-2 group">
+        <button className="flex flex-col items-center gap-2 group" aria-label="Switch camera">
           <div className="p-4 bg-slate-900 group-hover:bg-slate-800 rounded-2xl border border-slate-800 transition-all text-slate-400">
-            <RefreshCw className="w-6 h-6" />
+            <RefreshCw className="w-6 h-6" aria-hidden="true" />
           </div>
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Switch</span>
         </button>
@@ -332,16 +336,17 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
           onClick={() => !processing && handleQRCodeScanned('test')}
           className="relative group"
           disabled={processing}
+          aria-label={processing ? "Processing ticket" : "Scan QR code ticket"}
         >
           <div className="absolute inset-0 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundColor: brandColor }}></div>
           <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 shadow-2xl relative text-white ${processing ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ backgroundColor: brandColor }}>
-            <Camera className="w-10 h-10" />
+            <Camera className="w-10 h-10" aria-hidden="true" />
           </div>
         </button>
 
-        <button className="flex flex-col items-center gap-2 group">
+        <button className="flex flex-col items-center gap-2 group" aria-label="Get scanning support">
           <div className="p-4 bg-slate-900 group-hover:bg-slate-800 rounded-2xl border border-slate-800 transition-all text-slate-400">
-            <Info className="w-6 h-6" />
+            <Info className="w-6 h-6" aria-hidden="true" />
           </div>
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Support</span>
         </button>
