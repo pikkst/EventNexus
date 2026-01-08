@@ -121,12 +121,12 @@ async function bootstrapCity(
     let cityId = request.city_id
 
     if (!cityId) {
-      const { data: existingCity } = await supabase
+      const { data: existingCity, error: checkError } = await supabase
         .from('city_configs')
         .select('city_id')
         .eq('city_name', city_name)
         .eq('country', country)
-        .single()
+        .maybeSingle()
 
       if (existingCity) {
         cityId = existingCity.city_id
@@ -141,12 +141,16 @@ async function bootstrapCity(
             active: true,
             bootstrap_status: 'discovering_sources'
           })
-          .select()
+          .select('city_id')
           .single()
 
         if (cityError) throw cityError
         cityId = newCity.city_id
       }
+    }
+
+    if (!cityId) {
+      throw new Error('Failed to create or retrieve city config')
     }
 
     // Update bootstrap status

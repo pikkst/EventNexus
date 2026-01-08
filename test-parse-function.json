@@ -1,0 +1,6 @@
+{
+  "raw_event_id": "test-123",
+  "raw_content": "<div><h1>Test Music Festival</h1><p>Join us for an amazing night of live music on January 15, 2026 at 20:00. Location: Tallinn Old Town, Viru Street 5. Free entrance!</p></div>",
+  "content_type": "html",
+  "source_id": "test-source"
+}
