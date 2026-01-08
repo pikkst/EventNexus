@@ -195,9 +195,10 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
                  ? 'bg-white border-slate-200 hover:border-indigo-400'
                  : 'bg-slate-900 border-slate-800 hover:border-indigo-500'
              } border p-3 md:p-4 rounded-2xl md:rounded-[32px] shadow-2xl flex items-center gap-3 md:gap-4 group transition-all`}
+             aria-label={`View nearby event: ${nearestEvent.name}`}
            >
               <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white relative">
-                 <Radar className="w-6 h-6 animate-pulse" />
+                 <Radar className="w-6 h-6 animate-pulse" aria-hidden="true" />
                  <div className={`absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 ${
                    theme === 'light' ? 'border-white' : 'border-slate-900'
                  }`} />
@@ -233,6 +234,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
                   ? 'bg-slate-50 text-slate-900 placeholder:text-slate-400'
                   : 'bg-slate-800/50 md:bg-transparent text-white placeholder:text-slate-500'
               } pl-12 pr-4 py-3 text-sm focus:outline-none rounded-xl`}
+              aria-label="Search events on map"
             />
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto">
@@ -255,6 +257,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
                     ? 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300'
                     : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-600'
               }`}
+              aria-label={`Filter events by ${cat} category`}
+              aria-pressed={activeCategory === cat || (cat === 'All' && !activeCategory)}
             >
               {cat}
             </button>
@@ -271,11 +275,12 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
               : 'bg-slate-900 text-slate-100 border-slate-800 hover:bg-slate-800'
           }`}
           title={theme === 'light' ? 'Switch to Dark Theme' : 'Switch to Light Theme'}
+          aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
         >
-          {theme === 'light' ? <Moon className="w-5 h-5 md:w-6 md:h-6" /> : <Sun className="w-5 h-5 md:w-6 md:h-6" />}
+          {theme === 'light' ? <Moon className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" /> : <Sun className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />}
         </button>
-        <button onClick={() => setIsFollowingUser(!isFollowingUser)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${isFollowingUser ? 'bg-indigo-600 text-white border-indigo-500' : theme === 'light' ? 'bg-white text-slate-400 border-slate-200' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
-          <LocateFixed className="w-5 h-5 md:w-6 md:h-6" />
+        <button onClick={() => setIsFollowingUser(!isFollowingUser)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${isFollowingUser ? 'bg-indigo-600 text-white border-indigo-500' : theme === 'light' ? 'bg-white text-slate-400 border-slate-200' : 'bg-slate-900 text-slate-400 border-slate-800'}`} aria-label={isFollowingUser ? "Stop following your location" : "Follow your location on map"} aria-pressed={isFollowingUser}>
+          <LocateFixed className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />
         </button>
         <div className={`${
           theme === 'light'
@@ -292,6 +297,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
             className={`appearance-none w-1 h-32 rounded-lg accent-indigo-500 vertical-range cursor-pointer ${
               theme === 'light' ? 'bg-slate-200' : 'bg-slate-800'
             }`}
+            aria-label={`Search radius: ${searchRadius} kilometers`}
           />
         </div>
       </div>
@@ -314,12 +320,12 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
                 <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">{selectedEvent.location.city} • {selectedEvent.date}</p>
               </div>
               <div className="flex items-center gap-2 pt-4">
-                <button onClick={() => navigate(`/event/${selectedEvent.id}`)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95">Book Access</button>
+                <button onClick={() => navigate(`/event/${selectedEvent.id}`)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95" aria-label={`View and book ${selectedEvent.name}`}>Book Access</button>
                 <button onClick={() => setSelectedEvent(null)} className={`p-3 rounded-2xl ${
                   theme === 'light'
                     ? 'bg-slate-100 hover:bg-slate-200 text-slate-500'
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
-                }`}><X size={20} /></button>
+                }`} aria-label="Close event details"><X size={20} aria-hidden="true" /></button>
               </div>
             </div>
           </div>
