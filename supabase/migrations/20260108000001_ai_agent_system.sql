@@ -173,10 +173,16 @@ ALTER TABLE public.events
   ADD COLUMN IF NOT EXISTS canonical_event_id UUID REFERENCES public.events(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS start_time TIMESTAMPTZ;
 
+-- Disable translation validation trigger temporarily
+ALTER TABLE public.events DISABLE TRIGGER IF EXISTS validate_translations_trigger;
+
 -- Update start_time from existing date+time columns for existing rows
 UPDATE public.events 
 SET start_time = (date + time)::timestamptz 
 WHERE start_time IS NULL AND date IS NOT NULL AND time IS NOT NULL;
+
+-- Re-enable translation validation trigger
+ALTER TABLE public.events ENABLE TRIGGER IF EXISTS validate_translations_trigger;
 
 -- Add generated geography column using existing location_point
 ALTER TABLE public.events
@@ -207,7 +213,7 @@ CREATE INDEX IF NOT EXISTS idx_events_freshness ON public.events(freshness_score
 CREATE INDEX IF NOT EXISTS idx_events_import_source ON public.events(import_source) WHERE import_source = 'ai_agent';
 
 -- Full-text search indexes
-CREATE INDEX IF NOT EXISTS idx_events_fulltext ON public.events USING gin(to_tsvector('english', title || ' ' || COALESCE(description, '')));
+CREATE INDEX IF NOT EXISTS idx_events_fulltext ON public.events USING gin(to_tsvector('english', name || ' ' || COALESCE(description, '')));
 CREATE INDEX IF NOT EXISTS idx_parsed_events_json ON public.parsed_events USING gin(structured_json);
 
 -- Geospatial indexes
@@ -363,8 +369,8 @@ CREATE POLICY "Admins can read event matches" ON public.event_matches FOR SELECT
 );
 
 -- Public can read high-quality unclaimed future events for organizer claiming
-CREATE POLICY "Public can read unclaimed events" ON public.events FOR SELECT USING (
-  status = 'unclaimed' 
+CREATE POLICY "Public can read unclaimed AI events" ON public.events FOR SELECT USING (
+  import_source = 'ai_agent'
   AND start_time > NOW() 
   AND confidence_score >= 60
   AND canonical_event_id IS NULL
