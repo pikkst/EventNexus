@@ -10,7 +10,7 @@ const corsHeaders = {
 }
 
 const GEMINI_API_KEY = Deno.env.get('API_KEY') || Deno.env.get('GEMINI_API_KEY')
-const GEMINI_MODEL = 'gemini-2.0-flash-exp'
+const GEMINI_MODEL = 'gemini-2.0-flash'
 
 interface ParsedEvent {
   name: string
@@ -28,7 +28,7 @@ interface ParsedEvent {
   image_url?: string
 }
 
-async function parseEventWithGemini(rawContent: string, sourceType: string): Promise<ParsedEvent[]> {
+async function parseEventWithGemini(rawContent: string, sourceType: string, retries = 3): Promise<ParsedEvent[]> {
   const prompt = `You are an expert event data extractor. Extract structured public event information from the following ${sourceType} content.
 
 Extract ALL events found in the content. For each event, provide:
@@ -51,41 +51,57 @@ Return ONLY valid JSON array of events. No markdown, no explanations.
 Content to parse:
 ${rawContent.slice(0, 8000)}` // Limit content length
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 4096,
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: prompt }]
+            }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 4096,
+            }
+          })
         }
-      })
+      )
+
+      if (response.status === 429 && attempt < retries) {
+        // Rate limit - wait with exponential backoff
+        const waitTime = Math.pow(2, attempt) * 1000 // 1s, 2s, 4s
+        console.log(`Rate limited, retrying in ${waitTime}ms (attempt ${attempt + 1}/${retries})`)
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+        continue
+      }
+
+      if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      const text = data.candidates[0]?.content?.parts[0]?.text || '[]'
+
+      // Extract JSON from markdown code blocks if present
+      const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/```\n?([\s\S]*?)\n?```/)
+      const jsonText = jsonMatch ? jsonMatch[1] : text
+
+      try {
+        const events = JSON.parse(jsonText)
+        return Array.isArray(events) ? events : [events]
+      } catch (error) {
+        console.error('Failed to parse Gemini response:', text)
+        throw new Error('Invalid JSON response from AI')
+      }
+    } catch (error) {
+      if (attempt === retries) throw error
     }
-  )
-
-  if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status}`)
   }
-
-  const data = await response.json()
-  const text = data.candidates[0]?.content?.parts[0]?.text || '[]'
-
-  // Extract JSON from markdown code blocks if present
-  const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/```\n?([\s\S]*?)\n?```/)
-  const jsonText = jsonMatch ? jsonMatch[1] : text
-
-  try {
-    const events = JSON.parse(jsonText)
-    return Array.isArray(events) ? events : [events]
-  } catch (error) {
-    console.error('Failed to parse Gemini response:', text)
-    throw new Error('Invalid JSON response from AI')
-  }
+  
+  return []
 }
 
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
@@ -133,13 +149,15 @@ serve(async (req) => {
 
     if (rawError) throw rawError
 
+    console.log(`Found ${rawEvents?.length || 0} raw events to process`)
+
     const results = {
       processed: 0,
       failed: 0,
       events_extracted: 0,
     }
 
-    for (const rawEvent of rawEvents) {
+    for (const rawEvent of rawEvents || []) {
       try {
         // Update status to processing
         await supabaseClient
@@ -149,11 +167,15 @@ serve(async (req) => {
 
         const startTime = Date.now()
 
+        console.log(`Processing raw event ${rawEvent.id} from ${rawEvent.event_sources?.type}`)
+
         // Parse with AI
         const parsedEvents = await parseEventWithGemini(
           rawEvent.raw_content,
           rawEvent.event_sources.type
         )
+
+        console.log(`Extracted ${parsedEvents.length} events from raw event ${rawEvent.id}`)
 
         // Geocode addresses
         for (const event of parsedEvents) {
@@ -205,6 +227,11 @@ serve(async (req) => {
           .eq('id', rawEvent.id)
 
         results.processed++
+        
+        // Rate limit protection: wait 2s between events
+        if (rawEvents.length > 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
       } catch (error) {
         console.error(`Failed to parse event ${rawEvent.id}:`, error)
         

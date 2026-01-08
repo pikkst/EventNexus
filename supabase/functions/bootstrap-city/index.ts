@@ -10,7 +10,7 @@ const corsHeaders = {
 }
 
 const GEMINI_API_KEY = Deno.env.get('API_KEY') || Deno.env.get('GEMINI_API_KEY')
-const GEMINI_MODEL = 'gemini-2.0-flash-exp'
+const GEMINI_MODEL = 'gemini-2.0-flash'
 
 interface CityBootstrapRequest {
   city_id?: string;
@@ -108,16 +108,23 @@ NO markdown, NO explanations, ONLY the JSON array.`
 async function validateSource(url: string): Promise<boolean> {
   try {
     const response = await fetch(url, {
-      method: 'HEAD',
-      signal: AbortSignal.timeout(5000),
+      method: 'GET',
+      signal: AbortSignal.timeout(10000),
       headers: {
-        'User-Agent': 'EventNexus-Bot/1.0 (https://www.eventnexus.eu)'
-      }
+        'User-Agent': 'Mozilla/5.0 (compatible; EventNexus-Bot/1.0; +https://www.eventnexus.eu)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+      },
+      redirect: 'follow'
     })
-    return response.ok
+    // Accept 200-399 status codes (including redirects)
+    const isValid = response.status >= 200 && response.status < 400
+    console.log(`Source ${url} validation: ${response.status} - ${isValid ? 'VALID' : 'INVALID'}`)
+    return isValid
   } catch (error) {
-    console.error(`Source validation failed for ${url}:`, error)
-    return false
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    console.log(`Source validation error for ${url}: ${errorMsg} - accepting anyway`)
+    // Still add source even if validation fails - let fetch-sources handle it
+    return true
   }
 }
 
