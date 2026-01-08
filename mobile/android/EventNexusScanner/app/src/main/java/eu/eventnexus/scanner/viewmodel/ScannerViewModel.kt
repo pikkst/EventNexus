@@ -192,7 +192,8 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
     private suspend fun fetchEventDetails(eventId: String) {
         try {
             println("📥 Fetching event: $eventId")
-            val events = api.getEvent(eventId)
+            // Supabase REST API requires 'eq.' prefix for equality filter
+            val events = api.getEvent("eq.$eventId")
             println("📦 Events response: ${events.size} events")
             
             if (events.isNotEmpty()) {

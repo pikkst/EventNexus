@@ -22,7 +22,7 @@ interface SupabaseApi {
      */
     @GET("/rest/v1/events")
     suspend fun getEvent(
-        @Query("id") eventId: String
+        @Query("id") eventIdFilter: String
     ): List<EventResponse>
     
     /**
