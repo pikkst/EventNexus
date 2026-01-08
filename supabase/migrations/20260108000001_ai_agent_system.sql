@@ -173,26 +173,16 @@ ALTER TABLE public.events
   ADD COLUMN IF NOT EXISTS canonical_event_id UUID REFERENCES public.events(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS start_time TIMESTAMPTZ;
 
--- Conditionally disable translation validation trigger
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'validate_translations_trigger') THEN
-    ALTER TABLE public.events DISABLE TRIGGER validate_translations_trigger;
-  END IF;
-END $$;
+-- Disable ALL triggers on events table during migration UPDATE
+ALTER TABLE public.events DISABLE TRIGGER ALL;
 
 -- Update start_time from existing date+time columns for existing rows
 UPDATE public.events 
 SET start_time = (date + time)::timestamptz 
 WHERE start_time IS NULL AND date IS NOT NULL AND time IS NOT NULL;
 
--- Re-enable translation validation trigger
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'validate_translations_trigger') THEN
-    ALTER TABLE public.events ENABLE TRIGGER validate_translations_trigger;
-  END IF;
-END $$;
+-- Re-enable all triggers
+ALTER TABLE public.events ENABLE TRIGGER ALL;
 
 -- Add generated geography column using existing location_point
 ALTER TABLE public.events
