@@ -135,10 +135,14 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
      */
     suspend fun authenticateWithCode(code: String) {
         try {
+            println("🔍 Calling API with code: $code")
             val response = api.verifyScannerCode(mapOf("p_code" to code))
+            println("📡 API Response: $response")
             
             if (response.isNotEmpty()) {
                 val result = response[0]
+                println("📊 Result valid: ${result.valid}, event_id: ${result.event_id}, scanner_code_id: ${result.scanner_code_id}")
+                
                 if (result.valid) {
                     scannerCode = code
                     _scannerCodeId.value = result.scanner_code_id
@@ -146,23 +150,38 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
                     
                     // Fetch event details
                     result.event_id?.let { eventId ->
+                        println("🎉 Fetching event details for: $eventId")
                         fetchEventDetails(eventId)
                     }
                     
                     _isAuthenticated.value = true
+                    println("✅ Authentication successful, saving session...")
                     
                     // Save session to SharedPreferences
                     saveSession()
                     
                     // Record usage
-                    result.scanner_code_id?.let { recordUsage(it) }
+                    result.scanner_code_id?.let { 
+                        println("📝 Recording usage for scanner code: $it")
+                        recordUsage(it) 
+                    }
                 } else {
+                    println("❌ Scanner code invalid or expired")
                     throw Exception("Invalid scanner code or code expired")
                 }
             } else {
+                println("❌ Empty response from API")
                 throw Exception("Invalid scanner code")
             }
+        } catch (e: retrofit2.HttpException) {
+            println("🌐 HTTP Error: ${e.code()} - ${e.message()}")
+            throw Exception("Failed to connect to server: ${e.message()}")
+        } catch (e: java.net.UnknownHostException) {
+            println("🌐 Network Error: No internet connection")
+            throw Exception("Failed to connect: Check your internet connection")
         } catch (e: Exception) {
+            println("💥 Exception: ${e.javaClass.simpleName} - ${e.message}")
+            e.printStackTrace()
             throw Exception("Authentication failed: ${e.message}")
         }
     }
@@ -172,17 +191,26 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
      */
     private suspend fun fetchEventDetails(eventId: String) {
         try {
+            println("📥 Fetching event: $eventId")
             val events = api.getEvent(eventId)
+            println("📦 Events response: ${events.size} events")
+            
             if (events.isNotEmpty()) {
                 val event = events[0]
+                println("🎫 Event: ${event.name}, Date: ${event.date}")
                 _currentEvent.value = EventInfo(
                     id = event.id,
                     name = event.name,
                     date = event.date,
                     location = event.location?.get("address") as? String
                 )
+                println("✅ Event details saved")
+            } else {
+                println("⚠️ No event found for ID: $eventId")
             }
         } catch (e: Exception) {
+            println("❌ Failed to fetch event: ${e.message}")
+            e.printStackTrace()
             throw Exception("Failed to fetch event details: ${e.message}")
         }
     }
