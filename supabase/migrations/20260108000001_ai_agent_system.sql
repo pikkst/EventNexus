@@ -115,22 +115,7 @@ CREATE TABLE IF NOT EXISTS public.review_queue (
   CHECK (event_id IS NOT NULL OR parsed_event_id IS NOT NULL)
 );
 
--- AI decision audit log
-CREATE TABLE IF NOT EXISTS public.ai_decision_log (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  event_id UUID REFERENCES public.events(id) ON DELETE SET NULL,
-  agent_id UUID REFERENCES public.ai_agents(id) ON DELETE SET NULL,
-  parsed_event_id UUID REFERENCES public.parsed_events(id) ON DELETE SET NULL,
-  decision_type TEXT NOT NULL,
-  decision_result TEXT NOT NULL,
-  reasoning JSONB NOT NULL,
-  confidence_score NUMERIC(5,2),
-  ai_model TEXT NOT NULL,
-  processing_time_ms INTEGER,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- AI Agents Registry for multi-model orchestration
+-- AI Agents Registry for multi-model orchestration (must be before ai_decision_log)
 CREATE TABLE IF NOT EXISTS public.ai_agents (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT UNIQUE NOT NULL,
@@ -145,6 +130,21 @@ CREATE TABLE IF NOT EXISTS public.ai_agents (
   config JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- AI decision audit log
+CREATE TABLE IF NOT EXISTS public.ai_decision_log (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  event_id UUID REFERENCES public.events(id) ON DELETE SET NULL,
+  agent_id UUID REFERENCES public.ai_agents(id) ON DELETE SET NULL,
+  parsed_event_id UUID REFERENCES public.parsed_events(id) ON DELETE SET NULL,
+  decision_type TEXT NOT NULL,
+  decision_result TEXT NOT NULL,
+  reasoning JSONB NOT NULL,
+  confidence_score NUMERIC(5,2),
+  ai_model TEXT NOT NULL,
+  processing_time_ms INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Deduplication match records
@@ -458,48 +458,6 @@ CREATE POLICY "Admins can manage opt-outs" ON public.event_opt_outs FOR ALL TO a
 CREATE POLICY "Service role can manage AI usage log" ON public.ai_usage_log FOR ALL TO service_role USING (true);
 CREATE POLICY "Service role can manage city health metrics" ON public.city_health_metrics FOR ALL TO service_role USING (true);
 CREATE POLICY "Service role can manage opt-outs" ON public.event_opt_outs FOR ALL TO service_role USING (true);
-
--- Initial seed data for testing
-INSERT INTO public.city_configs (city_name, country, languages, timezone, geo_bounds, bootstrap_status) VALUES
-  ('Tallinn', 'Estonia', ARRAY['et', 'en'], 'Europe/Tallinn', 
-   ST_GeomFromText('POLYGON((24.5 59.3, 25.0 59.3, 25.0 59.5, 24.5 59.5, 24.5 59.3))', 4326), 'active'),
-  ('Berlin', 'Germany', ARRAY['de', 'en'], 'Europe/Berlin',
-   ST_GeomFromText('POLYGON((13.0 52.3, 13.8 52.3, 13.8 52.7, 13.0 52.7, 13.0 52.3))', 4326), 'active')
-ON CONFLICT (city_name, country) DO NOTHING;
-
--- AI Agent Registry (multi-model orchestration strategy)
-INSERT INTO public.ai_agents (name, role, ai_provider, model, temperature, max_tokens, cost_per_1k_tokens, description) VALUES
-  ('city_initializer', 'City bootstrap & source discovery', 'gemini', 'gemini-2.0-flash-exp', 0.2, 2048, 0.000075, 'Discovers official event sources for new cities using web search and structured data'),
-  ('parser_primary', 'HTML/RSS event extraction', 'gemini', 'gemini-2.0-flash-exp', 0.1, 4096, 0.000075, 'Primary event parser using Gemini Flash for speed and cost efficiency'),
-  ('translator', 'Multi-language translation', 'gemini', 'gemini-2.0-flash-exp', 0.2, 2048, 0.000075, 'Translates events to city languages'),
-  ('semantic_validator', 'Content quality validation', 'gemini', 'gemini-2.0-flash-exp', 0.3, 1024, 0.000075, 'Validates event semantics and detects spam'),
-  ('deduplicator', 'Fuzzy event matching', 'local', 'llama-3.1-8b', 0.2, 512, 0.000000, 'Local LLM for cost-effective deduplication using embeddings'),
-  ('review_explainer', 'Human review assistance', 'gemini', 'gemini-2.0-flash-thinking-exp', 0.4, 2048, 0.000150, 'Explains AI decisions to human reviewers')
-ON CONFLICT (name) DO NOTHING;
-
--- City-Agent associations for city-specific AI behavior
-CREATE TABLE IF NOT EXISTS public.city_agents (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  city_id UUID NOT NULL REFERENCES public.city_configs(city_id) ON DELETE CASCADE,
-  agent_id UUID NOT NULL REFERENCES public.ai_agents(id) ON DELETE CASCADE,
-  role TEXT NOT NULL,
-  active BOOLEAN NOT NULL DEFAULT true,
-  config_override JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(city_id, agent_id, role)
-);
-
-CREATE INDEX IF NOT EXISTS idx_city_agents_city ON public.city_agents(city_id) WHERE active = true;
-CREATE INDEX IF NOT EXISTS idx_city_agents_agent ON public.city_agents(agent_id) WHERE active = true;
-
--- Enable RLS for city_agents
-ALTER TABLE public.city_agents ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins can read city agents" ON public.city_agents FOR SELECT TO authenticated USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
-);
-
-CREATE POLICY "Service role can manage city agents" ON public.city_agents FOR ALL TO service_role USING (true);
 
 -- Initial seed data for testing
 INSERT INTO public.city_configs (city_name, country, languages, timezone, geo_bounds, bootstrap_status) VALUES
