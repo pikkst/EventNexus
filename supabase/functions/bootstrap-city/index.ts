@@ -31,6 +31,11 @@ interface EventSource {
 }
 
 async function discoverCitySources(cityName: string, country: string): Promise<EventSource[]> {
+  if (!GEMINI_API_KEY) {
+    console.error('GEMINI_API_KEY not configured')
+    return []
+  }
+
   const prompt = `You are an expert at finding official public event data sources for cities.
 
 Find official event sources for ${cityName}, ${country}.
@@ -56,39 +61,46 @@ Prioritize:
 Return 3-10 sources. Be conservative - only return sources you're confident exist.
 NO markdown, NO explanations, ONLY the JSON array.`
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 2048,
-        }
-      })
-    }
-  )
-
-  if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status}`)
-  }
-
-  const data = await response.json()
-  const text = data.candidates[0]?.content?.parts[0]?.text || '[]'
-
-  // Extract JSON from markdown if present
-  const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/```\n?([\s\S]*?)\n?```/)
-  const jsonText = jsonMatch ? jsonMatch[1] : text
-
   try {
-    const sources = JSON.parse(jsonText)
-    return Array.isArray(sources) ? sources : []
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 2048,
+          }
+        })
+      }
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Gemini API error ${response.status}:`, errorText)
+      throw new Error(`Gemini API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const text = data.candidates[0]?.content?.parts[0]?.text || '[]'
+
+    // Extract JSON from markdown if present
+    const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/```\n?([\s\S]*?)\n?```/)
+    const jsonText = jsonMatch ? jsonMatch[1] : text
+
+    try {
+      const sources = JSON.parse(jsonText)
+      return Array.isArray(sources) ? sources : []
+    } catch (error) {
+      console.error('Failed to parse source discovery response:', text)
+      return []
+    }
   } catch (error) {
-    console.error('Failed to parse source discovery response:', text)
+    console.error('Source discovery failed:', error)
     return []
   }
 }
@@ -116,10 +128,10 @@ async function bootstrapCity(
   
   const { city_name, country, languages = ['en'], timezone = 'UTC', auto_discover = true, seed_events = true } = request
   
+  let cityId = request.city_id  // Define at function scope
+
   try {
     // 1. Create or get city config
-    let cityId = request.city_id
-
     if (!cityId) {
       const { data: existingCity, error: checkError } = await supabase
         .from('city_configs')
