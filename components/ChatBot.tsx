@@ -88,11 +88,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setIsMinimized(!isMinimized)} className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 transition-colors">
-            {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+          <button onClick={() => setIsMinimized(!isMinimized)} className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 transition-colors" aria-label={isMinimized ? "Maximize chat window" : "Minimize chat window"}>
+            {isMinimized ? <Maximize2 className="w-4 h-4" aria-hidden="true" /> : <Minus className="w-4 h-4" aria-hidden="true" />}
           </button>
-          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 transition-colors">
-            <X className="w-4 h-4" />
+          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 transition-colors" aria-label="Close chat assistant">
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -127,6 +127,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 className="w-full bg-slate-900 border border-slate-800 rounded-2xl px-5 py-4 pr-16 text-sm text-white outline-none focus:border-indigo-500 transition-all"
+                aria-label="Chat message input"
               />
               <button 
                 onClick={handleSend}
@@ -134,8 +135,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
                 className={`absolute right-2 top-2 bottom-2 px-4 rounded-xl flex items-center justify-center transition-all ${
                   input.trim() ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 active:scale-95' : 'bg-slate-800 text-slate-500'
                 }`}
+                aria-label={isLoading ? "Sending message" : "Send message"}
               >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Send className="w-4 h-4" aria-hidden="true" />}
               </button>
             </div>
             <p className="text-[9px] text-center text-slate-600 font-bold uppercase tracking-widest mt-3">Nexus backbone secured by Gemini v3</p>
