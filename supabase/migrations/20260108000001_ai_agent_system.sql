@@ -165,22 +165,26 @@ CREATE TABLE IF NOT EXISTS public.event_matches (
 -- Add AI agent columns to existing events table
 ALTER TABLE public.events 
   ADD COLUMN IF NOT EXISTS city_id UUID REFERENCES public.city_configs(city_id),
-  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'unclaimed' CHECK (status IN ('unclaimed', 'claimed', 'promoted', 'archived', 'cancelled')),
   ADD COLUMN IF NOT EXISTS confidence_score NUMERIC(5,2) DEFAULT 0.00 CHECK (confidence_score BETWEEN 0 AND 100),
   ADD COLUMN IF NOT EXISTS freshness_score NUMERIC(3,2) DEFAULT 1.00 CHECK (freshness_score BETWEEN 0 AND 1),
   ADD COLUMN IF NOT EXISTS source_url TEXT,
   ADD COLUMN IF NOT EXISTS import_source TEXT DEFAULT 'ai_agent',
   ADD COLUMN IF NOT EXISTS last_ai_update TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS original_language TEXT,
-  ADD COLUMN IF NOT EXISTS canonical_event_id UUID REFERENCES public.events(id) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS canonical_event_id UUID REFERENCES public.events(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS start_time TIMESTAMPTZ;
 
--- Add generated geospatial column for performance optimization
+-- Update start_time from existing date+time columns for existing rows
+UPDATE public.events 
+SET start_time = (date + time)::timestamptz 
+WHERE start_time IS NULL AND date IS NOT NULL AND time IS NOT NULL;
+
+-- Add generated geography column using existing location_point
 ALTER TABLE public.events
   ADD COLUMN IF NOT EXISTS location_geom geography
   GENERATED ALWAYS AS (
     CASE 
-      WHEN location_lat IS NOT NULL AND location_lng IS NOT NULL 
-      THEN ST_SetSRID(ST_MakePoint(location_lng, location_lat), 4326)::geography
+      WHEN location_point IS NOT NULL 
+      THEN location_point::geography
       ELSE NULL
     END
   ) STORED;
@@ -189,7 +193,7 @@ ALTER TABLE public.events
 CREATE INDEX IF NOT EXISTS idx_city_configs_active ON public.city_configs(active) WHERE active = true;
 CREATE INDEX IF NOT EXISTS idx_event_sources_city ON public.event_sources(city_id) WHERE active = true;
 CREATE INDEX IF NOT EXISTS idx_raw_events_status ON public.raw_events(processing_status) WHERE processing_status = 'pending';
-CREATE INDEX IF NOT EXISTS idx_parses_freshness ON public.events(freshness_score DESC) WHERE status = 'unclaimed';
+CREATE INDEX IF NOT EXISTS idx_events_start_time ON public.events(start_time) WHERE start_time > NOW();
 CREATE INDEX IF NOT EXISTS idx_events_canonical ON public.events(canonical_event_id) WHERE canonical_event_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_event_versions_event ON public.event_versions(event_id, version_number DESC);
 CREATE INDEX IF NOT EXISTS idx_ai_decision_log_created ON public.ai_decision_log(created_at DESC);
@@ -199,8 +203,8 @@ CREATE INDEX IF NOT EXISTS idx_parsed_events_validation ON public.parsed_events(
 CREATE INDEX IF NOT EXISTS idx_review_queue_status ON public.review_queue(status) WHERE status = 'pending';
 CREATE INDEX IF NOT EXISTS idx_events_city_status ON public.events(city_id, status);
 CREATE INDEX IF NOT EXISTS idx_events_confidence ON public.events(confidence_score) WHERE confidence_score < 80;
-CREATE INDEX IF NOT EXISTS idx_events_freshness ON public.events(freshness_score DESC) WHERE status = 'unclaimed';
-CREATE INDEX IF NOT EXISTS idx_events_canonical ON public.events(canonical_event_id) WHERE canonical_event_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_events_freshness ON public.events(freshness_score DESC);
+CREATE INDEX IF NOT EXISTS idx_events_import_source ON public.events(import_source) WHERE import_source = 'ai_agent';
 
 -- Full-text search indexes
 CREATE INDEX IF NOT EXISTS idx_events_fulltext ON public.events USING gin(to_tsvector('english', title || ' ' || COALESCE(description, '')));
