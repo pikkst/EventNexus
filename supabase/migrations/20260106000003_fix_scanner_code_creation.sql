@@ -235,13 +235,45 @@ CREATE POLICY "Organizers can delete their own scanner codes"
     TO authenticated
     USING (organizer_id = auth.uid());
 
--- Step 5: Add comments
+-- Step 5: Add RLS policies
 -- ============================================
-COMMENT ON TABLE public.scanner_codes IS 'Scanner codes for mobile app authentication';
-COMMENT ON FUNCTION public.generate_scanner_code() IS 'Generates a unique 8-character alphanumeric scanner code';
-COMMENT ON FUNCTION public.create_scanner_code(UUID, UUID, TEXT, TIMESTAMPTZ) IS 'Creates a new scanner code with automatic unique code generation and event ownership validation';
-COMMENT ON FUNCTION public.verify_scanner_code(TEXT) IS 'Verifies a scanner code and returns event details for mobile app (case-insensitive)';
-COMMENT ON FUNCTION public.record_scanner_usage(UUID, TEXT) IS 'Records scanner code usage with timestamp and optional location';
+ALTER TABLE public.scanner_codes ENABLE ROW LEVEL SECURITY;
+
+-- Organizers can view their own scanner codes
+DROP POLICY IF EXISTS "Organizers can view their own scanner codes" ON public.scanner_codes;
+CREATE POLICY "Organizers can view their own scanner codes"
+    ON public.scanner_codes FOR SELECT
+    TO authenticated
+    USING (organizer_id = auth.uid());
+
+-- Organizers can create scanner codes for their events
+DROP POLICY IF EXISTS "Organizers can create scanner codes" ON public.scanner_codes;
+CREATE POLICY "Organizers can create scanner codes"
+    ON public.scanner_codes FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        organizer_id = auth.uid() AND
+        EXISTS (
+            SELECT 1 FROM public.events 
+            WHERE events.id = scanner_codes.event_id 
+            AND events.organizer_id = auth.uid()
+        )
+    );
+
+-- Organizers can update their own scanner codes
+DROP POLICY IF EXISTS "Organizers can update their own scanner codes" ON public.scanner_codes;
+CREATE POLICY "Organizers can update their own scanner codes"
+    ON public.scanner_codes FOR UPDATE
+    TO authenticated
+    USING (organizer_id = auth.uid())
+    WITH CHECK (organizer_id = auth.uid());
+
+-- Organizers can delete their own scanner codes
+DROP POLICY IF EXISTS "Organizers can delete their own scanner codes" ON public.scanner_codes;
+CREATE POLICY "Organizers can delete their own scanner codes"
+    ON public.scanner_codes FOR DELETE
+    TO authenticated
+    USING (organizer_id = auth.uid());
 
 -- Step 6: Fix verify_scanner_code function to handle status case-insensitively
 -- ============================================
@@ -313,7 +345,15 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.record_scanner_usage(UUID, TEXT) TO authenticated;
 
--- Step 8: Verification
+-- Step 8: Add comments
+-- ============================================
+COMMENT ON TABLE public.scanner_codes IS 'Scanner codes for mobile app authentication';
+COMMENT ON FUNCTION public.generate_scanner_code() IS 'Generates a unique 8-character alphanumeric scanner code';
+COMMENT ON FUNCTION public.create_scanner_code(UUID, UUID, TEXT, TIMESTAMPTZ) IS 'Creates a new scanner code with automatic unique code generation and event ownership validation';
+COMMENT ON FUNCTION public.verify_scanner_code(TEXT) IS 'Verifies a scanner code and returns event details for mobile app (case-insensitive)';
+COMMENT ON FUNCTION public.record_scanner_usage(UUID, TEXT) IS 'Records scanner code usage with timestamp and optional location';
+
+-- Step 9: Verification
 -- ============================================
 DO $$ 
 BEGIN
