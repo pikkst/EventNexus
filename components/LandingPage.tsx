@@ -244,8 +244,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 <h2 className="text-4xl md:text-5xl font-black tracking-tighter leading-none">{activeBanner.title}</h2>
                 <p className="text-lg text-slate-400 font-medium leading-relaxed">{activeBanner.copy}</p>
                 <div className="pt-2 flex items-center gap-6">
-                   <button className="bg-white text-slate-950 px-8 py-4 rounded-2xl font-bold text-sm shadow-xl flex items-center gap-2">
-                      {activeBanner.cta} <ArrowRight size={16} />
+                   <button className="bg-white text-slate-950 px-8 py-4 rounded-2xl font-bold text-sm shadow-xl flex items-center gap-2" aria-label={`${activeBanner.cta} - Limited offer campaign`}>
+                      {activeBanner.cta} <ArrowRight size={16} aria-hidden="true" />
                    </button>
                    <div className="flex flex-col">
                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Incentive Status</p>
@@ -288,14 +288,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             The world's first map-first event platform. From massive festivals to secret living room concerts — find your next vibe instantly.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link to="/map" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 px-10 py-4 rounded-2xl font-bold text-lg transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2">
-              <MapIcon className="w-5 h-5" /> Explore Map
+            <Link to="/map" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 px-10 py-4 rounded-2xl font-bold text-lg transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2" aria-label="Explore events on interactive map">
+              <MapIcon className="w-5 h-5" aria-hidden="true" /> Explore Map
             </Link>
             <button 
               onClick={handleCreateEvent}
               className="w-full sm:w-auto bg-slate-100 text-slate-950 hover:bg-white px-10 py-4 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2"
+              aria-label="Create and host your own event"
             >
-              <Plus className="w-5 h-5" /> Host an Event
+              <Plus className="w-5 h-5" aria-hidden="true" /> Host an Event
             </button>
           </div>
         </div>
@@ -463,8 +464,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 <button
                   onClick={onOpenAuth}
                   className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl text-white font-bold transition-all w-fit"
+                  aria-label="Sign up for free EventNexus account"
                 >
-                  Get Started Free <ArrowRight className="w-5 h-5" />
+                  Get Started Free <ArrowRight className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
               <div className="relative bg-slate-950 flex items-center justify-center p-8 md:p-12">
@@ -781,6 +783,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                     ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
                     : 'bg-slate-800 hover:bg-slate-700 text-white'
                 }`}
+                aria-label={`Sign up for ${tier.toUpperCase()} plan`}
               >
                 {tier === 'free' ? 'Start Free' : 'Get Started'}
               </button>
@@ -924,18 +927,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                   disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
                   className="flex-1 px-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all disabled:opacity-50"
                   required
+                  aria-label="Email address for newsletter subscription"
                 />
                 <button
                   type="submit"
                   disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
                   className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-emerald-600 disabled:cursor-not-allowed rounded-2xl font-bold text-white transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                  aria-label={
+                    newsletterStatus === 'loading'
+                      ? 'Subscribing to newsletter'
+                      : newsletterStatus === 'success'
+                        ? 'Successfully subscribed to newsletter'
+                        : 'Subscribe to newsletter'
+                  }
                 >
                   {newsletterStatus === 'loading' ? (
                     'Subscribing...'
                   ) : newsletterStatus === 'success' ? (
-                    <><Check className="w-5 h-5" /> Subscribed!</>
+                    <><Check className="w-5 h-5" aria-hidden="true" /> Subscribed!</>
                   ) : (
-                    <><Send className="w-5 h-5" /> Subscribe</>
+                    <><Send className="w-5 h-5" aria-hidden="true" /> Subscribe</>
                   )}
                 </button>
               </div>
@@ -963,8 +974,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
               <button 
                 onClick={handleCreateEvent}
                 className="bg-white text-indigo-600 px-12 py-4 rounded-2xl font-bold text-lg hover:bg-indigo-50 transition-all inline-flex items-center gap-2"
+                aria-label="Get started as an event organizer"
               >
-                Get Started <ChevronRight className="w-5 h-5" />
+                Get Started <ChevronRight className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
           </div>
