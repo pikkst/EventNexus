@@ -53,79 +53,73 @@ serve(async (req) => {
         // Check for duplicates
         const { data: existingEvents } = await supabaseClient
           .from('events')
-          .select('id, title, start_time, location_lat, location_lng')
+          .select('id, name, start_time, location_point')
           .eq('city_id', cityId)
-          .eq('title', eventData.title)
+          .eq('name', eventData.name)
           .gte('start_time', eventData.start_time)
           .lte('start_time', eventData.start_time)
 
         if (existingEvents && existingEvents.length > 0) {
-          // Potential duplicate - check geo proximity
+          // Duplicate found - update existing event
           const existing = existingEvents[0]
           
-          if (eventData.location_lat && existing.location_lat) {
-            const distance = Math.sqrt(
-              Math.pow(eventData.location_lat - existing.location_lat, 2) +
-              Math.pow(eventData.location_lng - existing.location_lng, 2)
-            ) * 111 // rough km conversion
+          const { error: updateError } = await supabaseClient
+            .from('events')
+            .update({
+              description: eventData.description,
+              image_url: eventData.image_url || null,
+              last_ai_update: new Date().toISOString(),
+            })
+            .eq('id', existing.id)
 
-            if (distance < 1) { // Within 1km
-              // Update existing event
-              const { error: updateError } = await supabaseClient
-                .from('events')
-                .update({
-                  description: eventData.description,
-                  end_time: eventData.end_time,
-                  image_url: eventData.image_url || null,
-                  last_ai_update: new Date().toISOString(),
-                })
-                .eq('id', existing.id)
+          if (!updateError) {
+            // Create version record
+            await supabaseClient
+              .from('event_versions')
+              .insert({
+                event_id: existing.id,
+                version_number: 1,
+                changes_json: {
+                  type: 'ai_update',
+                  changes: { description: 'updated' },
+                },
+                change_type: 'ai_update',
+              })
 
-              if (!updateError) {
-                // Create version record
-                await supabaseClient
-                  .from('event_versions')
-                  .insert({
-                    event_id: existing.id,
-                    version_number: 1, // Would increment in production
-                    changes_json: {
-                      type: 'ai_update',
-                      changes: { description: 'updated', end_time: 'updated' },
-                    },
-                    change_type: 'ai_update',
-                  })
+            // Update confidence record
+            await supabaseClient
+              .from('event_confidence')
+              .update({ event_id: existing.id })
+              .eq('parsed_event_id', parsedEvent.id)
 
-                // Update confidence record
-                await supabaseClient
-                  .from('event_confidence')
-                  .update({ event_id: existing.id })
-                  .eq('parsed_event_id', parsedEvent.id)
-
-                results.updated++
-                continue
-              }
-            }
+            results.updated++
+            continue
           }
-
-          // If we get here, it's similar but not a duplicate
-          console.log(`Publishing similar event: ${eventData.title}`)
         }
 
         // Create new event
+        const startTime = new Date(eventData.start_time)
+        const locationPoint = eventData.location_lat && eventData.location_lng
+          ? `POINT(${eventData.location_lng} ${eventData.location_lat})`
+          : null
+
         const { data: newEvent, error: insertError } = await supabaseClient
           .from('events')
           .insert({
-            title: eventData.title,
+            name: eventData.name,
             description: eventData.description,
-            start_time: eventData.start_time,
-            end_time: eventData.end_time,
-            location: eventData.location_address,
-            location_lat: eventData.location_lat,
-            location_lng: eventData.location_lng,
+            date: startTime.toISOString().split('T')[0],
+            time: startTime.toTimeString().split(' ')[0],
+            location: {
+              address: eventData.location_address,
+              lat: eventData.location_lat || null,
+              lng: eventData.location_lng || null
+            },
+            location_point: locationPoint,
             city_id: cityId,
             category: eventData.category,
-            is_free: eventData.is_free,
-            status: 'unclaimed',
+            price: eventData.is_free ? 'free' : 'paid',
+            status: 'active',
             confidence_score: confidenceScore,
             source_url: eventData.source_url,
             import_source: 'ai_agent',

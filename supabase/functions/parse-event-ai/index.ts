@@ -13,7 +13,7 @@ const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 const GEMINI_MODEL = 'gemini-2.0-flash-exp'
 
 interface ParsedEvent {
-  title: string
+  name: string
   description: string
   start_time: string
   end_time: string
@@ -32,11 +32,13 @@ async function parseEventWithGemini(rawContent: string, sourceType: string): Pro
   const prompt = `You are an expert event data extractor. Extract structured public event information from the following ${sourceType} content.
 
 Extract ALL events found in the content. For each event, provide:
-- title: event name
+- name: event name
 - description: full description
 - start_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS)
 - end_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS)
 - location_address: full address
+- location_lat: latitude as number (if available)
+- location_lng: longitude as number (if available)
 - category: one of (music, sports, arts, food, tech, education, business, community, other)
 - is_free: true if free entry, false if paid
 - original_language: detected language code (en, de, et, etc)
