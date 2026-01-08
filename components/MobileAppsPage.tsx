@@ -91,23 +91,42 @@ const MobileAppsPage: React.FC = () => {
     ]
   };
 
-  const screenshots = [
-    {
-      title: 'Login Screen',
-      description: 'Enter your scanner code',
-      image: '/assets/screenshots/scanner-login.png'
-    },
-    {
-      title: 'Scanner View',
-      description: 'Scan tickets with camera',
-      image: '/assets/screenshots/scanner-view.png'
-    },
-    {
-      title: 'Validation Result',
-      description: 'Instant ticket validation',
-      image: '/assets/screenshots/scanner-result.png'
-    }
-  ];
+  const screenshots = {
+    scanner: [
+      {
+        title: 'Login Screen',
+        description: 'Enter your scanner code',
+        image: '/assets/screenshots/scanner-login.png'
+      },
+      {
+        title: 'Scanner View',
+        description: 'Scan tickets with camera',
+        image: '/assets/screenshots/scanner-view.png'
+      },
+      {
+        title: 'Validation Result',
+        description: 'Instant ticket validation',
+        image: '/assets/screenshots/scanner-result.png'
+      }
+    ],
+    livemap: [
+      {
+        title: 'Map View',
+        description: 'Interactive event map',
+        image: '/assets/screenshots/livemap-map.png'
+      },
+      {
+        title: 'Event Details',
+        description: 'View event information',
+        image: '/assets/screenshots/livemap-details.png'
+      },
+      {
+        title: 'My Tickets',
+        description: 'Manage your tickets',
+        image: '/assets/screenshots/livemap-tickets.png'
+      }
+    ]
+  };
 
   const handleDownload = (platform: 'ios' | 'android') => {
     if (platform === 'android') {
@@ -228,7 +247,7 @@ const MobileAppsPage: React.FC = () => {
           <div className="relative max-w-4xl mx-auto">
             <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-3xl p-8 backdrop-blur-sm border border-slate-800">
               <div className="grid md:grid-cols-3 gap-6">
-                {screenshots.map((screenshot, index) => (
+                {screenshots[selectedApp].map((screenshot, index) => (
                   <div key={index} className="text-center">
                     <div className="bg-slate-900 rounded-2xl p-4 mb-4 aspect-[9/16] flex items-center justify-center border border-slate-800">
                       <div className="text-slate-600">
