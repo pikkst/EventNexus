@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Search,
   Upload,
+  Crown,
   X,
   Ticket as TicketIcon
 } from 'lucide-react';
@@ -87,7 +88,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     locationCity: '',
     visibility: 'public',
     price: 0,
-    max_capacity: 100
+    max_capacity: 100,
+    is_multilingual: false // Enable AI auto-translation for viewers
   });
 
   const [ticketTemplates, setTicketTemplates] = useState<Array<{
@@ -606,54 +608,88 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         console.log('ℹ️ No image preview, creating event without image');
       }
 
-      // AUTO-TRANSLATE FOR PRO+ USERS
-      let translations: { [key: string]: string } = {};
+      // AUTO-TRANSLATE FOR MULTILINGUAL EVENTS (Pro+ tier only)
+      let translations: { [key: string]: any } = {};
       const description = formData.tagline || formData.name;
       
-      if (user.subscription_tier !== 'free') {
-        console.log('🌐 Auto-translating event description for Pro+ tier...');
+      // Detect original language from event location
+      const { detectLanguageFromLocation, getAutoTranslationLanguages } = await import('../services/languageService');
+      const originalLanguage = detectLanguageFromLocation(
+        formData.locationCity || 'New York',
+        formData.locationAddress || formData.location
+      );
+      
+      if (formData.is_multilingual && user.subscription_tier !== 'free') {
+        console.log(`🌐 Auto-translating multilingual event from ${originalLanguage}...`);
         
-        const targetLanguages = [
-          { code: 'es', name: 'Spanish' },
-          { code: 'fr', name: 'French' },
-          { code: 'de', name: 'German' },
-          { code: 'pt', name: 'Portuguese' },
-          { code: 'it', name: 'Italian' }
-        ];
+        // Get target languages based on tier
+        const targetLangs = getAutoTranslationLanguages(user.subscription_tier, originalLanguage);
+        console.log('📝 Target languages:', targetLangs);
+        
+        const languageNames: { [key: string]: string } = {
+          en: 'English', et: 'Estonian', fi: 'Finnish', sv: 'Swedish',
+          de: 'German', fr: 'French', es: 'Spanish', ru: 'Russian', pl: 'Polish'
+        };
         
         try {
-          const translationPromises = targetLanguages.map(async ({ code, name }) => {
-            try {
-              console.log(`🔄 Translating to ${name}...`);
-              const translated = await translateDescription(
-                description,
-                name,
-                user.id,
-                user.subscription_tier
-              );
-              console.log(`✅ ${name} translation complete`);
-              return { lang: code, text: translated };
-            } catch (error) {
-              console.error(`⚠️ ${name} translation failed:`, error);
-              return { lang: code, text: description }; // Fallback to original
-            }
-          });
+          const translationPromises = targetLangs
+            .filter(code => code !== originalLanguage) // Don't translate to original language
+            .map(async (code) => {
+              try {
+                const name = languageNames[code];
+                console.log(`🔄 Translating to ${name}...`);
+                
+                // Translate name, description, and aboutText
+                const [translatedName, translatedDesc, translatedAbout] = await Promise.all([
+                  translateDescription(formData.name, name, user.id, user.subscription_tier),
+                  translateDescription(description, name, user.id, user.subscription_tier),
+                  formData.aboutText ? translateDescription(formData.aboutText, name, user.id, user.subscription_tier) : Promise.resolve('')
+                ]);
+                
+                console.log(`✅ ${name} translation complete`);
+                return {
+                  lang: code,
+                  data: {
+                    name: translatedName,
+                    description: translatedDesc,
+                    aboutText: translatedAbout || undefined
+                  }
+                };
+              } catch (error) {
+                console.error(`⚠️ ${languageNames[code]} translation failed:`, error);
+                // Fallback to original
+                return {
+                  lang: code,
+                  data: {
+                    name: formData.name,
+                    description: description,
+                    aboutText: formData.aboutText || undefined
+                  }
+                };
+              }
+            });
           
           const results = await Promise.all(translationPromises);
-          results.forEach(({ lang, text }) => {
-            translations[lang] = text;
+          results.forEach(({ lang, data }) => {
+            translations[lang] = data;
           });
           
-          // Add original English
-          translations['en'] = description;
+          // Add original language version
+          translations[originalLanguage] = {
+            name: formData.name,
+            description: description,
+            aboutText: formData.aboutText || undefined
+          };
           
           console.log('✅ All translations complete:', Object.keys(translations));
         } catch (error) {
           console.error('⚠️ Translation process failed, continuing without translations:', error);
-          // Continue without translations if the whole process fails
+          translations = {};
         }
+      } else if (formData.is_multilingual && user.subscription_tier === 'free') {
+        console.log('⚠️ Free tier cannot enable multilingual - ignoring flag');
       } else {
-        console.log('ℹ️ Free tier - skipping auto-translation');
+        console.log('ℹ️ Multilingual not enabled - skipping translation');
       }
 
       console.log('📦 Preparing event data...');
@@ -679,11 +715,13 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         attendeesCount: 0,
         maxAttendees: formData.max_capacity,
         isFeatured: user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise',
+        is_multilingual: formData.is_multilingual && user.subscription_tier !== 'free',
+        original_language: originalLanguage,
+        translations: Object.keys(translations).length > 0 ? translations : undefined,
         customBranding: (user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && user.branding ? {
           primaryColor: user.branding.primaryColor,
           logo: user.avatar
-        } : undefined,
-        translations: Object.keys(translations).length > 0 ? translations : undefined
+        } : undefined
       };
 
       console.log('📤 Calling createEvent()...');
@@ -1231,6 +1269,64 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   <p className="text-xs text-slate-400">Hidden from map. Only accessible via secret link or code.</p>
                 </div>
               </button>
+            </div>
+
+            {/* Multilingual Support */}
+            <div className="pt-4 border-t border-slate-800 space-y-3">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <Globe className="w-5 h-5 text-indigo-400" />
+                Language & Reach
+              </h3>
+              
+              <label className="flex items-start gap-4 p-4 rounded-2xl border border-slate-800 bg-slate-900 cursor-pointer hover:border-indigo-500/50 transition-colors">
+                <input 
+                  type="checkbox"
+                  checked={formData.is_multilingual}
+                  onChange={(e) => setFormData({...formData, is_multilingual: e.target.checked})}
+                  className="mt-1 w-5 h-5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-950"
+                />
+                <div className="flex-1">
+                  <h4 className="font-bold mb-1">Enable Multilingual Event 🌍</h4>
+                  <p className="text-xs text-slate-400 mb-2">
+                    AI automatically translates your event for international visitors based on their language preferences.
+                  </p>
+                  <div className="text-xs space-y-1">
+                    <p className="text-slate-500">
+                      ✓ Visitors see event in their own language
+                    </p>
+                    <p className="text-slate-500">
+                      ✓ QR code posters auto-detect language
+                    </p>
+                    <p className="text-slate-500">
+                      ✓ Instant translation for 9 languages
+                    </p>
+                    {user.subscription_tier === 'free' && (
+                      <p className="text-amber-400 flex items-center gap-1 mt-2">
+                        <Crown className="w-3 h-3" />
+                        Available for Pro, Premium, and Enterprise users
+                      </p>
+                    )}
+                    {user.subscription_tier === 'pro' && (
+                      <p className="text-green-400 mt-2">
+                        ✓ Translates to 3 major languages
+                      </p>
+                    )}
+                    {(user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && (
+                      <p className="text-green-400 mt-2">
+                        ✓ Translates to all 9 supported languages
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </label>
+
+              {formData.is_multilingual && user.subscription_tier === 'free' && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                  <p className="text-xs text-amber-300">
+                    💡 Upgrade to Pro or higher to unlock multilingual events. Your event will reach global audiences automatically!
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         );

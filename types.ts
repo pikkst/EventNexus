@@ -1,6 +1,12 @@
 
 export type EventVisibility = 'public' | 'private' | 'semi-private';
 
+export interface EventTranslation {
+  name: string;
+  description: string;
+  aboutText?: string;
+}
+
 export interface EventNexusEvent {
   id: string;
   name: string;
@@ -29,8 +35,14 @@ export interface EventNexusEvent {
     primaryColor?: string;
     logo?: string;
   };
+  is_multilingual?: boolean; // If true, AI auto-translates for viewers
+  original_language?: string; // Original language code event was created in
   translations?: {
-    [languageCode: string]: string; // e.g., { "en": "English", "es": "Español", "fr": "Français" }
+    [languageCode: string]: EventTranslation; // Structured translations
+  };
+  // Legacy support for old translation format
+  legacy_translations?: {
+    [languageCode: string]: string;
   };
   archived_at?: string; // When the event was archived by organizer
   archived_by?: string; // User ID who archived the event
@@ -240,6 +252,7 @@ export interface User {
   banned_at?: string;
   ban_reason?: string;
   tutorial_completed?: boolean; // Tracks if user has completed onboarding tutorial
+  preferred_language?: string; // User's preferred language code (e.g., 'en', 'et', 'fi')
 }
 
 export type TicketType = 'general' | 'vip' | 'early_bird' | 'day_pass' | 'multi_day' | 'backstage' | 'student' | 'group';
