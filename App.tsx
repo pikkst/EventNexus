@@ -723,6 +723,7 @@ const App: React.FC = () => {
         
         <Navbar 
           toggleSidebar={() => setSidebarOpen(true)} 
+          sidebarOpen={sidebarOpen}
           user={user} 
           notifications={notifications}
           onMarkRead={handleMarkRead}
@@ -837,7 +838,7 @@ const ConditionalFooter = () => {
   return <Footer />;
 }
 
-const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLogout, onOpenAuth }: any) => {
+const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLogout, onOpenAuth, sidebarOpen }: any) => {
   const [showNotifs, setShowNotifs] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
