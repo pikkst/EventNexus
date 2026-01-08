@@ -1,6 +1,8 @@
 package eu.eventnexus.scanner.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import eu.eventnexus.scanner.data.EventInfo
 import eu.eventnexus.scanner.data.ScanResult
@@ -17,9 +19,10 @@ import java.util.*
  * ViewModel for scanner functionality
  * Manages authentication state, scanning state, and API communication
  */
-class ScannerViewModel : ViewModel() {
+class ScannerViewModel(application: Application) : AndroidViewModel(application) {
     
     private val api: SupabaseApi = SupabaseClient.api
+    private val prefs = application.getSharedPreferences("scanner_prefs", Context.MODE_PRIVATE)
     
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
@@ -46,6 +49,9 @@ class ScannerViewModel : ViewModel() {
     private var scannerCode: String? = null
     
     init {
+        // Restore saved session if exists
+        restoreSession()
+        
         // Update session duration every second
         viewModelScope.launch {
             while (true) {
@@ -63,6 +69,65 @@ class ScannerViewModel : ViewModel() {
                 kotlinx.coroutines.delay(1000)
             }
         }
+    }
+    
+    /**
+     * Restore saved session from SharedPreferences
+     */
+    private fun restoreSession() {
+        val savedCode = prefs.getString("scanner_code", null)
+        val savedCodeId = prefs.getString("scanner_code_id", null)
+        val savedEventId = prefs.getString("event_id", null)
+        val savedEventName = prefs.getString("event_name", null)
+        val savedEventDate = prefs.getString("event_date", null)
+        val savedEventLocation = prefs.getString("event_location", null)
+        val savedSessionStart = prefs.getLong("session_start", 0)
+        val savedScannedCount = prefs.getInt("scanned_count", 0)
+        
+        if (!savedCode.isNullOrEmpty() && !savedCodeId.isNullOrEmpty()) {
+            scannerCode = savedCode
+            _scannerCodeId.value = savedCodeId
+            _scannedCount.value = savedScannedCount
+            
+            if (savedSessionStart > 0) {
+                _sessionStartTime.value = savedSessionStart
+            }
+            
+            if (!savedEventId.isNullOrEmpty() && !savedEventName.isNullOrEmpty()) {
+                _currentEvent.value = EventInfo(
+                    id = savedEventId,
+                    name = savedEventName,
+                    date = savedEventDate,
+                    location = savedEventLocation
+                )
+            }
+            
+            _isAuthenticated.value = true
+        }
+    }
+    
+    /**
+     * Save session to SharedPreferences
+     */
+    private fun saveSession() {
+        prefs.edit().apply {
+            putString("scanner_code", scannerCode)
+            putString("scanner_code_id", _scannerCodeId.value)
+            putString("event_id", _currentEvent.value?.id)
+            putString("event_name", _currentEvent.value?.name)
+            putString("event_date", _currentEvent.value?.date)
+            putString("event_location", _currentEvent.value?.location)
+            putLong("session_start", _sessionStartTime.value ?: 0)
+            putInt("scanned_count", _scannedCount.value)
+            apply()
+        }
+    }
+    
+    /**
+     * Clear saved session
+     */
+    private fun clearSession() {
+        prefs.edit().clear().apply()
     }
     
     /**
@@ -85,6 +150,9 @@ class ScannerViewModel : ViewModel() {
                     }
                     
                     _isAuthenticated.value = true
+                    
+                    // Save session to SharedPreferences
+                    saveSession()
                     
                     // Record usage
                     result.scanner_code_id?.let { recordUsage(it) }
@@ -191,5 +259,6 @@ class ScannerViewModel : ViewModel() {
         _scannedCount.value = 0
         _isScanning.value = false
         _sessionStartTime.value = null
+        clearSession()
     }
 }

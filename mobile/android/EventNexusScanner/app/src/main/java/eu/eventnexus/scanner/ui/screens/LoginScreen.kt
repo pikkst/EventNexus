@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    viewModel: ScannerViewModel = viewModel()
+    viewModel: ScannerViewModel
 ) {
     var scannerCode by remember { mutableStateOf("") }
     var isAuthenticating by remember { mutableStateOf(false) }
