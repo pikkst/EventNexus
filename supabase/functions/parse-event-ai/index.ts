@@ -10,7 +10,7 @@ const corsHeaders = {
 }
 
 const GEMINI_API_KEY = Deno.env.get('API_KEY') || Deno.env.get('GEMINI_API_KEY')
-const GEMINI_MODEL = 'gemini-2.5-pro'
+const GEMINI_MODEL = 'gemini-2.0-flash-exp' // Faster model for HTML parsing
 
 interface ParsedEvent {
   name: string
@@ -29,13 +29,31 @@ interface ParsedEvent {
 }
 
 async function parseEventWithGemini(rawContent: string, sourceType: string, retries = 3): Promise<ParsedEvent[]> {
-  const prompt = `You are an expert event data extractor. Extract structured public event information from the following ${sourceType} content.
+  // Get current time in Europe/Tallinn timezone
+  const now = new Date()
+  const estoniaTime = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Tallinn',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).format(now)
+  
+  const prompt = `You are an expert event data extractor. Current date and time in Estonia is: ${estoniaTime} (DD/MM/YYYY HH:MM:SS).
 
-Extract ALL events found in the content. For each event, provide:
+CRITICAL - ONLY FUTURE EVENTS:
+Today is 09/01/2026. Extract ONLY events starting AFTER this moment.
+SKIP: events from 2025, 2024, December 2025, etc.
+INCLUDE: events from 09/01/2026 onwards with future times.
+
+For each FUTURE event, provide:
 - name: event name
 - description: full description
-- start_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS)
-- end_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS)
+- start_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS) in local timezone - MUST be in the future
+- end_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS) in local timezone - MUST be in the future
 - location_address: full address
 - location_lat: latitude as number (if available)
 - location_lng: longitude as number (if available)
@@ -46,10 +64,10 @@ Extract ALL events found in the content. For each event, provide:
 - organizer: organizer name if mentioned
 - image_url: event image URL if available
 
-Return ONLY valid JSON array of events. No markdown, no explanations.
+Return ONLY valid JSON array of FUTURE events. No markdown, no explanations. Skip all past events.
 
 Content to parse:
-${rawContent.slice(0, 8000)}` // Limit content length
+${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -64,7 +82,7 @@ ${rawContent.slice(0, 8000)}` // Limit content length
             }],
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 4096,
+              maxOutputTokens: 8192,
             }
           })
         }
@@ -91,7 +109,26 @@ ${rawContent.slice(0, 8000)}` // Limit content length
 
       try {
         const events = JSON.parse(jsonText)
-        return Array.isArray(events) ? events : [events]
+        const eventArray = Array.isArray(events) ? events : [events]
+        
+        // Server-side filter: remove past events (timezone-aware)
+        const now = new Date()
+        const futureEvents = eventArray.filter((event: ParsedEvent) => {
+          if (!event.start_time) return false
+          
+          // Parse event time and compare
+          const eventStart = new Date(event.start_time)
+          const isFuture = eventStart > now
+          
+          if (!isFuture) {
+            console.log(`Filtered out past event: "${event.name}" (${event.start_time})`)
+          }
+          
+          return isFuture
+        })
+        
+        console.log(`Filtered ${eventArray.length} events -> ${futureEvents.length} future events`)
+        return futureEvents
       } catch (error) {
         console.error('Failed to parse Gemini response:', text)
         throw new Error('Invalid JSON response from AI')

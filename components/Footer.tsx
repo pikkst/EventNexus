@@ -32,9 +32,9 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           {/* Brand Column */}
           <div className="space-y-6">
-            <Link to="/" className="flex items-center gap-2 font-bold text-2xl tracking-tighter text-white">
+            <Link to="/" className="flex items-center gap-2 font-bold text-2xl tracking-tighter text-white" aria-label="EventNexus home">
               <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
-                <Compass className="w-6 h-6 text-white" />
+                <Compass className="w-6 h-6 text-white" aria-hidden="true" />
               </div>
               <span>EventNexus</span>
             </Link>
@@ -80,8 +80,9 @@ const Footer: React.FC = () => {
                 type="email" 
                 placeholder="email@nexus.com" 
                 className="w-full bg-slate-900 border border-slate-800 rounded-2xl px-5 py-4 text-xs text-white outline-none focus:border-indigo-500 transition-all"
+                aria-label="Email address for newsletter updates"
               />
-              <button className="absolute right-2 top-2 bottom-2 bg-indigo-600 px-4 rounded-xl text-[10px] font-black uppercase text-white shadow-lg">Join</button>
+              <button className="absolute right-2 top-2 bottom-2 bg-indigo-600 px-4 rounded-xl text-[10px] font-black uppercase text-white shadow-lg" aria-label="Subscribe to newsletter">Join</button>
             </div>
           </div>
         </div>

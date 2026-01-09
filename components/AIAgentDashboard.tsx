@@ -59,15 +59,10 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   });
   
   // Scheduler state
-  const [schedulerConfig, setSchedulerConfig] = useState({
-    fetch_interval_hours: 24,
-    parse_interval_hours: 1,
-    validate_interval_hours: 1,
-    auto_publish: true,
-    confidence_threshold: 80,
-    enabled: true
-  });
+  const [schedulerConfigs, setSchedulerConfigs] = useState<any[]>([]);
+  const [activeCronJobs, setActiveCronJobs] = useState<any[]>([]);
   const [savingScheduler, setSavingScheduler] = useState(false);
+  const [loadingScheduler, setLoadingScheduler] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -363,26 +358,76 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   }
 
   async function loadSchedulerConfig() {
-    // Load from localStorage or database
-    const saved = localStorage.getItem('ai_scheduler_config');
-    if (saved) {
-      setSchedulerConfig(JSON.parse(saved));
+    try {
+      setLoadingScheduler(true);
+      
+      // Load scheduler configs from database
+      const { data: configs, error: configError } = await supabase
+        .from('scheduler_configs')
+        .select('*')
+        .order('job_name');
+      
+      if (configError) throw configError;
+      setSchedulerConfigs(configs || []);
+      
+      // Load active cron jobs
+      const { data: cronData, error: cronError } = await supabase
+        .rpc('get_active_cron_jobs');
+      
+      if (cronError) {
+        console.warn('Failed to load cron jobs:', cronError);
+      } else {
+        setActiveCronJobs(cronData || []);
+      }
+    } catch (error: any) {
+      console.error('Failed to load scheduler config:', error);
+      alert(`Failed to load scheduler: ${error.message}`);
+    } finally {
+      setLoadingScheduler(false);
     }
   }
 
-  async function saveSchedulerConfig() {
+  async function saveSchedulerJob(jobName: string, intervalHours: number, enabled: boolean) {
     try {
       setSavingScheduler(true);
-      // Save to localStorage (in production, save to database)
-      localStorage.setItem('ai_scheduler_config', JSON.stringify(schedulerConfig));
       
-      alert('Scheduler configuration saved successfully!\\nNote: Actual scheduling requires cron setup in Supabase Dashboard.');
-      setSavingScheduler(false);
+      const functionUrls: Record<string, string> = {
+        'fetch-sources': 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/fetch-sources',
+        'parse-events': 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/parse-event-ai',
+        'validate-events': 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/validate-event'
+      };
+      
+      const { data, error } = await supabase.rpc('schedule_ai_pipeline_job', {
+        p_job_name: jobName,
+        p_interval_hours: intervalHours,
+        p_function_url: functionUrls[jobName],
+        p_enabled: enabled
+      });
+      
+      if (error) throw error;
+      
+      if (data.success) {
+        await loadSchedulerConfig();
+        alert(`✅ ${jobName} scheduled successfully!\nCron: ${data.cron_expression}\nStatus: ${enabled ? 'Active' : 'Inactive'}`);
+      } else {
+        throw new Error(data.error || 'Unknown error');
+      }
     } catch (error: any) {
-      console.error('Failed to save scheduler config:', error);
-      alert(`Failed to save configuration: ${error.message}`);
+      console.error('Failed to save scheduler:', error);
+      alert(`❌ Failed to schedule job: ${error.message}`);
+    } finally {
       setSavingScheduler(false);
     }
+  }
+
+  async function toggleSchedulerJob(jobName: string, currentEnabled: boolean) {
+    const config = schedulerConfigs.find(c => c.job_name === jobName);
+    if (!config) return;
+    
+    // Extract interval from cron expression (e.g., "0 */24 * * *" -> 24)
+    const cronMatch = config.schedule_cron.match(/\*\/(\d+)/);
+    const intervalHours = cronMatch ? parseInt(cronMatch[1]) : 24;
+    await saveSchedulerJob(jobName, intervalHours, !currentEnabled);
   }
 
   useEffect(() => {
@@ -837,173 +882,148 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">AI Pipeline Scheduler</h3>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${schedulerConfig.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                      {schedulerConfig.enabled ? 'Enabled' : 'Disabled'}
-                    </span>
-                  </div>
+                  <button
+                    onClick={loadSchedulerConfig}
+                    disabled={loadingScheduler}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loadingScheduler ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
                 </div>
 
-                <div className="border border-indigo-200 bg-indigo-50 rounded-lg p-4">
+                <div className="border border-green-200 bg-green-50 rounded-lg p-4">
                   <div className="flex gap-3">
-                    <AlertCircle className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-indigo-900">
-                      <p className="font-medium mb-1">Production Scheduler Setup Required</p>
-                      <p>These settings are saved locally. To enable automatic scheduling in production:</p>
-                      <ol className="list-decimal ml-4 mt-2 space-y-1">
-                        <li>Go to Supabase Dashboard → Database → Cron Jobs</li>
-                        <li>Create cron jobs for: <code className="px-1 bg-indigo-100 rounded">fetch-sources</code>, <code className="px-1 bg-indigo-100 rounded">parse-event-ai</code>, <code className="px-1 bg-indigo-100 rounded">validate-event</code></li>
-                        <li>Use the intervals configured below</li>
-                      </ol>
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-green-900">
+                      <p className="font-medium mb-1">✅ Automatic Scheduler Active</p>
+                      <p>Cron jobs are managed automatically through the UI. Enable/disable jobs below and they will be immediately scheduled in the database.</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="border border-gray-200 rounded-lg p-6 space-y-6">
-                  <div>
-                    <label className="flex items-center gap-2 cursor-pointer mb-6">
-                      <input
-                        type="checkbox"
-                        checked={schedulerConfig.enabled}
-                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, enabled: e.target.checked })}
-                        className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                      />
-                      <span className="text-base font-medium text-gray-900">Enable Automatic Pipeline Execution</span>
-                    </label>
+                {loadingScheduler ? (
+                  <div className="flex items-center justify-center py-12">
+                    <RefreshCw className="w-8 h-8 animate-spin text-indigo-600" />
                   </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Fetch Sources Job */}
+                    {schedulerConfigs.map((config) => {
+                      const isActive = activeCronJobs.some(job => job.jobname === `ai_agent_${config.job_name.replace('-', '_')}`);
+                      const jobLabels: Record<string, string> = {
+                        'fetch-sources': 'Fetch Event Sources',
+                        'parse-events': 'Parse Events with AI',
+                        'validate-events': 'Validate & Auto-Publish'
+                      };
+                      const jobDescriptions: Record<string, string> = {
+                        'fetch-sources': 'Fetches new events from configured city calendars and RSS feeds',
+                        'parse-events': 'Extracts structured event data from raw HTML/XML using Gemini AI',
+                        'validate-events': 'Validates parsed events and auto-publishes high-confidence matches'
+                      };
+                      
+                      return (
+                        <div key={config.job_name} className="border border-gray-200 rounded-lg p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="text-base font-semibold text-gray-900">{jobLabels[config.job_name]}</h4>
+                                <div className="flex items-center gap-2">
+                                  {config.is_enabled && isActive ? (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1">
+                                      <CheckCircle className="w-3 h-3" />
+                                      Active
+                                    </span>
+                                  ) : config.is_enabled ? (
+                                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">Scheduled</span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">Disabled</span>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-3">{jobDescriptions[config.job_name]}</p>
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <span className="text-gray-500">Schedule:</span>
+                                  <p className="font-mono text-xs text-gray-900 mt-1">{config.schedule_cron}</p>
+                                </div>
+                                {config.last_run_at && (
+                                  <div>
+                                    <span className="text-gray-500">Last Run:</span>
+                                    <p className="text-xs text-gray-900 mt-1">{new Date(config.last_run_at).toLocaleString()}</p>
+                                  </div>
+                                )}
+                                <div>
+                                  <span className="text-gray-500">Total Runs:</span>
+                                  <p className="text-xs text-gray-900 mt-1">{config.run_count || 0}</p>
+                                </div>
+                                {config.error_count > 0 && (
+                                  <div>
+                                    <span className="text-red-500">Errors:</span>
+                                    <p className="text-xs text-red-600 mt-1">{config.error_count}</p>
+                                  </div>
+                                )}
+                              </div>
+                              {config.last_error && (
+                                <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                                  <strong>Last Error:</strong> {config.last_error}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => toggleSchedulerJob(config.job_name, config.is_enabled)}
+                              disabled={savingScheduler}
+                              className={`ml-4 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 ${
+                                config.is_enabled
+                                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+                              } disabled:opacity-50`}
+                            >
+                              {config.is_enabled ? (
+                                <>
+                                  <Pause className="w-4 h-4" />
+                                  Disable
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="w-4 h-4" />
+                                  Enable
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Fetch Sources Interval (hours)
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="168"
-                        value={schedulerConfig.fetch_interval_hours}
-                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, fetch_interval_hours: parseInt(e.target.value) || 24 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">How often to fetch new events from sources (recommended: 24h)</p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Parse Events Interval (hours)
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="24"
-                        value={schedulerConfig.parse_interval_hours}
-                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, parse_interval_hours: parseInt(e.target.value) || 1 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">How often to parse raw events (recommended: 1h)</p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Validate Events Interval (hours)
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="24"
-                        value={schedulerConfig.validate_interval_hours}
-                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, validate_interval_hours: parseInt(e.target.value) || 1 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">How often to validate parsed events (recommended: 1h)</p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Auto-Publish Confidence Threshold
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={schedulerConfig.confidence_threshold}
-                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, confidence_threshold: parseInt(e.target.value) || 80 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Events above this score auto-publish (current: {schedulerConfig.confidence_threshold}%)</p>
-                    </div>
+                    {schedulerConfigs.length === 0 && (
+                      <div className="text-center py-12 text-gray-500">
+                        <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <p>No scheduler jobs configured. Please run the scheduler migration.</p>
+                      </div>
+                    )}
                   </div>
+                )}
 
-                  <div className="border-t border-gray-200 pt-6">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={schedulerConfig.auto_publish}
-                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, auto_publish: e.target.checked })}
-                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">
-                        Auto-publish validated events (recommended for production)
-                      </span>
-                    </label>
-                    <p className="text-xs text-gray-500 ml-6 mt-1">
-                      When disabled, all events go to review queue regardless of confidence score
-                    </p>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      onClick={saveSchedulerConfig}
-                      disabled={savingScheduler}
-                      className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {savingScheduler ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-4 h-4" />
-                          Save Configuration
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Cron Job Examples */}
-                <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-                  <h4 className="font-medium text-gray-900 mb-3">Example Cron Job SQL (for Supabase)</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">Fetch Sources (every {schedulerConfig.fetch_interval_hours}h):</p>
-                      <pre className="text-xs bg-gray-800 text-green-400 p-3 rounded overflow-x-auto">
-{`SELECT cron.schedule(
-  'fetch-sources-job',
-  '0 */${schedulerConfig.fetch_interval_hours} * * *',
-  $$SELECT net.http_post(
-    url:='https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/fetch-sources',
-    headers:='{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb
-  )$$
-);`}
-                      </pre>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">Validate Events (every {schedulerConfig.validate_interval_hours}h):</p>
-                      <pre className="text-xs bg-gray-800 text-green-400 p-3 rounded overflow-x-auto">
-{`SELECT cron.schedule(
-  'validate-event-job',
-  '0 */${schedulerConfig.validate_interval_hours} * * *',
-  $$SELECT net.http_post(
-    url:='https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/validate-event',
-    headers:='{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb
-  )$$
-);`}
-                      </pre>
+                {/* Active Cron Jobs Info */}
+                {activeCronJobs.length > 0 && (
+                  <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                    <h4 className="font-medium text-gray-900 mb-3">Active Cron Jobs in Database</h4>
+                    <div className="space-y-2">
+                      {activeCronJobs.map((job, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-sm py-2 px-3 bg-white rounded border border-gray-200">
+                          <div>
+                            <span className="font-mono text-xs text-gray-900">{job.jobname}</span>
+                            <p className="text-xs text-gray-500 mt-1">{job.schedule}</p>
+                          </div>
+                          <span className={`px-2 py-1 rounded text-xs ${job.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                            {job.active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 

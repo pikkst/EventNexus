@@ -20,8 +20,19 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get validated parsed events ready for publishing
-    const { data: parsedEvents, error: parsedError } = await supabaseClient
+    // Get parsed_event_id from request body if provided
+    let parsedEventId: string | null = null
+    if (req.method === 'POST') {
+      try {
+        const body = await req.json()
+        parsedEventId = body.parsed_event_id || null
+      } catch {
+        // No body or invalid JSON - will fetch all validated events
+      }
+    }
+
+    // Build query for validated parsed events ready for publishing
+    let query = supabaseClient
       .from('parsed_events')
       .select(`
         *,
@@ -33,7 +44,15 @@ serve(async (req) => {
       .eq('validation_status', 'validated')
       .gte('event_confidence.final_score', 60)
       .is('event_confidence.event_id', null) // Not yet published
-      .limit(20)
+
+    // If specific parsed_event_id provided, filter for it
+    if (parsedEventId) {
+      query = query.eq('id', parsedEventId)
+    } else {
+      query = query.limit(20)
+    }
+
+    const { data: parsedEvents, error: parsedError } = await query
 
     if (parsedError) throw parsedError
 
@@ -48,16 +67,18 @@ serve(async (req) => {
       try {
         const eventData = parsedEvent.structured_json
         const cityId = parsedEvent.raw_events.event_sources.city_id
-        const confidenceScore = parsedEvent.event_confidence[0].final_score
+        const confidenceScore = parsedEvent.event_confidence[0]?.final_score || 0
 
         // Check for duplicates
+        const eventStartTime = new Date(eventData.start_time)
+        const eventDateStr = eventStartTime.toISOString().split('T')[0]
+        
         const { data: existingEvents } = await supabaseClient
           .from('events')
-          .select('id, name, start_time, location_point')
+          .select('id, name, date, location_point')
           .eq('city_id', cityId)
           .eq('name', eventData.name)
-          .gte('start_time', eventData.start_time)
-          .lte('start_time', eventData.start_time)
+          .eq('date', eventDateStr)
 
         if (existingEvents && existingEvents.length > 0) {
           // Duplicate found - update existing event
@@ -67,7 +88,7 @@ serve(async (req) => {
             .from('events')
             .update({
               description: eventData.description,
-              image_url: eventData.image_url || null,
+              image: eventData.image_url || null,
               last_ai_update: new Date().toISOString(),
             })
             .eq('id', existing.id)
@@ -99,6 +120,12 @@ serve(async (req) => {
 
         // Create new event
         const startTime = new Date(eventData.start_time)
+        
+        // Extract date and time separately (both required by schema)
+        const isoString = startTime.toISOString() // "2026-03-20T18:00:00.000Z"
+        const [dateStr, timeStr] = isoString.split('T')
+        const timeOnly = timeStr.split('.')[0] // "18:00:00"
+        
         const locationPoint = eventData.location_lat && eventData.location_lng
           ? `POINT(${eventData.location_lng} ${eventData.location_lat})`
           : null
@@ -108,24 +135,20 @@ serve(async (req) => {
           .insert({
             name: eventData.name,
             description: eventData.description,
-            date: startTime.toISOString().split('T')[0],
-            time: startTime.toTimeString().split(' ')[0],
+            category: eventData.category,
+            date: dateStr,
+            time: timeOnly,
             location: {
               address: eventData.location_address,
               lat: eventData.location_lat || null,
               lng: eventData.location_lng || null
             },
             location_point: locationPoint,
-            city_id: cityId,
-            category: eventData.category,
-            price: eventData.is_free ? 'free' : 'paid',
+            price: 0,
+            organizer_id: 'f2ecf6c6-14c1-4dbd-894b-14ee6493d807', // Admin user
+            image: eventData.image_url || null,
             status: 'active',
-            confidence_score: confidenceScore,
-            source_url: eventData.source_url,
-            import_source: 'ai_agent',
-            original_language: parsedEvent.original_language,
-            image_url: eventData.image_url || null,
-            last_ai_update: new Date().toISOString(),
+            tags: eventData.category ? [eventData.category] : []
           })
           .select()
           .single()
