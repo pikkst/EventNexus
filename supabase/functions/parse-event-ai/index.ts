@@ -31,7 +31,18 @@ interface ParsedEvent {
   image_url?: string
 }
 
-async function parseEventWithGemini(rawContent: string, sourceType: string, supabaseClient: any, retries = 3): Promise<ParsedEvent[]> {
+// ✅ SOOVITUS 1: Return state object instead of raw array
+interface ParseResult {
+  events: ParsedEvent[]
+  rejected: ParsedEvent[]
+  meta: {
+    total_extracted: number
+    total_valid: number
+    total_rejected: number
+  }
+}
+
+async function parseEventWithGemini(rawContent: string, sourceType: string, supabaseClient: any, retries = 3): Promise<ParseResult> {
   // Get current time in Europe/Tallinn timezone
   const now = new Date()
   const estoniaTime = new Intl.DateTimeFormat('en-GB', {
@@ -183,9 +194,11 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
         const nowWithMargin = new Date(now.getTime() - 6 * 60 * 60 * 1000)
         const oneMonthLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // +30 days
         
+        const rejectedEvents: ParsedEvent[] = []
         const validEvents = eventArray.filter((event: ParsedEvent) => {
           if (!event.start_time) {
             console.log(`Filtered out event without start_time: "${event.name}"`)
+            rejectedEvents.push(event)
             return false
           }
           
@@ -195,8 +208,10 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
           
           if (!isFuture) {
             console.log(`Filtered out past event: "${event.name}" (${event.start_time}) - now: ${now.toISOString()}`)
+            rejectedEvents.push(event)
           } else if (!withinMonth) {
             console.log(`Filtered out event beyond 1 month: "${event.name}" (${event.start_time})`)
+            rejectedEvents.push(event)
           }
           
           return isFuture && withinMonth
@@ -204,7 +219,16 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
         
         console.log(`Filtered ${eventArray.length} events -> ${validEvents.length} valid events (future + within 30 days)`)
         await log(supabaseClient, 'parse-event-ai', 'success', 'Filtered events', { before: eventArray.length, after: validEvents.length })
-        return validEvents
+        
+        return {
+          events: validEvents,
+          rejected: rejectedEvents,
+          meta: {
+            total_extracted: eventArray.length,
+            total_valid: validEvents.length,
+            total_rejected: rejectedEvents.length
+          }
+        }
       } catch (error) {
         console.error('Failed to parse Gemini response:', text.substring(0, 1000))
         await log(supabaseClient, 'parse-event-ai', 'error', 'JSON parse failed - response may be incomplete', { 
@@ -228,7 +252,12 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
     }
   }
   
-  return []
+  // Should never reach here
+  return {
+    events: [],
+    rejected: [],
+    meta: { total_extracted: 0, total_valid: 0, total_rejected: 0 }
+  }
 }
 
 async function geocodeAddress(address: string, supabaseClient: any): Promise<{ lat: number; lng: number } | null> {
@@ -373,17 +402,34 @@ serve(async (req) => {
         }
 
         // Parse with AI
-        const parsedEvents = await parseEventWithGemini(
+        const parseResult = await parseEventWithGemini(
           rawEvent.raw_content,
           rawEvent.event_sources.type,
           supabaseClient
         )
 
-        console.log(`Extracted ${parsedEvents.length} events from raw event ${rawEvent.id}`)
-        await log(supabaseClient, 'parse-event-ai', parsedEvents.length > 0 ? 'success' : 'warning', `Extracted events from source`, { source_id: rawEvent.id, events_found: parsedEvents.length }, { source_id: rawEvent.id })
+        // ✅ SOOVITUS 2: Type guard before loop
+        if (!Array.isArray(parseResult.events)) {
+          throw new Error('parsedEvents is not iterable - parseResult.events must be an array')
+        }
+
+        // ✅ SOOVITUS 3: Pipeline state logging
+        console.log(`Parse pipeline state for source ${rawEvent.id}:`, {
+          extracted: parseResult.meta.total_extracted,
+          valid: parseResult.meta.total_valid,
+          rejected: parseResult.meta.total_rejected
+        })
+        await log(supabaseClient, 'parse-event-ai', 'info', 'Parse pipeline state', {
+          source_id: rawEvent.id,
+          extracted: parseResult.meta.total_extracted,
+          valid: parseResult.meta.total_valid,
+          rejected: parseResult.meta.total_rejected
+        }, { source_id: rawEvent.id })
+
+        await log(supabaseClient, 'parse-event-ai', parseResult.events.length > 0 ? 'success' : 'warning', `Extracted events from source`, { source_id: rawEvent.id, events_found: parseResult.events.length }, { source_id: rawEvent.id })
 
         // Geocode addresses
-        for (const event of parsedEvents) {
+        for (const event of parseResult.events) {
           if (event.location_address && !event.location_lat) {
             const coords = await geocodeAddress(event.location_address, supabaseClient)
             if (coords) {
@@ -394,7 +440,7 @@ serve(async (req) => {
         }
 
         // Store parsed events
-        for (const event of parsedEvents) {
+        for (const event of parseResult.events) {
           const { error: insertError } = await supabaseClient
             .from('parsed_events')
             .insert({
@@ -418,7 +464,8 @@ serve(async (req) => {
             decision_type: 'extraction',
             decision_result: 'success',
             reasoning: {
-              events_found: parsedEvents.length,
+              events_found: parseResult.events.length,
+              events_rejected: parseResult.meta.total_rejected,
               source_type: rawEvent.event_sources.type,
             },
             ai_model: GEMINI_MODEL,
@@ -435,7 +482,7 @@ serve(async (req) => {
         
         // TRACK: If 0 events extracted, increment failed_parse_count for this source
         // DEACTIVATE: If 3+ consecutive failed parses, mark source as inactive (outdated/moved site)
-        if (parsedEvents.length === 0) {
+        if (parseResult.events.length === 0) {
           const { data: sourceData } = await supabaseClient
             .from('event_sources')
             .select('failed_parse_count')
