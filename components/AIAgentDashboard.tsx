@@ -492,11 +492,10 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       
       console.log('City inserted successfully:', insertedCity);
       
-      alert(`✅ City added: ${cityData.city_name}, ${cityData.country}\n\nBootstrap will start automatically within 5 minutes.`);
+      alert(`✅ City added: ${cityData.city_name}, ${cityData.country}\n\n🤖 Auto-bootstrap queued! Sources will be discovered within 5 minutes.\n\nCheck Agent Logs to monitor progress.`);
       
-      // Automatically trigger bootstrap - use city_id not id
-      const cityId = insertedCity.city_id || insertedCity.id;
-      await triggerBootstrapForCity(cityId);
+      // Auto-bootstrap handled by database trigger → bootstrap_queue
+      // No need to call triggerBootstrapForCity() - cron job will process the queue
       
       // Reset form and reload cities
       setNewCity({ 
