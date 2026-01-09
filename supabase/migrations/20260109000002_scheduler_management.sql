@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS public.scheduler_configs (
 -- Enable RLS
 ALTER TABLE public.scheduler_configs ENABLE ROW LEVEL SECURITY;
 
--- Only admins can manage scheduler
+-- Only admins can manage scheduler (drop first if exists)
+DROP POLICY IF EXISTS "Admins can manage scheduler configs" ON public.scheduler_configs;
 CREATE POLICY "Admins can manage scheduler configs"
   ON public.scheduler_configs
   FOR ALL
