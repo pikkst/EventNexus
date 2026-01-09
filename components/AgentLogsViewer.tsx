@@ -78,22 +78,22 @@ export const AgentLogsViewer: React.FC<AgentLogsViewerProps> = ({
 
   const getLevelBadgeColor = (level: string) => {
     switch (level) {
-      case 'error': return 'bg-red-100 text-red-800';
-      case 'warning': return 'bg-yellow-100 text-yellow-800';
-      case 'success': return 'bg-green-100 text-green-800';
-      case 'debug': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
+      case 'error': return 'bg-red-500 text-white';
+      case 'warning': return 'bg-yellow-500 text-gray-900';
+      case 'success': return 'bg-green-500 text-white';
+      case 'debug': return 'bg-gray-600 text-white';
+      default: return 'bg-blue-500 text-white';
     }
   };
 
   const getAgentBadgeColor = (agent: string) => {
     switch (agent) {
-      case 'bootstrap-city': return 'bg-purple-100 text-purple-800';
-      case 'fetch-sources': return 'bg-indigo-100 text-indigo-800';
-      case 'parse-event-ai': return 'bg-pink-100 text-pink-800';
-      case 'validate-event': return 'bg-orange-100 text-orange-800';
-      case 'publish-event': return 'bg-teal-100 text-teal-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'bootstrap-city': return 'bg-purple-600 text-white';
+      case 'fetch-sources': return 'bg-indigo-600 text-white';
+      case 'parse-event-ai': return 'bg-pink-600 text-white';
+      case 'validate-event': return 'bg-orange-600 text-white';
+      case 'publish-event': return 'bg-teal-600 text-white';
+      default: return 'bg-gray-600 text-white';
     }
   };
 
@@ -195,10 +195,10 @@ export const AgentLogsViewer: React.FC<AgentLogsViewerProps> = ({
                     {/* Details */}
                     {log.details && (
                       <details className="mt-2">
-                        <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
+                        <summary className="text-xs text-blue-600 font-medium cursor-pointer hover:text-blue-800">
                           View details
                         </summary>
-                        <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-x-auto">
+                        <pre className="mt-2 p-3 bg-gray-900 text-gray-100 rounded text-xs overflow-x-auto font-mono">
                           {JSON.stringify(log.details, null, 2)}
                         </pre>
                       </details>
