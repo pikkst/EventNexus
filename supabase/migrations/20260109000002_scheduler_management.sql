@@ -179,7 +179,7 @@ RETURNS TABLE (
 BEGIN
   RETURN QUERY
   SELECT * FROM cron.job
-  WHERE jobname LIKE 'ai_agent_%';
+  WHERE cron.job.jobname LIKE 'ai_agent_%';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
