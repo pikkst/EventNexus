@@ -46,6 +46,20 @@ create table if not exists bootstrap_queue (
   updated_at timestamptz not null default now()
 );
 
+-- Add columns if they don't exist (for existing tables)
+do $$ 
+begin
+  if not exists (select 1 from information_schema.columns 
+                 where table_name = 'bootstrap_queue' and column_name = 'city_name') then
+    alter table bootstrap_queue add column city_name text not null default '';
+  end if;
+  
+  if not exists (select 1 from information_schema.columns 
+                 where table_name = 'bootstrap_queue' and column_name = 'country') then
+    alter table bootstrap_queue add column country text not null default '';
+  end if;
+end $$;
+
 -- Index for efficient queue processing
 create index if not exists idx_bootstrap_queue_status on bootstrap_queue(status, created_at);
 
