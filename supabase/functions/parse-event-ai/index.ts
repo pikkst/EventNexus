@@ -46,12 +46,12 @@ async function parseEventWithGemini(rawContent: string, sourceType: string, retr
   
   const prompt = `You are an expert event data extractor. Current date and time in Estonia is: ${estoniaTime} (DD/MM/YYYY HH:MM:SS).
 
-CRITICAL - ONLY FUTURE EVENTS:
-Today is 09/01/2026. Extract ONLY events starting AFTER this moment.
-SKIP: events from 2025, 2024, December 2025, etc.
-INCLUDE: events from 09/01/2026 onwards with future times.
+CRITICAL - EVENT TIME WINDOW:
+Today is 09/01/2026. Extract ONLY events within the next 30 DAYS.
+SKIP: past events AND events starting after 08/02/2026 (beyond 30 days)
+INCLUDE: events from 09/01/2026 to 08/02/2026 (within 30-day window)
 
-For each FUTURE event, provide:
+For each valid event, provide:
 - name: event name
 - description: DETAILED description (minimum 100 characters). If source lacks details, write an engaging description based on: event name, category, location, organizer. Include what attendees can expect.
 - start_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS) in local timezone - MUST be in the future
@@ -128,24 +128,28 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
         const events = JSON.parse(jsonText)
         const eventArray = Array.isArray(events) ? events : [events]
         
-        // Server-side filter: remove past events (timezone-aware)
+        // Server-side filter: only events within next 30 days
         const now = new Date()
-        const futureEvents = eventArray.filter((event: ParsedEvent) => {
+        const oneMonthLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // +30 days
+        
+        const validEvents = eventArray.filter((event: ParsedEvent) => {
           if (!event.start_time) return false
           
-          // Parse event time and compare
           const eventStart = new Date(event.start_time)
           const isFuture = eventStart > now
+          const withinMonth = eventStart <= oneMonthLater
           
           if (!isFuture) {
             console.log(`Filtered out past event: "${event.name}" (${event.start_time})`)
+          } else if (!withinMonth) {
+            console.log(`Filtered out event beyond 1 month: "${event.name}" (${event.start_time})`)
           }
           
-          return isFuture
+          return isFuture && withinMonth
         })
         
-        console.log(`Filtered ${eventArray.length} events -> ${futureEvents.length} future events`)
-        return futureEvents
+        console.log(`Filtered ${eventArray.length} events -> ${validEvents.length} valid events (future + within 30 days)`)
+        return validEvents
       } catch (error) {
         console.error('Failed to parse Gemini response:', text)
         throw new Error('Invalid JSON response from AI')

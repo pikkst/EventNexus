@@ -588,7 +588,8 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
       const functionUrls: Record<string, string> = {
         'fetch-sources': 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/fetch-sources',
         'parse-events': 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/parse-event-ai',
-        'validate-events': 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/validate-event'
+        'validate-events': 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/validate-event',
+        'archive-expired': 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/archive-expired-events'
       };
       
       const { data, error } = await supabase.rpc('schedule_ai_pipeline_job', {
@@ -1244,12 +1245,14 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                       const jobLabels: Record<string, string> = {
                         'fetch-sources': 'Fetch Event Sources',
                         'parse-events': 'Parse Events with AI',
-                        'validate-events': 'Validate & Auto-Publish'
+                        'validate-events': 'Validate & Auto-Publish',
+                        'archive-expired': 'Archive Expired Events'
                       };
                       const jobDescriptions: Record<string, string> = {
                         'fetch-sources': 'Fetches new events from configured city calendars and RSS feeds',
                         'parse-events': 'Extracts structured event data from raw HTML/XML using Gemini AI',
-                        'validate-events': 'Validates parsed events and auto-publishes high-confidence matches'
+                        'validate-events': 'Validates parsed events and auto-publishes high-confidence matches',
+                        'archive-expired': 'Automatically archives events after their end time has passed (removes from map)'
                       };
                       
                       return (
