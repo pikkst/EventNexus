@@ -141,21 +141,22 @@ async function validateEvent(
   const semanticValidity = await calculateSemanticValidity(event)
 
   // Calculate final score (weighted average)
-  const finalScore = Math.round(
-    sourceScore * 25 +
-    dataCompleteness * 0.25 +
-    timeValidity * 0.20 +
-    geoAccuracy * 0.15 +
-    semanticValidity * 0.15
-  )
+  // All component scores are 0-1, final_score is 0-100 for UI
+  const finalScore = (
+    (sourceScore / 100) * 0.25 +
+    (dataCompleteness / 100) * 0.25 +
+    (timeValidity / 100) * 0.20 +
+    (geoAccuracy / 100) * 0.15 +
+    (semanticValidity / 100) * 0.15
+  ) * 100
 
   const scores = {
-    source_score: sourceScore,
-    data_completeness: dataCompleteness,
-    time_validity: timeValidity,
-    geo_accuracy: geoAccuracy,
-    semantic_validity: semanticValidity,
-    final_score: finalScore,
+    source_score: sourceScore / 100,
+    data_completeness: dataCompleteness / 100,
+    time_validity: timeValidity / 100,
+    geo_accuracy: geoAccuracy / 100,
+    semantic_validity: semanticValidity / 100,
+    final_score: Math.round(finalScore * 100) / 100, // Round to 2 decimals
   }
 
   // Validation rules
@@ -219,12 +220,7 @@ serve(async (req) => {
     // Get pending parsed events
     const { data: parsedEvents, error: parsedError } = await supabaseClient
       .from('parsed_events')
-      .select(`
-        *,
-        raw_events!inner(
-          event_sources!inner(source_score)
-        )
-      `)
+      .select('*')
       .eq('validation_status', 'pending')
       .limit(10)
 
@@ -245,7 +241,29 @@ serve(async (req) => {
           .update({ validation_status: 'validating' })
           .eq('id', parsedEvent.id)
 
-        const sourceScore = parsedEvent.raw_events.event_sources.source_score * 100
+        // Fetch source_score separately to avoid complex JOIN issues
+        let sourceScore = 50 // Default score if not found
+        try {
+          const { data: rawEvent } = await supabaseClient
+            .from('raw_events')
+            .select('source_id')
+            .eq('id', parsedEvent.raw_event_id)
+            .single()
+          
+          if (rawEvent?.source_id) {
+            const { data: eventSource } = await supabaseClient
+              .from('event_sources')
+              .select('source_score')
+              .eq('id', rawEvent.source_id)
+              .single()
+            
+            if (eventSource?.source_score) {
+              sourceScore = eventSource.source_score * 100
+            }
+          }
+        } catch (err) {
+          console.warn(`Failed to fetch source_score for event ${parsedEvent.id}:`, err)
+        }
 
         const validation = await validateEvent(parsedEvent, sourceScore)
 
@@ -306,8 +324,35 @@ serve(async (req) => {
             .update({ validation_status: 'validated' })
             .eq('id', parsedEvent.id)
 
-          if (validation.action === 'auto_publish') {
-            results.auto_published++
+          if (validation.action === 'auto_publish' || validation.action === 'publish_flagged') {
+            // Call publish-event function
+            try {
+              const publishResponse = await fetch(
+                `${Deno.env.get('SUPABASE_URL')}/functions/v1/publish-event`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ parsed_event_id: parsedEvent.id }),
+                }
+              )
+
+              if (publishResponse.ok) {
+                if (validation.action === 'auto_publish') {
+                  results.auto_published++
+                } else {
+                  results.flagged++
+                }
+              } else {
+                console.error(`Failed to publish event ${parsedEvent.id}:`, await publishResponse.text())
+                results.queued_for_review++
+              }
+            } catch (publishError) {
+              console.error(`Error calling publish-event for ${parsedEvent.id}:`, publishError)
+              results.queued_for_review++
+            }
           } else {
             results.flagged++
           }
