@@ -9,6 +9,63 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Gemini API image generation (matches geminiService.ts logic)
+async function generateEventImage(
+  eventName: string, 
+  category: string, 
+  description: string
+): Promise<string | null> {
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+  if (!GEMINI_API_KEY) {
+    console.warn('GEMINI_API_KEY not set, skipping image generation')
+    return null
+  }
+
+  try {
+    // Use same prompt format as EventCreationFlow: "name: description. Category: category"
+    const prompt = `${eventName}: ${description}. Category: ${category}`
+    
+    // Match geminiService.ts prompt template
+    const fullPrompt = `Professional marketing flier for EventNexus with clear promotional text overlay: ${prompt}. Include eye-catching headlines and call-to-action text directly on the image. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements, bold typography, 8k. Aspect ratio: 16:9`
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: fullPrompt
+            }]
+          }]
+        })
+      }
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Gemini API error:', errorText)
+      return null
+    }
+
+    const data = await response.json()
+    
+    // Extract image from response (same logic as geminiService.ts)
+    for (const part of data.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        const base64Data = part.inlineData.data
+        return `data:image/png;base64,${base64Data}`
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('Failed to generate event image:', error)
+    return null
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -130,6 +187,22 @@ serve(async (req) => {
           ? `POINT(${eventData.location_lng} ${eventData.location_lat})`
           : null
 
+        // Generate AI image if no image URL provided
+        let eventImage = eventData.image_url || null
+        if (!eventImage) {
+          console.log(`Generating AI image for event: ${eventData.name}`)
+          eventImage = await generateEventImage(
+            eventData.name,
+            eventData.category || 'event',
+            eventData.description || ''
+          )
+          if (eventImage) {
+            console.log(`✓ AI image generated for: ${eventData.name}`)
+          } else {
+            console.log(`✗ Failed to generate AI image for: ${eventData.name}`)
+          }
+        }
+
         const { data: newEvent, error: insertError } = await supabaseClient
           .from('events')
           .insert({
@@ -146,7 +219,7 @@ serve(async (req) => {
             location_point: locationPoint,
             price: 0,
             organizer_id: 'f2ecf6c6-14c1-4dbd-894b-14ee6493d807', // Admin user
-            image: eventData.image_url || null,
+            image: eventImage,
             status: 'active',
             tags: eventData.category ? [eventData.category] : []
           })
