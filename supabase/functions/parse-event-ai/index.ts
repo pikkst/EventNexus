@@ -71,11 +71,17 @@ For each FUTURE event, provide:
 IMPORTANT - DESCRIPTION QUALITY:
 - Minimum 100 characters, preferably 200-300
 - Include: what is happening, who is performing/speaking, what attendees will experience
+- Include EVENT PROGRAM/SCHEDULE if mentioned (e.g., "18:00 Doors, 19:00 Opening, 20:00 Main event")
 - Add context about the venue/location if mentioned
 - If source has minimal info, create engaging description from available data
 - Example: "An evening concert featuring local jazz musicians at the historic Town Hall. Join us for an unforgettable performance of classic and contemporary jazz pieces."
 
-Return ONLY valid JSON array of FUTURE events. No markdown, no explanations. Skip all past events.
+CRITICAL - PAID vs FREE:
+- Set is_free=false ONLY if event requires ticket purchase or has admission fee
+- Set is_free=true for: free entry, donation-based, registration only (no payment required)
+- We ONLY publish FREE events - paid events will be filtered out
+
+Return ONLY valid JSON array of FUTURE FREE events. No markdown, no explanations. Skip all past and paid events.
 
 Content to parse:
 ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
