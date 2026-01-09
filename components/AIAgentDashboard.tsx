@@ -14,6 +14,13 @@ import {
   Eye,
   Play,
   Pause,
+  Plus,
+  Edit2,
+  Trash2,
+  Save,
+  X,
+  Settings,
+  Calendar,
 } from 'lucide-react';
 import {
   AIAgentStats,
@@ -35,8 +42,32 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   const [recentDecisions, setRecentDecisions] = useState<AIDecisionLog[]>([]);
   const [usageLogs, setUsageLogs] = useState<AIUsageLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'cities' | 'review' | 'decisions' | 'costs'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'cities' | 'manage-cities' | 'scheduler' | 'review' | 'decisions' | 'costs'>('overview');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // City management state
+  const [cities, setCities] = useState<any[]>([]);
+  const [showAddCity, setShowAddCity] = useState(false);
+  const [editingCity, setEditingCity] = useState<any>(null);
+  const [newCity, setNewCity] = useState({ 
+    city_name: '', 
+    country: '', 
+    latitude: '', 
+    longitude: '', 
+    timezone: 'Europe/Tallinn',
+    is_active: true 
+  });
+  
+  // Scheduler state
+  const [schedulerConfig, setSchedulerConfig] = useState({
+    fetch_interval_hours: 24,
+    parse_interval_hours: 1,
+    validate_interval_hours: 1,
+    auto_publish: true,
+    confidence_threshold: 80,
+    enabled: true
+  });
+  const [savingScheduler, setSavingScheduler] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -244,6 +275,124 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     return 'bg-red-500';
   }
 
+  // City management functions
+  async function loadCities() {
+    try {
+      const { data, error } = await supabase
+        .from('city_configs')
+        .select('*')
+        .order('city_name');
+      
+      if (error) throw error;
+      setCities(data || []);
+    } catch (error) {
+      console.error('Failed to load cities:', error);
+    }
+  }
+
+  async function handleAddCity() {
+    try {
+      const { error } = await supabase
+        .from('city_configs')
+        .insert({
+          city_id: crypto.randomUUID(),
+          city_name: newCity.city_name,
+          country: newCity.country,
+          latitude: parseFloat(newCity.latitude),
+          longitude: parseFloat(newCity.longitude),
+          timezone: newCity.timezone,
+          is_active: newCity.is_active,
+        });
+
+      if (error) throw error;
+      
+      setShowAddCity(false);
+      setNewCity({ city_name: '', country: '', latitude: '', longitude: '', timezone: 'Europe/Tallinn', is_active: true });
+      await loadCities();
+      alert('City added successfully!');
+    } catch (error: any) {
+      console.error('Failed to add city:', error);
+      alert(`Failed to add city: ${error.message}`);
+    }
+  }
+
+  async function handleUpdateCity(city: any) {
+    try {
+      const { error } = await supabase
+        .from('city_configs')
+        .update({
+          city_name: city.city_name,
+          country: city.country,
+          latitude: city.latitude,
+          longitude: city.longitude,
+          timezone: city.timezone,
+          is_active: city.is_active,
+        })
+        .eq('city_id', city.city_id);
+
+      if (error) throw error;
+      
+      setEditingCity(null);
+      await loadCities();
+      alert('City updated successfully!');
+    } catch (error: any) {
+      console.error('Failed to update city:', error);
+      alert(`Failed to update city: ${error.message}`);
+    }
+  }
+
+  async function handleDeleteCity(cityId: string) {
+    if (!confirm('Are you sure you want to delete this city? This will also remove all associated event sources.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('city_configs')
+        .delete()
+        .eq('city_id', cityId);
+
+      if (error) throw error;
+      
+      await loadCities();
+      alert('City deleted successfully!');
+    } catch (error: any) {
+      console.error('Failed to delete city:', error);
+      alert(`Failed to delete city: ${error.message}`);
+    }
+  }
+
+  async function loadSchedulerConfig() {
+    // Load from localStorage or database
+    const saved = localStorage.getItem('ai_scheduler_config');
+    if (saved) {
+      setSchedulerConfig(JSON.parse(saved));
+    }
+  }
+
+  async function saveSchedulerConfig() {
+    try {
+      setSavingScheduler(true);
+      // Save to localStorage (in production, save to database)
+      localStorage.setItem('ai_scheduler_config', JSON.stringify(schedulerConfig));
+      
+      alert('Scheduler configuration saved successfully!\\nNote: Actual scheduling requires cron setup in Supabase Dashboard.');
+      setSavingScheduler(false);
+    } catch (error: any) {
+      console.error('Failed to save scheduler config:', error);
+      alert(`Failed to save configuration: ${error.message}`);
+      setSavingScheduler(false);
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'manage-cities') {
+      loadCities();
+    } else if (activeTab === 'scheduler') {
+      loadSchedulerConfig();
+    }
+  }, [activeTab]);
+
   if (loading && !stats) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -362,10 +511,12 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="border-b border-gray-200">
-            <nav className="flex -mb-px">
+            <nav className="flex -mb-px overflow-x-auto">
               {[
                 { id: 'overview', label: 'Overview', icon: Activity },
                 { id: 'cities', label: 'City Health', icon: MapPin },
+                { id: 'manage-cities', label: 'Manage Cities', icon: Settings },
+                { id: 'scheduler', label: 'Scheduler', icon: Calendar },
                 { id: 'review', label: 'Review Queue', icon: Eye, badge: stats?.pending_review },
                 { id: 'decisions', label: 'AI Decisions', icon: Bot },
                 { id: 'costs', label: 'Cost Analysis', icon: DollarSign },
@@ -477,6 +628,381 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'manage-cities' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">Manage Cities & Event Sources</h3>
+                  <button
+                    onClick={() => setShowAddCity(!showAddCity)}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    {showAddCity ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                    {showAddCity ? 'Cancel' : 'Add City'}
+                  </button>
+                </div>
+
+                {/* Add City Form */}
+                {showAddCity && (
+                  <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                    <h4 className="font-medium text-gray-900 mb-4">Add New City</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">City Name *</label>
+                        <input
+                          type="text"
+                          value={newCity.city_name}
+                          onChange={(e) => setNewCity({ ...newCity, city_name: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Tartu"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
+                        <input
+                          type="text"
+                          value={newCity.country}
+                          onChange={(e) => setNewCity({ ...newCity, country: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Estonia"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Latitude *</label>
+                        <input
+                          type="number"
+                          step="0.0001"
+                          value={newCity.latitude}
+                          onChange={(e) => setNewCity({ ...newCity, latitude: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                          placeholder="58.3776"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Longitude *</label>
+                        <input
+                          type="number"
+                          step="0.0001"
+                          value={newCity.longitude}
+                          onChange={(e) => setNewCity({ ...newCity, longitude: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                          placeholder="26.7290"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                        <select
+                          value={newCity.timezone}
+                          onChange={(e) => setNewCity({ ...newCity, timezone: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        >
+                          <option value="Europe/Tallinn">Europe/Tallinn</option>
+                          <option value="Europe/Helsinki">Europe/Helsinki</option>
+                          <option value="Europe/Stockholm">Europe/Stockholm</option>
+                          <option value="Europe/Riga">Europe/Riga</option>
+                          <option value="Europe/Vilnius">Europe/Vilnius</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={newCity.is_active}
+                            onChange={(e) => setNewCity({ ...newCity, is_active: e.target.checked })}
+                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">Active</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex gap-3">
+                      <button
+                        onClick={handleAddCity}
+                        disabled={!newCity.city_name || !newCity.country || !newCity.latitude || !newCity.longitude}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <Save className="w-4 h-4" />
+                        Save City
+                      </button>
+                      <button
+                        onClick={() => setShowAddCity(false)}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cities List */}
+                <div className="space-y-4">
+                  {cities.map((city) => (
+                    <div key={city.city_id} className="border border-gray-200 rounded-lg p-4">
+                      {editingCity?.city_id === city.city_id ? (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input
+                              type="text"
+                              value={editingCity.city_name}
+                              onChange={(e) => setEditingCity({ ...editingCity, city_name: e.target.value })}
+                              className="px-3 py-2 border border-gray-300 rounded-lg"
+                              placeholder="City Name"
+                            />
+                            <input
+                              type="text"
+                              value={editingCity.country}
+                              onChange={(e) => setEditingCity({ ...editingCity, country: e.target.value })}
+                              className="px-3 py-2 border border-gray-300 rounded-lg"
+                              placeholder="Country"
+                            />
+                            <input
+                              type="number"
+                              step="0.0001"
+                              value={editingCity.latitude}
+                              onChange={(e) => setEditingCity({ ...editingCity, latitude: parseFloat(e.target.value) })}
+                              className="px-3 py-2 border border-gray-300 rounded-lg"
+                              placeholder="Latitude"
+                            />
+                            <input
+                              type="number"
+                              step="0.0001"
+                              value={editingCity.longitude}
+                              onChange={(e) => setEditingCity({ ...editingCity, longitude: parseFloat(e.target.value) })}
+                              className="px-3 py-2 border border-gray-300 rounded-lg"
+                              placeholder="Longitude"
+                            />
+                          </div>
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => handleUpdateCity(editingCity)}
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                            >
+                              <Save className="w-4 h-4" />
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingCity(null)}
+                              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                              {city.city_name}, {city.country}
+                              {!city.is_active && (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded">Inactive</span>
+                              )}
+                            </h4>
+                            <p className="text-sm text-gray-500">
+                              Lat: {city.latitude.toFixed(4)}, Lng: {city.longitude.toFixed(4)} • {city.timezone}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setEditingCity(city)}
+                              className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCity(city.city_id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {cities.length === 0 && !showAddCity && (
+                    <div className="text-center py-12 text-gray-500">
+                      <MapPin className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p>No cities configured yet. Add your first city to start monitoring events!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'scheduler' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">AI Pipeline Scheduler</h3>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${schedulerConfig.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                      {schedulerConfig.enabled ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border border-indigo-200 bg-indigo-50 rounded-lg p-4">
+                  <div className="flex gap-3">
+                    <AlertCircle className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-indigo-900">
+                      <p className="font-medium mb-1">Production Scheduler Setup Required</p>
+                      <p>These settings are saved locally. To enable automatic scheduling in production:</p>
+                      <ol className="list-decimal ml-4 mt-2 space-y-1">
+                        <li>Go to Supabase Dashboard → Database → Cron Jobs</li>
+                        <li>Create cron jobs for: <code className="px-1 bg-indigo-100 rounded">fetch-sources</code>, <code className="px-1 bg-indigo-100 rounded">parse-event-ai</code>, <code className="px-1 bg-indigo-100 rounded">validate-event</code></li>
+                        <li>Use the intervals configured below</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-gray-200 rounded-lg p-6 space-y-6">
+                  <div>
+                    <label className="flex items-center gap-2 cursor-pointer mb-6">
+                      <input
+                        type="checkbox"
+                        checked={schedulerConfig.enabled}
+                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, enabled: e.target.checked })}
+                        className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                      />
+                      <span className="text-base font-medium text-gray-900">Enable Automatic Pipeline Execution</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Fetch Sources Interval (hours)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="168"
+                        value={schedulerConfig.fetch_interval_hours}
+                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, fetch_interval_hours: parseInt(e.target.value) || 24 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">How often to fetch new events from sources (recommended: 24h)</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Parse Events Interval (hours)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="24"
+                        value={schedulerConfig.parse_interval_hours}
+                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, parse_interval_hours: parseInt(e.target.value) || 1 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">How often to parse raw events (recommended: 1h)</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Validate Events Interval (hours)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="24"
+                        value={schedulerConfig.validate_interval_hours}
+                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, validate_interval_hours: parseInt(e.target.value) || 1 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">How often to validate parsed events (recommended: 1h)</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Auto-Publish Confidence Threshold
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={schedulerConfig.confidence_threshold}
+                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, confidence_threshold: parseInt(e.target.value) || 80 })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Events above this score auto-publish (current: {schedulerConfig.confidence_threshold}%)</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={schedulerConfig.auto_publish}
+                        onChange={(e) => setSchedulerConfig({ ...schedulerConfig, auto_publish: e.target.checked })}
+                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        Auto-publish validated events (recommended for production)
+                      </span>
+                    </label>
+                    <p className="text-xs text-gray-500 ml-6 mt-1">
+                      When disabled, all events go to review queue regardless of confidence score
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={saveSchedulerConfig}
+                      disabled={savingScheduler}
+                      className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {savingScheduler ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          Save Configuration
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cron Job Examples */}
+                <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                  <h4 className="font-medium text-gray-900 mb-3">Example Cron Job SQL (for Supabase)</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-1">Fetch Sources (every {schedulerConfig.fetch_interval_hours}h):</p>
+                      <pre className="text-xs bg-gray-800 text-green-400 p-3 rounded overflow-x-auto">
+{`SELECT cron.schedule(
+  'fetch-sources-job',
+  '0 */${schedulerConfig.fetch_interval_hours} * * *',
+  $$SELECT net.http_post(
+    url:='https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/fetch-sources',
+    headers:='{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb
+  )$$
+);`}
+                      </pre>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-1">Validate Events (every {schedulerConfig.validate_interval_hours}h):</p>
+                      <pre className="text-xs bg-gray-800 text-green-400 p-3 rounded overflow-x-auto">
+{`SELECT cron.schedule(
+  'validate-event-job',
+  '0 */${schedulerConfig.validate_interval_hours} * * *',
+  $$SELECT net.http_post(
+    url:='https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/validate-event',
+    headers:='{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb
+  )$$
+);`}
+                      </pre>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
