@@ -58,9 +58,15 @@ async function uploadImageToStorage(
 // Nominatim geocoding fallback for addresses without coordinates
 async function geocodeAddress(address: string): Promise<{lat: number, lng: number} | null> {
   try {
-    const encodedAddress = encodeURIComponent(address)
+    // Add Estonia to address if not already present for better Nominatim results
+    let searchAddress = address
+    if (!address.toLowerCase().includes('estonia') && !address.toLowerCase().includes('eesti')) {
+      searchAddress = `${address}, Estonia`
+    }
+    
+    const encodedAddress = encodeURIComponent(searchAddress)
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`,
+      `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1&countrycodes=ee`,
       {
         headers: {
           'User-Agent': 'EventNexus/1.0 (contact: huntersest@gmail.com)',
@@ -81,6 +87,33 @@ async function geocodeAddress(address: string): Promise<{lat: number, lng: numbe
       return {
         lat: parseFloat(result.lat),
         lng: parseFloat(result.lon)
+      }
+    }
+    
+    // Retry with venue name only if full address fails
+    if (address.includes(',')) {
+      const venueName = address.split(',')[0].trim()
+      console.log(`🔄 Retrying with venue name: ${venueName}`)
+      
+      const venueAddress = `${venueName}, Estonia`
+      const retryResponse = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(venueAddress)}&format=json&limit=1&countrycodes=ee`,
+        {
+          headers: {
+            'User-Agent': 'EventNexus/1.0 (contact: huntersest@gmail.com)',
+            'Accept-Language': 'et,en'
+          }
+        }
+      )
+      
+      if (retryResponse.ok) {
+        const retryData = await retryResponse.json()
+        if (retryData && retryData.length > 0) {
+          return {
+            lat: parseFloat(retryData[0].lat),
+            lng: parseFloat(retryData[0].lon)
+          }
+        }
       }
     }
 
