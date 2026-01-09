@@ -546,33 +546,15 @@ serve(async (req) => {
       
       console.log(`🚀 Processing queued bootstrap for: ${nextJob.city_name} (${nextJob.city_id})`)
       
-      // Get city details
-      const { data: cityData } = await supabaseClient
-        .from('cities')
-        .select('name, country')
-        .eq('id', nextJob.city_id)
-        .single()
-      
-      if (!cityData) {
-        await supabaseClient.rpc('mark_bootstrap_failed', {
-          p_city_id: nextJob.city_id,
-          p_error: 'City not found in database'
-        })
-        return new Response(
-          JSON.stringify({ success: false, error: 'City not found' }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 404,
-          }
-        )
-      }
+      // 🔧 Use city data from queue (no race condition)
+      // Queue already has city_name and country stored
       
       // Bootstrap this city
       try {
         const result = await bootstrapCity(supabaseClient, {
           city_id: nextJob.city_id,
-          city_name: cityData.name,
-          country: cityData.country,
+          city_name: nextJob.city_name,
+          country: nextJob.country,
           auto_discover: true,
           seed_events: true
         })
@@ -583,12 +565,12 @@ serve(async (req) => {
           p_sources_found: result.sources_inserted
         })
         
-        console.log(`✅ Auto-bootstrap completed for ${cityData.name}: ${result.sources_inserted} sources`)
+        console.log(`✅ Auto-bootstrap completed for ${nextJob.city_name}: ${result.sources_inserted} sources`)
         
         return new Response(
           JSON.stringify({
             success: true,
-            message: `City ${cityData.name} bootstrapped successfully`,
+            message: `City ${nextJob.city_name} bootstrapped successfully`,
             ...result
           }),
           {
@@ -597,7 +579,7 @@ serve(async (req) => {
           }
         )
       } catch (bootstrapError) {
-        console.error(`❌ Bootstrap failed for ${cityData.name}:`, bootstrapError)
+        console.error(`❌ Bootstrap failed for ${nextJob.city_name}:`, bootstrapError)
         await supabaseClient.rpc('mark_bootstrap_failed', {
           p_city_id: nextJob.city_id,
           p_error: bootstrapError.message
