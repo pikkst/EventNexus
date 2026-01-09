@@ -31,7 +31,7 @@ interface ParsedEvent {
   image_url?: string
 }
 
-async function parseEventWithGemini(rawContent: string, sourceType: string, retries = 3): Promise<ParsedEvent[]> {
+async function parseEventWithGemini(rawContent: string, sourceType: string, supabaseClient: any, retries = 3): Promise<ParsedEvent[]> {
   // Get current time in Europe/Tallinn timezone
   const now = new Date()
   const estoniaTime = new Intl.DateTimeFormat('en-GB', {
@@ -375,7 +375,8 @@ serve(async (req) => {
         // Parse with AI
         const parsedEvents = await parseEventWithGemini(
           rawEvent.raw_content,
-          rawEvent.event_sources.type
+          rawEvent.event_sources.type,
+          supabaseClient
         )
 
         console.log(`Extracted ${parsedEvents.length} events from raw event ${rawEvent.id}`)
