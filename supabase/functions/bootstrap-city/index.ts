@@ -519,8 +519,94 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const request: CityBootstrapRequest = await req.json()
+    const request: CityBootstrapRequest = await req.json().catch(() => ({}))
 
+    // 🔧 AUTO-BOOTSTRAP MODE: Process queue if no specific city provided
+    if (!request.city_name && !request.city_id) {
+      console.log('🤖 Auto-bootstrap mode: checking queue...')
+      
+      const { data: nextJob, error: queueError } = await supabaseClient
+        .rpc('get_next_bootstrap_job')
+        .single()
+      
+      if (queueError || !nextJob) {
+        console.log('📭 No cities in bootstrap queue')
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'No cities pending bootstrap',
+            queued: 0 
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        )
+      }
+      
+      console.log(`🚀 Processing queued bootstrap for: ${nextJob.city_name} (${nextJob.city_id})`)
+      
+      // Get city details
+      const { data: cityData } = await supabaseClient
+        .from('cities')
+        .select('name, country')
+        .eq('id', nextJob.city_id)
+        .single()
+      
+      if (!cityData) {
+        await supabaseClient.rpc('mark_bootstrap_failed', {
+          p_city_id: nextJob.city_id,
+          p_error: 'City not found in database'
+        })
+        return new Response(
+          JSON.stringify({ success: false, error: 'City not found' }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 404,
+          }
+        )
+      }
+      
+      // Bootstrap this city
+      try {
+        const result = await bootstrapCity(supabaseClient, {
+          city_id: nextJob.city_id,
+          city_name: cityData.name,
+          country: cityData.country,
+          auto_discover: true,
+          seed_events: true
+        })
+        
+        // Mark as complete
+        await supabaseClient.rpc('mark_bootstrap_complete', {
+          p_city_id: nextJob.city_id,
+          p_sources_found: result.sources_inserted
+        })
+        
+        console.log(`✅ Auto-bootstrap completed for ${cityData.name}: ${result.sources_inserted} sources`)
+        
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: `City ${cityData.name} bootstrapped successfully`,
+            ...result
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        )
+      } catch (bootstrapError) {
+        console.error(`❌ Bootstrap failed for ${cityData.name}:`, bootstrapError)
+        await supabaseClient.rpc('mark_bootstrap_failed', {
+          p_city_id: nextJob.city_id,
+          p_error: bootstrapError.message
+        })
+        throw bootstrapError
+      }
+    }
+
+    // MANUAL MODE: Bootstrap specific city
     if (!request.city_name || !request.country) {
       return new Response(
         JSON.stringify({ error: 'city_name and country are required' }),

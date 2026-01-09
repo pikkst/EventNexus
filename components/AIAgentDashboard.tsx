@@ -214,10 +214,17 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         // Calculate freshness score (0-100) based on created_at (since last_bootstrap_at doesn't exist yet)
         const daysSinceCreated = Math.floor((Date.now() - new Date(city.created_at).getTime()) / (1000 * 60 * 60 * 24));
         
-        let freshness_score = 100;
-        if (daysSinceCreated > 7) freshness_score = 70;
-        if (daysSinceCreated > 30) freshness_score = 40;
-        if (daysSinceCreated > 90) freshness_score = 10;
+        // 🔧 FIX: Health should be 0 if no sources
+        let freshness_score = 0;
+        
+        if (sourcesCount > 0) {
+          // Base health on source count and activity
+          freshness_score = 100;
+          if (daysSinceCreated > 7) freshness_score = 70;
+          if (daysSinceCreated > 30) freshness_score = 40;
+          if (daysSinceCreated > 90) freshness_score = 10;
+        }
+        
         if (!city.is_active) freshness_score = 0;
 
         return {
@@ -1454,14 +1461,22 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className={`px-2 py-1 rounded text-xs font-medium ${
-                              metric.freshness_score >= 80 ? 'bg-green-100 text-green-700' :
-                              metric.freshness_score >= 60 ? 'bg-yellow-100 text-yellow-700' :
-                              metric.freshness_score >= 40 ? 'bg-orange-100 text-orange-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              Health: {metric.freshness_score}%
-                            </div>
+                            {metric.bootstrap_status === 'bootstrapping' ? (
+                              <div className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 flex items-center gap-1 animate-pulse">
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                Bootstrapping...
+                              </div>
+                            ) : (
+                              <div className={`px-2 py-1 rounded text-xs font-medium ${
+                                metric.freshness_score >= 80 ? 'bg-green-100 text-green-700' :
+                                metric.freshness_score >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                                metric.freshness_score >= 40 ? 'bg-orange-100 text-orange-700' :
+                                metric.freshness_score === 0 ? 'bg-gray-100 text-gray-600' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                Health: {metric.freshness_score}%
+                              </div>
+                            )}
                             <div className={`w-3 h-3 rounded-full ${getHealthColor(metric.freshness_score)}`} />
                           </div>
                         </div>
