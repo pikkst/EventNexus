@@ -3,6 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { log } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -215,6 +216,7 @@ serve(async (req) => {
         
         if (isDefinitelyPaid) {
           console.log(`⊘ Skipping paid event: ${eventData.name} (price: €${eventData.price})`);
+          await log(supabaseClient, 'publish-event', 'info', 'Skipped paid event', { event: eventData.name, price: eventData.price }, { city_id: cityId });
           results.skipped++;
           continue;
         }
@@ -248,6 +250,7 @@ serve(async (req) => {
           
           if (isSameLocation) {
             console.log(`⊘ Duplicate active event found: "${eventData.name}" on ${eventDateStr} at ${newAddr}`)
+            await log(supabaseClient, 'publish-event', 'info', 'Duplicate event skipped', { event: eventData.name, date: eventDateStr, location: newAddr }, { city_id: cityId, event_id: existing.id });
             results.skipped++
             
             // Mark parsed_event as already published to avoid re-processing
@@ -283,8 +286,10 @@ serve(async (req) => {
             eventData.location_lat = geocoded.lat
             eventData.location_lng = geocoded.lng
             console.log(`✓ Geocoded successfully: ${geocoded.lat.toFixed(6)}, ${geocoded.lng.toFixed(6)}`)
+            await log(supabaseClient, 'publish-event', 'success', 'Geocoded address', { address: eventData.location_address, lat: geocoded.lat, lng: geocoded.lng }, { city_id: cityId });
           } else {
             console.log(`⚠️ Geocoding failed for: ${eventData.location_address}`)
+            await log(supabaseClient, 'publish-event', 'warning', 'Geocoding failed', { address: eventData.location_address }, { city_id: cityId });
           }
           
           // Rate limit: 1 request per second for Nominatim
@@ -297,6 +302,7 @@ serve(async (req) => {
             isNaN(eventData.location_lat) || isNaN(eventData.location_lng)) {
           
           console.log(`❌ Skipping event "${eventData.name}" - no precise location found. Address: ${eventData.location_address || 'N/A'}`)
+          await log(supabaseClient, 'publish-event', 'warning', 'Skipped - no precise location', { event: eventData.name, address: eventData.location_address }, { city_id: cityId });
           
           // Mark as flagged for manual review (needs real venue address)
           await supabaseClient
@@ -394,6 +400,14 @@ serve(async (req) => {
           .single()
 
         if (insertError) throw insertError
+
+        // Log successful publish
+        await log(supabaseClient, 'publish-event', 'success', 'Published event to map', { 
+          event_id: newEvent.id, 
+          event: eventData.name, 
+          date: dateStr,
+          location: eventData.location_address
+        }, { city_id: cityId, event_id: newEvent.id });
 
         // Link confidence record to published event
         await supabaseClient

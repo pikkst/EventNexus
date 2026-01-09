@@ -3,6 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { log } from '../_shared/logger.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -150,6 +151,7 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
         const eventArray = Array.isArray(events) ? events : [events]
         
         console.log(`AI extracted ${eventArray.length} events before filtering`)
+        await log(supabaseClient, 'parse-event-ai', 'info', 'AI extracted events', { events_before_filter: eventArray.length })
         
         // Server-side filter: only events within next 30 days
         // CRITICAL: Account for timezone - events are in Europe/Tallinn (UTC+2/+3)
@@ -179,6 +181,7 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
         })
         
         console.log(`Filtered ${eventArray.length} events -> ${validEvents.length} valid events (future + within 30 days)`)
+        await log(supabaseClient, 'parse-event-ai', 'success', 'Filtered events', { before: eventArray.length, after: validEvents.length })
         return validEvents
       } catch (error) {
         console.error('Failed to parse Gemini response:', text.substring(0, 1000))
@@ -192,7 +195,7 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
   return []
 }
 
-async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+async function geocodeAddress(address: string, supabaseClient: any): Promise<{ lat: number; lng: number } | null> {
   // Use OpenStreetMap Nominatim for geocoding (free, no API key needed)
   // Rate limit: max 1 request per second
   try {
@@ -211,6 +214,7 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
 
     if (!response.ok) {
       console.error(`❌ Nominatim API error ${response.status}`)
+      await log(supabaseClient, 'parse-event-ai', 'error', 'Nominatim API error', { status: response.status, address })
       return null
     }
 
@@ -240,6 +244,7 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
     
     if (data && data.length > 0) {
       console.log(`✓ Geocoded: ${address} → ${data[0].lat}, ${data[0].lon}`)
+      await log(supabaseClient, 'parse-event-ai', 'success', 'Geocoded address', { address, lat: data[0].lat, lng: data[0].lon })
       return {
         lat: parseFloat(data[0].lat),
         lng: parseFloat(data[0].lon),
@@ -247,8 +252,10 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
     }
     
     console.log(`⚠️ Nominatim found no results for: ${address}`)
+    await log(supabaseClient, 'parse-event-ai', 'warning', 'Geocoding failed - no results', { address })
   } catch (error) {
     console.error('❌ Geocoding failed:', error)
+    await log(supabaseClient, 'parse-event-ai', 'error', 'Geocoding exception', { address, error: String(error) })
   }
   return null
 }
@@ -285,6 +292,7 @@ serve(async (req) => {
     if (rawError) throw rawError
 
     console.log(`Found ${rawEvents?.length || 0} raw events to process${cityId ? ` for city ${cityId}` : ''}`)
+    await log(supabaseClient, 'parse-event-ai', 'info', 'Starting event extraction', { raw_events: rawEvents?.length || 0 }, { city_id: cityId })
 
     const results = {
       processed: 0,
@@ -326,11 +334,12 @@ serve(async (req) => {
         )
 
         console.log(`Extracted ${parsedEvents.length} events from raw event ${rawEvent.id}`)
+        await log(supabaseClient, 'parse-event-ai', parsedEvents.length > 0 ? 'success' : 'warning', `Extracted events from source`, { source_id: rawEvent.id, events_found: parsedEvents.length }, { source_id: rawEvent.id })
 
         // Geocode addresses
         for (const event of parsedEvents) {
           if (event.location_address && !event.location_lat) {
-            const coords = await geocodeAddress(event.location_address)
+            const coords = await geocodeAddress(event.location_address, supabaseClient)
             if (coords) {
               event.location_lat = coords.lat
               event.location_lng = coords.lng
