@@ -282,11 +282,18 @@ serve(async (req) => {
                                  newAddr.substring(0, 50).toLowerCase()
           
           if (isSameLocation) {
-            console.log(`⊘ Duplicate active event found: "${eventData.name}" on ${eventDateStr} at ${newAddr}`)
+            // 🔧 Reduce log spam - only log once
+            console.log(`⊘ Duplicate: "${eventData.name}" on ${eventDateStr}`)
             await log(supabaseClient, 'publish-event', 'info', 'Duplicate event skipped', { event: eventData.name, date: eventDateStr, location: newAddr }, { city_id: cityId, event_id: existing.id });
             results.skipped++
             
-            // Mark parsed_event as already published to avoid re-processing
+            // 🔧 Mark raw_event as skipped_duplicate to avoid reprocessing
+            await supabaseClient
+              .from('raw_events')
+              .update({ processing_status: 'skipped_duplicate' })
+              .eq('id', parsedEvent.raw_event_id)
+            
+            // Mark parsed_event as already published
             await supabaseClient
               .from('event_confidence')
               .update({ event_id: existing.id })

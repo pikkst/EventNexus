@@ -3,6 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { validateEventDate } from '../_shared/dateValidator.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,22 +53,17 @@ function calculateDataCompleteness(event: any): number {
 
 function calculateTimeValidity(event: any): number {
   try {
-    const startTime = new Date(event.start_time)
-    const now = new Date()
+    // 🔧 Use central date validator
+    const validation = validateEventDate(event.start_time, 'Europe/Tallinn')
     
-    // Event must be in the future
-    if (startTime <= now) {
+    if (!validation.valid) {
+      console.log(`Time validation failed: ${validation.reason} - ${validation.details}`)
       return 0
-    }
-
-    // Events too far in future (>1 year) get lower score
-    const monthsAhead = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30)
-    if (monthsAhead > 12) {
-      return 50
     }
 
     // Check end time if provided
     if (event.end_time) {
+      const startTime = new Date(event.start_time)
       const endTime = new Date(event.end_time)
       if (endTime <= startTime) {
         return 30 // Invalid time range
@@ -76,6 +72,7 @@ function calculateTimeValidity(event: any): number {
 
     return 100
   } catch (error) {
+    console.error('Time validity error:', error)
     return 0
   }
 }
