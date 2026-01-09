@@ -21,8 +21,9 @@ begin
     -- Schedule bootstrap via pg_cron or immediate call
     -- For immediate execution, we'll use a deferred trigger approach
     -- Insert into a bootstrap_queue table that will be processed
-    insert into bootstrap_queue (city_id, status, created_at)
-    values (new.city_id, 'queued', now())
+    -- 🔧 CRITICAL: Store city_name and country to avoid race condition
+    insert into bootstrap_queue (city_id, city_name, country, status, created_at)
+    values (new.city_id, new.city_name, new.country, 'queued', now())
     on conflict (city_id) do nothing;
     
   end if;
@@ -35,6 +36,8 @@ $$ language plpgsql security definer;
 create table if not exists bootstrap_queue (
   id uuid primary key default gen_random_uuid(),
   city_id uuid references city_configs(city_id) on delete cascade unique,
+  city_name text not null,
+  country text not null,
   status text not null default 'queued' check (status in ('queued', 'processing', 'completed', 'failed')),
   attempts int not null default 0,
   last_attempt timestamptz,
@@ -64,7 +67,7 @@ create policy "Service role can manage bootstrap queue"
 
 -- 5. Add helper function to get next bootstrap job
 create or replace function get_next_bootstrap_job()
-returns table (city_id uuid, city_name text) as $$
+returns table (city_id uuid, city_name text, country text) as $$
   update bootstrap_queue
   set 
     status = 'processing',
@@ -82,7 +85,8 @@ returns table (city_id uuid, city_name text) as $$
   )
   returning 
     bootstrap_queue.city_id,
-    (select city_name from city_configs where city_id = bootstrap_queue.city_id) as city_name;
+    bootstrap_queue.city_name,
+    bootstrap_queue.country;
 $$ language sql security definer;
 
 -- 6. Add function to mark bootstrap complete
@@ -124,8 +128,8 @@ end;
 $$ language plpgsql security definer;
 
 -- 8. Queue existing pending cities for bootstrap
-insert into bootstrap_queue (city_id, status)
-select city_id, 'queued'
+insert into bootstrap_queue (city_id, city_name, country, status)
+select city_id, city_name, country, 'queued'
 from city_configs
 where bootstrap_status = 'pending'
 on conflict (city_id) do nothing;
