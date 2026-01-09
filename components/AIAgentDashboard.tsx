@@ -49,6 +49,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   const [cities, setCities] = useState<any[]>([]);
   const [showAddCity, setShowAddCity] = useState(false);
   const [editingCity, setEditingCity] = useState<any>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [newCity, setNewCity] = useState({ 
     city_name: '', 
     country: '', 
@@ -354,6 +355,75 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     } catch (error: any) {
       console.error('Failed to delete city:', error);
       alert(`Failed to delete city: ${error.message}`);
+    }
+  }
+
+  // Auto-geocode city when name and country are provided
+  async function geocodeCity(cityName: string, country: string) {
+    if (!cityName || !country) return;
+
+    setIsGeocoding(true);
+    try {
+      const query = `${cityName}, ${country}`;
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
+        {
+          headers: {
+            'User-Agent': 'EventNexus/1.0'
+          }
+        }
+      );
+      
+      if (!response.ok) throw new Error('Geocoding failed');
+      
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const location = data[0];
+        setNewCity(prev => ({
+          ...prev,
+          latitude: parseFloat(location.lat).toFixed(4),
+          longitude: parseFloat(location.lon).toFixed(4)
+        }));
+      } else {
+        alert(`Could not find coordinates for ${cityName}, ${country}. Please enter manually.`);
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      alert('Failed to auto-fill coordinates. Please enter manually.');
+    } finally {
+      setIsGeocoding(false);
+    }
+  }
+
+  // Auto-geocode city when name and country are provided
+  async function geocodeCity(cityName: string, country: string) {
+    if (!cityName || !country) return;
+
+    setIsGeocoding(true);
+    try {
+      const query = `${cityName}, ${country}`;
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`
+      );
+      
+      if (!response.ok) throw new Error('Geocoding failed');
+      
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const location = data[0];
+        setNewCity(prev => ({
+          ...prev,
+          latitude: parseFloat(location.lat).toFixed(4),
+          longitude: parseFloat(location.lon).toFixed(4)
+        }));
+      } else {
+        alert(`Could not find coordinates for ${cityName}, ${country}. Please enter manually.`);
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      alert('Failed to auto-fill coordinates. Please enter manually.');
+    } finally {
+      setIsGeocoding(false);
     }
   }
 
@@ -700,7 +770,14 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
                         <input
                           type="text"
                           value={newCity.city_name}
-                          onChange={(e) => setNewCity({ ...newCity, city_name: e.target.value })}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setNewCity({ ...newCity, city_name: value });
+                            // Auto-geocode when both city and country are filled
+                            if (value && newCity.country) {
+                              geocodeCity(value, newCity.country);
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                           placeholder="Tartu"
                         />
@@ -710,31 +787,40 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
                         <input
                           type="text"
                           value={newCity.country}
-                          onChange={(e) => setNewCity({ ...newCity, country: e.target.value })}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setNewCity({ ...newCity, country: value });
+                            // Auto-geocode when both city and country are filled
+                            if (newCity.city_name && value) {
+                              geocodeCity(newCity.city_name, value);
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                           placeholder="Estonia"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Latitude *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Latitude * {isGeocoding && <span className="text-indigo-600 text-xs">(loading...)</span>}
+                        </label>
                         <input
-                          type="number"
-                          step="0.0001"
+                          type="text"
                           value={newCity.latitude}
-                          onChange={(e) => setNewCity({ ...newCity, latitude: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                          placeholder="58.3776"
+                          readOnly
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
+                          placeholder="Auto-filled from city name"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Longitude *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Longitude * {isGeocoding && <span className="text-indigo-600 text-xs">(loading...)</span>}
+                        </label>
                         <input
-                          type="number"
-                          step="0.0001"
+                          type="text"
                           value={newCity.longitude}
-                          onChange={(e) => setNewCity({ ...newCity, longitude: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                          placeholder="26.7290"
+                          readOnly
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
+                          placeholder="Auto-filled from city name"
                         />
                       </div>
                       <div>
