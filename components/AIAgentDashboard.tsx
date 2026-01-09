@@ -67,6 +67,11 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   const [activeCronJobs, setActiveCronJobs] = useState<any[]>([]);
   const [savingScheduler, setSavingScheduler] = useState(false);
   const [loadingScheduler, setLoadingScheduler] = useState(false);
+  
+  // Manual jobs state
+  const [showManualJobs, setShowManualJobs] = useState(false);
+  const [runningManualJob, setRunningManualJob] = useState(false);
+  const [selectedCityForBootstrap, setSelectedCityForBootstrap] = useState<string>('');
 
   // Live Activity state
   const [liveActivity, setLiveActivity] = useState<AIDecisionLog[]>([]);
@@ -213,6 +218,65 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
 
     if (error) throw error;
     return data || [];
+  }
+
+  // Manual job functions
+  async function runManualBootstrap() {
+    if (!selectedCityForBootstrap) {
+      alert('Please select a city first');
+      return;
+    }
+    
+    setRunningManualJob(true);
+    try {
+      const city = cities.find(c => c.city_id === selectedCityForBootstrap);
+      console.log(`🚀 Bootstrap starting for: ${city.city_name}`);
+      
+      const { data, error } = await supabase.functions.invoke('bootstrap-city', {
+        body: { 
+          city_name: city.city_name,
+          country: city.country,
+          auto_discover: true,
+          seed_events: true
+        }
+      });
+      
+      if (error) throw error;
+      
+      const summary = `
+✅ Bootstrap Complete for ${city.city_name}!
+
+📋 Sources Added: ${data.sources_added || 0}
+🎉 Events Seeded: ${data.events_seeded || 0}
+${data.error ? `\n⚠️ ${data.error}` : ''}
+      `.trim();
+      
+      alert(summary);
+      await loadDashboardData();
+    } catch (error: any) {
+      console.error('Bootstrap failed:', error);
+      alert(`❌ Bootstrap Failed!\n\n${error.message}`);
+    } finally {
+      setRunningManualJob(false);
+      setShowManualJobs(false);
+    }
+  }
+
+  async function runManualJob(jobName: string) {
+    setRunningManualJob(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(jobName);
+      
+      if (error) throw error;
+      
+      alert(`✅ ${jobName} completed!\n\n${JSON.stringify(data?.results || data, null, 2)}`);
+      await loadDashboardData();
+    } catch (error: any) {
+      console.error(`${jobName} failed:`, error);
+      alert(`❌ ${jobName} failed!\n\n${error.message}`);
+    } finally {
+      setRunningManualJob(false);
+    }
   }
 
   async function triggerAgentPipeline() {
@@ -670,6 +734,97 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
+              
+              {/* Manual Jobs Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowManualJobs(!showManualJobs)}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  Manual Jobs
+                </button>
+                
+                {showManualJobs && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="p-4 border-b border-gray-200">
+                      <h3 className="font-semibold text-gray-900">Manual Job Triggers</h3>
+                      <p className="text-xs text-gray-500 mt-1">Run individual pipeline steps</p>
+                    </div>
+                    
+                    <div className="p-3 space-y-2">
+                      {/* Bootstrap City */}
+                      <div className="border border-gray-200 rounded p-3">
+                        <label className="text-sm font-medium text-gray-700 block mb-2">
+                          Bootstrap City
+                        </label>
+                        <select
+                          value={selectedCityForBootstrap}
+                          onChange={(e) => setSelectedCityForBootstrap(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded mb-2 text-sm"
+                        >
+                          <option value="">Select city...</option>
+                          {cities.map(city => (
+                            <option key={city.city_id} value={city.city_id}>
+                              {city.city_name}, {city.country}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={runManualBootstrap}
+                          disabled={!selectedCityForBootstrap || runningManualJob}
+                          className="w-full px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
+                        >
+                          {runningManualJob ? 'Running...' : 'Discover Sources'}
+                        </button>
+                      </div>
+                      
+                      {/* Other Jobs */}
+                      <button
+                        onClick={() => runManualJob('fetch-sources')}
+                        disabled={runningManualJob}
+                        className="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 text-sm text-left"
+                      >
+                        Fetch Sources
+                      </button>
+                      
+                      <button
+                        onClick={() => runManualJob('parse-event-ai')}
+                        disabled={runningManualJob}
+                        className="w-full px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-300 text-sm text-left"
+                      >
+                        Parse Event AI
+                      </button>
+                      
+                      <button
+                        onClick={() => runManualJob('validate-event')}
+                        disabled={runningManualJob}
+                        className="w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-300 text-sm text-left"
+                      >
+                        Validate Event
+                      </button>
+                      
+                      <button
+                        onClick={() => runManualJob('publish-event')}
+                        disabled={runningManualJob}
+                        className="w-full px-3 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 disabled:bg-gray-300 text-sm text-left"
+                      >
+                        Publish Event
+                      </button>
+                    </div>
+                    
+                    <div className="p-3 border-t border-gray-200">
+                      <button
+                        onClick={() => setShowManualJobs(false)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
               <button
                 onClick={triggerAgentPipeline}
                 disabled={isProcessing}
