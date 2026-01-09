@@ -207,7 +207,7 @@ serve(async (req) => {
           .from('events')
           .insert({
             name: eventData.name,
-            description: eventData.description,
+            description: eventData.description || 'Event details to be announced.',
             category: eventData.category,
             date: dateStr,
             time: timeOnly,
@@ -217,7 +217,8 @@ serve(async (req) => {
               lng: eventData.location_lng || null
             },
             location_point: locationPoint,
-            price: 0,
+            price: eventData.price || (eventData.is_free ? 0 : null),
+            max_attendees: eventData.max_capacity || null,
             organizer_id: 'f2ecf6c6-14c1-4dbd-894b-14ee6493d807', // Admin user
             image: eventImage,
             status: 'active',
