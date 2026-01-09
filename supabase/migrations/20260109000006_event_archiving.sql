@@ -13,9 +13,19 @@ VALUES
 ON CONFLICT (job_name) DO NOTHING;
 
 -- Update valid_job_name constraint to include archive-expired
-ALTER TABLE public.scheduler_configs 
-  DROP CONSTRAINT IF EXISTS valid_job_name;
+-- First, check if constraint exists and drop it
+DO $$ 
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'valid_job_name' 
+    AND conrelid = 'public.scheduler_configs'::regclass
+  ) THEN
+    ALTER TABLE public.scheduler_configs DROP CONSTRAINT valid_job_name;
+  END IF;
+END $$;
 
+-- Add updated constraint
 ALTER TABLE public.scheduler_configs 
   ADD CONSTRAINT valid_job_name 
   CHECK (job_name IN ('fetch-sources', 'parse-events', 'validate-events', 'archive-expired'));

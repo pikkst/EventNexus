@@ -133,53 +133,45 @@ serve(async (req) => {
           continue;
         }
 
-        // Check for duplicates
+        // Check for duplicates - CRITICAL: must check active status to avoid re-publishing
         const eventStartTime = new Date(eventData.start_time)
         const eventDateStr = eventStartTime.toISOString().split('T')[0]
         
         const { data: existingEvents } = await supabaseClient
           .from('events')
-          .select('id, name, date, location_point')
+          .select('id, name, date, location_point, status, location')
           .eq('city_id', cityId)
           .eq('name', eventData.name)
           .eq('date', eventDateStr)
+          .eq('status', 'active') // Only check active events
 
         if (existingEvents && existingEvents.length > 0) {
-          // Duplicate found - update existing event
+          // Check if location also matches (same venue)
           const existing = existingEvents[0]
+          const existingAddr = existing.location?.address || ''
+          const newAddr = eventData.location_address || ''
           
-          const { error: updateError } = await supabaseClient
-            .from('events')
-            .update({
-              description: eventData.description,
-              image: eventData.image_url || null,
-              last_ai_update: new Date().toISOString(),
-            })
-            .eq('id', existing.id)
-
-          if (!updateError) {
-            // Create version record
-            await supabaseClient
-              .from('event_versions')
-              .insert({
-                event_id: existing.id,
-                version_number: 1,
-                changes_json: {
-                  type: 'ai_update',
-                  changes: { description: 'updated' },
-                },
-                change_type: 'ai_update',
-              })
-
-            // Update confidence record
+          // Simple address similarity check (first 50 chars)
+          const isSameLocation = existingAddr.substring(0, 50).toLowerCase() === 
+                                 newAddr.substring(0, 50).toLowerCase()
+          
+          if (isSameLocation) {
+            console.log(`⊘ Duplicate active event found: "${eventData.name}" on ${eventDateStr} at ${newAddr}`)
+            results.skipped++
+            
+            // Mark parsed_event as already published to avoid re-processing
             await supabaseClient
               .from('event_confidence')
               .update({ event_id: existing.id })
               .eq('parsed_event_id', parsedEvent.id)
-
-            results.updated++
-            continue
+            
+            continue // Skip this event completely
           }
+        }
+
+        // If we reach here, it's either: no duplicate, or different location (allowed)
+        if (existingEvents && existingEvents.length > 0) {
+          console.log(`✓ Same name/date but different location - creating separate event`)
         }
 
         // Create new event
