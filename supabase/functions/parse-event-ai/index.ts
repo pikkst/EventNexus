@@ -52,6 +52,21 @@ Today is 09/01/2026. Extract ONLY events within the next 30 DAYS.
 SKIP: past events AND events starting after 08/02/2026 (beyond 30 days)
 INCLUDE: events from 09/01/2026 to 08/02/2026 (within 30-day window)
 
+CRITICAL - WHAT IS AN EVENT (vs VENUE/SERVICE):
+✅ EXTRACT: Specific events with EXACT dates and times
+  - "Concert on Jan 15, 2026 at 19:00"
+  - "Workshop: Marketing Basics, Jan 20, 2026"
+  - "Festival opening ceremony, Feb 1, 2026"
+  
+❌ SKIP: Venue descriptions, rental services, generic information
+  - "Event space available for rent"
+  - "Our venue can host up to 200 people"
+  - "Book our conference hall for your event"
+  - "Rental fee: €X per hour"
+  - Pages about venue/space without specific events listed
+  
+If the page ONLY describes a venue/service without listing specific dated events, return EMPTY ARRAY [].
+
 HTML PARSING TIPS:
 - Look for event cards/listings with date, title, location
 - Common HTML patterns: <article>, <div class="event">, <li class="event-item">
@@ -395,6 +410,40 @@ serve(async (req) => {
           .eq('id', rawEvent.id)
 
         results.processed++
+        
+        // TRACK: If 0 events extracted, increment failed_parse_count for this source
+        // DEACTIVATE: If 3+ consecutive failed parses, mark source as inactive (outdated/moved site)
+        if (validEvents.length === 0) {
+          const { data: sourceData } = await supabaseClient
+            .from('event_sources')
+            .select('failed_parse_count')
+            .eq('id', rawEvent.source_id)
+            .single()
+          
+          const newFailedCount = (sourceData?.failed_parse_count || 0) + 1
+          
+          await supabaseClient
+            .from('event_sources')
+            .update({ 
+              failed_parse_count: newFailedCount,
+              active: newFailedCount < 3 // Deactivate after 3+ failed parses
+            })
+            .eq('id', rawEvent.source_id)
+          
+          if (newFailedCount >= 3) {
+            console.log(`❌ Source ${rawEvent.source_id} deactivated after ${newFailedCount} failed parses (0 events)`)
+            await log(supabaseClient, 'parse-event-ai', 'warning', 'Source auto-deactivated (outdated/moved)', { 
+              source_id: rawEvent.source_id, 
+              failed_count: newFailedCount 
+            })
+          }
+        } else {
+          // SUCCESS: Reset failed_parse_count when events are found
+          await supabaseClient
+            .from('event_sources')
+            .update({ failed_parse_count: 0 })
+            .eq('id', rawEvent.source_id)
+        }
         
         // Rate limit protection: 150 RPM = 2.5 req/sec, use 1s delay to be safe
         if (rawEvents.length > 1) {
