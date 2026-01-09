@@ -29,22 +29,24 @@ CREATE TABLE IF NOT EXISTS agent_logs (
 );
 
 -- Indexes for fast queries
-CREATE INDEX idx_agent_logs_created_at ON agent_logs(created_at DESC);
-CREATE INDEX idx_agent_logs_agent_name ON agent_logs(agent_name);
-CREATE INDEX idx_agent_logs_level ON agent_logs(level);
-CREATE INDEX idx_agent_logs_job_id ON agent_logs(job_id) WHERE job_id IS NOT NULL;
-CREATE INDEX idx_agent_logs_city_id ON agent_logs(city_id) WHERE city_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_agent_logs_created_at ON agent_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_logs_agent_name ON agent_logs(agent_name);
+CREATE INDEX IF NOT EXISTS idx_agent_logs_level ON agent_logs(level);
+CREATE INDEX IF NOT EXISTS idx_agent_logs_job_id ON agent_logs(job_id) WHERE job_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_agent_logs_city_id ON agent_logs(city_id) WHERE city_id IS NOT NULL;
 
 -- RLS policies
 ALTER TABLE agent_logs ENABLE ROW LEVEL SECURITY;
 
 -- Allow authenticated users to read logs
+DROP POLICY IF EXISTS "Allow authenticated users to read agent logs" ON agent_logs;
 CREATE POLICY "Allow authenticated users to read agent logs"
   ON agent_logs FOR SELECT
   TO authenticated
   USING (true);
 
 -- Allow service role to insert logs
+DROP POLICY IF EXISTS "Allow service role to insert agent logs" ON agent_logs;
 CREATE POLICY "Allow service role to insert agent logs"
   ON agent_logs FOR INSERT
   TO service_role

@@ -13,6 +13,47 @@ export interface LogContext {
   event_id?: string
 }
 
+// Simple function-based logger (no class needed)
+export async function log(
+  supabase: SupabaseClient,
+  agentName: string,
+  level: LogLevel,
+  message: string,
+  details?: any,
+  context?: { city_id?: string; source_id?: string; event_id?: string; job_id?: string }
+) {
+  // Console log (for Supabase logs)
+  const prefix = getPrefix(level)
+  console.log(`${prefix} ${message}`, details ? JSON.stringify(details) : '')
+
+  // Database log (for admin UI) - fire and forget, don't block execution
+  try {
+    supabase.from('agent_logs').insert({
+      agent_name: agentName,
+      level,
+      message,
+      details: details || null,
+      city_id: context?.city_id || null,
+      source_id: context?.source_id || null,
+      event_id: context?.event_id || null,
+      job_id: context?.job_id || null,
+    }).then() // Don't await - fire and forget
+  } catch (error) {
+    // Silently fail - logging shouldn't break the agent
+  }
+}
+
+function getPrefix(level: LogLevel): string {
+  switch (level) {
+    case 'info': return 'ℹ️'
+    case 'success': return '✅'
+    case 'warning': return '⚠️'
+    case 'error': return '❌'
+    case 'debug': return '🔍'
+  }
+}
+
+// Legacy class for backward compatibility
 export class AgentLogger {
   private supabase: SupabaseClient
   private context: LogContext
@@ -25,26 +66,12 @@ export class AgentLogger {
   }
 
   async log(level: LogLevel, message: string, details?: any) {
-    // Console log (for Supabase logs)
-    const prefix = this.getPrefix(level)
-    console.log(`${prefix} ${message}`, details ? JSON.stringify(details) : '')
-
-    // Database log (for admin UI)
-    try {
-      await this.supabase.from('agent_logs').insert({
-        agent_name: this.context.agent_name,
-        job_id: this.context.job_id,
-        city_id: this.context.city_id,
-        source_id: this.context.source_id,
-        event_id: this.context.event_id,
-        level,
-        message,
-        details: details || null,
-        duration_ms: Date.now() - this.startTime,
-      })
-    } catch (error) {
-      console.error('Failed to write log to database:', error)
-    }
+    return log(this.supabase, this.context.agent_name, level, message, details, {
+      city_id: this.context.city_id,
+      source_id: this.context.source_id,
+      event_id: this.context.event_id,
+      job_id: this.context.job_id,
+    })
   }
 
   info(message: string, details?: any) {
@@ -65,15 +92,5 @@ export class AgentLogger {
 
   debug(message: string, details?: any) {
     return this.log('debug', message, details)
-  }
-
-  private getPrefix(level: LogLevel): string {
-    switch (level) {
-      case 'info': return 'ℹ️'
-      case 'success': return '✅'
-      case 'warning': return '⚠️'
-      case 'error': return '❌'
-      case 'debug': return '🔍'
-    }
   }
 }

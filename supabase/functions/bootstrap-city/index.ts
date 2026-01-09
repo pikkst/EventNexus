@@ -3,6 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { log } from '../_shared/logger.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -423,6 +424,7 @@ async function bootstrapCity(
 
     if (seed_events && sourcesAdded > 0) {
       console.log(`Seeding initial events for ${city_name}...`)
+      await log(supabase, 'bootstrap-city', 'info', 'Seeding initial events', { city: city_name, sources: sourcesAdded }, { city_id: cityId });
       
       // Trigger fetch-sources for this city
       const { data: fetchResult, error: fetchError } = await supabase.functions.invoke('fetch-sources', {
@@ -458,6 +460,13 @@ async function bootstrapCity(
       .eq('city_id', cityId)
 
     // Log completion
+    await log(supabase, 'bootstrap-city', finalStatus === 'active' ? 'success' : 'warning', 'City bootstrap completed', { 
+      city: city_name, 
+      status: finalStatus, 
+      sources: sourcesAdded, 
+      events: eventsSeeded 
+    }, { city_id: cityId });
+    
     await supabase
       .from('ai_decision_log')
       .insert({
