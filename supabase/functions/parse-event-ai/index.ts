@@ -4,6 +4,7 @@
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { log } from '../_shared/logger.ts'
+import { validateEventDate } from '../_shared/dateValidator.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -186,14 +187,7 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
         console.log(`AI extracted ${eventArray.length} events before filtering`)
         await log(supabaseClient, 'parse-event-ai', 'info', 'AI extracted events', { events_before_filter: eventArray.length })
         
-        // Server-side filter: only events within next 30 days
-        // CRITICAL: Account for timezone - events are in Europe/Tallinn (UTC+2/+3)
-        // If event time doesn't have timezone indicator, assume it's in local time
-        const now = new Date()
-        // Subtract 6 hours margin to account for timezone differences and avoid filtering today's events
-        const nowWithMargin = new Date(now.getTime() - 6 * 60 * 60 * 1000)
-        const oneMonthLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // +30 days
-        
+        // 🔧 Server-side filter: use central date validator
         const rejectedEvents: ParsedEvent[] = []
         const validEvents = eventArray.filter((event: ParsedEvent) => {
           if (!event.start_time) {
@@ -202,19 +196,16 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
             return false
           }
           
-          const eventStart = new Date(event.start_time)
-          const isFuture = eventStart > nowWithMargin
-          const withinMonth = eventStart <= oneMonthLater
+          // Use central date validator
+          const validation = validateEventDate(event.start_time, 'Europe/Tallinn')
           
-          if (!isFuture) {
-            console.log(`Filtered out past event: "${event.name}" (${event.start_time}) - now: ${now.toISOString()}`)
+          if (!validation.valid) {
+            console.log(`Filtered out event: "${event.name}" - ${validation.reason}: ${validation.details}`)
             rejectedEvents.push(event)
-          } else if (!withinMonth) {
-            console.log(`Filtered out event beyond 1 month: "${event.name}" (${event.start_time})`)
-            rejectedEvents.push(event)
+            return false
           }
           
-          return isFuture && withinMonth
+          return true
         })
         
         console.log(`Filtered ${eventArray.length} events -> ${validEvents.length} valid events (future + within 30 days)`)
@@ -345,9 +336,10 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get city_id from request body if provided
+    // 🔧 Get request parameters
     const body = await req.json().catch(() => ({}))
     const cityId = body.city_id || null
+    const rawEventIds = body.raw_event_ids || null // Two-phase pipeline support
 
     // Build query for pending raw events
     let query = supabaseClient
@@ -356,9 +348,15 @@ serve(async (req) => {
       .eq('processing_status', 'pending')
       .limit(10) // Process in batches
 
-    // Filter by city if specified
-    if (cityId) {
-      query = query.eq('event_sources.city_id', cityId)
+    // 🔧 If specific raw_event_ids provided (two-phase pipeline), use those
+    if (rawEventIds && Array.isArray(rawEventIds) && rawEventIds.length > 0) {
+      query = query.in('id', rawEventIds)
+      console.log(`Processing specific raw events: ${rawEventIds.length} IDs`)
+    } else {
+      // Legacy mode: filter by city if specified
+      if (cityId) {
+        query = query.eq('event_sources.city_id', cityId)
+      }
     }
 
     const { data: rawEvents, error: rawError } = await query
@@ -480,31 +478,54 @@ serve(async (req) => {
 
         results.processed++
         
-        // TRACK: If 0 events extracted, increment failed_parse_count for this source
+        // 🔧 TRACK: Source health automation
+        // If 0 events extracted, increment failed_parse_count
         // DEACTIVATE: If 3+ consecutive failed parses, mark source as inactive (outdated/moved site)
         if (parseResult.events.length === 0) {
           const { data: sourceData } = await supabaseClient
             .from('event_sources')
-            .select('failed_parse_count')
+            .select('failed_parse_count, source_score')
             .eq('id', rawEvent.source_id)
             .single()
           
           const newFailedCount = (sourceData?.failed_parse_count || 0) + 1
+          const currentScore = sourceData?.source_score || 1.0
+          const newScore = Math.max(0.0, currentScore - 0.1) // Decrease score by 0.1
           
           await supabaseClient
             .from('event_sources')
             .update({ 
               failed_parse_count: newFailedCount,
+              source_score: newScore,
               active: newFailedCount < 3 // Deactivate after 3+ failed parses
             })
             .eq('id', rawEvent.source_id)
           
           if (newFailedCount >= 3) {
-            console.log(`❌ Source ${rawEvent.source_id} deactivated after ${newFailedCount} failed parses (0 events)`)
-            await log(supabaseClient, 'parse-event-ai', 'warning', 'Source auto-deactivated (outdated/moved)', { 
+            console.log(`❌ Source ${rawEvent.source_id} auto-deactivated after ${newFailedCount} failed parses (0 events)`)
+            await log(supabaseClient, 'parse-event-ai', 'warning', 'Source auto-deactivated (low yield)', { 
               source_id: rawEvent.source_id, 
-              failed_count: newFailedCount 
+              failed_count: newFailedCount,
+              final_score: newScore
             })
+            
+            // Log AI decision
+            await supabaseClient
+              .from('ai_decision_log')
+              .insert({
+                parsed_event_id: null,
+                decision_type: 'disable_source',
+                decision_result: 'low_yield',
+                reasoning: {
+                  failed_parse_count: newFailedCount,
+                  events_extracted: 0,
+                  reason: 'Source consistently returns 0 events - likely outdated or moved'
+                },
+                ai_model: 'rules_engine',
+                processing_time_ms: 0,
+              })
+          } else {
+            console.log(`⚠️ Source ${rawEvent.source_id} failed parse ${newFailedCount}/3 (score: ${newScore})`)
           }
         } else {
           // SUCCESS: Reset failed_parse_count when events are found
