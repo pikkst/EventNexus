@@ -172,7 +172,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     const { data: cities, error } = await supabase
       .from('city_configs')
       .select(`
-        id,
+        city_id,
         city_name,
         country,
         is_active,
@@ -194,7 +194,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         const { count: sourcesCount } = await supabase
           .from('event_sources')
           .select('*', { count: 'exact', head: true })
-          .eq('city_id', city.id)
+          .eq('city_id', city.city_id)
           .eq('active', true);
 
         // Count events from last 30 days
@@ -202,14 +202,14 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         const { count: eventsCount } = await supabase
           .from('events')
           .select('*', { count: 'exact', head: true })
-          .eq('city_id', city.id)
+          .eq('city_id', city.city_id)
           .gte('created_at', thirtyDaysAgo);
 
         // Count total events (all time)
         const { count: totalEvents } = await supabase
           .from('events')
           .select('*', { count: 'exact', head: true })
-          .eq('city_id', city.id);
+          .eq('city_id', city.city_id);
 
         // Calculate freshness score (0-100) based on created_at (since last_bootstrap_at doesn't exist yet)
         const daysSinceCreated = Math.floor((Date.now() - new Date(city.created_at).getTime()) / (1000 * 60 * 60 * 24));
@@ -221,8 +221,8 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         if (!city.is_active) freshness_score = 0;
 
         return {
-          id: city.id,
-          city_id: city.id,
+          id: city.city_id,
+          city_id: city.city_id,
           active_sources: sourcesCount || 0,
           total_events: totalEvents || 0,
           events_this_week: eventsCount || 0,
@@ -417,21 +417,24 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     try {
       setIsGeocoding(true);
       
-      // Validate coordinates
-      if (!newCity.latitude || !newCity.longitude || newCity.latitude === '0' || newCity.longitude === '0') {
-        alert('Invalid coordinates. Please try geocoding again.');
+      // Validate coordinates (parse as float first)
+      const lat = parseFloat(newCity.latitude);
+      const lng = parseFloat(newCity.longitude);
+      
+      if (isNaN(lat) || isNaN(lng) || Math.abs(lat) < 0.01 || Math.abs(lng) < 0.01) {
+        alert(`Invalid coordinates: ${newCity.latitude}, ${newCity.longitude}. Please try geocoding again.`);
         setIsGeocoding(false);
         return;
       }
       
-      console.log('Adding city to database:', newCity);
+      console.log('Adding city to database:', { ...newCity, lat, lng });
       
       // Insert city into city_configs (only columns that exist)
       const cityData: any = {
         city_name: newCity.city_name,
         country: newCity.country,
-        latitude: parseFloat(newCity.latitude),
-        longitude: parseFloat(newCity.longitude),
+        latitude: lat,
+        longitude: lng,
         timezone: newCity.timezone,
         is_active: true
       };
@@ -456,10 +459,13 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         throw insertError;
       }
       
+      console.log('City inserted successfully:', insertedCity);
+      
       alert(`✅ City added: ${newCity.city_name}, ${newCity.country}\n\nStarting bootstrap...`);
       
-      // Automatically trigger bootstrap
-      await triggerBootstrapForCity(insertedCity.id);
+      // Automatically trigger bootstrap - use city_id not id
+      const cityId = insertedCity.city_id || insertedCity.id;
+      await triggerBootstrapForCity(cityId);
       
       // Reset form and reload cities
       setNewCity({ 
