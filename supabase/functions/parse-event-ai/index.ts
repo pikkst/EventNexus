@@ -202,12 +202,19 @@ async function geocodeAddress(address: string, supabaseClient: any): Promise<{ l
     // Add 1.1 second delay to respect Nominatim rate limit
     await new Promise(resolve => setTimeout(resolve, 1100))
     
-    // Try full address first
+    // Add Estonia to address if not already present for better results
+    let searchAddress = address
+    if (!address.toLowerCase().includes('estonia') && !address.toLowerCase().includes('eesti')) {
+      searchAddress = `${address}, Estonia`
+    }
+    
+    // Try full address first with country code filter
     let response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1&countrycodes=ee`,
       {
         headers: {
           'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
+          'Accept-Language': 'et,en'
         }
       }
     )
@@ -227,11 +234,13 @@ async function geocodeAddress(address: string, supabaseClient: any): Promise<{ l
         console.log(`🔄 Retrying with venue name only: ${venueName}`)
         await new Promise(resolve => setTimeout(resolve, 1100))
         
+        const venueSearch = `${venueName}, Estonia`
         response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(venueName)}&limit=1`,
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(venueSearch)}&limit=1&countrycodes=ee`,
           {
             headers: {
               'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
+              'Accept-Language': 'et,en'
             }
           }
         )
