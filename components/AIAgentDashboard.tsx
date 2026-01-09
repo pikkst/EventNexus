@@ -53,6 +53,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   const [showAddCity, setShowAddCity] = useState(false);
   const [editingCity, setEditingCity] = useState<any>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodingResults, setGeocodingResults] = useState<any[]>([]);
   const [newCity, setNewCity] = useState({ 
     city_name: '', 
     country: '', 
@@ -221,6 +222,177 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   }
 
   // Manual job functions
+  async function geocodeAndAddCity() {
+    if (!newCity.city_name.trim()) {
+      alert('Please enter a city name');
+      return;
+    }
+    
+    setIsGeocoding(true);
+    setGeocodingResults([]);
+    
+    try {
+      // Use Nominatim to geocode city name
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?` +
+        `q=${encodeURIComponent(newCity.city_name)}&` +
+        `format=json&limit=5&` +
+        `featuretype=city&` +
+        `addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'EventNexus/1.0',
+            'Accept-Language': 'en'
+          }
+        }
+      );
+      
+      if (!response.ok) throw new Error('Geocoding failed');
+      
+      const results = await response.json();
+      
+      if (results.length === 0) {
+        alert('City not found. Please try a different name or spelling.');
+        return;
+      }
+      
+      // Show results for user to select
+      setGeocodingResults(results);
+      
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      alert('Failed to find city. Please try again.');
+    } finally {
+      setIsGeocoding(false);
+    }
+  }
+  
+  async function selectGeocodedCity(result: any) {
+    // Extract city name and country from OSM result
+    const cityName = result.address.city || result.address.town || result.address.village || result.name;
+    const country = result.address.country;
+    
+    // Auto-detect timezone based on coordinates (simplified - use lat/lng)
+    const timezone = getTimezoneFromCoords(parseFloat(result.lat), parseFloat(result.lon));
+    
+    setNewCity({
+      city_name: cityName,
+      country: country,
+      latitude: result.lat,
+      longitude: result.lon,
+      timezone: timezone,
+      is_active: true
+    });
+    
+    setGeocodingResults([]);
+    
+    // Confirm with user
+    const confirm = window.confirm(
+      `Add city: ${cityName}, ${country}?\n\n` +
+      `Coordinates: ${result.lat}, ${result.lon}\n` +
+      `Timezone: ${timezone}\n\n` +
+      `After adding, the system will automatically:\n` +
+      `1. Bootstrap event sources for this city\n` +
+      `2. Start discovering events\n` +
+      `3. Add to regular pipeline\n\n` +
+      `Continue?`
+    );
+    
+    if (!confirm) return;
+    
+    // Add city to database
+    await addCityToDatabase();
+  }
+  
+  function getTimezoneFromCoords(lat: number, lng: number): string {
+    // Simplified timezone detection by region
+    if (lat >= 35 && lat <= 71 && lng >= -10 && lng <= 40) {
+      // Europe
+      if (lng >= 20) return 'Europe/Tallinn'; // Eastern Europe
+      if (lng >= 5) return 'Europe/Berlin'; // Central Europe
+      return 'Europe/London'; // Western Europe
+    }
+    if (lat >= -60 && lat <= 15 && lng >= -170 && lng <= -30) {
+      return 'America/New_York'; // Americas
+    }
+    if (lat >= -50 && lat <= 55 && lng >= 40 && lng <= 180) {
+      return 'Asia/Tokyo'; // Asia/Pacific
+    }
+    return 'UTC'; // Fallback
+  }
+  
+  async function addCityToDatabase() {
+    try {
+      setIsGeocoding(true);
+      
+      // Insert city into city_configs
+      const { data: insertedCity, error: insertError } = await supabase
+        .from('city_configs')
+        .insert({
+          city_name: newCity.city_name,
+          country: newCity.country,
+          latitude: parseFloat(newCity.latitude),
+          longitude: parseFloat(newCity.longitude),
+          timezone: newCity.timezone,
+          is_active: true,
+          bootstrap_status: 'pending',
+          pipeline_enabled: true
+        })
+        .select()
+        .single();
+      
+      if (insertError) throw insertError;
+      
+      alert(`✅ City added: ${newCity.city_name}, ${newCity.country}\n\nStarting bootstrap...`);
+      
+      // Automatically trigger bootstrap
+      await triggerBootstrapForCity(insertedCity.id);
+      
+      // Reset form and reload cities
+      setNewCity({ 
+        city_name: '', 
+        country: '', 
+        latitude: '', 
+        longitude: '', 
+        timezone: 'Europe/Tallinn',
+        is_active: true 
+      });
+      setShowAddCity(false);
+      await loadCities();
+      
+    } catch (error) {
+      console.error('Error adding city:', error);
+      alert('Failed to add city. Please try again.');
+    } finally {
+      setIsGeocoding(false);
+    }
+  }
+  
+  async function triggerBootstrapForCity(cityId: string) {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bootstrap-city`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ city_id: cityId })
+        }
+      );
+      
+      if (!response.ok) throw new Error('Bootstrap failed');
+      
+      const result = await response.json();
+      alert(`✅ Bootstrap completed!\n\nDiscovered ${result.sources_added || 0} event sources.\n\nCheck Agent Logs for details.`);
+      
+    } catch (error) {
+      console.error('Bootstrap error:', error);
+      alert('Bootstrap started but check Agent Logs for status.');
+    }
+  }
+  
   async function runManualBootstrap() {
     if (!selectedCityForBootstrap) {
       alert('Please select a city first');
@@ -1166,113 +1338,86 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                 {/* Add City Form */}
                 {showAddCity && (
                   <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-                    <h4 className="font-medium text-gray-900 mb-4">Add New City</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h4 className="font-medium text-gray-900 mb-4">Add New City (Auto-Setup)</h4>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Enter a city name. System will automatically find coordinates, country, timezone and bootstrap event sources.
+                    </p>
+                    
+                    <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">City Name *</label>
-                        <input
-                          type="text"
-                          value={newCity.city_name}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setNewCity({ ...newCity, city_name: value });
-                            // Auto-geocode when both city and country are filled
-                            if (value && newCity.country) {
-                              geocodeCity(value, newCity.country);
-                            }
-                          }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                          placeholder="Tartu"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
-                        <input
-                          type="text"
-                          value={newCity.country}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setNewCity({ ...newCity, country: value });
-                            // Auto-geocode when both city and country are filled
-                            if (newCity.city_name && value) {
-                              geocodeCity(newCity.city_name, value);
-                            }
-                          }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                          placeholder="Estonia"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Latitude * {isGeocoding && <span className="text-indigo-600 text-xs">(loading...)</span>}
-                        </label>
-                        <input
-                          type="text"
-                          value={newCity.latitude}
-                          readOnly
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
-                          placeholder="Auto-filled from city name"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Longitude * {isGeocoding && <span className="text-indigo-600 text-xs">(loading...)</span>}
-                        </label>
-                        <input
-                          type="text"
-                          value={newCity.longitude}
-                          readOnly
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
-                          placeholder="Auto-filled from city name"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
-                        <select
-                          value={newCity.timezone}
-                          onChange={(e) => setNewCity({ ...newCity, timezone: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                        >
-                          <option value="Europe/Tallinn">Europe/Tallinn</option>
-                          <option value="Europe/Helsinki">Europe/Helsinki</option>
-                          <option value="Europe/Stockholm">Europe/Stockholm</option>
-                          <option value="Europe/Riga">Europe/Riga</option>
-                          <option value="Europe/Vilnius">Europe/Vilnius</option>
-                        </select>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2 cursor-pointer">
+                        <div className="flex gap-2">
                           <input
-                            type="checkbox"
-                            checked={newCity.is_active}
-                            onChange={(e) => setNewCity({ ...newCity, is_active: e.target.checked })}
-                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            type="text"
+                            value={newCity.city_name}
+                            onChange={(e) => setNewCity({ ...newCity, city_name: e.target.value })}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Berlin, Paris, London, New York..."
+                            onKeyPress={(e) => e.key === 'Enter' && geocodeAndAddCity()}
                           />
-                          <span className="text-sm font-medium text-gray-700">Active</span>
-                        </label>
+                          <button
+                            onClick={geocodeAndAddCity}
+                            disabled={isGeocoding || !newCity.city_name.trim()}
+                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                          >
+                            {isGeocoding ? (
+                              <>
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                Searching...
+                              </>
+                            ) : (
+                              <>
+                                <MapPin className="w-4 h-4" />
+                                Find & Add City
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-4 flex gap-3">
-                      <button
-                        onClick={handleAddCity}
-                        disabled={!newCity.city_name || !newCity.country || !newCity.latitude || !newCity.longitude}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                      >
-                        <Save className="w-4 h-4" />
-                        Save City
-                      </button>
-                      <button
-                        onClick={() => setShowAddCity(false)}
-                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                      >
-                        Cancel
-                      </button>
+                      
+                      {/* Geocoding Results */}
+                      {geocodingResults.length > 0 && (
+                        <div className="border border-indigo-200 bg-indigo-50 rounded-lg p-4">
+                          <h5 className="font-medium text-indigo-900 mb-3">Select City:</h5>
+                          <div className="space-y-2">
+                            {geocodingResults.map((result, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => selectGeocodedCity(result)}
+                                className="w-full text-left p-3 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <p className="font-medium text-gray-900">
+                                      {result.address.city || result.address.town || result.address.village || result.name}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      {result.address.country}
+                                      {result.address.state && `, ${result.address.state}`}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Lat: {parseFloat(result.lat).toFixed(4)}, Lng: {parseFloat(result.lon).toFixed(4)}
+                                    </p>
+                                  </div>
+                                  <span className="text-xs text-indigo-600 font-medium">
+                                    Click to add
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* Cities List */}
-                <div className="space-y-4">
+                {/* Existing Cities List */}
+                <div className="border border-gray-200 rounded-lg p-6 bg-white">
+                  <h4 className="font-medium text-gray-900 mb-4">Active Cities</h4>
+                  
+                  {/* Cities List */}
+                  <div className="space-y-4">
                   {cities.map((city) => (
                     <div key={city.city_id} className="border border-gray-200 rounded-lg p-4">
                       {editingCity?.city_id === city.city_id ? (
@@ -1363,6 +1508,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                       <p>No cities configured yet. Add your first city to start monitoring events!</p>
                     </div>
                   )}
+                  </div>
                 </div>
               </div>
             )}

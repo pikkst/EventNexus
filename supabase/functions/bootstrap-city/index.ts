@@ -141,18 +141,20 @@ async function discoverSourcesViaGoogleSearch(cityName: string, country: string)
                                    'guidelines', 'handbook', 'manual', 'documentation'];
         const irrelevantKeywords = ['documentation', 'tutorial', 'how to', 'guide', 'reference', 
                                     'weather', 'forecast', 'temperature', 'tracking software', 'guidelines',
-                                    'api reference', 'stats api', 'booking system'];
-        const irrelevantPaths = ['/guidelines/', '/docs/', '/api-docs/', '/handbook/', '/manual/'];
+                                    'api reference', 'stats api', 'booking system', 'event space rental',
+                                    'venue rental', 'rent our space', 'book our venue'];
+        const irrelevantPaths = ['/guidelines/', '/docs/', '/api-docs/', '/handbook/', '/manual/', '/event-space/', '/venue-rental/'];
         
         const isIrrelevantDomain = irrelevantDomains.some(domain => displayLink.includes(domain) || itemUrl.includes(domain));
         const isIrrelevantContent = irrelevantKeywords.some(kw => itemTitle.includes(kw) || itemSnippet.includes(kw));
         const isIrrelevantPath = irrelevantPaths.some(path => itemUrl.includes(path));
         
         // STRICT: Filter out if wrong country/city (e.g., Tartu College in Canada, not Estonia)
-        const wrongCountry = (country === 'Estonia' && (itemUrl.includes('.ca') || itemUrl.includes('.us') || itemUrl.includes('.au')));
+        // Block .ca, .us, .au domains for Estonian cities
+        const wrongCountry = (country === 'Estonia' && (itemUrl.includes('.ca') || itemUrl.includes('.us') || itemUrl.includes('.au') || displayLink.includes('.ca')));
         
         if (isIrrelevantDomain || isIrrelevantContent || isIrrelevantPath || wrongCountry) {
-          console.log(`   Filtered out irrelevant: ${item.title}`)
+          console.log(`   Filtered out irrelevant: ${item.title} [${wrongCountry ? 'wrong country' : 'irrelevant'}]`)
           continue
         }
         
