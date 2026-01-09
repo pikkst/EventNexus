@@ -532,7 +532,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
                 <AlertCircle className="w-10 h-10 text-orange-500" />
               </div>
               <p className="text-sm text-gray-500 mt-2">
-                Avg confidence: {stats.avg_confidence.toFixed(1)}%
+                Avg confidence: {(stats.avg_confidence || 0).toFixed(1)}%
               </p>
             </div>
 
@@ -541,13 +541,13 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
                 <div>
                   <p className="text-sm text-gray-600">AI Cost (7d)</p>
                   <p className="text-3xl font-bold text-gray-900">
-                    ${stats.estimated_cost_7d.toFixed(2)}
+                    ${(stats.estimated_cost_7d || 0).toFixed(2)}
                   </p>
                 </div>
                 <DollarSign className="w-10 h-10 text-purple-500" />
               </div>
               <p className="text-sm text-gray-500 mt-2">
-                {(stats.total_tokens_used_7d / 1000).toFixed(1)}k tokens
+                {((stats.total_tokens_used_7d || 0) / 1000).toFixed(1)}k tokens
               </p>
             </div>
           </div>
@@ -658,7 +658,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
                         </div>
                         <div>
                           <p className="text-gray-600">Avg Confidence</p>
-                          <p className="font-semibold text-gray-900">{metric.avg_confidence.toFixed(1)}%</p>
+                          <p className="font-semibold text-gray-900">{(metric.avg_confidence || 0).toFixed(1)}%</p>
                         </div>
                         <div>
                           <p className="text-gray-600">Unclaimed</p>
