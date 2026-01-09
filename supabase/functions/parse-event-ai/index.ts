@@ -22,6 +22,8 @@ interface ParsedEvent {
   location_lng?: number
   category: string
   is_free: boolean
+  price?: number
+  max_capacity?: number
   original_language: string
   source_url?: string
   organizer?: string
@@ -51,18 +53,27 @@ INCLUDE: events from 09/01/2026 onwards with future times.
 
 For each FUTURE event, provide:
 - name: event name
-- description: full description
+- description: DETAILED description (minimum 100 characters). If source lacks details, write an engaging description based on: event name, category, location, organizer. Include what attendees can expect.
 - start_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS) in local timezone - MUST be in the future
 - end_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS) in local timezone - MUST be in the future
-- location_address: full address
+- location_address: full address (street, building, city, postal code if available)
 - location_lat: latitude as number (if available)
 - location_lng: longitude as number (if available)
 - category: one of (music, sports, arts, food, tech, education, business, community, other)
 - is_free: true if free entry, false if paid
 - original_language: detected language code (en, de, et, etc)
 - source_url: original event URL if available
-- organizer: organizer name if mentioned
+- organizer: organizer name/company (extract from any mentions in text)
 - image_url: event image URL if available
+- price: numeric price in EUR (0 if free, extract from ticket info)
+- max_capacity: maximum attendees if mentioned
+
+IMPORTANT - DESCRIPTION QUALITY:
+- Minimum 100 characters, preferably 200-300
+- Include: what is happening, who is performing/speaking, what attendees will experience
+- Add context about the venue/location if mentioned
+- If source has minimal info, create engaging description from available data
+- Example: "An evening concert featuring local jazz musicians at the historic Town Hall. Join us for an unforgettable performance of classic and contemporary jazz pieces."
 
 Return ONLY valid JSON array of FUTURE events. No markdown, no explanations. Skip all past events.
 
