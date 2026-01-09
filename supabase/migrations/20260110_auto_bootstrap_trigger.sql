@@ -60,6 +60,7 @@ create trigger on_city_created
 -- 4. Add RLS policies for bootstrap_queue
 alter table bootstrap_queue enable row level security;
 
+drop policy if exists "Service role can manage bootstrap queue" on bootstrap_queue;
 create policy "Service role can manage bootstrap queue"
   on bootstrap_queue for all
   using (auth.role() = 'service_role')
