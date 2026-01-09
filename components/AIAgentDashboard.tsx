@@ -21,6 +21,7 @@ import {
   X,
   Settings,
   Calendar,
+  Radio,
 } from 'lucide-react';
 import {
   AIAgentStats,
@@ -65,12 +66,31 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   const [savingScheduler, setSavingScheduler] = useState(false);
   const [loadingScheduler, setLoadingScheduler] = useState(false);
 
+  // Live Activity state
+  const [liveActivity, setLiveActivity] = useState<AIDecisionLog[]>([]);
+  const [activityFilter, setActivityFilter] = useState<string>('all'); // all, fetch, parse, validate, publish
+
   useEffect(() => {
     loadDashboardData();
     
     // Auto-refresh every 30 seconds
     const interval = setInterval(loadDashboardData, 30000);
-    return () => clearInterval(interval);
+    
+    // Subscribe to real-time activity updates
+    const subscription = supabase
+      .channel('ai_activity')
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'ai_decision_log' }, 
+        (payload) => {
+          setLiveActivity(prev => [payload.new as AIDecisionLog, ...prev].slice(0, 100));
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      clearInterval(interval);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function loadDashboardData() {
@@ -96,6 +116,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       setCityMetrics(metricsResult);
       setReviewQueue(reviewResult);
       setRecentDecisions(decisionsResult);
+      setLiveActivity(decisionsResult); // Also populate live activity on load
       setUsageLogs(usageResult);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -194,21 +215,83 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
 
   async function triggerAgentPipeline() {
     setIsProcessing(true);
+    const results = {
+      fetch: null as any,
+      parse: null as any,
+      validate: null as any,
+      publish: null as any,
+      errors: [] as string[]
+    };
+
     try {
-      // Trigger the agent pipeline via Edge Functions
-      const { data, error } = await supabase.functions.invoke('fetch-sources', {
+      // Step 1: Fetch sources
+      console.log('🔄 Step 1/4: Fetching sources...');
+      const fetchResp = await supabase.functions.invoke('fetch-sources', {
         body: { city_id: null }, // Process all cities
       });
+      
+      if (fetchResp.error) throw new Error(`Fetch failed: ${fetchResp.error.message}`);
+      results.fetch = fetchResp.data;
+      console.log('✅ Fetch complete:', results.fetch);
 
-      if (error) throw error;
+      // Step 2: Parse with AI
+      console.log('🔄 Step 2/4: Parsing events with AI...');
+      const parseResp = await supabase.functions.invoke('parse-event-ai', {
+        body: {}
+      });
+      
+      if (parseResp.error) {
+        results.errors.push(`Parse: ${parseResp.error.message}`);
+      } else {
+        results.parse = parseResp.data;
+        console.log('✅ Parse complete:', results.parse);
+      }
 
-      alert(`Agent pipeline triggered successfully!\n${JSON.stringify(data.results, null, 2)}`);
+      // Step 3: Validate events
+      console.log('🔄 Step 3/4: Validating events...');
+      const validateResp = await supabase.functions.invoke('validate-event', {
+        body: {}
+      });
+      
+      if (validateResp.error) {
+        results.errors.push(`Validate: ${validateResp.error.message}`);
+      } else {
+        results.validate = validateResp.data;
+        console.log('✅ Validate complete:', results.validate);
+      }
+
+      // Step 4: Publish to live map
+      console.log('🔄 Step 4/4: Publishing to live map...');
+      const publishResp = await supabase.functions.invoke('publish-event', {
+        body: {}
+      });
+      
+      if (publishResp.error) {
+        results.errors.push(`Publish: ${publishResp.error.message}`);
+      } else {
+        results.publish = publishResp.data;
+        console.log('✅ Publish complete:', results.publish);
+      }
+
+      // Show comprehensive results
+      const summary = `
+🎉 Pipeline Complete!
+
+📥 FETCH: ${results.fetch?.results?.fetched || 0} new, ${results.fetch?.results?.skipped || 0} skipped
+🤖 PARSE: ${results.parse?.results?.parsed || 0} parsed
+✅ VALIDATE: ${results.validate?.results?.validated || 0} validated, ${results.validate?.results?.auto_published || 0} auto-published
+🚀 PUBLISH: ${results.publish?.results?.published || 0} published, ${results.publish?.results?.updated || 0} updated
+
+${results.errors.length > 0 ? '\n⚠️ Errors:\n' + results.errors.join('\n') : ''}
+      `.trim();
+
+      alert(summary);
       
       // Reload dashboard data
       await loadDashboardData();
-    } catch (error) {
-      console.error('Failed to trigger agent:', error);
-      alert('Failed to trigger agent pipeline. Check console for details.');
+    } catch (error: any) {
+      console.error('Pipeline failed:', error);
+      alert(`❌ Pipeline Failed!\n\nError: ${error.message}\n\nCheck console for details.`);
     } finally {
       setIsProcessing(false);
     }
@@ -629,6 +712,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
             <nav className="flex -mb-px overflow-x-auto">
               {[
                 { id: 'overview', label: 'Overview', icon: Activity },
+                { id: 'live-activity', label: 'Live Activity', icon: Radio },
                 { id: 'cities', label: 'City Health', icon: MapPin },
                 { id: 'manage-cities', label: 'Manage Cities', icon: Settings },
                 { id: 'scheduler', label: 'Scheduler', icon: Calendar },
@@ -699,6 +783,125 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
                         </div>
                       ))}
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'live-activity' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <Radio className="w-5 h-5 text-green-500 animate-pulse" />
+                      Live Agent Activity
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">Real-time feed of AI agent actions and decisions</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <select
+                      value={activityFilter}
+                      onChange={(e) => setActivityFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                      <option value="all">All Activity</option>
+                      <option value="fetch">Fetch Sources</option>
+                      <option value="parse">AI Parsing</option>
+                      <option value="validation">Validation</option>
+                      <option value="publish">Publishing</option>
+                      <option value="bootstrap">City Bootstrap</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                    <div className="flex items-center gap-2 text-xs font-medium text-gray-600 uppercase">
+                      <span className="w-20">Time</span>
+                      <span className="w-32">Agent</span>
+                      <span className="w-40">Action</span>
+                      <span className="flex-1">Details</span>
+                      <span className="w-20">Score</span>
+                    </div>
+                  </div>
+                  
+                  <div className="max-h-[600px] overflow-y-auto">
+                    {liveActivity
+                      .filter(log => activityFilter === 'all' || log.decision_type.includes(activityFilter))
+                      .map((log) => (
+                        <div key={log.id} className="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-start gap-2 text-sm">
+                            <span className="w-20 text-gray-500 text-xs">
+                              {new Date(log.created_at).toLocaleTimeString()}
+                            </span>
+                            <span className="w-32 font-medium text-indigo-600 text-xs">
+                              {log.ai_model || 'Unknown'}
+                            </span>
+                            <span className="w-40 text-gray-900 text-xs">
+                              {log.decision_type}
+                            </span>
+                            <div className="flex-1 text-xs text-gray-600">
+                              <span className="font-medium text-gray-900">{log.decision_result}</span>
+                              {log.reasoning && typeof log.reasoning === 'object' && (
+                                <div className="mt-1 text-xs text-gray-500">
+                                  {Object.entries(log.reasoning).slice(0, 3).map(([key, value]) => (
+                                    <span key={key} className="mr-3">
+                                      {key}: {typeof value === 'object' ? JSON.stringify(value).slice(0, 50) : String(value).slice(0, 50)}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <span className={`w-20 text-xs font-semibold ${
+                              (log.confidence_score || 0) >= 80 ? 'text-green-600' :
+                              (log.confidence_score || 0) >= 60 ? 'text-yellow-600' :
+                              'text-orange-600'
+                            }`}>
+                              {log.confidence_score ? `${log.confidence_score}%` : '-'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    
+                    {liveActivity.length === 0 && (
+                      <div className="p-12 text-center text-gray-500">
+                        <Radio className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <p>Waiting for agent activity...</p>
+                        <p className="text-sm mt-1">Agents will appear here when they start working</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Database className="w-5 h-5 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">Sources Fetched</span>
+                    </div>
+                    <p className="text-2xl font-bold text-blue-900">
+                      {liveActivity.filter(l => l.decision_type.includes('fetch')).length}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Bot className="w-5 h-5 text-purple-600" />
+                      <span className="text-sm font-medium text-purple-900">AI Parsed</span>
+                    </div>
+                    <p className="text-2xl font-bold text-purple-900">
+                      {liveActivity.filter(l => l.decision_type.includes('parse')).length}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <span className="text-sm font-medium text-green-900">Published</span>
+                    </div>
+                    <p className="text-2xl font-bold text-green-900">
+                      {liveActivity.filter(l => l.decision_type.includes('publish')).length}
+                    </p>
                   </div>
                 </div>
               </div>
