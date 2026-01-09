@@ -343,26 +343,19 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       || result.name.split(',')[0].trim(); // Take first part of display name
     
     const country = result.address.country;
+    const lat = result.lat;
+    const lng = result.lon;
     
     // Auto-detect timezone based on coordinates (simplified - use lat/lng)
-    const timezone = getTimezoneFromCoords(parseFloat(result.lat), parseFloat(result.lon));
+    const timezone = getTimezoneFromCoords(parseFloat(lat), parseFloat(lng));
     
     console.log('Selected city:', { 
       cityName, 
       country, 
-      lat: result.lat, 
-      lng: result.lon, 
+      lat, 
+      lng, 
       timezone,
       raw: result 
-    });
-    
-    setNewCity({
-      city_name: cityName,
-      country: country,
-      latitude: result.lat,
-      longitude: result.lon,
-      timezone: timezone,
-      is_active: true
     });
     
     setGeocodingResults([]);
@@ -370,7 +363,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     // Confirm with user
     const confirm = window.confirm(
       `Add city: ${cityName}, ${country}?\n\n` +
-      `Coordinates: ${result.lat}, ${result.lon}\n` +
+      `Coordinates: ${lat}, ${lng}\n` +
       `Timezone: ${timezone}\n\n` +
       `After adding, the system will automatically:\n` +
       `1. Bootstrap event sources for this city\n` +
@@ -380,20 +373,18 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     );
     
     if (!confirm) {
-      // Reset form if cancelled
-      setNewCity({ 
-        city_name: '', 
-        country: '', 
-        latitude: '', 
-        longitude: '', 
-        timezone: 'Europe/Tallinn',
-        is_active: true 
-      });
       return;
     }
     
-    // Add city to database
-    await addCityToDatabase();
+    // Add city to database with explicit data (don't rely on state update timing)
+    await addCityToDatabase({
+      city_name: cityName,
+      country: country,
+      latitude: lat,
+      longitude: lng,
+      timezone: timezone,
+      is_active: true
+    });
   }
   
   function getTimezoneFromCoords(lat: number, lng: number): string {
@@ -413,44 +404,47 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     return 'UTC'; // Fallback
   }
   
-  async function addCityToDatabase() {
+  async function addCityToDatabase(cityToAdd?: any) {
     try {
       setIsGeocoding(true);
       
+      // Use passed parameter or fall back to state
+      const cityData = cityToAdd || newCity;
+      
       // Validate coordinates (parse as float first)
-      const lat = parseFloat(newCity.latitude);
-      const lng = parseFloat(newCity.longitude);
+      const lat = parseFloat(cityData.latitude);
+      const lng = parseFloat(cityData.longitude);
       
       if (isNaN(lat) || isNaN(lng) || Math.abs(lat) < 0.01 || Math.abs(lng) < 0.01) {
-        alert(`Invalid coordinates: ${newCity.latitude}, ${newCity.longitude}. Please try geocoding again.`);
+        alert(`Invalid coordinates: ${cityData.latitude}, ${cityData.longitude}. Please try geocoding again.`);
         setIsGeocoding(false);
         return;
       }
       
-      console.log('Adding city to database:', { ...newCity, lat, lng });
+      console.log('Adding city to database:', { ...cityData, lat, lng });
       
       // Insert city into city_configs (only columns that exist)
-      const cityData: any = {
-        city_name: newCity.city_name,
-        country: newCity.country,
+      const insertData: any = {
+        city_name: cityData.city_name,
+        country: cityData.country,
         latitude: lat,
         longitude: lng,
-        timezone: newCity.timezone,
+        timezone: cityData.timezone,
         is_active: true
       };
       
       // Add optional columns only if they exist in schema
       // These might not exist yet - that's OK, city will still be created
       try {
-        cityData.bootstrap_status = 'pending';
-        cityData.pipeline_enabled = true;
+        insertData.bootstrap_status = 'pending';
+        insertData.pipeline_enabled = true;
       } catch (e) {
         console.log('Optional columns not available:', e);
       }
       
       const { data: insertedCity, error: insertError } = await supabase
         .from('city_configs')
-        .insert(cityData)
+        .insert(insertData)
         .select()
         .single();
       
@@ -461,7 +455,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       
       console.log('City inserted successfully:', insertedCity);
       
-      alert(`✅ City added: ${newCity.city_name}, ${newCity.country}\n\nStarting bootstrap...`);
+      alert(`✅ City added: ${cityData.city_name}, ${cityData.country}\n\nStarting bootstrap...`);
       
       // Automatically trigger bootstrap - use city_id not id
       const cityId = insertedCity.city_id || insertedCity.id;
