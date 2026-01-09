@@ -1397,10 +1397,21 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">City Health & Pipeline Status</h3>
                   <button
-                    onClick={loadData}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100"
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        const metrics = await loadCityMetrics();
+                        setCityMetrics(metrics);
+                      } catch (error) {
+                        console.error('Failed to refresh city metrics:', error);
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <RefreshCw className="w-4 h-4" />
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                     Refresh
                   </button>
                 </div>
