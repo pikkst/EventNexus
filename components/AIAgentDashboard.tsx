@@ -483,6 +483,8 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   
   async function triggerBootstrapForCity(cityId: string) {
     try {
+      console.log('🚀 Triggering bootstrap for city:', cityId);
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bootstrap-city`,
         {
@@ -495,14 +497,20 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         }
       );
       
-      if (!response.ok) throw new Error('Bootstrap failed');
+      console.log('📡 Bootstrap response status:', response.status);
+      const responseText = await response.text();
+      console.log('📡 Bootstrap response body:', responseText);
       
-      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(`Bootstrap failed: ${response.status} - ${responseText}`);
+      }
+      
+      const result = JSON.parse(responseText);
       alert(`✅ Bootstrap completed!\n\nDiscovered ${result.sources_added || 0} event sources.\n\nCheck Agent Logs for details.`);
       
     } catch (error) {
-      console.error('Bootstrap error:', error);
-      alert('Bootstrap started but check Agent Logs for status.');
+      console.error('❌ Bootstrap error:', error);
+      alert(`❌ Bootstrap failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
