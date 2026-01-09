@@ -67,6 +67,7 @@ create policy "Service role can manage bootstrap queue"
   with check (auth.role() = 'service_role');
 
 -- 5. Add helper function to get next bootstrap job
+drop function if exists get_next_bootstrap_job();
 create or replace function get_next_bootstrap_job()
 returns table (city_id uuid, city_name text, country text) as $$
   update bootstrap_queue
