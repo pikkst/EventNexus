@@ -168,17 +168,85 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   }
 
   async function loadCityMetrics(): Promise<CityHealthMetrics[]> {
-    const { data, error } = await supabase
-      .from('city_health_metrics')
+    // Load real-time city health metrics - active cities with event counts
+    const { data: cities, error } = await supabase
+      .from('city_configs')
       .select(`
-        *,
-        city:city_configs(city_name, country, active)
+        id,
+        city_name,
+        country,
+        is_active,
+        pipeline_enabled,
+        bootstrap_status,
+        last_bootstrap_at,
+        created_at
       `)
-      .order('calculated_at', { ascending: false })
-      .limit(20);
+      .order('city_name');
 
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      console.error('Failed to load cities:', error);
+      return [];
+    }
+
+    if (!cities || cities.length === 0) return [];
+
+    // For each city, get event sources count and events count
+    const metrics = await Promise.all(
+      cities.map(async (city) => {
+        // Count active event sources
+        const { count: sourcesCount } = await supabase
+          .from('event_sources')
+          .select('*', { count: 'exact', head: true })
+          .eq('city_id', city.id)
+          .eq('active', true);
+
+        // Count events from last 30 days
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const { count: eventsCount } = await supabase
+          .from('events')
+          .select('*', { count: 'exact', head: true })
+          .eq('city_id', city.id)
+          .gte('created_at', thirtyDaysAgo);
+
+        // Count total events (all time)
+        const { count: totalEvents } = await supabase
+          .from('events')
+          .select('*', { count: 'exact', head: true })
+          .eq('city_id', city.id);
+
+        // Calculate freshness score (0-100)
+        const daysSinceBootstrap = city.last_bootstrap_at 
+          ? Math.floor((Date.now() - new Date(city.last_bootstrap_at).getTime()) / (1000 * 60 * 60 * 24))
+          : 999;
+        
+        let freshness_score = 100;
+        if (daysSinceBootstrap > 7) freshness_score = 70;
+        if (daysSinceBootstrap > 30) freshness_score = 40;
+        if (daysSinceBootstrap > 90) freshness_score = 10;
+        if (!city.is_active) freshness_score = 0;
+
+        return {
+          id: city.id,
+          city_id: city.id,
+          active_sources: sourcesCount || 0,
+          total_events: totalEvents || 0,
+          events_this_week: eventsCount || 0,
+          avg_confidence: 0.85, // Placeholder
+          freshness_score,
+          last_fetch_at: city.last_bootstrap_at,
+          calculated_at: new Date().toISOString(),
+          city: {
+            city_name: city.city_name,
+            country: city.country,
+            active: city.is_active
+          },
+          pipeline_enabled: city.pipeline_enabled,
+          bootstrap_status: city.bootstrap_status
+        };
+      })
+    );
+
+    return metrics;
   }
 
   async function loadReviewQueue(): Promise<ReviewQueueItem[]> {
@@ -1281,44 +1349,99 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
 
             {activeTab === 'cities' && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900">City Health Metrics</h3>
-                <div className="space-y-4">
-                  {cityMetrics.map((metric) => (
-                    <div key={metric.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            {metric.city?.city_name || 'Unknown'}, {metric.city?.country || ''}
-                          </h4>
-                          <p className="text-sm text-gray-500">
-                            Last updated: {new Date(metric.calculated_at).toLocaleString()}
-                          </p>
-                        </div>
-                        <div className={`w-3 h-3 rounded-full ${getHealthColor(metric.freshness_score)}`} />
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <p className="text-gray-600">Events (7d)</p>
-                          <p className="font-semibold text-gray-900">{metric.events_last_7d}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Avg Confidence</p>
-                          <p className="font-semibold text-gray-900">{(metric.avg_confidence || 0).toFixed(1)}%</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Unclaimed</p>
-                          <p className="font-semibold text-gray-900">{metric.unclaimed_events}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Failed Sources</p>
-                          <p className={`font-semibold ${metric.failed_sources > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            {metric.failed_sources}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">City Health & Pipeline Status</h3>
+                  <button
+                    onClick={loadData}
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Refresh
+                  </button>
                 </div>
+                
+                {cityMetrics.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <MapPin className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No cities configured yet. Add cities in "Manage Cities" tab.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {cityMetrics.map((metric) => (
+                      <div key={metric.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <MapPin className={`w-5 h-5 ${metric.city?.active ? 'text-green-500' : 'text-gray-400'}`} />
+                            <div>
+                              <h4 className="font-medium text-gray-900">
+                                {metric.city?.city_name || 'Unknown'}, {metric.city?.country || ''}
+                              </h4>
+                              <p className="text-xs text-gray-500">
+                                {metric.pipeline_enabled ? (
+                                  <span className="text-green-600 flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3" /> Pipeline Active
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-500 flex items-center gap-1">
+                                    <Pause className="w-3 h-3" /> Pipeline Paused
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className={`px-2 py-1 rounded text-xs font-medium ${
+                              metric.freshness_score >= 80 ? 'bg-green-100 text-green-700' :
+                              metric.freshness_score >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                              metric.freshness_score >= 40 ? 'bg-orange-100 text-orange-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              Health: {metric.freshness_score}%
+                            </div>
+                            <div className={`w-3 h-3 rounded-full ${getHealthColor(metric.freshness_score)}`} />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                          <div className="bg-blue-50 rounded p-2">
+                            <p className="text-blue-600 text-xs">Event Sources</p>
+                            <p className="font-bold text-blue-900 text-lg">{metric.active_sources}</p>
+                          </div>
+                          <div className="bg-green-50 rounded p-2">
+                            <p className="text-green-600 text-xs">Total Events</p>
+                            <p className="font-bold text-green-900 text-lg">{metric.total_events}</p>
+                          </div>
+                          <div className="bg-purple-50 rounded p-2">
+                            <p className="text-purple-600 text-xs">Last 30 Days</p>
+                            <p className="font-bold text-purple-900 text-lg">{metric.events_this_week}</p>
+                          </div>
+                          <div className="bg-orange-50 rounded p-2">
+                            <p className="text-orange-600 text-xs">Bootstrap Status</p>
+                            <p className="font-semibold text-orange-900 text-xs capitalize">{metric.bootstrap_status || 'pending'}</p>
+                          </div>
+                          <div className="bg-gray-50 rounded p-2">
+                            <p className="text-gray-600 text-xs">Last Bootstrap</p>
+                            <p className="font-medium text-gray-900 text-xs">
+                              {metric.last_fetch_at ? new Date(metric.last_fetch_at).toLocaleDateString() : 'Never'}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {metric.active_sources === 0 && metric.city?.active && (
+                          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                            ⚠️ No event sources found. Run bootstrap to discover sources.
+                          </div>
+                        )}
+                        
+                        {!metric.city?.active && (
+                          <div className="mt-3 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600">
+                            ℹ️ City is inactive. Enable in "Manage Cities" to start discovery.
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

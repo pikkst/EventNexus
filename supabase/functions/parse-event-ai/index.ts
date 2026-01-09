@@ -122,6 +122,10 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      // Add timeout to prevent 504 Gateway Timeout (Edge Functions have 30s limit)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout (before Edge Function 30s limit)
+      
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
         {
@@ -133,11 +137,14 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
             }],
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 8192,
+              maxOutputTokens: 16384, // Increased from 8192 to handle longer event lists
             }
-          })
+          }),
+          signal: controller.signal
         }
       )
+      
+      clearTimeout(timeoutId);
 
       if (response.status === 429 && attempt < retries) {
         // Rate limit - wait with exponential backoff
@@ -200,9 +207,23 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
         return validEvents
       } catch (error) {
         console.error('Failed to parse Gemini response:', text.substring(0, 1000))
-        throw new Error('Invalid JSON response from AI')
+        await log(supabaseClient, 'parse-event-ai', 'error', 'JSON parse failed - response may be incomplete', { 
+          text_preview: text.substring(0, 500),
+          text_length: text.length,
+          error: String(error)
+        })
+        throw new Error(`Invalid JSON response from AI: ${error.message}`)
       }
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.error('Gemini API timeout after 25s')
+        await log(supabaseClient, 'parse-event-ai', 'error', 'Gemini API timeout (25s)', { attempt: attempt + 1 })
+        if (attempt < retries) {
+          console.log(`Retrying... (attempt ${attempt + 2}/${retries + 1})`)
+          continue
+        }
+        throw new Error('Gemini API timeout - content may be too large')
+      }
       if (attempt === retries) throw error
     }
   }
