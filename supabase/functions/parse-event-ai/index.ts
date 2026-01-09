@@ -435,7 +435,7 @@ serve(async (req) => {
         
         // TRACK: If 0 events extracted, increment failed_parse_count for this source
         // DEACTIVATE: If 3+ consecutive failed parses, mark source as inactive (outdated/moved site)
-        if (validEvents.length === 0) {
+        if (parsedEvents.length === 0) {
           const { data: sourceData } = await supabaseClient
             .from('event_sources')
             .select('failed_parse_count')
