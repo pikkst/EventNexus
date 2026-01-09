@@ -6,14 +6,8 @@ ALTER TABLE public.events
 -- Create index for efficient queries on archived events
 CREATE INDEX IF NOT EXISTS idx_events_archived_at ON public.events(archived_at) WHERE archived_at IS NOT NULL;
 
--- Update scheduler configs to include archive job
-INSERT INTO public.scheduler_configs (job_name, schedule_cron, function_url, is_enabled, created_by)
-VALUES 
-  ('archive-expired', '0 0 * * *', 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/archive-expired-events', false, NULL)
-ON CONFLICT (job_name) DO NOTHING;
-
 -- Update valid_job_name constraint to include archive-expired
--- First, check if constraint exists and drop it
+-- CRITICAL: Must do this BEFORE inserting new job
 DO $$ 
 BEGIN
   IF EXISTS (
@@ -25,9 +19,15 @@ BEGIN
   END IF;
 END $$;
 
--- Add updated constraint
+-- Add updated constraint with archive-expired included
 ALTER TABLE public.scheduler_configs 
   ADD CONSTRAINT valid_job_name 
   CHECK (job_name IN ('fetch-sources', 'parse-events', 'validate-events', 'archive-expired'));
+
+-- NOW we can insert the archive job (constraint already updated)
+INSERT INTO public.scheduler_configs (job_name, schedule_cron, function_url, is_enabled, created_by)
+VALUES 
+  ('archive-expired', '0 0 * * *', 'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/archive-expired-events', false, NULL)
+ON CONFLICT (job_name) DO NOTHING;
 
 COMMENT ON COLUMN public.events.archived_at IS 'Timestamp when event was automatically archived after end time passed';
