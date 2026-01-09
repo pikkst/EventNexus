@@ -215,74 +215,115 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
 
   async function triggerAgentPipeline() {
     setIsProcessing(true);
-    const results = {
-      fetch: null as any,
-      parse: null as any,
-      validate: null as any,
-      publish: null as any,
-      errors: [] as string[]
+    
+    const totalResults = {
+      cities: 0,
+      totalFetched: 0,
+      totalParsed: 0,
+      totalValidated: 0,
+      totalPublished: 0,
+      cityErrors: [] as string[]
     };
 
     try {
-      // Step 1: Fetch sources
-      console.log('🔄 Step 1/4: Fetching sources...');
-      const fetchResp = await supabase.functions.invoke('fetch-sources', {
-        body: { city_id: null }, // Process all cities
-      });
-      
-      if (fetchResp.error) throw new Error(`Fetch failed: ${fetchResp.error.message}`);
-      results.fetch = fetchResp.data;
-      console.log('✅ Fetch complete:', results.fetch);
+      // Load active cities
+      const { data: activeCities, error: citiesError } = await supabase
+        .from('city_configs')
+        .select('id, city_name, country')
+        .eq('is_active', true)
+        .order('city_name');
 
-      // Step 2: Parse with AI
-      console.log('🔄 Step 2/4: Parsing events with AI...');
-      const parseResp = await supabase.functions.invoke('parse-event-ai', {
-        body: {}
-      });
-      
-      if (parseResp.error) {
-        results.errors.push(`Parse: ${parseResp.error.message}`);
-      } else {
-        results.parse = parseResp.data;
-        console.log('✅ Parse complete:', results.parse);
+      if (citiesError) throw new Error(`Failed to load cities: ${citiesError.message}`);
+      if (!activeCities || activeCities.length === 0) {
+        alert('⚠️ No active cities found. Please add and activate cities first.');
+        return;
       }
 
-      // Step 3: Validate events
-      console.log('🔄 Step 3/4: Validating events...');
-      const validateResp = await supabase.functions.invoke('validate-event', {
-        body: {}
-      });
-      
-      if (validateResp.error) {
-        results.errors.push(`Validate: ${validateResp.error.message}`);
-      } else {
-        results.validate = validateResp.data;
-        console.log('✅ Validate complete:', results.validate);
-      }
+      totalResults.cities = activeCities.length;
+      console.log(`🌍 Processing ${activeCities.length} cities one by one...`);
 
-      // Step 4: Publish to live map
-      console.log('🔄 Step 4/4: Publishing to live map...');
-      const publishResp = await supabase.functions.invoke('publish-event', {
-        body: {}
-      });
-      
-      if (publishResp.error) {
-        results.errors.push(`Publish: ${publishResp.error.message}`);
-      } else {
-        results.publish = publishResp.data;
-        console.log('✅ Publish complete:', results.publish);
+      // Process each city through full pipeline
+      for (let i = 0; i < activeCities.length; i++) {
+        const city = activeCities[i];
+        console.log(`\n🏙️ [${i + 1}/${activeCities.length}] Processing: ${city.city_name}, ${city.country}`);
+
+        try {
+          // Step 1: Fetch sources for this city
+          console.log(`  📥 Step 1/4: Fetching sources...`);
+          const fetchResp = await supabase.functions.invoke('fetch-sources', {
+            body: { city_id: city.id }
+          });
+          
+          if (fetchResp.error) {
+            totalResults.cityErrors.push(`${city.city_name}: Fetch failed - ${fetchResp.error.message}`);
+            continue; // Skip to next city
+          }
+          
+          const fetched = fetchResp.data?.results?.fetched || 0;
+          totalResults.totalFetched += fetched;
+          console.log(`  ✅ Fetched ${fetched} new events`);
+
+          // Step 2: Parse with AI (processes all pending for this city)
+          console.log(`  🤖 Step 2/4: Parsing with AI...`);
+          const parseResp = await supabase.functions.invoke('parse-event-ai', {
+            body: { city_id: city.id }
+          });
+          
+          if (parseResp.error) {
+            totalResults.cityErrors.push(`${city.city_name}: Parse failed - ${parseResp.error.message}`);
+          } else {
+            const parsed = parseResp.data?.results?.parsed || 0;
+            totalResults.totalParsed += parsed;
+            console.log(`  ✅ Parsed ${parsed} events`);
+          }
+
+          // Step 3: Validate events
+          console.log(`  ✅ Step 3/4: Validating...`);
+          const validateResp = await supabase.functions.invoke('validate-event', {
+            body: { city_id: city.id }
+          });
+          
+          if (validateResp.error) {
+            totalResults.cityErrors.push(`${city.city_name}: Validate failed - ${validateResp.error.message}`);
+          } else {
+            const validated = validateResp.data?.results?.validated || 0;
+            totalResults.totalValidated += validated;
+            console.log(`  ✅ Validated ${validated} events`);
+          }
+
+          // Step 4: Publish to live map
+          console.log(`  🚀 Step 4/4: Publishing...`);
+          const publishResp = await supabase.functions.invoke('publish-event', {
+            body: { city_id: city.id }
+          });
+          
+          if (publishResp.error) {
+            totalResults.cityErrors.push(`${city.city_name}: Publish failed - ${publishResp.error.message}`);
+          } else {
+            const published = publishResp.data?.results?.published || 0;
+            totalResults.totalPublished += published;
+            console.log(`  ✅ Published ${published} events`);
+          }
+
+          console.log(`✅ ${city.city_name} complete!\n`);
+
+        } catch (cityError: any) {
+          console.error(`❌ Error processing ${city.city_name}:`, cityError);
+          totalResults.cityErrors.push(`${city.city_name}: ${cityError.message}`);
+        }
       }
 
       // Show comprehensive results
       const summary = `
 🎉 Pipeline Complete!
 
-📥 FETCH: ${results.fetch?.results?.fetched || 0} new, ${results.fetch?.results?.skipped || 0} skipped
-🤖 PARSE: ${results.parse?.results?.parsed || 0} parsed
-✅ VALIDATE: ${results.validate?.results?.validated || 0} validated, ${results.validate?.results?.auto_published || 0} auto-published
-🚀 PUBLISH: ${results.publish?.results?.published || 0} published, ${results.publish?.results?.updated || 0} updated
+🌍 Cities Processed: ${totalResults.cities}
+📥 Total Fetched: ${totalResults.totalFetched} events
+🤖 Total Parsed: ${totalResults.totalParsed} events
+✅ Total Validated: ${totalResults.totalValidated} events
+🚀 Total Published: ${totalResults.totalPublished} events
 
-${results.errors.length > 0 ? '\n⚠️ Errors:\n' + results.errors.join('\n') : ''}
+${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.cityErrors.join('\n') : '✅ All cities processed successfully!'}
       `.trim();
 
       alert(summary);
