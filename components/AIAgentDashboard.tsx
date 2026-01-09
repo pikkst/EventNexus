@@ -846,7 +846,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
                               )}
                             </h4>
                             <p className="text-sm text-gray-500">
-                              Lat: {city.latitude.toFixed(4)}, Lng: {city.longitude.toFixed(4)} • {city.timezone}
+                              Lat: {(city.latitude || 0).toFixed(4)}, Lng: {(city.longitude || 0).toFixed(4)} • {city.timezone}
                             </p>
                           </div>
                           <div className="flex gap-2">
