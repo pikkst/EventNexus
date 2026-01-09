@@ -16,13 +16,13 @@ begin
     service_key := current_setting('app.settings.service_role_key', true);
     
     -- Log the bootstrap trigger
-    raise notice 'Triggering auto-bootstrap for city: % (%)', new.name, new.id;
+    raise notice 'Triggering auto-bootstrap for city: % (%)', new.city_name, new.city_id;
     
     -- Schedule bootstrap via pg_cron or immediate call
     -- For immediate execution, we'll use a deferred trigger approach
     -- Insert into a bootstrap_queue table that will be processed
     insert into bootstrap_queue (city_id, status, created_at)
-    values (new.id, 'queued', now())
+    values (new.city_id, 'queued', now())
     on conflict (city_id) do nothing;
     
   end if;
@@ -34,7 +34,7 @@ $$ language plpgsql security definer;
 -- 2. Create bootstrap queue table
 create table if not exists bootstrap_queue (
   id uuid primary key default gen_random_uuid(),
-  city_id uuid references cities(id) on delete cascade unique,
+  city_id uuid references city_configs(city_id) on delete cascade unique,
   status text not null default 'queued' check (status in ('queued', 'processing', 'completed', 'failed')),
   attempts int not null default 0,
   last_attempt timestamptz,
@@ -46,10 +46,10 @@ create table if not exists bootstrap_queue (
 -- Index for efficient queue processing
 create index if not exists idx_bootstrap_queue_status on bootstrap_queue(status, created_at);
 
--- 3. Create trigger on cities table
-drop trigger if exists on_city_created on cities;
+-- 3. Create trigger on city_configs table
+drop trigger if exists on_city_created on city_configs;
 create trigger on_city_created
-  after insert or update of bootstrap_status on cities
+  after insert or update of bootstrap_status on city_configs
   for each row
   when (new.bootstrap_status = 'pending')
   execute function trigger_city_bootstrap();
@@ -82,7 +82,7 @@ returns table (city_id uuid, city_name text) as $$
   )
   returning 
     bootstrap_queue.city_id,
-    (select name from cities where id = bootstrap_queue.city_id) as city_name;
+    (select city_name from city_configs where city_id = bootstrap_queue.city_id) as city_name;
 $$ language sql security definer;
 
 -- 6. Add function to mark bootstrap complete
@@ -97,11 +97,11 @@ begin
   where city_id = p_city_id;
   
   -- Update city status
-  update cities
+  update city_configs
   set 
     bootstrap_status = 'completed',
     updated_at = now()
-  where id = p_city_id;
+  where city_id = p_city_id;
   
   -- Log success
   raise notice 'Bootstrap completed for city: % (% sources found)', p_city_id, p_sources_found;
@@ -125,8 +125,8 @@ $$ language plpgsql security definer;
 
 -- 8. Queue existing pending cities for bootstrap
 insert into bootstrap_queue (city_id, status)
-select id, 'queued'
-from cities
+select city_id, 'queued'
+from city_configs
 where bootstrap_status = 'pending'
 on conflict (city_id) do nothing;
 
