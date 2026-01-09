@@ -22,6 +22,7 @@ import {
   Settings,
   Calendar,
   Radio,
+  FileText,
 } from 'lucide-react';
 import {
   AIAgentStats,
@@ -31,6 +32,7 @@ import {
   AIUsageLog,
 } from '../types';
 import { supabase } from '../services/supabase';
+import { AgentLogsViewer } from './AgentLogsViewer';
 
 interface AIAgentDashboardProps {
   user: any;
@@ -43,7 +45,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   const [recentDecisions, setRecentDecisions] = useState<AIDecisionLog[]>([]);
   const [usageLogs, setUsageLogs] = useState<AIUsageLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'cities' | 'manage-cities' | 'scheduler' | 'review' | 'decisions' | 'costs'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'cities' | 'manage-cities' | 'scheduler' | 'review' | 'decisions' | 'costs' | 'logs'>('overview');
   const [isProcessing, setIsProcessing] = useState(false);
   
   // City management state
@@ -761,6 +763,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                 { id: 'review', label: 'Review Queue', icon: Eye, badge: stats?.pending_review },
                 { id: 'decisions', label: 'AI Decisions', icon: Bot },
                 { id: 'costs', label: 'Cost Analysis', icon: DollarSign },
+                { id: 'logs', label: 'Agent Logs', icon: FileText },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -1515,6 +1518,16 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'logs' && (
+              <div className="space-y-6">
+                <AgentLogsViewer 
+                  maxLogs={200}
+                  autoRefresh={true}
+                  refreshInterval={5000}
+                />
               </div>
             )}
           </div>

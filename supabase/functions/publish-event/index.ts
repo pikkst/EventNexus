@@ -9,6 +9,87 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Upload base64 image to Supabase Storage and return public URL
+async function uploadImageToStorage(
+  supabaseClient: any,
+  base64Data: string,
+  eventId: string
+): Promise<string | null> {
+  try {
+    // Remove data:image/png;base64, prefix if present
+    const base64Clean = base64Data.replace(/^data:image\/\w+;base64,/, '')
+    
+    // Convert base64 to Uint8Array
+    const binaryString = atob(base64Clean)
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+    
+    // Generate filename
+    const filename = `events/${eventId}-${Date.now()}.png`
+    
+    // Upload to Supabase Storage
+    const { data, error } = await supabaseClient.storage
+      .from('event-images')
+      .upload(filename, bytes, {
+        contentType: 'image/png',
+        upsert: false
+      })
+    
+    if (error) {
+      console.error('Storage upload error:', error)
+      return null
+    }
+    
+    // Get public URL
+    const { data: urlData } = supabaseClient.storage
+      .from('event-images')
+      .getPublicUrl(filename)
+    
+    return urlData.publicUrl
+  } catch (error) {
+    console.error('Failed to upload image to storage:', error)
+    return null
+  }
+}
+
+// Nominatim geocoding fallback for addresses without coordinates
+async function geocodeAddress(address: string): Promise<{lat: number, lng: number} | null> {
+  try {
+    const encodedAddress = encodeURIComponent(address)
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`,
+      {
+        headers: {
+          'User-Agent': 'EventNexus/1.0 (contact: huntersest@gmail.com)',
+          'Accept-Language': 'et,en'
+        }
+      }
+    )
+
+    if (!response.ok) {
+      console.error(`Nominatim API error: ${response.status}`)
+      return null
+    }
+
+    const data = await response.json()
+    
+    if (data && data.length > 0) {
+      const result = data[0]
+      return {
+        lat: parseFloat(result.lat),
+        lng: parseFloat(result.lon)
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('Geocoding failed:', error)
+    return null
+  }
+}
+
 // Gemini API image generation (matches geminiService.ts logic)
 async function generateEventImage(
   eventName: string, 
@@ -127,10 +208,20 @@ serve(async (req) => {
         const confidenceScore = parsedEvent.event_confidence[0]?.final_score || 0
 
         // CRITICAL: Only publish FREE events (we don't sell tickets)
-        if (!eventData.is_free) {
-          console.log(`⊘ Skipping paid event: ${eventData.name} (price: ${eventData.price || 'unknown'})`);
+        // If is_free is explicitly false AND there's a price, skip it
+        // If price is unknown/null, assume free (benefit of doubt)
+        const hasKnownPrice = eventData.price !== null && eventData.price !== undefined && eventData.price > 0
+        const isDefinitelyPaid = eventData.is_free === false && hasKnownPrice
+        
+        if (isDefinitelyPaid) {
+          console.log(`⊘ Skipping paid event: ${eventData.name} (price: €${eventData.price})`);
           results.skipped++;
           continue;
+        }
+        
+        // If price is unknown but is_free=false, log warning but publish anyway (assume free)
+        if (eventData.is_free === false && !hasKnownPrice) {
+          console.log(`⚠️ Publishing event with unknown price (assuming free): ${eventData.name}`);
         }
 
         // Check for duplicates - CRITICAL: must check active status to avoid re-publishing
@@ -182,35 +273,100 @@ serve(async (req) => {
         const [dateStr, timeStr] = isoString.split('T')
         const timeOnly = timeStr.split('.')[0] // "18:00:00"
         
-        const locationPoint = eventData.location_lat && eventData.location_lng
-          ? `POINT(${eventData.location_lng} ${eventData.location_lat})`
-          : null
+        // GEOCODING FALLBACK: If AI didn't extract coordinates, try Nominatim
+        if ((!eventData.location_lat || !eventData.location_lng) && eventData.location_address) {
+          console.log(`🌍 Geocoding address: ${eventData.location_address}`)
+          
+          const geocoded = await geocodeAddress(eventData.location_address)
+          
+          if (geocoded) {
+            eventData.location_lat = geocoded.lat
+            eventData.location_lng = geocoded.lng
+            console.log(`✓ Geocoded successfully: ${geocoded.lat.toFixed(6)}, ${geocoded.lng.toFixed(6)}`)
+          } else {
+            console.log(`⚠️ Geocoding failed for: ${eventData.location_address}`)
+          }
+          
+          // Rate limit: 1 request per second for Nominatim
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+        
+        // CRITICAL: SKIP events without precise coordinates - we cannot show misleading locations on map
+        if (!eventData.location_lat || !eventData.location_lng || 
+            typeof eventData.location_lat !== 'number' || typeof eventData.location_lng !== 'number' ||
+            isNaN(eventData.location_lat) || isNaN(eventData.location_lng)) {
+          
+          console.log(`❌ Skipping event "${eventData.name}" - no precise location found. Address: ${eventData.location_address || 'N/A'}`)
+          
+          // Mark as flagged for manual review (needs real venue address)
+          await supabaseClient
+            .from('parsed_events')
+            .update({ 
+              status: 'flagged',
+              validation_notes: 'Missing precise location - AI could not extract venue address or geocoding failed'
+            })
+            .eq('id', parsedEvent.id)
+          
+          results.skipped++
+          continue // Skip to next event
+        }
+        
+        const locationPoint = `POINT(${eventData.location_lng} ${eventData.location_lat})`
 
         // Generate AI image if no image URL provided
         let eventImage = eventData.image_url || null
         if (!eventImage) {
           console.log(`Generating AI image for event: ${eventData.name}`)
-          eventImage = await generateEventImage(
+          const base64Image = await generateEventImage(
             eventData.name,
             eventData.category || 'event',
             eventData.description || ''
           )
-          if (eventImage) {
-            console.log(`✓ AI image generated for: ${eventData.name}`)
+          
+          if (base64Image) {
+            // Upload to Supabase Storage and get public URL
+            const storageUrl = await uploadImageToStorage(
+              supabaseClient,
+              base64Image,
+              parsedEvent.id // Use parsed_event ID for filename
+            )
+            
+            if (storageUrl) {
+              eventImage = storageUrl
+              console.log(`✓ AI image uploaded to storage: ${storageUrl}`)
+            } else {
+              console.log(`✗ Failed to upload AI image to storage for: ${eventData.name}`)
+            }
           } else {
             console.log(`✗ Failed to generate AI image for: ${eventData.name}`)
           }
         }
 
-        // Build description with source link if content is minimal
+        // Build description with better formatting
         let finalDescription = eventData.description || 'Event details to be announced.';
         
-        // If description is short or missing, append link to original source
-        if (finalDescription.length < 100 && eventData.source_url) {
-          finalDescription += `\n\nFor full event details and program, visit: ${eventData.source_url}`;
-        } else if (!finalDescription.includes('http') && eventData.source_url) {
-          // Always append source link for transparency
-          finalDescription += `\n\nSource: ${eventData.source_url}`;
+        // Ensure description ends with period
+        if (finalDescription && !finalDescription.match(/[.!?]$/)) {
+          finalDescription += '.';
+        }
+        
+        // Add source link in a clean format
+        if (eventData.source_url) {
+          // Extract domain for cleaner display
+          let displayUrl = eventData.source_url;
+          try {
+            const url = new URL(eventData.source_url);
+            displayUrl = url.hostname.replace('www.', '');
+          } catch (e) {
+            // Keep original if URL parsing fails
+          }
+          
+          finalDescription += `\n\n📍 More details: ${eventData.source_url}`;
+        }
+        
+        // Add location if available
+        if (eventData.location_address) {
+          finalDescription += `\n📌 Location: ${eventData.location_address}`;
         }
 
         const { data: newEvent, error: insertError } = await supabaseClient
@@ -223,12 +379,12 @@ serve(async (req) => {
             time: timeOnly,
             location: {
               address: eventData.location_address,
-              lat: eventData.location_lat || null,
-              lng: eventData.location_lng || null
+              lat: eventData.location_lat,
+              lng: eventData.location_lng
             },
             location_point: locationPoint,
+            city_id: cityId, // CRITICAL: Link to city
             price: 0, // Always free - we don't sell tickets for aggregated events
-            max_attendees: eventData.max_capacity || null,
             organizer_id: 'f2ecf6c6-14c1-4dbd-894b-14ee6493d807', // Admin user
             image: eventImage,
             status: 'active',

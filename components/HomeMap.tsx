@@ -99,6 +99,11 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
   // Show ALL events on map (only filter by category, not distance)
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
+      // CRITICAL: Filter out events with null/invalid coordinates to prevent map crashes
+      if (!event.location || typeof event.location.lat !== 'number' || typeof event.location.lng !== 'number') {
+        console.warn(`Skipping event ${event.id} (${event.name}) - invalid location:`, event.location);
+        return false;
+      }
       return !activeCategory || event.category === activeCategory;
     });
   }, [events, activeCategory]);
@@ -106,6 +111,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
   // Find nearest event within search radius (for proximity notifications)
   const nearestEvent = useMemo(() => {
     const eventsWithinRadius = events.filter(event => {
+      // Skip events without valid coordinates
+      if (!event.location || !event.location.lat || !event.location.lng) return false;
       const dist = calculateDistance(userLocation[0], userLocation[1], event.location.lat, event.location.lng);
       return dist <= searchRadius && (!activeCategory || event.category === activeCategory);
     });

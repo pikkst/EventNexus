@@ -51,39 +51,57 @@ Today is 09/01/2026. Extract ONLY events within the next 30 DAYS.
 SKIP: past events AND events starting after 08/02/2026 (beyond 30 days)
 INCLUDE: events from 09/01/2026 to 08/02/2026 (within 30-day window)
 
+HTML PARSING TIPS:
+- Look for event cards/listings with date, title, location
+- Common HTML patterns: <article>, <div class="event">, <li class="event-item">
+- Dates may be in various formats: "09/01/2026", "Jan 9", "Thursday 9 January"
+- Extract venue names from location fields
+- Look for time indicators: "14:00", "2:00 pm", "10:30 am – 18:30 pm"
+- If end time spans multiple hours (e.g., "10:30 am – 18:30 pm"), it's likely an all-day event - set end_time to the closing time
+- Multiple dates like "09/01/2026 + 182 additional dates" means recurring/ongoing - extract the start date
+
+CRITICAL - LOCATION/ADDRESS EXTRACTION:
+- ALWAYS extract the full venue name and address
+- Examples: "Humboldt Forum, Schloßplatz 1, Berlin", "Pirita Vaba Aja Keskus, Tallinn", "Vanemuine Theatre, Tartu"
+- Include street name, building number, and city
+- If only venue name is available (e.g., "Kadrioru kunstimuuseum"), include it - we will geocode it
+- Look for address patterns in HTML: venue name + street + city
+- SKIP events without identifiable venue/location - we cannot show events on map without precise location
+
 For each valid event, provide:
-- name: event name
-- description: DETAILED description (minimum 100 characters). If source lacks details, write an engaging description based on: event name, category, location, organizer. Include what attendees can expect.
-- start_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS) in local timezone - MUST be in the future
-- end_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS) in local timezone - MUST be in the future
-- location_address: full address (street, building, city, postal code if available)
-- location_lat: latitude as number (if available)
-- location_lng: longitude as number (if available)
-- category: one of (music, sports, arts, food, tech, education, business, community, other)
-- is_free: true if free entry, false if paid
+- name: event name (from title/heading)
+- description: DETAILED description (minimum 100 characters). Extract from event text or create engaging description from: event name, category, venue, what attendees can expect. Include program/schedule if mentioned.
+- start_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS) - parse from date/time fields. If only date given, use 09:00 as default time. MUST be in the future.
+- end_time: ISO 8601 format (YYYY-MM-DDTHH:MM:SS) - if not specified, add 2-3 hours to start_time. MUST be in the future.
+- location_address: FULL ADDRESS - venue name, street, building number, city. Format: "Venue Name, Street Address, City". REQUIRED - skip event if no venue/address found.
+- location_lat: latitude as number (if available in data, otherwise leave empty - we will geocode)
+- location_lng: longitude as number (if available in data, otherwise leave empty - we will geocode)
+- category: one of (music, sports, arts, food, tech, education, business, community, other) - map from: "Concerts"→music, "Theatre"→arts, "Sports"→sports, "Exhibitions"→arts, "Festivals"→community, "Films"→arts, "Shows"→arts, "Opera & Dance"→arts, "Lectures"→education
+- is_free: true if free entry/admission, false if paid or tickets required
 - original_language: detected language code (en, de, et, etc)
-- source_url: original event URL if available
-- organizer: organizer name/company (extract from any mentions in text)
-- image_url: event image URL if available
-- price: numeric price in EUR (0 if free, extract from ticket info)
-- max_capacity: maximum attendees if mentioned
+- source_url: original event URL if available in HTML links
+- organizer: organizer name/company (extract from any mentions in text or venue name)
+- image_url: event image URL if available (look for <img src="...">)
+- price: numeric price in EUR (0 if free, extract from ticket info if available)
+- max_capacity: maximum attendees if mentioned (usually not in HTML calendars)
 
 IMPORTANT - DESCRIPTION QUALITY:
 - Minimum 100 characters, preferably 200-300
-- Include: what is happening, who is performing/speaking, what attendees will experience
-- Include EVENT PROGRAM/SCHEDULE if mentioned (e.g., "18:00 Doors, 19:00 Opening, 20:00 Main event")
-- Add context about the venue/location if mentioned
-- If source has minimal info, create engaging description from available data
-- Example: "An evening concert featuring local jazz musicians at the historic Town Hall. Join us for an unforgettable performance of classic and contemporary jazz pieces."
+- Extract full event description text from HTML
+- If source has minimal info, create engaging description: "Experience [event name] at [venue]. [Category] event featuring [details]."
+- Include EVENT PROGRAM/SCHEDULE if mentioned (e.g., "14:00 Opening, 15:00 Main event")
+- Add context about the venue if it's well-known (e.g., "at the historic Humboldt Forum")
 
-CRITICAL - PAID vs FREE:
-- Set is_free=false ONLY if event requires ticket purchase or has admission fee
-- Set is_free=true for: free entry, donation-based, registration only (no payment required)
-- We ONLY publish FREE events - paid events will be filtered out
+CRITICAL - PAID vs FREE (Default to FREE):
+- Set is_free=true (default) unless you see clear evidence of paid admission
+- Set is_free=false ONLY if: "Buy tickets", "Admission €X", "Tickets from €X", "Paid entry" mentioned
+- If unclear or no price info → DEFAULT to is_free=true
+- Free indicators: "Free admission", "Free entry", "Free of charge", no ticket/price mentions
+- We prefer publishing free events, so when in doubt, assume FREE
 
-Return ONLY valid JSON array of FUTURE FREE events. No markdown, no explanations. Skip all past and paid events.
+Return ONLY valid JSON array of FUTURE events (preferably free). No markdown, no explanations.
 
-Content to parse:
+Content to parse (HTML/RSS/iCal):
 ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
 
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -134,7 +152,11 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
         console.log(`AI extracted ${eventArray.length} events before filtering`)
         
         // Server-side filter: only events within next 30 days
+        // CRITICAL: Account for timezone - events are in Europe/Tallinn (UTC+2/+3)
+        // If event time doesn't have timezone indicator, assume it's in local time
         const now = new Date()
+        // Subtract 6 hours margin to account for timezone differences and avoid filtering today's events
+        const nowWithMargin = new Date(now.getTime() - 6 * 60 * 60 * 1000)
         const oneMonthLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // +30 days
         
         const validEvents = eventArray.filter((event: ParsedEvent) => {
@@ -144,11 +166,11 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
           }
           
           const eventStart = new Date(event.start_time)
-          const isFuture = eventStart > now
+          const isFuture = eventStart > nowWithMargin
           const withinMonth = eventStart <= oneMonthLater
           
           if (!isFuture) {
-            console.log(`Filtered out past event: "${event.name}" (${event.start_time})`)
+            console.log(`Filtered out past event: "${event.name}" (${event.start_time}) - now: ${now.toISOString()}`)
           } else if (!withinMonth) {
             console.log(`Filtered out event beyond 1 month: "${event.name}" (${event.start_time})`)
           }
@@ -172,8 +194,13 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
 
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   // Use OpenStreetMap Nominatim for geocoding (free, no API key needed)
+  // Rate limit: max 1 request per second
   try {
-    const response = await fetch(
+    // Add 1.1 second delay to respect Nominatim rate limit
+    await new Promise(resolve => setTimeout(resolve, 1100))
+    
+    // Try full address first
+    let response = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
       {
         headers: {
@@ -182,15 +209,46 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
       }
     )
 
-    const data = await response.json()
-    if (data.length > 0) {
+    if (!response.ok) {
+      console.error(`❌ Nominatim API error ${response.status}`)
+      return null
+    }
+
+    let data = await response.json()
+    
+    // If no results, try simplified query (venue name only, without street)
+    if (!data || data.length === 0) {
+      const venueName = address.split(',')[0].trim() // Extract venue name before first comma
+      if (venueName && venueName !== address) {
+        console.log(`🔄 Retrying with venue name only: ${venueName}`)
+        await new Promise(resolve => setTimeout(resolve, 1100))
+        
+        response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(venueName)}&limit=1`,
+          {
+            headers: {
+              'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
+            }
+          }
+        )
+        
+        if (response.ok) {
+          data = await response.json()
+        }
+      }
+    }
+    
+    if (data && data.length > 0) {
+      console.log(`✓ Geocoded: ${address} → ${data[0].lat}, ${data[0].lon}`)
       return {
         lat: parseFloat(data[0].lat),
         lng: parseFloat(data[0].lon),
       }
     }
+    
+    console.log(`⚠️ Nominatim found no results for: ${address}`)
   } catch (error) {
-    console.error('Geocoding failed:', error)
+    console.error('❌ Geocoding failed:', error)
   }
   return null
 }
@@ -245,6 +303,21 @@ serve(async (req) => {
         const startTime = Date.now()
 
         console.log(`Processing raw event ${rawEvent.id} from ${rawEvent.event_sources?.type}`)
+
+        // Check if content is substantial enough to contain events
+        const contentLength = rawEvent.raw_content?.length || 0
+        if (contentLength < 500) {
+          console.log(`⊘ Skipping raw event ${rawEvent.id} - content too short (${contentLength} chars)`)
+          await supabaseClient
+            .from('raw_events')
+            .update({ 
+              processing_status: 'completed',
+              metadata: { note: 'Content too short - likely no events' }
+            })
+            .eq('id', rawEvent.id)
+          results.failed++
+          continue
+        }
 
         // Parse with AI
         const parsedEvents = await parseEventWithGemini(
