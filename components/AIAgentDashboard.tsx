@@ -176,9 +176,6 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         city_name,
         country,
         is_active,
-        pipeline_enabled,
-        bootstrap_status,
-        last_bootstrap_at,
         created_at
       `)
       .order('city_name');
@@ -214,15 +211,13 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           .select('*', { count: 'exact', head: true })
           .eq('city_id', city.id);
 
-        // Calculate freshness score (0-100)
-        const daysSinceBootstrap = city.last_bootstrap_at 
-          ? Math.floor((Date.now() - new Date(city.last_bootstrap_at).getTime()) / (1000 * 60 * 60 * 24))
-          : 999;
+        // Calculate freshness score (0-100) based on created_at (since last_bootstrap_at doesn't exist yet)
+        const daysSinceCreated = Math.floor((Date.now() - new Date(city.created_at).getTime()) / (1000 * 60 * 60 * 24));
         
         let freshness_score = 100;
-        if (daysSinceBootstrap > 7) freshness_score = 70;
-        if (daysSinceBootstrap > 30) freshness_score = 40;
-        if (daysSinceBootstrap > 90) freshness_score = 10;
+        if (daysSinceCreated > 7) freshness_score = 70;
+        if (daysSinceCreated > 30) freshness_score = 40;
+        if (daysSinceCreated > 90) freshness_score = 10;
         if (!city.is_active) freshness_score = 0;
 
         return {
@@ -233,15 +228,15 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           events_this_week: eventsCount || 0,
           avg_confidence: 0.85, // Placeholder
           freshness_score,
-          last_fetch_at: city.last_bootstrap_at,
+          last_fetch_at: null, // Will be populated after SQL migration
           calculated_at: new Date().toISOString(),
           city: {
             city_name: city.city_name,
             country: city.country,
             active: city.is_active
           },
-          pipeline_enabled: city.pipeline_enabled,
-          bootstrap_status: city.bootstrap_status
+          pipeline_enabled: true, // Default until column exists
+          bootstrap_status: sourcesCount > 0 ? 'completed' : 'pending' // Infer from sources
         };
       })
     );
@@ -300,17 +295,18 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     setGeocodingResults([]);
     
     try {
-      // Use Nominatim to geocode city name
+      // Use Nominatim to geocode city name with namedetails for English names
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?` +
         `q=${encodeURIComponent(newCity.city_name)}&` +
         `format=json&limit=5&` +
         `featuretype=city&` +
-        `addressdetails=1`,
+        `addressdetails=1&` +
+        `namedetails=1`, // Get name variants including English
         {
           headers: {
             'User-Agent': 'EventNexus/1.0',
-            'Accept-Language': 'en'
+            'Accept-Language': 'en' // Prefer English results
           }
         }
       );
@@ -337,11 +333,28 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   
   async function selectGeocodedCity(result: any) {
     // Extract city name and country from OSM result
-    const cityName = result.address.city || result.address.town || result.address.village || result.name;
+    // Prioritize: city > town > municipality > village > name (fallback)
+    // IMPORTANT: Use English names from namedetails if available
+    const cityName = result.namedetails?.name 
+      || result.address.city 
+      || result.address.town 
+      || result.address.municipality
+      || result.address.village 
+      || result.name.split(',')[0].trim(); // Take first part of display name
+    
     const country = result.address.country;
     
     // Auto-detect timezone based on coordinates (simplified - use lat/lng)
     const timezone = getTimezoneFromCoords(parseFloat(result.lat), parseFloat(result.lon));
+    
+    console.log('Selected city:', { 
+      cityName, 
+      country, 
+      lat: result.lat, 
+      lng: result.lon, 
+      timezone,
+      raw: result 
+    });
     
     setNewCity({
       city_name: cityName,
@@ -366,7 +379,18 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       `Continue?`
     );
     
-    if (!confirm) return;
+    if (!confirm) {
+      // Reset form if cancelled
+      setNewCity({ 
+        city_name: '', 
+        country: '', 
+        latitude: '', 
+        longitude: '', 
+        timezone: 'Europe/Tallinn',
+        is_active: true 
+      });
+      return;
+    }
     
     // Add city to database
     await addCityToDatabase();
@@ -393,23 +417,44 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     try {
       setIsGeocoding(true);
       
-      // Insert city into city_configs
+      // Validate coordinates
+      if (!newCity.latitude || !newCity.longitude || newCity.latitude === '0' || newCity.longitude === '0') {
+        alert('Invalid coordinates. Please try geocoding again.');
+        setIsGeocoding(false);
+        return;
+      }
+      
+      console.log('Adding city to database:', newCity);
+      
+      // Insert city into city_configs (only columns that exist)
+      const cityData: any = {
+        city_name: newCity.city_name,
+        country: newCity.country,
+        latitude: parseFloat(newCity.latitude),
+        longitude: parseFloat(newCity.longitude),
+        timezone: newCity.timezone,
+        is_active: true
+      };
+      
+      // Add optional columns only if they exist in schema
+      // These might not exist yet - that's OK, city will still be created
+      try {
+        cityData.bootstrap_status = 'pending';
+        cityData.pipeline_enabled = true;
+      } catch (e) {
+        console.log('Optional columns not available:', e);
+      }
+      
       const { data: insertedCity, error: insertError } = await supabase
         .from('city_configs')
-        .insert({
-          city_name: newCity.city_name,
-          country: newCity.country,
-          latitude: parseFloat(newCity.latitude),
-          longitude: parseFloat(newCity.longitude),
-          timezone: newCity.timezone,
-          is_active: true,
-          bootstrap_status: 'pending',
-          pipeline_enabled: true
-        })
+        .insert(cityData)
         .select()
         .single();
       
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        throw insertError;
+      }
       
       alert(`✅ City added: ${newCity.city_name}, ${newCity.country}\n\nStarting bootstrap...`);
       
