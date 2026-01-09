@@ -430,6 +430,28 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       
       console.log('Adding city to database:', { ...cityData, lat, lng });
       
+      // 🔧 Check if city already exists
+      const { data: existingCity, error: checkError } = await supabase
+        .from('city_configs')
+        .select('city_id, city_name, country, bootstrap_status')
+        .eq('city_name', cityData.city_name)
+        .eq('country', cityData.country)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error('Error checking existing city:', checkError);
+        throw checkError;
+      }
+      
+      if (existingCity) {
+        alert(`⚠️ City already exists: ${existingCity.city_name}, ${existingCity.country}\n\nBootstrap status: ${existingCity.bootstrap_status || 'pending'}\n\nUse the city list below to manage it.`);
+        setShowAddCity(false);
+        // Reload city metrics to show existing city
+        const metrics = await loadCityMetrics();
+        setCityMetrics(metrics);
+        return;
+      }
+      
       // Insert city into city_configs (only columns that exist)
       const insertData: any = {
         city_name: cityData.city_name,
@@ -457,12 +479,20 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       
       if (insertError) {
         console.error('Insert error:', insertError);
+        
+        // Better error message for duplicate
+        if (insertError.code === '23505') {
+          alert(`⚠️ This city already exists in the database.\n\nCity: ${cityData.city_name}, ${cityData.country}\n\nPlease check the city list below.`);
+          setShowAddCity(false);
+          return;
+        }
+        
         throw insertError;
       }
       
       console.log('City inserted successfully:', insertedCity);
       
-      alert(`✅ City added: ${cityData.city_name}, ${cityData.country}\n\nStarting bootstrap...`);
+      alert(`✅ City added: ${cityData.city_name}, ${cityData.country}\n\nBootstrap will start automatically within 5 minutes.`);
       
       // Automatically trigger bootstrap - use city_id not id
       const cityId = insertedCity.city_id || insertedCity.id;
