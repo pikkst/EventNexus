@@ -126,6 +126,13 @@ serve(async (req) => {
         const cityId = parsedEvent.raw_events.event_sources.city_id
         const confidenceScore = parsedEvent.event_confidence[0]?.final_score || 0
 
+        // CRITICAL: Only publish FREE events (we don't sell tickets)
+        if (!eventData.is_free) {
+          console.log(`⊘ Skipping paid event: ${eventData.name} (price: ${eventData.price || 'unknown'})`);
+          results.skipped++;
+          continue;
+        }
+
         // Check for duplicates
         const eventStartTime = new Date(eventData.start_time)
         const eventDateStr = eventStartTime.toISOString().split('T')[0]
@@ -203,11 +210,22 @@ serve(async (req) => {
           }
         }
 
+        // Build description with source link if content is minimal
+        let finalDescription = eventData.description || 'Event details to be announced.';
+        
+        // If description is short or missing, append link to original source
+        if (finalDescription.length < 100 && eventData.source_url) {
+          finalDescription += `\n\nFor full event details and program, visit: ${eventData.source_url}`;
+        } else if (!finalDescription.includes('http') && eventData.source_url) {
+          // Always append source link for transparency
+          finalDescription += `\n\nSource: ${eventData.source_url}`;
+        }
+
         const { data: newEvent, error: insertError } = await supabaseClient
           .from('events')
           .insert({
             name: eventData.name,
-            description: eventData.description || 'Event details to be announced.',
+            description: finalDescription,
             category: eventData.category,
             date: dateStr,
             time: timeOnly,
@@ -217,7 +235,7 @@ serve(async (req) => {
               lng: eventData.location_lng || null
             },
             location_point: locationPoint,
-            price: eventData.price || (eventData.is_free ? 0 : null),
+            price: 0, // Always free - we don't sell tickets for aggregated events
             max_attendees: eventData.max_capacity || null,
             organizer_id: 'f2ecf6c6-14c1-4dbd-894b-14ee6493d807', // Admin user
             image: eventImage,
