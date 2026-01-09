@@ -120,6 +120,9 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
       const data = await response.json()
       const text = data.candidates[0]?.content?.parts[0]?.text || '[]'
 
+      // Log AI response for debugging
+      console.log(`AI response (first 500 chars): ${text.substring(0, 500)}`)
+
       // Extract JSON from markdown code blocks if present
       const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/```\n?([\s\S]*?)\n?```/)
       const jsonText = jsonMatch ? jsonMatch[1] : text
@@ -128,12 +131,17 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
         const events = JSON.parse(jsonText)
         const eventArray = Array.isArray(events) ? events : [events]
         
+        console.log(`AI extracted ${eventArray.length} events before filtering`)
+        
         // Server-side filter: only events within next 30 days
         const now = new Date()
         const oneMonthLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // +30 days
         
         const validEvents = eventArray.filter((event: ParsedEvent) => {
-          if (!event.start_time) return false
+          if (!event.start_time) {
+            console.log(`Filtered out event without start_time: "${event.name}"`)
+            return false
+          }
           
           const eventStart = new Date(event.start_time)
           const isFuture = eventStart > now
@@ -151,7 +159,7 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
         console.log(`Filtered ${eventArray.length} events -> ${validEvents.length} valid events (future + within 30 days)`)
         return validEvents
       } catch (error) {
-        console.error('Failed to parse Gemini response:', text)
+        console.error('Failed to parse Gemini response:', text.substring(0, 1000))
         throw new Error('Invalid JSON response from AI')
       }
     } catch (error) {
@@ -198,16 +206,27 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get pending raw events
-    const { data: rawEvents, error: rawError } = await supabaseClient
+    // Get city_id from request body if provided
+    const body = await req.json().catch(() => ({}))
+    const cityId = body.city_id || null
+
+    // Build query for pending raw events
+    let query = supabaseClient
       .from('raw_events')
-      .select('*, event_sources(type)')
+      .select('*, event_sources!inner(type, city_id)')
       .eq('processing_status', 'pending')
       .limit(10) // Process in batches
 
+    // Filter by city if specified
+    if (cityId) {
+      query = query.eq('event_sources.city_id', cityId)
+    }
+
+    const { data: rawEvents, error: rawError } = await query
+
     if (rawError) throw rawError
 
-    console.log(`Found ${rawEvents?.length || 0} raw events to process`)
+    console.log(`Found ${rawEvents?.length || 0} raw events to process${cityId ? ` for city ${cityId}` : ''}`)
 
     const results = {
       processed: 0,
