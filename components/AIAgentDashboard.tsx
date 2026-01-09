@@ -229,8 +229,8 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       // Load active cities
       const { data: activeCities, error: citiesError } = await supabase
         .from('city_configs')
-        .select('id, city_name, country')
-        .eq('is_active', true)
+        .select('city_id, city_name, country')
+        .eq('active', true)
         .order('city_name');
 
       if (citiesError) throw new Error(`Failed to load cities: ${citiesError.message}`);
@@ -251,7 +251,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           // Step 1: Fetch sources for this city
           console.log(`  📥 Step 1/4: Fetching sources...`);
           const fetchResp = await supabase.functions.invoke('fetch-sources', {
-            body: { city_id: city.id }
+            body: { city_id: city.city_id }
           });
           
           if (fetchResp.error) {
@@ -266,7 +266,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           // Step 2: Parse with AI (processes all pending for this city)
           console.log(`  🤖 Step 2/4: Parsing with AI...`);
           const parseResp = await supabase.functions.invoke('parse-event-ai', {
-            body: { city_id: city.id }
+            body: { city_id: city.city_id }
           });
           
           if (parseResp.error) {
@@ -280,7 +280,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           // Step 3: Validate events
           console.log(`  ✅ Step 3/4: Validating...`);
           const validateResp = await supabase.functions.invoke('validate-event', {
-            body: { city_id: city.id }
+            body: { city_id: city.city_id }
           });
           
           if (validateResp.error) {
@@ -294,7 +294,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           // Step 4: Publish to live map
           console.log(`  🚀 Step 4/4: Publishing...`);
           const publishResp = await supabase.functions.invoke('publish-event', {
-            body: { city_id: city.id }
+            body: { city_id: city.city_id }
           });
           
           if (publishResp.error) {
@@ -421,7 +421,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
           latitude: parseFloat(newCity.latitude),
           longitude: parseFloat(newCity.longitude),
           timezone: newCity.timezone,
-          is_active: newCity.is_active,
+          active: newCity.is_active,
         });
 
       if (error) throw error;
@@ -446,7 +446,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
           latitude: city.latitude,
           longitude: city.longitude,
           timezone: city.timezone,
-          is_active: city.is_active,
+          active: city.is_active,
         })
         .eq('city_id', city.city_id);
 
