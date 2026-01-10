@@ -33,7 +33,7 @@ import {
   AIUsageLog,
 } from '../types';
 import { supabase } from '../services/supabase';
-import { AgentLogsViewer } from './AgentLogsViewer';
+import { AgentLogsViewer, AgentLog } from './AgentLogsViewer';
 
 interface AIAgentDashboardProps {
   user: any;
@@ -48,6 +48,9 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'cities' | 'manage-cities' | 'scheduler' | 'review' | 'decisions' | 'costs' | 'logs'>('overview');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Store Supabase agent logs for download
+  const [supabaseLogs, setSupabaseLogs] = useState<AgentLog[]>([]);
   
   // Load persisted pipeline progress from localStorage
   const loadPersistedProgress = () => {
@@ -1149,7 +1152,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
     }
   }
 
-  // Download pipeline logs as JSON
+  // Download pipeline logs as JSON (includes both pipeline execution and Supabase agent logs)
   function downloadPipelineLogs() {
     const logData = {
       timestamp: new Date().toISOString(),
@@ -1178,12 +1181,32 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
       geocodingStats: pipelineProgress.geocodingStats,
       aiStats: pipelineProgress.aiStats,
       
+      // Supabase Edge Function logs (from agent_logs table)
+      supabaseLogs: supabaseLogs.map(log => ({
+        timestamp: log.created_at,
+        agent: log.agent_name,
+        level: log.level,
+        message: log.message,
+        details: log.details,
+        duration_ms: log.duration_ms,
+        job_id: log.job_id,
+        city_id: log.city_id,
+      })),
+      
       // Summaries for quick analysis
       summary: {
         totalLogEntries: pipelineProgress.fullLogs.length > 0 ? pipelineProgress.fullLogs.length : pipelineProgress.recentLogs.length,
         totalErrors: pipelineProgress.errors.length,
         totalDetailedErrors: pipelineProgress.detailedErrors?.length ?? 0,
         totalValidationFailures: pipelineProgress.validationFailures?.length ?? 0,
+        totalSupabaseLogs: supabaseLogs.length,
+        supabaseLogsByLevel: {
+          error: supabaseLogs.filter(l => l.level === 'error').length,
+          warning: supabaseLogs.filter(l => l.level === 'warning').length,
+          success: supabaseLogs.filter(l => l.level === 'success').length,
+          info: supabaseLogs.filter(l => l.level === 'info').length,
+          debug: supabaseLogs.filter(l => l.level === 'debug').length,
+        },
         avgCityProcessingTime: (pipelineProgress.performanceMetrics?.length ?? 0) > 0 
           ? (pipelineProgress.performanceMetrics.reduce((sum, m) => sum + m.totalTime, 0) / pipelineProgress.performanceMetrics.length).toFixed(2)
           : 0,
@@ -3045,6 +3068,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                         maxLogs={200}
                         autoRefresh={true}
                         refreshInterval={5000}
+                        onLogsUpdate={(logs) => setSupabaseLogs(logs)}
                       />
                     </div>
                   </div>
