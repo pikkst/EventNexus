@@ -62,7 +62,8 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     totalValidated: 0,
     totalPublished: 0,
     currentStep: '',
-    recentLogs: [] as string[]
+    recentLogs: [] as string[],
+    fullLogs: [] as string[] // Complete log history for download
   });
   
   // City management state
@@ -803,7 +804,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         totalValidated: 0,
         totalPublished: 0,
         currentStep: 'Starting pipeline...',
-        recentLogs: [`Started processing ${activeCities.length} cities`]
+        recentLogs: [`Started processing ${activeCities.length} cities`],
+        fullLogs: [`Started processing ${activeCities.length} cities`]
       });
 
       // Process each city through full pipeline
@@ -812,12 +814,14 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         console.log(`\n🏙️ [${i + 1}/${activeCities.length}] Processing: ${city.city_name}, ${city.country}`);
 
         // Update progress - current city
+        const cityLogEntry = `[${i + 1}/${activeCities.length}] ${city.city_name}, ${city.country} ${city.country_code ? '(' + city.country_code.toUpperCase() + ')' : ''}`;
         setPipelineProgress(prev => ({
           ...prev,
           currentCity: `${city.city_name}, ${city.country}`,
           currentCityIndex: i + 1,
           currentStep: 'Fetching sources...',
-          recentLogs: [...prev.recentLogs.slice(-9), `[${i + 1}/${activeCities.length}] ${city.city_name}, ${city.country} ${city.country_code ? '(' + city.country_code.toUpperCase() + ')' : ''}`]
+          recentLogs: [...prev.recentLogs.slice(-9), cityLogEntry],
+          fullLogs: [...prev.fullLogs, cityLogEntry]
         }));
 
         try {
@@ -833,7 +837,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             setPipelineProgress(prev => ({
               ...prev,
               citiesFailed: prev.citiesFailed + 1,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Fetch failed`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Fetch failed`],
+              fullLogs: [...prev.fullLogs, `  ❌ Fetch failed`]
             }));
             continue; // Skip to next city
           }
@@ -845,7 +850,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             ...prev,
             totalFetched: prev.totalFetched + fetched,
             currentStep: '🤖 Parsing with AI...',
-            recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Fetched ${fetched} events`]
+            recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Fetched ${fetched} events`],
+            fullLogs: [...prev.fullLogs, `  ✅ Fetched ${fetched} events`]
           }));
 
           // Step 2: Parse with AI (processes all pending for this city)
@@ -858,7 +864,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             totalResults.cityErrors.push(`${city.city_name}: Parse failed - ${parseResp.error.message}`);
             setPipelineProgress(prev => ({
               ...prev,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Parse failed`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Parse failed`],
+              fullLogs: [...prev.fullLogs, `  ⚠️ Parse failed`]
             }));
           } else {
             const parsed = parseResp.data?.results?.parsed || 0;
@@ -868,7 +875,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
               ...prev,
               totalParsed: prev.totalParsed + parsed,
               currentStep: '✅ Validating...',
-              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Parsed ${parsed} events`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Parsed ${parsed} events`],
+              fullLogs: [...prev.fullLogs, `  ✅ Parsed ${parsed} events`]
             }));
           }
 
@@ -882,7 +890,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             totalResults.cityErrors.push(`${city.city_name}: Validate failed - ${validateResp.error.message}`);
             setPipelineProgress(prev => ({
               ...prev,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Validate failed`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Validate failed`],
+              fullLogs: [...prev.fullLogs, `  ⚠️ Validate failed`]
             }));
           } else {
             const validated = validateResp.data?.results?.validated || 0;
@@ -892,7 +901,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
               ...prev,
               totalValidated: prev.totalValidated + validated,
               currentStep: '🚀 Publishing...',
-              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Validated ${validated} events`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Validated ${validated} events`],
+              fullLogs: [...prev.fullLogs, `  ✅ Validated ${validated} events`]
             }));
           }
 
@@ -906,7 +916,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             totalResults.cityErrors.push(`${city.city_name}: Publish failed - ${publishResp.error.message}`);
             setPipelineProgress(prev => ({
               ...prev,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Publish failed`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Publish failed`],
+              fullLogs: [...prev.fullLogs, `  ⚠️ Publish failed`]
             }));
           } else {
             const published = publishResp.data?.results?.published || 0;
@@ -916,7 +927,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
               ...prev,
               totalPublished: prev.totalPublished + published,
               currentStep: '🎯 Ensuring free events...',
-              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Published ${published} events`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Published ${published} events`],
+              fullLogs: [...prev.fullLogs, `  ✅ Published ${published} events`]
             }));
           }
 
@@ -934,7 +946,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             setPipelineProgress(prev => ({
               ...prev,
               citiesCompleted: prev.citiesCompleted + 1,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Free check failed`, `✅ Complete!`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Free check failed`, `✅ Complete!`],
+              fullLogs: [...prev.fullLogs, `  ⚠️ Free check failed`, `✅ Complete!`]
             }));
           } else {
             const { current_free_count, target, success } = ensureResp.data || {};
@@ -944,6 +957,11 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
               citiesCompleted: prev.citiesCompleted + 1,
               recentLogs: [
                 ...prev.recentLogs.slice(-9), 
+                `  ${success ? '✅' : '⚠️'} ${current_free_count}/${target} free events`,
+                `✅ Complete!`
+              ],
+              fullLogs: [
+                ...prev.fullLogs,
                 `  ${success ? '✅' : '⚠️'} ${current_free_count}/${target} free events`,
                 `✅ Complete!`
               ]
@@ -958,7 +976,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
           setPipelineProgress(prev => ({
             ...prev,
             citiesFailed: prev.citiesFailed + 1,
-            recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Error: ${cityError.message}`]
+            recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Error: ${cityError.message}`],
+            fullLogs: [...prev.fullLogs, `  ❌ Error: ${cityError.message}`]
           }));
         }
       }
@@ -968,7 +987,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         ...prev,
         isRunning: false,
         currentStep: 'Complete!',
-        recentLogs: [...prev.recentLogs, '🎉 Pipeline complete!']
+        recentLogs: [...prev.recentLogs, '🎉 Pipeline complete!'],
+        fullLogs: [...prev.fullLogs, '🎉 Pipeline complete!']
       }));
 
       const summary = `
@@ -993,7 +1013,8 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
         ...prev,
         isRunning: false,
         currentStep: 'Failed',
-        recentLogs: [...prev.recentLogs, `❌ Pipeline failed: ${error.message}`]
+        recentLogs: [...prev.recentLogs, `❌ Pipeline failed: ${error.message}`],
+        fullLogs: [...prev.fullLogs, `❌ Pipeline failed: ${error.message}`]
       }));
       alert(`❌ Pipeline Failed!\n\nError: ${error.message}\n\nCheck console for details.`);
     } finally {
@@ -1020,7 +1041,8 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
         totalValidated: pipelineProgress.totalValidated,
         totalPublished: pipelineProgress.totalPublished,
       },
-      logs: pipelineProgress.recentLogs,
+      logs: pipelineProgress.fullLogs.length > 0 ? pipelineProgress.fullLogs : pipelineProgress.recentLogs,
+      totalLogEntries: pipelineProgress.fullLogs.length > 0 ? pipelineProgress.fullLogs.length : pipelineProgress.recentLogs.length,
     };
 
     const jsonString = JSON.stringify(logData, null, 2);
