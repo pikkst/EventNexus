@@ -754,16 +754,21 @@ export interface AIUsageLog {
 export interface CityHealthMetrics {
   id: string;
   city_id: string;
-  events_last_7d: number;
-  events_last_24h: number;
+  events_last_7d?: number;
+  events_last_24h?: number;
+  events_this_week?: number;
+  total_events?: number;
   avg_confidence: number;
-  failed_sources: number;
+  failed_sources?: number;
   active_sources: number;
   freshness_score: number;
-  unclaimed_events: number;
-  claimed_events: number;
+  unclaimed_events?: number;
+  claimed_events?: number;
   calculation_metadata?: Record<string, any>;
   calculated_at: string;
+  last_fetch_at?: string | null;
+  pipeline_enabled?: boolean;
+  bootstrap_status?: 'pending' | 'bootstrapping' | 'completed' | 'failed';
   // Joined data
   city?: CityConfig;
 }
