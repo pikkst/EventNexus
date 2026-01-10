@@ -49,8 +49,25 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'cities' | 'manage-cities' | 'scheduler' | 'review' | 'decisions' | 'costs' | 'logs'>('overview');
   const [isProcessing, setIsProcessing] = useState(false);
   
+  // Load persisted pipeline progress from localStorage
+  const loadPersistedProgress = () => {
+    try {
+      const saved = localStorage.getItem('ai_pipeline_progress');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Only restore if pipeline was running
+        if (parsed.isRunning) {
+          return parsed;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load persisted progress:', error);
+    }
+    return null;
+  };
+
   // Pipeline progress tracking
-  const [pipelineProgress, setPipelineProgress] = useState({
+  const [pipelineProgress, setPipelineProgress] = useState(() => loadPersistedProgress() || {
     isRunning: false,
     currentCity: '',
     currentCityIndex: 0,
@@ -105,6 +122,20 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     }
   });
   
+  // Persist pipeline progress to localStorage whenever it changes
+  useEffect(() => {
+    if (pipelineProgress.isRunning) {
+      try {
+        localStorage.setItem('ai_pipeline_progress', JSON.stringify(pipelineProgress));
+      } catch (error) {
+        console.error('Failed to persist progress:', error);
+      }
+    } else {
+      // Clear on completion
+      localStorage.removeItem('ai_pipeline_progress');
+    }
+  }, [pipelineProgress]);
+  
   // City management state
   const [cities, setCities] = useState<any[]>([]);
   const [showAddCity, setShowAddCity] = useState(false);
@@ -145,6 +176,20 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     // Auto-refresh every 30 seconds
     const interval = setInterval(loadDashboardData, 30000);
     
+    // Keep-alive: Ping Supabase auth every 60 seconds to prevent auto-logout during long pipeline runs
+    const keepAliveInterval = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          // Refresh session to keep it alive
+          await supabase.auth.refreshSession();
+          console.log('🔄 Auth session refreshed (keep-alive)');
+        }
+      } catch (error) {
+        console.error('Keep-alive refresh failed:', error);
+      }
+    }, 60000); // Every 60 seconds
+    
     // Subscribe to real-time activity updates
     const subscription = supabase
       .channel('ai_activity')
@@ -158,6 +203,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     
     return () => {
       clearInterval(interval);
+      clearInterval(keepAliveInterval);
       subscription.unsubscribe();
     };
   }, []);
@@ -896,19 +942,50 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             fullLogs: [...prev.fullLogs, `  ✅ Fetched ${fetched} events`]
           }));
 
-          // Step 2: Parse with AI (processes all pending for this city)
+          // Step 2: Parse with AI (processes all pending for this city) with retry logic
           console.log(`  🤖 Step 2/4: Parsing with AI...`);
-          const parseResp = await supabase.functions.invoke('parse-event-ai', {
-            body: { city_id: city.city_id }
-          });
+          let parseResp;
+          let parseAttempt = 0;
+          const maxParseRetries = 2; // Retry up to 2 times on 504 timeout
+          
+          while (parseAttempt <= maxParseRetries) {
+            try {
+              parseResp = await supabase.functions.invoke('parse-event-ai', {
+                body: { city_id: city.city_id }
+              });
+              
+              // If successful or non-timeout error, break
+              if (!parseResp.error || !parseResp.error.message?.includes('504')) {
+                break;
+              }
+              
+              // 504 timeout - retry
+              parseAttempt++;
+              if (parseAttempt <= maxParseRetries) {
+                const retryDelay = 3000 * parseAttempt; // 3s, 6s
+                console.log(`  ⏳ Parse timeout (attempt ${parseAttempt}/${maxParseRetries + 1}), retrying in ${retryDelay}ms...`);
+                setPipelineProgress(prev => ({
+                  ...prev,
+                  currentStep: `⏳ Parse timeout, retry ${parseAttempt}/${maxParseRetries + 1}...`,
+                  recentLogs: [...prev.recentLogs.slice(-9), `  ⏳ Retry parse (${parseAttempt}/${maxParseRetries + 1})`],
+                  fullLogs: [...prev.fullLogs, `  ⏳ Parse timeout, retrying (${parseAttempt}/${maxParseRetries + 1})`]
+                }));
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+              }
+            } catch (error) {
+              parseResp = { error };
+              break;
+            }
+          }
           
           if (parseResp.error) {
             const errorMsg = parseResp.error.message || String(parseResp.error);
+            const is504 = errorMsg.includes('504');
             totalResults.cityErrors.push(`${city.city_name}: Parse failed - ${errorMsg}`);
             setPipelineProgress(prev => ({
               ...prev,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Parse failed: ${errorMsg}`],
-              fullLogs: [...prev.fullLogs, `  ⚠️ Parse failed: ${errorMsg}`],
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Parse failed: ${errorMsg}${is504 ? ' (timeout after retries)' : ''}`],
+              fullLogs: [...prev.fullLogs, `  ⚠️ Parse failed: ${errorMsg}${is504 ? ' (timeout after retries)' : ''}`],
               errors: [...prev.errors, `[${city.city_name}] Parse: ${errorMsg}`]
             }));
           } else {

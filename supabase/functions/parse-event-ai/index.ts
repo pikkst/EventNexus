@@ -518,7 +518,7 @@ serve(async (req) => {
       .from('raw_events')
       .select('*, event_sources!inner(type, city_id)')
       .eq('processing_status', 'pending')
-      .limit(10) // Process in batches
+      .limit(3) // Reduced from 10 to prevent 504 timeouts (3 events * ~30s = ~90s, well under 150s Edge Function limit)
 
     // 🔧 If specific raw_event_ids provided (two-phase pipeline), use those
     if (rawEventIds && Array.isArray(rawEventIds) && rawEventIds.length > 0) {
