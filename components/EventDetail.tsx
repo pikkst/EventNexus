@@ -45,7 +45,17 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  
+  // Initialize selected language from user preference or browser locale
+  const [selectedLanguage, setSelectedLanguage] = useState(() => {
+    if (user?.preferred_language && user.preferred_language !== 'en') {
+      return user.preferred_language;
+    }
+    // Fallback to browser language or English
+    const browserLang = navigator.language?.split('-')[0] || 'en';
+    return browserLang;
+  });
+  
   const [organizerName, setOrganizerName] = useState<string>('EventNexus User');
   const [ticketQuantities, setTicketQuantities] = useState<{ [key: string]: number }>({});
   const [organizerPaymentReady, setOrganizerPaymentReady] = useState(false);
@@ -55,17 +65,49 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [translatedAboutText, setTranslatedAboutText] = useState<string | null>(null);
   const translationCache = useRef<Map<string, { name: string; aboutText: string }>>(new Map());
 
-  // Get available languages from event translations
+  // Initialize available languages from event - for dropdown display
   const availableLanguages = React.useMemo(() => {
-    if (!event?.translations) return [{ code: 'en', name: 'English' }];
+    if (!event?.translations) {
+      // Even without translations, show full language list for remote translation
+      return [
+        { code: 'en', name: 'English' },
+        { code: 'et', name: 'Eesti' },
+        { code: 'es', name: 'Español' },
+        { code: 'fr', name: 'Français' },
+        { code: 'de', name: 'Deutsch' },
+        { code: 'pt', name: 'Português' },
+        { code: 'it', name: 'Italiano' },
+        { code: 'fi', name: 'Suomi' },
+        { code: 'sv', name: 'Svenska' },
+        { code: 'tr', name: 'Türkçe' },
+        { code: 'pl', name: 'Polski' },
+        { code: 'ru', name: 'Русский' },
+        { code: 'uk', name: 'Українська' },
+        { code: 'ja', name: '日本語' },
+        { code: 'ko', name: '한국어' },
+        { code: 'zh', name: '中文' },
+        { code: 'ar', name: 'العربية' }
+      ];
+    }
     
     const langMap: { [key: string]: string } = {
       'en': 'English',
+      'et': 'Eesti',
       'es': 'Español',
       'fr': 'Français',
       'de': 'Deutsch',
       'pt': 'Português',
-      'it': 'Italiano'
+      'it': 'Italiano',
+      'fi': 'Suomi',
+      'sv': 'Svenska',
+      'tr': 'Türkçe',
+      'pl': 'Polski',
+      'ru': 'Русский',
+      'uk': 'Українська',
+      'ja': '日本語',
+      'ko': '한국어',
+      'zh': '中文',
+      'ar': 'العربية'
     };
     
     return Object.keys(event.translations).map(code => ({
