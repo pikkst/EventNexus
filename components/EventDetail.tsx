@@ -125,6 +125,13 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
     return event.translations[selectedLanguage] || event.description;
   }, [event, selectedLanguage]);
 
+  // Sync selected language with user preference when user loads or preference changes
+  useEffect(() => {
+    if (user?.preferred_language && user.preferred_language !== 'en') {
+      setSelectedLanguage(user.preferred_language);
+    }
+  }, [user?.preferred_language]);
+
   // Auto-translate event name and about text when language changes
   useEffect(() => {
     const doTranslate = async () => {
@@ -136,7 +143,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       const direct = event.translations?.[targetLang];
       if (direct) {
         setTranslatedName(direct.name || event.name);
-        setTranslatedAboutText(direct.aboutText || event.aboutText || '');
+        // Use description from structured translation or fall back to aboutText
+        const aboutText = direct.aboutText || direct.description || event.aboutText || '';
+        setTranslatedAboutText(aboutText);
         return;
       }
 
