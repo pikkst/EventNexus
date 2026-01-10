@@ -56,50 +56,13 @@ async function uploadImageToStorage(
 }
 
 // Nominatim geocoding fallback for addresses without coordinates
-async function geocodeAddress(address: string, country: string, countryCode: string): Promise<{lat: number, lng: number} | null> {
+async function geocodeAddress(address: string, country: string, countryCode: string, cityName?: string): Promise<{lat: number, lng: number} | null> {
   try {
-    // Add country to address if not already present for better Nominatim results
-    let searchAddress = address
-    const lowerAddress = address.toLowerCase()
-    const lowerCountry = country.toLowerCase()
-    if (!lowerAddress.includes(lowerCountry)) {
-      searchAddress = `${address}, ${country}`
-    }
-    
-    const encodedAddress = encodeURIComponent(searchAddress)
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1&countrycodes=${countryCode}`,
-      {
-        headers: {
-          'User-Agent': 'EventNexus/1.0 (contact: huntersest@gmail.com)',
-          'Accept-Language': 'et,en'
-        }
-      }
-    )
-
-    if (!response.ok) {
-      console.error(`Nominatim API error: ${response.status}`)
-      return null
-    }
-
-    const data = await response.json()
-    
-    if (data && data.length > 0) {
-      const result = data[0]
-      return {
-        lat: parseFloat(result.lat),
-        lng: parseFloat(result.lon)
-      }
-    }
-    
-    // Retry with venue name only if full address fails
-    if (address.includes(',')) {
-      const venueName = address.split(',')[0].trim()
-      console.log(`🔄 Retrying with venue name: ${venueName}`)
-      
-      const venueAddress = `${venueName}, ${country}`
-      const retryResponse = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(venueAddress)}&format=json&limit=1&countrycodes=${countryCode}`,
+    // Helper function to try geocoding with a specific search query
+    async function tryGeocode(searchQuery: string, label: string): Promise<{lat: number, lng: number} | null> {
+      console.log(`🌍 Geocoding ${label}: ${searchQuery}`)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1&countrycodes=${countryCode}`,
         {
           headers: {
             'User-Agent': 'EventNexus/1.0 (contact: huntersest@gmail.com)',
@@ -107,18 +70,61 @@ async function geocodeAddress(address: string, country: string, countryCode: str
           }
         }
       )
+
+      if (!response.ok) {
+        console.error(`Nominatim API error: ${response.status}`)
+        return null
+      }
+
+      const data = await response.json()
       
-      if (retryResponse.ok) {
-        const retryData = await retryResponse.json()
-        if (retryData && retryData.length > 0) {
-          return {
-            lat: parseFloat(retryData[0].lat),
-            lng: parseFloat(retryData[0].lon)
-          }
+      if (data && data.length > 0) {
+        const result = data[0]
+        console.log(`✅ Geocoded via ${label}: ${result.display_name}`)
+        return {
+          lat: parseFloat(result.lat),
+          lng: parseFloat(result.lon)
         }
       }
+      
+      return null
     }
 
+    // Strategy 1: Try full address with country
+    const lowerAddress = address.toLowerCase()
+    const lowerCountry = country.toLowerCase()
+    let searchAddress = address
+    
+    // Add city name to address if provided and not already present
+    if (cityName && !lowerAddress.includes(cityName.toLowerCase())) {
+      searchAddress = `${address}, ${cityName}`
+    }
+    
+    // Add country if not present
+    if (!lowerAddress.includes(lowerCountry)) {
+      searchAddress = `${searchAddress}, ${country}`
+    }
+    
+    let result = await tryGeocode(searchAddress, 'full address')
+    if (result) return result
+
+    // Strategy 2: Try venue name only with country
+    if (address.includes(',')) {
+      const venueName = address.split(',')[0].trim()
+      const venueSearch = `${venueName}, ${country}`
+      result = await tryGeocode(venueSearch, 'venue name')
+      if (result) return result
+    }
+
+    // Strategy 3: Try venue name with city name
+    if (cityName && address.includes(',')) {
+      const venueName = address.split(',')[0].trim()
+      const citySearch = `${venueName}, ${cityName}, ${country}`
+      result = await tryGeocode(citySearch, 'venue + city')
+      if (result) return result
+    }
+
+    console.warn(`❌ All geocoding strategies failed for: ${address}`)
     return null
   } catch (error) {
     console.error('Geocoding failed:', error)
@@ -348,7 +354,8 @@ serve(async (req) => {
           const geocoded = await geocodeAddress(
             eventData.location_address,
             cityConfig.country,
-            cityConfig.country_code || 'ee'
+            cityConfig.country_code || 'ee',
+            cityConfig.name // Pass city name for better geocoding
           )
           
           if (geocoded) {
