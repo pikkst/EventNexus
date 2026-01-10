@@ -66,6 +66,26 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
   const translationCache = useRef<Map<string, { name: string; aboutText: string; description: string }>>(new Map());
 
+  const LANGUAGE_LABELS: Record<string, string> = {
+    en: 'English',
+    et: 'Estonian',
+    es: 'Spanish',
+    fr: 'French',
+    de: 'German',
+    pt: 'Portuguese',
+    it: 'Italian',
+    fi: 'Finnish',
+    sv: 'Swedish',
+    tr: 'Turkish',
+    pl: 'Polish',
+    ru: 'Russian',
+    uk: 'Ukrainian',
+    ja: 'Japanese',
+    ko: 'Korean',
+    zh: 'Chinese',
+    ar: 'Arabic'
+  };
+
   // Initialize available languages from event - for dropdown display
   const availableLanguages = React.useMemo(() => {
     if (!event?.translations) {
@@ -141,6 +161,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       if (!event) { setTranslatedName(null); setTranslatedAboutText(null); setTranslatedDescription(null); return; }
 
       const targetLang = selectedLanguage || 'en';
+      const targetLabel = LANGUAGE_LABELS[targetLang] || targetLang;
       const key = `${event.id}:${targetLang}`;
 
       // If event has structured translations, prefer them
@@ -177,12 +198,12 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
 
       // Remote translate via Gemini service with graceful fallback
       try {
-        const nameTranslated = await translateDescription(event.name, targetLang);
+        const nameTranslated = await translateDescription(event.name, targetLabel);
         const aboutSource = event.aboutText || '';
         const descSource = event.description || '';
         const [aboutTranslated, descTranslated] = await Promise.all([
-          aboutSource ? translateDescription(aboutSource, targetLang) : Promise.resolve(''),
-          descSource ? translateDescription(descSource, targetLang) : Promise.resolve('')
+          aboutSource ? translateDescription(aboutSource, targetLabel) : Promise.resolve(''),
+          descSource ? translateDescription(descSource, targetLabel) : Promise.resolve('')
         ]);
 
         setTranslatedName(nameTranslated || event.name);
