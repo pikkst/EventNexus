@@ -702,8 +702,11 @@ export const updateUser = async (id: string, updates: Partial<User>): Promise<Us
       case 'subscriptionStatus':
         dbUpdates.subscription_status = value;
         break;
+      case 'preferredLanguage':
+        dbUpdates.preferred_language = value;
+        break;
       default:
-        // Keep other fields as-is (name, email, avatar, bio, location, branding, etc.)
+        // Keep other fields as-is (name, email, avatar, bio, location, branding, preferred_language, etc.)
         dbUpdates[key] = value;
     }
   }

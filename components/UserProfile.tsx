@@ -86,7 +86,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
     avatar: user.avatar,
     location: user.location,
     agencySlug: user.agencySlug || user.agency_slug,
-    branding: user.branding
+    branding: user.branding,
+    preferred_language: user.preferred_language || 'en'
   });
 
   useEffect(() => {
@@ -1468,6 +1469,39 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                      placeholder="Tell the world about yourself..."
                      aria-label="Biography"
                    />
+                </div>
+
+                {/* Language Preference - Universal for all tiers */}
+                <div className="space-y-2">
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preferred Language for Translations</label>
+                   <div className="flex items-center gap-3">
+                      <Globe className="w-5 h-5 text-indigo-400" />
+                      <select 
+                        value={tempUser.preferred_language || 'en'}
+                        onChange={(e) => setTempUser({...tempUser, preferred_language: e.target.value})}
+                        className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-6 py-3 text-white outline-none focus:border-indigo-500 font-medium"
+                        aria-label="Select your preferred language for event translations"
+                      >
+                        <option value="en">English</option>
+                        <option value="et">Eesti (Estonian)</option>
+                        <option value="es">Español (Spanish)</option>
+                        <option value="fr">Français (French)</option>
+                        <option value="de">Deutsch (German)</option>
+                        <option value="it">Italiano (Italian)</option>
+                        <option value="pt">Português (Portuguese)</option>
+                        <option value="fi">Suomi (Finnish)</option>
+                        <option value="sv">Svenska (Swedish)</option>
+                        <option value="tr">Türkçe (Turkish)</option>
+                        <option value="pl">Polski (Polish)</option>
+                        <option value="ru">Русский (Russian)</option>
+                        <option value="uk">Українська (Ukrainian)</option>
+                        <option value="ja">日本語 (Japanese)</option>
+                        <option value="ko">한국어 (Korean)</option>
+                        <option value="zh">中文 (Chinese)</option>
+                        <option value="ar">العربية (Arabic)</option>
+                      </select>
+                   </div>
+                   <p className="text-xs text-slate-500 ml-1 mt-2">Events you view will be automatically translated to this language</p>
                 </div>
 
                 {/* Tiered Customization: Branding */}
