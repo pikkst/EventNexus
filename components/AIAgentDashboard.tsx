@@ -521,6 +521,13 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     try {
       console.log('🚀 Triggering bootstrap for city:', cityId);
       
+      // Update UI to show bootstrapping status
+      setCityMetrics(prev => prev.map(m => 
+        m.city_id === cityId 
+          ? { ...m, bootstrap_status: 'bootstrapping' as const }
+          : m
+      ));
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bootstrap-city`,
         {
@@ -542,10 +549,23 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       }
       
       const result = JSON.parse(responseText);
+      
+      // Refresh city metrics to show updated data
+      const updatedMetrics = await loadCityMetrics();
+      setCityMetrics(updatedMetrics);
+      
       alert(`✅ Bootstrap completed!\n\nDiscovered ${result.sources_added || 0} event sources.\n\nCheck Agent Logs for details.`);
       
     } catch (error) {
       console.error('❌ Bootstrap error:', error);
+      
+      // Reset bootstrap status on error
+      setCityMetrics(prev => prev.map(m => 
+        m.city_id === cityId 
+          ? { ...m, bootstrap_status: 'pending' as const }
+          : m
+      ));
+      
       alert(`❌ Bootstrap failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -1536,8 +1556,27 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                         </div>
                         
                         {metric.active_sources === 0 && metric.city?.active && (
-                          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                            ⚠️ No event sources found. Run bootstrap to discover sources.
+                          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded flex items-center justify-between">
+                            <div className="text-xs text-yellow-800">
+                              ⚠️ No event sources found. Run bootstrap to discover sources.
+                            </div>
+                            <button
+                              onClick={() => triggerBootstrapForCity(metric.city_id)}
+                              disabled={metric.bootstrap_status === 'bootstrapping'}
+                              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                            >
+                              {metric.bootstrap_status === 'bootstrapping' ? (
+                                <>
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                  Discovering...
+                                </>
+                              ) : (
+                                <>
+                                  <Zap className="w-4 h-4" />
+                                  Discover Sources
+                                </>
+                              )}
+                            </button>
                           </div>
                         )}
                         
