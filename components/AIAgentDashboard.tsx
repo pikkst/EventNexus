@@ -23,6 +23,7 @@ import {
   Calendar,
   Radio,
   FileText,
+  Download,
 } from 'lucide-react';
 import {
   AIAgentStats,
@@ -1000,6 +1001,40 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
     }
   }
 
+  // Download pipeline logs as JSON
+  function downloadPipelineLogs() {
+    const logData = {
+      timestamp: new Date().toISOString(),
+      pipeline: {
+        isRunning: pipelineProgress.isRunning,
+        currentCity: pipelineProgress.currentCity,
+        currentCityIndex: pipelineProgress.currentCityIndex,
+        totalCities: pipelineProgress.totalCities,
+        currentStep: pipelineProgress.currentStep,
+      },
+      stats: {
+        citiesCompleted: pipelineProgress.citiesCompleted,
+        citiesFailed: pipelineProgress.citiesFailed,
+        totalFetched: pipelineProgress.totalFetched,
+        totalParsed: pipelineProgress.totalParsed,
+        totalValidated: pipelineProgress.totalValidated,
+        totalPublished: pipelineProgress.totalPublished,
+      },
+      logs: pipelineProgress.recentLogs,
+    };
+
+    const jsonString = JSON.stringify(logData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `pipeline-logs-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   async function approveReviewItem(item: ReviewQueueItem) {
     try {
       const { error } = await supabase
@@ -1498,7 +1533,17 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
 
                 {/* Recent Activity Log */}
                 <div className="bg-white rounded p-3 max-h-40 overflow-y-auto">
-                  <div className="text-xs font-semibold text-gray-600 mb-2">Recent Activity:</div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs font-semibold text-gray-600">Recent Activity:</div>
+                    <button
+                      onClick={downloadPipelineLogs}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                      title="Download full logs as JSON"
+                    >
+                      <Download className="w-3 h-3" />
+                      Download JSON
+                    </button>
+                  </div>
                   <div className="space-y-1 font-mono text-xs text-gray-700">
                     {pipelineProgress.recentLogs.map((log, idx) => (
                       <div key={idx} className="leading-tight">{log}</div>
@@ -1511,9 +1556,19 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
             {/* Pipeline Summary (after completion) */}
             {!pipelineProgress.isRunning && pipelineProgress.totalCities > 0 && (
               <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <h3 className="text-lg font-semibold text-green-900">Pipeline Completed</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <h3 className="text-lg font-semibold text-green-900">Pipeline Completed</h3>
+                  </div>
+                  <button
+                    onClick={downloadPipelineLogs}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    title="Download full logs as JSON"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download Logs
+                  </button>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                   <div className="text-center">
