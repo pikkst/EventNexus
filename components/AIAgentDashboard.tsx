@@ -72,6 +72,8 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   // Pipeline progress tracking
   const [pipelineProgress, setPipelineProgress] = useState(() => loadPersistedProgress() || {
     isRunning: false,
+    runStartTime: null as string | null, // Track when pipeline started
+    runEndTime: null as string | null, // Track when pipeline ended
     currentCity: '',
     currentCityIndex: 0,
     totalCities: 0,
@@ -880,8 +882,12 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
       console.log(`🌍 Processing ${activeCities.length} cities one by one...`);
 
       // Initialize progress
+      const runStartTime = new Date().toISOString();
+      
       setPipelineProgress({
         isRunning: true,
+        runStartTime: runStartTime, // Track pipeline start time
+        runEndTime: null,
         currentCity: '',
         currentCityIndex: 0,
         totalCities: activeCities.length,
@@ -894,7 +900,24 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         currentStep: 'Starting pipeline...',
         recentLogs: [`Started processing ${activeCities.length} cities`],
         fullLogs: [`Started processing ${activeCities.length} cities`],
-        errors: [] // Reset errors at pipeline start
+        errors: [], // Reset errors at pipeline start
+        detailedErrors: [],
+        performanceMetrics: [],
+        validationFailures: [],
+        geocodingStats: {
+          attempts: 0,
+          successes: 0,
+          failures: 0,
+          avgTime: 0,
+          failureReasons: {}
+        },
+        aiStats: {
+          totalRequests: 0,
+          timeouts: 0,
+          rateLimits: 0,
+          modelUsage: {},
+          avgResponseTime: 0
+        }
       });
 
       // Process each city through full pipeline
@@ -1113,9 +1136,12 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
       }
 
       // Show comprehensive results
+      const runEndTime = new Date().toISOString();
+      
       setPipelineProgress(prev => ({
         ...prev,
         isRunning: false,
+        runEndTime: runEndTime, // Track pipeline end time
         currentStep: 'Complete!',
         recentLogs: [...prev.recentLogs, '🎉 Pipeline complete!'],
         fullLogs: [...prev.fullLogs, '🎉 Pipeline complete!']
@@ -1158,6 +1184,11 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
       timestamp: new Date().toISOString(),
       pipeline: {
         isRunning: pipelineProgress.isRunning,
+        runStartTime: pipelineProgress.runStartTime,
+        runEndTime: pipelineProgress.runEndTime,
+        runDuration: pipelineProgress.runStartTime && pipelineProgress.runEndTime
+          ? ((new Date(pipelineProgress.runEndTime).getTime() - new Date(pipelineProgress.runStartTime).getTime()) / 1000).toFixed(2) + 's'
+          : 'N/A',
         currentCity: pipelineProgress.currentCity,
         currentCityIndex: pipelineProgress.currentCityIndex,
         totalCities: pipelineProgress.totalCities,
@@ -1181,7 +1212,12 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
       geocodingStats: pipelineProgress.geocodingStats,
       aiStats: pipelineProgress.aiStats,
       
-      // Supabase Edge Function logs (from agent_logs table)
+      // Supabase Edge Function logs (from agent_logs table, filtered by pipeline run time)
+      supabaseLogsTimeRange: {
+        startTime: pipelineProgress.runStartTime,
+        endTime: pipelineProgress.runEndTime || new Date().toISOString(),
+        note: 'Logs are filtered to show only entries from this specific pipeline run'
+      },
       supabaseLogs: supabaseLogs.map(log => ({
         timestamp: log.created_at,
         agent: log.agent_name,
@@ -3064,11 +3100,27 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
 
                     {/* AgentLogsViewer - Supabase Function Logs integrated */}
                     <div className="border-t pt-4">
+                      {pipelineProgress.runStartTime && (
+                        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-center gap-2 text-sm text-blue-800">
+                            <Info className="w-4 h-4" />
+                            <span className="font-semibold">Filtered to this pipeline run:</span>
+                            <span className="text-xs text-blue-600">
+                              {new Date(pipelineProgress.runStartTime).toLocaleString('et-EE')}
+                              {pipelineProgress.runEndTime && (
+                                <> → {new Date(pipelineProgress.runEndTime).toLocaleString('et-EE')}</>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                       <AgentLogsViewer 
                         maxLogs={200}
                         autoRefresh={true}
                         refreshInterval={5000}
                         onLogsUpdate={(logs) => setSupabaseLogs(logs)}
+                        startTime={pipelineProgress.runStartTime}
+                        endTime={pipelineProgress.runEndTime || undefined}
                       />
                     </div>
                   </div>

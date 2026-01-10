@@ -19,6 +19,8 @@ interface AgentLogsViewerProps {
   autoRefresh?: boolean;
   refreshInterval?: number;
   onLogsUpdate?: (logs: AgentLog[]) => void; // Callback to pass logs to parent
+  startTime?: string | null; // Filter logs after this timestamp
+  endTime?: string | null; // Filter logs before this timestamp
 }
 
 export const AgentLogsViewer: React.FC<AgentLogsViewerProps> = ({
@@ -26,6 +28,8 @@ export const AgentLogsViewer: React.FC<AgentLogsViewerProps> = ({
   autoRefresh = true,
   refreshInterval = 5000,
   onLogsUpdate,
+  startTime = null,
+  endTime = null,
 }) => {
   const [logs, setLogs] = useState<AgentLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +50,14 @@ export const AgentLogsViewer: React.FC<AgentLogsViewerProps> = ({
 
       if (agentFilter !== 'all') {
         query = query.eq('agent_name', agentFilter);
+      }
+
+      // Filter by time range if provided (for pipeline run tracking)
+      if (startTime) {
+        query = query.gte('created_at', startTime);
+      }
+      if (endTime) {
+        query = query.lte('created_at', endTime);
       }
 
       const { data, error } = await query;
@@ -72,7 +84,7 @@ export const AgentLogsViewer: React.FC<AgentLogsViewerProps> = ({
       const interval = setInterval(fetchLogs, refreshInterval);
       return () => clearInterval(interval);
     }
-  }, [filter, agentFilter]);
+  }, [filter, agentFilter, startTime, endTime]); // Re-fetch when time filters change
 
   const getLevelIcon = (level: string) => {
     switch (level) {
