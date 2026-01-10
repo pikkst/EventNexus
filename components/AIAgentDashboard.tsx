@@ -861,14 +861,16 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
           });
           
           if (parseResp.error) {
-            totalResults.cityErrors.push(`${city.city_name}: Parse failed - ${parseResp.error.message}`);
+            const errorMsg = parseResp.error.message || String(parseResp.error);
+            totalResults.cityErrors.push(`${city.city_name}: Parse failed - ${errorMsg}`);
             setPipelineProgress(prev => ({
               ...prev,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Parse failed`],
-              fullLogs: [...prev.fullLogs, `  ⚠️ Parse failed`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Parse failed: ${errorMsg}`],
+              fullLogs: [...prev.fullLogs, `  ⚠️ Parse failed: ${errorMsg}`]
             }));
           } else {
-            const parsed = parseResp.data?.results?.parsed || 0;
+            // Try both .parsed and .events_extracted keys for backward compatibility
+            const parsed = parseResp.data?.results?.parsed || parseResp.data?.results?.events_extracted || 0;
             totalResults.totalParsed += parsed;
             console.log(`  ✅ Parsed ${parsed} events`);
             setPipelineProgress(prev => ({
@@ -887,11 +889,12 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
           });
           
           if (validateResp.error) {
-            totalResults.cityErrors.push(`${city.city_name}: Validate failed - ${validateResp.error.message}`);
+            const errorMsg = validateResp.error.message || String(validateResp.error);
+            totalResults.cityErrors.push(`${city.city_name}: Validate failed - ${errorMsg}`);
             setPipelineProgress(prev => ({
               ...prev,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Validate failed`],
-              fullLogs: [...prev.fullLogs, `  ⚠️ Validate failed`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Validate failed: ${errorMsg}`],
+              fullLogs: [...prev.fullLogs, `  ⚠️ Validate failed: ${errorMsg}`]
             }));
           } else {
             const validated = validateResp.data?.results?.validated || 0;
@@ -913,11 +916,12 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
           });
           
           if (publishResp.error) {
-            totalResults.cityErrors.push(`${city.city_name}: Publish failed - ${publishResp.error.message}`);
+            const errorMsg = publishResp.error.message || String(publishResp.error);
+            totalResults.cityErrors.push(`${city.city_name}: Publish failed - ${errorMsg}`);
             setPipelineProgress(prev => ({
               ...prev,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Publish failed`],
-              fullLogs: [...prev.fullLogs, `  ⚠️ Publish failed`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Publish failed: ${errorMsg}`],
+              fullLogs: [...prev.fullLogs, `  ⚠️ Publish failed: ${errorMsg}`]
             }));
           } else {
             const published = publishResp.data?.results?.published || 0;
