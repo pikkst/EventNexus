@@ -209,7 +209,7 @@ CRITICAL - PAID vs FREE (Default to FREE):
 Return ONLY valid JSON array of FUTURE events (preferably free). No markdown, no explanations.
 
 Content to parse (HTML/RSS/iCal):
-${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate limits and timeouts
+${rawContent.slice(0, 30000)}` // Limit to 30KB to avoid timeouts on large HTML
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -218,9 +218,9 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
       debugMetrics.aiStats.modelUsed = currentModel
       debugMetrics.aiStats.requests++
       
-      // Add timeout to prevent 504 Gateway Timeout (Edge Functions have 30s limit)
+      // Add timeout to prevent 504 Gateway Timeout (Edge Functions have 60s limit with proper headers)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout (before Edge Function 30s limit)
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout (allow more time for large content)
       
       const aiCallStart = Date.now()
       const response = await fetch(
@@ -263,8 +263,8 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
         
         // All models rate limited - wait with backoff
         if (attempt < retries) {
-          const baseWait = Math.pow(2, attempt) * 8000 // 8s, 16s, 32s (more aggressive)
-        const jitter = Math.random() * 2000 // 0-2s random jitter to avoid thundering herd
+          const baseWait = Math.pow(2, attempt) * 12000 // 12s, 24s, 48s (longer waits for large content)
+        const jitter = Math.random() * 3000 // 0-3s random jitter to avoid thundering herd
         const waitTime = baseWait + jitter
         console.log(`⏳ Rate limited (429), retrying in ${Math.round(waitTime/1000)}s (attempt ${attempt + 1}/${retries})`)
         await log(supabaseClient, 'parse-event-ai', 'warning', 'Rate limit hit - waiting', { 
@@ -353,8 +353,8 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
     } catch (error) {
       if (error.name === 'AbortError') {
         debugMetrics.aiStats.timeouts++
-        console.error('Gemini API timeout after 25s')
-        await log(supabaseClient, 'parse-event-ai', 'error', 'Gemini API timeout (25s)', { 
+        console.error('Gemini API timeout after 45s')
+        await log(supabaseClient, 'parse-event-ai', 'error', 'Gemini API timeout (45s)', { 
           attempt: attempt + 1,
           content_length: rawContent.length,
           source_type: sourceType,
@@ -364,7 +364,7 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
         debugMetrics.detailedErrors.push({
           timestamp: new Date().toISOString(),
           step: 'AI Parse',
-          error: 'Timeout after 25s',
+          error: 'Timeout after 45s',
           context: { contentLength: rawContent.length, sourceType, city: cityName }
         })
         
