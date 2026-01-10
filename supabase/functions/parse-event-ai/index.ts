@@ -48,7 +48,79 @@ interface ParseResult {
   }
 }
 
-async function parseEventWithGemini(rawContent: string, sourceType: string, cityTimezone: string, cityName: string, supabaseClient: any, retries = 3): Promise<ParseResult> {
+// Debug tracking structure
+interface DebugMetrics {
+  performance: {
+    startTime: number
+    fetchTime: number
+    parseTime: number
+    geocodeTime: number
+    totalTime: number
+  }
+  aiStats: {
+    requests: number
+    timeouts: number
+    rateLimits: number
+    modelUsed: string
+    avgResponseTime: number
+    responseTimes: number[]
+  }
+  geocodingStats: {
+    attempts: number
+    successes: number
+    failures: number
+    failureReasons: Record<string, number>
+  }
+  validationFailures: Array<{
+    eventName: string
+    reason: string
+    data?: any
+  }>
+  detailedErrors: Array<{
+    timestamp: string
+    step: string
+    error: string
+    context?: any
+  }>
+}
+
+function createDebugMetrics(): DebugMetrics {
+  return {
+    performance: {
+      startTime: Date.now(),
+      fetchTime: 0,
+      parseTime: 0,
+      geocodeTime: 0,
+      totalTime: 0
+    },
+    aiStats: {
+      requests: 0,
+      timeouts: 0,
+      rateLimits: 0,
+      modelUsed: GEMINI_MODELS[currentModelIndex],
+      avgResponseTime: 0,
+      responseTimes: []
+    },
+    geocodingStats: {
+      attempts: 0,
+      successes: 0,
+      failures: 0,
+      failureReasons: {}
+    },
+    validationFailures: [],
+    detailedErrors: []
+  }
+}
+
+async function parseEventWithGemini(
+  rawContent: string, 
+  sourceType: string, 
+  cityTimezone: string, 
+  cityName: string, 
+  supabaseClient: any,
+  debugMetrics: DebugMetrics, 
+  retries = 3
+): Promise<ParseResult> {
   // Get current time in city timezone
   const now = new Date()
   const cityTime = new Intl.DateTimeFormat('en-GB', {
@@ -143,11 +215,14 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
     try {
       // Get current model (with fallback if rate limited)
       const currentModel = GEMINI_MODELS[currentModelIndex]
+      debugMetrics.aiStats.modelUsed = currentModel
+      debugMetrics.aiStats.requests++
       
       // Add timeout to prevent 504 Gateway Timeout (Edge Functions have 30s limit)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout (before Edge Function 30s limit)
       
+      const aiCallStart = Date.now()
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${GEMINI_API_KEY}`,
         {
@@ -165,10 +240,14 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
           signal: controller.signal
         }
       )
+      const aiCallTime = (Date.now() - aiCallStart) / 1000
+      debugMetrics.aiStats.responseTimes.push(aiCallTime)
+      debugMetrics.aiStats.avgResponseTime = debugMetrics.aiStats.responseTimes.reduce((a, b) => a + b, 0) / debugMetrics.aiStats.responseTimes.length
       
       clearTimeout(timeoutId);
 
       if (response.status === 429) {
+        debugMetrics.aiStats.rateLimits++
         // Try fallback model if available
         if (currentModelIndex < GEMINI_MODELS.length - 1) {
           currentModelIndex++
@@ -225,6 +304,11 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
           if (!event.start_time) {
             console.log(`Filtered out event without start_time: "${event.name}"`)
             rejectedEvents.push(event)
+            debugMetrics.validationFailures.push({
+              eventName: event.name,
+              reason: 'Missing start_time',
+              data: { event }
+            })
             return false
           }
           
@@ -234,6 +318,11 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
           if (!validation.valid) {
             console.log(`Filtered out event: "${event.name}" - ${validation.reason}: ${validation.details}`)
             rejectedEvents.push(event)
+            debugMetrics.validationFailures.push({
+              eventName: event.name,
+              reason: `${validation.reason}: ${validation.details}`,
+              data: { event, validation }
+            })
             return false
           }
           
@@ -263,6 +352,7 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
       }
     } catch (error) {
       if (error.name === 'AbortError') {
+        debugMetrics.aiStats.timeouts++
         console.error('Gemini API timeout after 25s')
         await log(supabaseClient, 'parse-event-ai', 'error', 'Gemini API timeout (25s)', { 
           attempt: attempt + 1,
@@ -270,6 +360,14 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
           source_type: sourceType,
           city: cityName
         })
+        
+        debugMetrics.detailedErrors.push({
+          timestamp: new Date().toISOString(),
+          step: 'AI Parse',
+          error: 'Timeout after 25s',
+          context: { contentLength: rawContent.length, sourceType, city: cityName }
+        })
+        
         if (attempt < retries) {
           console.log(`Retrying... (attempt ${attempt + 2}/${retries + 1})`)
           continue
@@ -278,6 +376,12 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
       }
       
       // Log detailed error for debugging
+      debugMetrics.detailedErrors.push({
+        timestamp: new Date().toISOString(),
+        step: 'AI Parse',
+        error: error.message || String(error),
+        context: { attempt: attempt + 1, city: cityName }
+      })
       console.error(`Parse attempt ${attempt + 1}/${retries + 1} failed:`, error)
       await log(supabaseClient, 'parse-event-ai', 'error', 'Parse attempt failed', {
         attempt: attempt + 1,
@@ -299,7 +403,13 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
   }
 }
 
-async function geocodeAddress(address: string, country: string, countryCode: string, supabaseClient: any): Promise<{ lat: number; lng: number } | null> {
+async function geocodeAddress(
+  address: string, 
+  country: string, 
+  countryCode: string, 
+  supabaseClient: any,
+  debugMetrics: DebugMetrics
+): Promise<{ lat: number; lng: number } | null> {
   // Use OpenStreetMap Nominatim for geocoding (free, no API key needed)
   // Rate limit: max 1 request per second
   try {
