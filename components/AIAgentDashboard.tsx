@@ -48,6 +48,22 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'cities' | 'manage-cities' | 'scheduler' | 'review' | 'decisions' | 'costs' | 'logs'>('overview');
   const [isProcessing, setIsProcessing] = useState(false);
   
+  // Pipeline progress tracking
+  const [pipelineProgress, setPipelineProgress] = useState({
+    isRunning: false,
+    currentCity: '',
+    currentCityIndex: 0,
+    totalCities: 0,
+    citiesCompleted: 0,
+    citiesFailed: 0,
+    totalFetched: 0,
+    totalParsed: 0,
+    totalValidated: 0,
+    totalPublished: 0,
+    currentStep: '',
+    recentLogs: [] as string[]
+  });
+  
   // City management state
   const [cities, setCities] = useState<any[]>([]);
   const [showAddCity, setShowAddCity] = useState(false);
@@ -749,7 +765,7 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
       // Load active cities
       const { data: activeCities, error: citiesError } = await supabase
         .from('city_configs')
-        .select('city_id, city_name, country')
+        .select('city_id, city_name, country, country_code')
         .eq('active', true)
         .order('city_name');
 
@@ -762,26 +778,63 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
       totalResults.cities = activeCities.length;
       console.log(`🌍 Processing ${activeCities.length} cities one by one...`);
 
+      // Initialize progress
+      setPipelineProgress({
+        isRunning: true,
+        currentCity: '',
+        currentCityIndex: 0,
+        totalCities: activeCities.length,
+        citiesCompleted: 0,
+        citiesFailed: 0,
+        totalFetched: 0,
+        totalParsed: 0,
+        totalValidated: 0,
+        totalPublished: 0,
+        currentStep: 'Starting pipeline...',
+        recentLogs: [`Started processing ${activeCities.length} cities`]
+      });
+
       // Process each city through full pipeline
       for (let i = 0; i < activeCities.length; i++) {
         const city = activeCities[i];
         console.log(`\n🏙️ [${i + 1}/${activeCities.length}] Processing: ${city.city_name}, ${city.country}`);
 
+        // Update progress - current city
+        setPipelineProgress(prev => ({
+          ...prev,
+          currentCity: `${city.city_name}, ${city.country}`,
+          currentCityIndex: i + 1,
+          currentStep: 'Fetching sources...',
+          recentLogs: [...prev.recentLogs.slice(-9), `[${i + 1}/${activeCities.length}] ${city.city_name}, ${city.country} ${city.country_code ? '(' + city.country_code.toUpperCase() + ')' : ''}`]
+        }));
+
         try {
           // Step 1: Fetch sources for this city
           console.log(`  📥 Step 1/4: Fetching sources...`);
+          setPipelineProgress(prev => ({ ...prev, currentStep: '📥 Fetching sources...' }));
           const fetchResp = await supabase.functions.invoke('fetch-sources', {
             body: { city_id: city.city_id }
           });
           
           if (fetchResp.error) {
             totalResults.cityErrors.push(`${city.city_name}: Fetch failed - ${fetchResp.error.message}`);
+            setPipelineProgress(prev => ({
+              ...prev,
+              citiesFailed: prev.citiesFailed + 1,
+              recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Fetch failed`]
+            }));
             continue; // Skip to next city
           }
           
           const fetched = fetchResp.data?.results?.fetched || 0;
           totalResults.totalFetched += fetched;
           console.log(`  ✅ Fetched ${fetched} new events`);
+          setPipelineProgress(prev => ({
+            ...prev,
+            totalFetched: prev.totalFetched + fetched,
+            currentStep: '🤖 Parsing with AI...',
+            recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Fetched ${fetched} events`]
+          }));
 
           // Step 2: Parse with AI (processes all pending for this city)
           console.log(`  🤖 Step 2/4: Parsing with AI...`);
@@ -791,10 +844,20 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
           
           if (parseResp.error) {
             totalResults.cityErrors.push(`${city.city_name}: Parse failed - ${parseResp.error.message}`);
+            setPipelineProgress(prev => ({
+              ...prev,
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Parse failed`]
+            }));
           } else {
             const parsed = parseResp.data?.results?.parsed || 0;
             totalResults.totalParsed += parsed;
             console.log(`  ✅ Parsed ${parsed} events`);
+            setPipelineProgress(prev => ({
+              ...prev,
+              totalParsed: prev.totalParsed + parsed,
+              currentStep: '✅ Validating...',
+              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Parsed ${parsed} events`]
+            }));
           }
 
           // Step 3: Validate events
@@ -805,10 +868,20 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
           
           if (validateResp.error) {
             totalResults.cityErrors.push(`${city.city_name}: Validate failed - ${validateResp.error.message}`);
+            setPipelineProgress(prev => ({
+              ...prev,
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Validate failed`]
+            }));
           } else {
             const validated = validateResp.data?.results?.validated || 0;
             totalResults.totalValidated += validated;
             console.log(`  ✅ Validated ${validated} events`);
+            setPipelineProgress(prev => ({
+              ...prev,
+              totalValidated: prev.totalValidated + validated,
+              currentStep: '🚀 Publishing...',
+              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Validated ${validated} events`]
+            }));
           }
 
           // Step 4: Publish to live map
@@ -819,10 +892,20 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
           
           if (publishResp.error) {
             totalResults.cityErrors.push(`${city.city_name}: Publish failed - ${publishResp.error.message}`);
+            setPipelineProgress(prev => ({
+              ...prev,
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Publish failed`]
+            }));
           } else {
             const published = publishResp.data?.results?.published || 0;
             totalResults.totalPublished += published;
             console.log(`  ✅ Published ${published} events`);
+            setPipelineProgress(prev => ({
+              ...prev,
+              totalPublished: prev.totalPublished + published,
+              citiesCompleted: prev.citiesCompleted + 1,
+              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Published ${published} events`, `✅ Complete!`]
+            }));
           }
 
           console.log(`✅ ${city.city_name} complete!\n`);
@@ -830,10 +913,22 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         } catch (cityError: any) {
           console.error(`❌ Error processing ${city.city_name}:`, cityError);
           totalResults.cityErrors.push(`${city.city_name}: ${cityError.message}`);
+          setPipelineProgress(prev => ({
+            ...prev,
+            citiesFailed: prev.citiesFailed + 1,
+            recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Error: ${cityError.message}`]
+          }));
         }
       }
 
       // Show comprehensive results
+      setPipelineProgress(prev => ({
+        ...prev,
+        isRunning: false,
+        currentStep: 'Complete!',
+        recentLogs: [...prev.recentLogs, '🎉 Pipeline complete!']
+      }));
+
       const summary = `
 🎉 Pipeline Complete!
 
@@ -852,6 +947,12 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
       await loadDashboardData();
     } catch (error: any) {
       console.error('Pipeline failed:', error);
+      setPipelineProgress(prev => ({
+        ...prev,
+        isRunning: false,
+        currentStep: 'Failed',
+        recentLogs: [...prev.recentLogs, `❌ Pipeline failed: ${error.message}`]
+      }));
       alert(`❌ Pipeline Failed!\n\nError: ${error.message}\n\nCheck console for details.`);
     } finally {
       setIsProcessing(false);
@@ -1282,7 +1383,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
               <button
                 onClick={triggerAgentPipeline}
                 disabled={isProcessing}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {isProcessing ? (
                   <>
@@ -1297,6 +1398,106 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                 )}
               </button>
             </div>
+
+            {/* Pipeline Progress Tracker */}
+            {pipelineProgress.isRunning && (
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
+                    <h3 className="text-lg font-semibold text-blue-900">Pipeline Running</h3>
+                  </div>
+                  <span className="text-sm font-medium text-blue-700">
+                    {pipelineProgress.currentCityIndex} / {pipelineProgress.totalCities} cities
+                  </span>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="mb-3">
+                  <div className="flex justify-between text-sm text-gray-600 mb-1">
+                    <span className="font-medium">{pipelineProgress.currentCity}</span>
+                    <span>{Math.round((pipelineProgress.currentCityIndex / pipelineProgress.totalCities) * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div 
+                      className="bg-blue-600 h-3 rounded-full transition-all duration-300"
+                      style={{ width: `${(pipelineProgress.currentCityIndex / pipelineProgress.totalCities) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Current Step */}
+                <div className="mb-3 text-sm text-gray-700">
+                  <span className="font-medium">Current Step:</span> {pipelineProgress.currentStep}
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-3">
+                  <div className="bg-white rounded p-2 text-center">
+                    <div className="text-xs text-gray-500">Completed</div>
+                    <div className="text-lg font-bold text-green-600">{pipelineProgress.citiesCompleted}</div>
+                  </div>
+                  <div className="bg-white rounded p-2 text-center">
+                    <div className="text-xs text-gray-500">Failed</div>
+                    <div className="text-lg font-bold text-red-600">{pipelineProgress.citiesFailed}</div>
+                  </div>
+                  <div className="bg-white rounded p-2 text-center">
+                    <div className="text-xs text-gray-500">Fetched</div>
+                    <div className="text-lg font-bold text-blue-600">{pipelineProgress.totalFetched}</div>
+                  </div>
+                  <div className="bg-white rounded p-2 text-center">
+                    <div className="text-xs text-gray-500">Parsed</div>
+                    <div className="text-lg font-bold text-purple-600">{pipelineProgress.totalParsed}</div>
+                  </div>
+                  <div className="bg-white rounded p-2 text-center">
+                    <div className="text-xs text-gray-500">Published</div>
+                    <div className="text-lg font-bold text-green-600">{pipelineProgress.totalPublished}</div>
+                  </div>
+                </div>
+
+                {/* Recent Activity Log */}
+                <div className="bg-white rounded p-3 max-h-40 overflow-y-auto">
+                  <div className="text-xs font-semibold text-gray-600 mb-2">Recent Activity:</div>
+                  <div className="space-y-1 font-mono text-xs text-gray-700">
+                    {pipelineProgress.recentLogs.map((log, idx) => (
+                      <div key={idx} className="leading-tight">{log}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Pipeline Summary (after completion) */}
+            {!pipelineProgress.isRunning && pipelineProgress.totalCities > 0 && (
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <h3 className="text-lg font-semibold text-green-900">Pipeline Completed</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  <div className="text-center">
+                    <div className="text-xs text-gray-600">Total Cities</div>
+                    <div className="text-xl font-bold text-gray-900">{pipelineProgress.totalCities}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-600">Completed</div>
+                    <div className="text-xl font-bold text-green-600">{pipelineProgress.citiesCompleted}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-600">Total Fetched</div>
+                    <div className="text-xl font-bold text-blue-600">{pipelineProgress.totalFetched}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-600">Total Parsed</div>
+                    <div className="text-xl font-bold text-purple-600">{pipelineProgress.totalParsed}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-600">Total Published</div>
+                    <div className="text-xl font-bold text-green-600">{pipelineProgress.totalPublished}</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
