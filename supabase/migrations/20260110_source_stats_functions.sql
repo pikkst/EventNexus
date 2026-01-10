@@ -15,12 +15,12 @@ BEGIN
   RETURN QUERY
   SELECT
     p_source_id,
-    COUNT(e.id) FILTER (WHERE e.is_free = true)::INT AS free_count,
+    COUNT(e.id) FILTER (WHERE e.price = 0)::INT AS free_count,
     COUNT(e.id)::INT AS total_count,
     (
       CASE 
         WHEN COUNT(e.id) > 0 
-        THEN LEAST(1.00, COUNT(e.id) FILTER (WHERE e.is_free = true)::DECIMAL / COUNT(e.id))
+        THEN LEAST(1.00, COUNT(e.id) FILTER (WHERE e.price = 0)::DECIMAL / COUNT(e.id))
         ELSE 0.50::DECIMAL
       END
     ) AS free_ratio

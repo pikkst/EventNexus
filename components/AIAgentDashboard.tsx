@@ -163,7 +163,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       supabase.from('city_configs').select('*', { count: 'exact' }).eq('active', true),
       supabase.from('event_sources').select('*', { count: 'exact' }).eq('active', true),
       supabase.from('events').select('*', { count: 'exact' }).gte('created_at', yesterday.toISOString()),
-      supabase.from('events').select('*', { count: 'exact' }).eq('is_free', true).eq('status', 'active'),
+      supabase.from('events').select('*', { count: 'exact' }).eq('price', 0).eq('status', 'active'),
       supabase.from('review_queue').select('*', { count: 'exact' }).eq('status', 'pending'),
       supabase.from('event_confidence').select('final_score'),
       supabase.from('ai_usage_log').select('tokens_used, cost_estimate').gte('created_at', weekAgo.toISOString()),
@@ -239,7 +239,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           .select('*', { count: 'exact', head: true })
           .eq('city_id', city.city_id)
           .eq('status', 'active')
-          .eq('is_free', true);
+          .eq('price', 0);
 
         // Calculate freshness score (0-100) based on created_at (since last_bootstrap_at doesn't exist yet)
         const daysSinceCreated = Math.floor((Date.now() - new Date(city.created_at).getTime()) / (1000 * 60 * 60 * 24));
