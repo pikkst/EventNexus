@@ -412,6 +412,9 @@ async function geocodeAddress(
 ): Promise<{ lat: number; lng: number } | null> {
   // Use OpenStreetMap Nominatim for geocoding (free, no API key needed)
   // Rate limit: max 1 request per second
+  debugMetrics.geocodingStats.attempts++
+  const geocodeStart = Date.now()
+  
   try {
     // Add 1.1 second delay to respect Nominatim rate limit
     await new Promise(resolve => setTimeout(resolve, 1100))
@@ -455,6 +458,9 @@ async function geocodeAddress(
       const data = await response.json()
       
       if (data && data.length > 0) {
+        debugMetrics.geocodingStats.successes++
+        debugMetrics.performance.geocodeTime += (Date.now() - geocodeStart) / 1000
+        
         console.log(`✓ Geocoded: "${address}" → ${data[0].lat}, ${data[0].lon} (using: "${searchAddress}")`)
         await log(supabaseClient, 'parse-event-ai', 'success', 'Geocoded address', { 
           original: address, 
@@ -474,9 +480,17 @@ async function geocodeAddress(
       }
     }
     
+    debugMetrics.geocodingStats.failures++
+    const reason = 'No results found'
+    debugMetrics.geocodingStats.failureReasons[reason] = (debugMetrics.geocodingStats.failureReasons[reason] || 0) + 1
+    
     console.log(`⚠️ Nominatim found no results for any variation of: ${address}`)
     await log(supabaseClient, 'parse-event-ai', 'warning', 'Geocoding failed - no results', { address, tried: searchVariations })
   } catch (error) {
+    debugMetrics.geocodingStats.failures++
+    const reason = error.message || 'Unknown error'
+    debugMetrics.geocodingStats.failureReasons[reason] = (debugMetrics.geocodingStats.failureReasons[reason] || 0) + 1
+    
     console.error('❌ Geocoding failed:', error)
     await log(supabaseClient, 'parse-event-ai', 'error', 'Geocoding exception', { address, error: String(error) })
   }
@@ -523,6 +537,9 @@ serve(async (req) => {
 
     console.log(`Found ${rawEvents?.length || 0} raw events to process${cityId ? ` for city ${cityId}` : ''}`)
     await log(supabaseClient, 'parse-event-ai', 'info', 'Starting event extraction', { raw_events: rawEvents?.length || 0 }, { city_id: cityId })
+
+    // Initialize debug metrics
+    const debugMetrics = createDebugMetrics()
 
     const results = {
       processed: 0,
@@ -579,13 +596,16 @@ serve(async (req) => {
         }
 
         // Parse with AI
+        const parseStepStart = Date.now()
         const parseResult = await parseEventWithGemini(
           rawEvent.raw_content,
           rawEvent.event_sources.type,
           cityConfig.timezone,
           cityConfig.city_name,
-          supabaseClient
+          supabaseClient,
+          debugMetrics
         )
+        debugMetrics.performance.parseTime += (Date.now() - parseStepStart) / 1000
 
         // ✅ SOOVITUS 2: Type guard before loop
         if (!Array.isArray(parseResult.events)) {
@@ -624,7 +644,8 @@ serve(async (req) => {
               enhancedAddress,
               cityConfig.country,
               cityConfig.country_code || 'ee',
-              supabaseClient
+              supabaseClient,
+              debugMetrics
             )
             if (coords) {
               event.location_lat = coords.lat
@@ -751,10 +772,38 @@ serve(async (req) => {
       }
     }
 
+    // Calculate total processing time
+    debugMetrics.performance.totalTime = (Date.now() - debugMetrics.performance.startTime) / 1000
+
     return new Response(
       JSON.stringify({
         success: true,
         results,
+        debugMetrics: {
+          performance: {
+            parseTime: debugMetrics.performance.parseTime.toFixed(2),
+            geocodeTime: debugMetrics.performance.geocodeTime.toFixed(2),
+            totalTime: debugMetrics.performance.totalTime.toFixed(2)
+          },
+          aiStats: {
+            requests: debugMetrics.aiStats.requests,
+            timeouts: debugMetrics.aiStats.timeouts,
+            rateLimits: debugMetrics.aiStats.rateLimits,
+            modelUsed: debugMetrics.aiStats.modelUsed,
+            avgResponseTime: debugMetrics.aiStats.avgResponseTime.toFixed(2)
+          },
+          geocodingStats: {
+            attempts: debugMetrics.geocodingStats.attempts,
+            successes: debugMetrics.geocodingStats.successes,
+            failures: debugMetrics.geocodingStats.failures,
+            successRate: debugMetrics.geocodingStats.attempts > 0 
+              ? ((debugMetrics.geocodingStats.successes / debugMetrics.geocodingStats.attempts) * 100).toFixed(1)
+              : '0',
+            failureReasons: debugMetrics.geocodingStats.failureReasons
+          },
+          validationFailures: debugMetrics.validationFailures.slice(0, 10), // Top 10
+          detailedErrors: debugMetrics.detailedErrors.slice(0, 10) // Top 10
+        },
         timestamp: new Date().toISOString(),
       }),
       {
