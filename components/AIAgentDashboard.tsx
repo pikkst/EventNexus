@@ -24,6 +24,7 @@ import {
   Radio,
   FileText,
   Download,
+  Info,
 } from 'lucide-react';
 import {
   AIAgentStats,
