@@ -63,7 +63,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [eventCompleted, setEventCompleted] = useState(false);
   const [translatedName, setTranslatedName] = useState<string | null>(null);
   const [translatedAboutText, setTranslatedAboutText] = useState<string | null>(null);
-  const translationCache = useRef<Map<string, { name: string; aboutText: string }>>(new Map());
+  const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
+  const translationCache = useRef<Map<string, { name: string; aboutText: string; description: string }>>(new Map());
 
   // Initialize available languages from event - for dropdown display
   const availableLanguages = React.useMemo(() => {
@@ -119,11 +120,13 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   // Get description in selected language
   const displayDescription = React.useMemo(() => {
     if (!event) return '';
-    if (!event.translations || Object.keys(event.translations).length === 0) {
-      return event.description;
-    }
-    return event.translations[selectedLanguage] || event.description;
-  }, [event, selectedLanguage]);
+    if (translatedDescription) return translatedDescription;
+
+    const translation = event.translations?.[selectedLanguage];
+    if (translation?.description) return translation.description;
+
+    return event.description;
+  }, [event, selectedLanguage, translatedDescription]);
 
   // Sync selected language with user preference when user loads or preference changes
   useEffect(() => {
@@ -135,9 +138,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   // Auto-translate event name and about text when language changes
   useEffect(() => {
     const doTranslate = async () => {
-      if (!event) { setTranslatedName(null); setTranslatedAboutText(null); return; }
+      if (!event) { setTranslatedName(null); setTranslatedAboutText(null); setTranslatedDescription(null); return; }
 
       const targetLang = selectedLanguage || 'en';
+      const key = `${event.id}:${targetLang}`;
 
       // If event has structured translations, prefer them
       const direct = event.translations?.[targetLang];
@@ -145,16 +149,19 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         setTranslatedName(direct.name || event.name);
         // Use description from structured translation or fall back to aboutText
         const aboutText = direct.aboutText || direct.description || event.aboutText || '';
+        const description = direct.description || event.description;
         setTranslatedAboutText(aboutText);
+        setTranslatedDescription(description);
+        translationCache.current.set(key, { name: direct.name || event.name, aboutText, description });
         return;
       }
 
       // Cache key per event + target language
-      const key = `${event.id}:${targetLang}`;
       const cachedTrans = translationCache.current.get(key);
       if (cachedTrans) {
         setTranslatedName(cachedTrans.name);
         setTranslatedAboutText(cachedTrans.aboutText);
+        setTranslatedDescription(cachedTrans.description);
         return;
       }
 
@@ -163,7 +170,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       if (legacy) {
         setTranslatedName(legacy);
         setTranslatedAboutText(event.aboutText || '');
-        translationCache.current.set(key, { name: legacy, aboutText: event.aboutText || '' });
+        setTranslatedDescription(event.description || '');
+        translationCache.current.set(key, { name: legacy, aboutText: event.aboutText || '', description: event.description || '' });
         return;
       }
 
@@ -171,14 +179,25 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       try {
         const nameTranslated = await translateDescription(event.name, targetLang);
         const aboutSource = event.aboutText || '';
-        const aboutTranslated = aboutSource ? await translateDescription(aboutSource, targetLang) : '';
+        const descSource = event.description || '';
+        const [aboutTranslated, descTranslated] = await Promise.all([
+          aboutSource ? translateDescription(aboutSource, targetLang) : Promise.resolve(''),
+          descSource ? translateDescription(descSource, targetLang) : Promise.resolve('')
+        ]);
+
         setTranslatedName(nameTranslated || event.name);
         setTranslatedAboutText(aboutTranslated || aboutSource);
-        translationCache.current.set(key, { name: nameTranslated || event.name, aboutText: aboutTranslated || aboutSource });
+        setTranslatedDescription(descTranslated || descSource);
+        translationCache.current.set(key, {
+          name: nameTranslated || event.name,
+          aboutText: aboutTranslated || aboutSource,
+          description: descTranslated || descSource
+        });
       } catch (e) {
         console.warn('Translation fallback due to error:', e);
         setTranslatedName(event.name);
         setTranslatedAboutText(event.aboutText || '');
+        setTranslatedDescription(event.description || '');
       }
     };
 
