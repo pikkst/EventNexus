@@ -2599,15 +2599,15 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
 
             {activeTab === 'logs' && (
               <div className="space-y-6">
-                {/* Pipeline Logs Section */}
+                {/* Combined Logs - Pipeline + Supabase Functions */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                   <div className="p-4 border-b border-gray-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Play className="w-5 h-5 text-indigo-600" />
+                        <FileText className="w-5 h-5 text-indigo-600" />
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">Pipeline Logs</h3>
-                          <p className="text-sm text-gray-600">Real-time logs from "Run Pipeline" execution</p>
+                          <h3 className="text-lg font-semibold text-gray-900">All Agent Logs</h3>
+                          <p className="text-sm text-gray-600">Combined: Pipeline execution + Supabase Edge Functions</p>
                         </div>
                       </div>
                       {pipelineProgress.fullLogs.length > 0 && (
@@ -2626,18 +2626,23 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                   {/* Pipeline Status */}
                   {pipelineProgress.isRunning && (
                     <div className="p-4 bg-blue-50 border-b border-blue-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
-                        <span className="font-semibold text-blue-900">Pipeline Running</span>
-                        <span className="text-sm text-blue-700">
-                          ({pipelineProgress.currentCityIndex}/{pipelineProgress.totalCities} cities)
-                        </span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
+                          <span className="font-semibold text-blue-900">Pipeline Running</span>
+                          <span className="text-sm text-blue-700">
+                            ({pipelineProgress.currentCityIndex}/{pipelineProgress.totalCities} cities)
+                          </span>
+                        </div>
+                        <div className="text-sm text-blue-700">
+                          {Math.round((pipelineProgress.currentCityIndex / pipelineProgress.totalCities) * 100)}%
+                        </div>
                       </div>
-                      <div className="text-sm text-blue-800">
+                      <div className="text-sm text-blue-800 mb-2">
                         {pipelineProgress.currentStep} - {pipelineProgress.currentCity}
                       </div>
                       {/* Progress Bar */}
-                      <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
+                      <div className="w-full bg-blue-200 rounded-full h-2">
                         <div 
                           className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${(pipelineProgress.currentCityIndex / pipelineProgress.totalCities) * 100}%` }}
@@ -2674,44 +2679,57 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                     </div>
                   )}
 
-                  {/* Pipeline Full Logs */}
-                  {pipelineProgress.fullLogs.length > 0 ? (
-                    <div className="p-4">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <FileText className="w-4 h-4" />
-                        Full Pipeline Log ({pipelineProgress.fullLogs.length} entries)
-                      </h4>
-                      <div className="bg-gray-900 text-gray-100 rounded-lg p-4 max-h-96 overflow-y-auto font-mono text-xs">
-                        {pipelineProgress.fullLogs.map((log, idx) => (
-                          <div 
-                            key={idx} 
-                            className={`leading-tight py-0.5 ${
-                              log.includes('❌') || log.includes('Failed') ? 'text-red-400' :
-                              log.includes('⚠️') ? 'text-yellow-400' :
-                              log.includes('✅') ? 'text-green-400' :
-                              log.includes('🚀') ? 'text-blue-400' :
-                              'text-gray-300'
-                            }`}
-                          >
-                            {log}
-                          </div>
-                        ))}
+                  {/* Combined Full Logs - Pipeline + Supabase */}
+                  <div className="p-4">
+                    {pipelineProgress.fullLogs.length > 0 ? (
+                      <>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          <Play className="w-4 h-4 text-indigo-600" />
+                          Pipeline Execution Log ({pipelineProgress.fullLogs.length} entries)
+                        </h4>
+                        <div className="bg-gray-900 text-gray-100 rounded-lg p-4 max-h-96 overflow-y-auto font-mono text-xs mb-6">
+                          {pipelineProgress.fullLogs.map((log, idx) => (
+                            <div 
+                              key={idx} 
+                              className={`leading-tight py-0.5 ${
+                                log.includes('❌') || log.includes('Failed') ? 'text-red-400' :
+                                log.includes('⚠️') ? 'text-yellow-400' :
+                                log.includes('✅') ? 'text-green-400' :
+                                log.includes('🚀') ? 'text-blue-400' :
+                                'text-gray-300'
+                              }`}
+                            >
+                              {log}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="p-8 text-center text-gray-500 mb-6">
+                        <Play className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                        <p className="font-medium">No pipeline logs yet</p>
+                        <p className="text-sm">Click "Run Pipeline" to see logs here</p>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="p-8 text-center text-gray-500">
-                      <Play className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                      <p className="font-medium">No pipeline logs yet</p>
-                      <p className="text-sm">Click "Run Pipeline" to see logs here</p>
-                    </div>
-                  )}
+                    )}
+
+                    {/* Supabase Function Logs (always visible) */}
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2 border-t pt-4">
+                      <Database className="w-4 h-4 text-purple-600" />
+                      System Function Logs (parse-event-ai, publish-event, etc.)
+                    </h4>
+                    <AgentLogsViewer 
+                      maxLogs={200}
+                      autoRefresh={true}
+                      refreshInterval={5000}
+                    />
+                  </div>
 
                   {/* Error Logs */}
                   {pipelineProgress.errors.length > 0 && (
                     <div className="p-4 border-t border-red-200 bg-red-50">
                       <h4 className="text-sm font-semibold text-red-800 mb-2 flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
-                        Errors ({pipelineProgress.errors.length})
+                        Pipeline Errors ({pipelineProgress.errors.length})
                       </h4>
                       <div className="space-y-2">
                         {pipelineProgress.errors.map((error, idx) => (
@@ -2722,26 +2740,6 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                       </div>
                     </div>
                   )}
-                </div>
-
-                {/* Supabase Function Logs Section */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                  <div className="p-4 border-b border-gray-200">
-                    <div className="flex items-center gap-3">
-                      <Database className="w-5 h-5 text-purple-600" />
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Supabase Function Logs</h3>
-                        <p className="text-sm text-gray-600">System-level logs from Edge Functions</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <AgentLogsViewer 
-                      maxLogs={200}
-                      autoRefresh={true}
-                      refreshInterval={5000}
-                    />
-                  </div>
                 </div>
               </div>
             )}
