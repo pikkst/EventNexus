@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import logger from '../utils/logger';
+import { translateDescription } from '../services/geminiService';
 import { 
   MapPin, 
   Calendar, 
@@ -50,6 +51,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [organizerPaymentReady, setOrganizerPaymentReady] = useState(false);
   const [checkingOrganizerStatus, setCheckingOrganizerStatus] = useState(true);
   const [eventCompleted, setEventCompleted] = useState(false);
+  const [translatedName, setTranslatedName] = useState<string | null>(null);
+  const [translatedAboutText, setTranslatedAboutText] = useState<string | null>(null);
+  const translationCache = useRef<Map<string, { name: string; aboutText: string }>>(new Map());
 
   // Get available languages from event translations
   const availableLanguages = React.useMemo(() => {
@@ -77,6 +81,57 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       return event.description;
     }
     return event.translations[selectedLanguage] || event.description;
+  }, [event, selectedLanguage]);
+
+  // Auto-translate event name and about text when language changes
+  useEffect(() => {
+    const doTranslate = async () => {
+      if (!event) { setTranslatedName(null); setTranslatedAboutText(null); return; }
+
+      const targetLang = selectedLanguage || 'en';
+
+      // If event has structured translations, prefer them
+      const direct = event.translations?.[targetLang];
+      if (direct) {
+        setTranslatedName(direct.name || event.name);
+        setTranslatedAboutText(direct.aboutText || event.aboutText || '');
+        return;
+      }
+
+      // Cache key per event + target language
+      const key = `${event.id}:${targetLang}`;
+      const cachedTrans = translationCache.current.get(key);
+      if (cachedTrans) {
+        setTranslatedName(cachedTrans.name);
+        setTranslatedAboutText(cachedTrans.aboutText);
+        return;
+      }
+
+      // Fallback: legacy translation format
+      const legacy = event.legacy_translations?.[targetLang];
+      if (legacy) {
+        setTranslatedName(legacy);
+        setTranslatedAboutText(event.aboutText || '');
+        translationCache.current.set(key, { name: legacy, aboutText: event.aboutText || '' });
+        return;
+      }
+
+      // Remote translate via Gemini service with graceful fallback
+      try {
+        const nameTranslated = await translateDescription(event.name, targetLang);
+        const aboutSource = event.aboutText || '';
+        const aboutTranslated = aboutSource ? await translateDescription(aboutSource, targetLang) : '';
+        setTranslatedName(nameTranslated || event.name);
+        setTranslatedAboutText(aboutTranslated || aboutSource);
+        translationCache.current.set(key, { name: nameTranslated || event.name, aboutText: aboutTranslated || aboutSource });
+      } catch (e) {
+        console.warn('Translation fallback due to error:', e);
+        setTranslatedName(event.name);
+        setTranslatedAboutText(event.aboutText || '');
+      }
+    };
+
+    doTranslate();
   }, [event, selectedLanguage]);
 
   // Load event from database
@@ -387,7 +442,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                   </span>
                 )}
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-3 sm:mb-4 leading-tight">{event.name}</h1>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-3 sm:mb-4 leading-tight">{translatedName || event.name}</h1>
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 md:gap-6 text-sm sm:text-base text-white/90">
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -493,7 +548,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               {event.aboutText && (
                 <div className="mt-6 pt-6 border-t border-slate-800">
                   <pre className="text-slate-300 leading-relaxed text-sm sm:text-base whitespace-pre-wrap font-sans">
-                    {event.aboutText}
+                    {translatedAboutText || event.aboutText}
                   </pre>
                 </div>
               )}

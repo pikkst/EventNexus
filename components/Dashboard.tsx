@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area 
 } from 'recharts';
@@ -33,7 +33,7 @@ import {
   getAffiliateStats,
   getAffiliateReferrals
 } from '../services/dbService';
-import { generateAdCampaign, generateAdImage, generatePosterDesign } from '../services/geminiService';
+import { generateAdCampaign, generateAdImage, generatePosterDesign, translateDescription } from '../services/geminiService';
 import { generatePrintablePoster, PosterDesign } from '../services/posterService';
 import { supabase } from '../services/supabase';
 import OrganizerScannerHub from './OrganizerScannerHub';
@@ -114,6 +114,67 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [posterDesign, setPosterDesign] = useState<PosterDesign | null>(null);
   const [selectedAdForPoster, setSelectedAdForPoster] = useState<any>(null);
+  const [eventTranslations, setEventTranslations] = useState<{ [eventId: string]: { name: string } }>({});
+  const translationCache = useRef<Map<string, { name: string }>>(new Map());
+
+  // Auto-translate event names based on user's preferred language
+  useEffect(() => {
+    const doTranslate = async () => {
+      let targetLang = 'en';
+      try {
+        if (user?.preferred_language) {
+          targetLang = user.preferred_language.toLowerCase();
+        }
+      } catch {}
+
+      const newTranslations: { [eventId: string]: { name: string } } = {};
+
+      for (const event of events) {
+        // Skip if already has translation
+        if (eventTranslations[event.id]) {
+          newTranslations[event.id] = eventTranslations[event.id];
+          continue;
+        }
+
+        // Check if event already in target language
+        const orig = (event.original_language || '').toLowerCase();
+        if (orig && orig === targetLang) {
+          newTranslations[event.id] = { name: event.name };
+          continue;
+        }
+
+        // Check cache
+        const cacheKey = `${event.id}:${targetLang}`;
+        const cached = translationCache.current.get(cacheKey);
+        if (cached) {
+          newTranslations[event.id] = cached;
+          continue;
+        }
+
+        // Prefer structured translations
+        if (event.translations?.[targetLang]) {
+          newTranslations[event.id] = { name: event.translations[targetLang].name };
+          continue;
+        }
+
+        // Remote translate
+        try {
+          const translated = await translateDescription(event.name, targetLang);
+          newTranslations[event.id] = { name: translated || event.name };
+          translationCache.current.set(cacheKey, { name: translated || event.name });
+        } catch (e) {
+          console.warn('Event name translation fallback:', e);
+          newTranslations[event.id] = { name: event.name };
+        }
+      }
+
+      setEventTranslations(newTranslations);
+    };
+
+    if (events.length > 0) {
+      doTranslate();
+    }
+  }, [events, user?.preferred_language]);
 
   // Update SEO meta tags on mount
   useEffect(() => {
@@ -988,7 +1049,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                               <td className="px-3 sm:px-6 py-3 sm:py-4">
                                 <div className="flex items-center gap-1 sm:gap-2">
                                   <div className="flex-1 min-w-[140px] sm:min-w-0">
-                                    <div className="font-bold text-white text-xs sm:text-sm truncate">{event.event_name}</div>
+                                    <div className="font-bold text-white text-xs sm:text-sm truncate">{eventTranslations[event.event_id]?.name || event.event_name}</div>
                                     <div className="text-[10px] sm:text-xs text-slate-500">{new Date(event.event_date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}</div>
                                   </div>
                                   <Link 

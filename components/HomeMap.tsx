@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, SlidersHorizontal, MapPin, Calendar, 
@@ -11,6 +11,7 @@ import L from 'leaflet';
 import { CATEGORIES } from '../constants';
 import { EventNexusEvent } from '../types';
 import { getEvents } from '../services/dbService';
+import { translateDescription } from '../services/geminiService';
 import { filterActiveEvents } from '../utils/eventUtils';
 import { generateMapSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 
@@ -64,6 +65,9 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
   const [selectedEvent, setSelectedEvent] = useState<EventNexusEvent | null>(null);
   const [isFollowingUser, setIsFollowingUser] = useState(true);
   const [routeToEvent, setRouteToEvent] = useState<EventNexusEvent | null>(null);
+  const [translatedTitle, setTranslatedTitle] = useState<string | null>(null);
+  const [translatedDesc, setTranslatedDesc] = useState<string | null>(null);
+  const translationCache = useRef<Map<string, { name: string; desc: string }>>(new Map());
 
   // Load events from database
   useEffect(() => {
@@ -107,6 +111,81 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
       return !activeCategory || event.category === activeCategory;
     });
   }, [events, activeCategory]);
+
+  // Auto-translate selected event title/description based on viewer locale
+  useEffect(() => {
+    const doTranslate = async () => {
+      if (!selectedEvent) { setTranslatedTitle(null); setTranslatedDesc(null); return; }
+
+      // Determine target language: user preference → browser locale → default 'en'
+      let targetLang = 'en';
+      try {
+        const cached = localStorage.getItem('eventnexus-user-cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const pref = parsed?.user?.preferred_language;
+          if (typeof pref === 'string' && pref.length >= 2) {
+            targetLang = pref.toLowerCase();
+          }
+        }
+      } catch {}
+      if (!targetLang || targetLang.length < 2) {
+        const navLang = (navigator.language || 'en').toLowerCase();
+        targetLang = navLang.split('-')[0];
+      }
+
+      // If event has structured translations, prefer them
+      const direct = selectedEvent.translations?.[targetLang];
+      if (direct) {
+        setTranslatedTitle(direct.name || selectedEvent.name);
+        setTranslatedDesc(direct.description || selectedEvent.description);
+        return;
+      }
+
+      // If already in target language or original unknown, skip remote translation
+      const orig = (selectedEvent.original_language || '').toLowerCase();
+      if (orig && orig === targetLang) {
+        setTranslatedTitle(selectedEvent.name);
+        setTranslatedDesc(selectedEvent.description);
+        return;
+      }
+
+      // Cache key per event + target language
+      const key = `${selectedEvent.id}:${targetLang}`;
+      const cachedTrans = translationCache.current.get(key);
+      if (cachedTrans) {
+        setTranslatedTitle(cachedTrans.name);
+        setTranslatedDesc(cachedTrans.desc);
+        return;
+      }
+
+      // Fallback: legacy translation format
+      const legacy = selectedEvent.legacy_translations?.[targetLang];
+      if (legacy) {
+        setTranslatedTitle(legacy);
+        setTranslatedDesc(selectedEvent.description);
+        translationCache.current.set(key, { name: legacy, desc: selectedEvent.description });
+        return;
+      }
+
+      // Remote translate via Gemini service with graceful fallback
+      try {
+        const nameTranslated = await translateDescription(selectedEvent.name, targetLang);
+        // Translate brief description; keep it short for map UI
+        const descSource = selectedEvent.description || '';
+        const descTranslated = descSource ? await translateDescription(descSource, targetLang) : '';
+        setTranslatedTitle(nameTranslated || selectedEvent.name);
+        setTranslatedDesc(descTranslated || descSource);
+        translationCache.current.set(key, { name: nameTranslated || selectedEvent.name, desc: descTranslated || descSource });
+      } catch (e) {
+        console.warn('Translation fallback due to error:', e);
+        setTranslatedTitle(selectedEvent.name);
+        setTranslatedDesc(selectedEvent.description || '');
+      }
+    };
+
+    doTranslate();
+  }, [selectedEvent]);
 
   // Find nearest event within search radius (for proximity notifications)
   const nearestEvent = useMemo(() => {
@@ -323,8 +402,11 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
               <div>
                 <h3 className={`font-black text-lg leading-tight tracking-tighter ${
                   theme === 'light' ? 'text-slate-900' : 'text-white'
-                }`}>{selectedEvent.name}</h3>
+                }`}>{translatedTitle || selectedEvent.name}</h3>
                 <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">{selectedEvent.location.city} • {selectedEvent.date}</p>
+                {translatedDesc && (
+                  <p className={`${theme === 'light' ? 'text-slate-600' : 'text-slate-300'} text-xs mt-2 line-clamp-2`}>{translatedDesc}</p>
+                )}
               </div>
               <div className="flex items-center gap-2 pt-4">
                 <button onClick={() => navigate(`/event/${selectedEvent.id}`)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95" aria-label={`View and book ${selectedEvent.name}`}>Book Access</button>
