@@ -159,10 +159,11 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const [citiesData, sourcesData, eventsData, reviewData, confidenceData, usageData] = await Promise.all([
+    const [citiesData, sourcesData, eventsData, freeEventsData, reviewData, confidenceData, usageData] = await Promise.all([
       supabase.from('city_configs').select('*', { count: 'exact' }).eq('active', true),
       supabase.from('event_sources').select('*', { count: 'exact' }).eq('active', true),
       supabase.from('events').select('*', { count: 'exact' }).gte('created_at', yesterday.toISOString()),
+      supabase.from('events').select('*', { count: 'exact' }).eq('is_free', true).eq('status', 'active'),
       supabase.from('review_queue').select('*', { count: 'exact' }).eq('status', 'pending'),
       supabase.from('event_confidence').select('final_score'),
       supabase.from('ai_usage_log').select('tokens_used, cost_estimate').gte('created_at', weekAgo.toISOString()),
@@ -180,6 +181,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       active_sources: sourcesData.count || 0,
       events_discovered_24h: eventsData.count || 0,
       events_published_24h: eventsData.count || 0,
+      free_events_active: freeEventsData.count || 0, // ⭐ NEW
       pending_review: reviewData.count || 0,
       avg_confidence: Math.round(avgConfidence * 100) / 100,
       total_tokens_used_7d: totalTokens,
@@ -231,6 +233,14 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           .select('*', { count: 'exact', head: true })
           .eq('city_id', city.city_id);
 
+        // Count active free events (⭐ NEW)
+        const { count: freeEventsCount } = await supabase
+          .from('events')
+          .select('*', { count: 'exact', head: true })
+          .eq('city_id', city.city_id)
+          .eq('status', 'active')
+          .eq('is_free', true);
+
         // Calculate freshness score (0-100) based on created_at (since last_bootstrap_at doesn't exist yet)
         const daysSinceCreated = Math.floor((Date.now() - new Date(city.created_at).getTime()) / (1000 * 60 * 60 * 24));
         
@@ -253,6 +263,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           active_sources: sourcesCount || 0,
           total_events: totalEvents || 0,
           events_this_week: eventsCount || 0,
+          free_events_count: freeEventsCount || 0, // ⭐ NEW
           avg_confidence: 0.85, // Placeholder
           freshness_score,
           last_fetch_at: null, // Will be populated after SQL migration
@@ -903,8 +914,38 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             setPipelineProgress(prev => ({
               ...prev,
               totalPublished: prev.totalPublished + published,
+              currentStep: '🎯 Ensuring free events...',
+              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Published ${published} events`]
+            }));
+          }
+
+          // Step 5: Ensure minimum free events (NEW)
+          console.log(`  🎯 Step 5/5: Ensuring free events...`);
+          const ensureResp = await supabase.functions.invoke('ensure-free-events', {
+            body: { 
+              city_id: city.city_id,
+              target_free_events: 5 
+            }
+          });
+          
+          if (ensureResp.error) {
+            console.warn(`  ⚠️ Free event check failed: ${ensureResp.error.message}`);
+            setPipelineProgress(prev => ({
+              ...prev,
               citiesCompleted: prev.citiesCompleted + 1,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Published ${published} events`, `✅ Complete!`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Free check failed`, `✅ Complete!`]
+            }));
+          } else {
+            const { current_free_count, target, success } = ensureResp.data || {};
+            console.log(`  ${success ? '✅' : '⚠️'} Free events: ${current_free_count}/${target}`);
+            setPipelineProgress(prev => ({
+              ...prev,
+              citiesCompleted: prev.citiesCompleted + 1,
+              recentLogs: [
+                ...prev.recentLogs.slice(-9), 
+                `  ${success ? '✅' : '⚠️'} ${current_free_count}/${target} free events`,
+                `✅ Complete!`
+              ]
             }));
           }
 
@@ -1503,7 +1544,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1527,6 +1568,22 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
               </div>
               <p className="text-sm text-gray-500 mt-2">
                 {stats.events_published_24h} published
+              </p>
+            </div>
+
+            {/* ⭐ NEW: Free Events Card */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg shadow p-6 border-2 border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-700 font-medium">Free Events</p>
+                  <p className="text-3xl font-bold text-green-900">{stats.free_events_active || 0}</p>
+                </div>
+                <TrendingUp className="w-10 h-10 text-green-600" />
+              </div>
+              <p className="text-sm text-green-600 mt-2 font-medium">
+                {stats.total_cities > 0 
+                  ? `${Math.round((stats.free_events_active || 0) / stats.total_cities * 10) / 10} per city avg`
+                  : 'Across all cities'}
               </p>
             </div>
 
@@ -1877,7 +1934,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
                           <div className="bg-blue-50 rounded p-2">
                             <p className="text-blue-600 text-xs">Event Sources</p>
                             <p className="font-bold text-blue-900 text-lg">{metric.active_sources}</p>
@@ -1885,6 +1942,16 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                           <div className="bg-green-50 rounded p-2">
                             <p className="text-green-600 text-xs">Total Events</p>
                             <p className="font-bold text-green-900 text-lg">{metric.total_events}</p>
+                          </div>
+                          {/* ⭐ NEW: Free Events */}
+                          <div className="bg-emerald-50 rounded p-2 border-2 border-emerald-200">
+                            <p className="text-emerald-700 text-xs font-semibold">Free Events</p>
+                            <p className="font-bold text-emerald-900 text-lg">
+                              {metric.free_events_count || 0}
+                              {metric.free_events_count !== undefined && metric.free_events_count < 5 && (
+                                <span className="text-xs text-orange-600 ml-1">⚠️</span>
+                              )}
+                            </p>
                           </div>
                           <div className="bg-purple-50 rounded p-2">
                             <p className="text-purple-600 text-xs">Last 30 Days</p>
