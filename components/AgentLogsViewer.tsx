@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
 import { AlertCircle, CheckCircle, Info, AlertTriangle, Bug, Filter, RefreshCw } from 'lucide-react';
 
-interface AgentLog {
+export interface AgentLog {
   id: string;
   created_at: string;
   agent_name: string;
@@ -18,12 +18,14 @@ interface AgentLogsViewerProps {
   maxLogs?: number;
   autoRefresh?: boolean;
   refreshInterval?: number;
+  onLogsUpdate?: (logs: AgentLog[]) => void; // Callback to pass logs to parent
 }
 
 export const AgentLogsViewer: React.FC<AgentLogsViewerProps> = ({
   maxLogs = 100,
   autoRefresh = true,
   refreshInterval = 5000,
+  onLogsUpdate,
 }) => {
   const [logs, setLogs] = useState<AgentLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,13 @@ export const AgentLogsViewer: React.FC<AgentLogsViewerProps> = ({
       const { data, error } = await query;
 
       if (error) throw error;
-      setLogs(data || []);
+      const fetchedLogs = data || [];
+      setLogs(fetchedLogs);
+      
+      // Pass logs to parent component
+      if (onLogsUpdate) {
+        onLogsUpdate(fetchedLogs);
+      }
     } catch (error) {
       console.error('Failed to fetch agent logs:', error);
     } finally {
