@@ -758,6 +758,7 @@ export interface CityHealthMetrics {
   events_last_24h?: number;
   events_this_week?: number;
   total_events?: number;
+  free_events_count?: number; // ⭐ NEW - Active free events for this city
   avg_confidence: number;
   failed_sources?: number;
   active_sources: number;
@@ -794,6 +795,7 @@ export interface AIAgentStats {
   active_sources: number;
   events_discovered_24h: number;
   events_published_24h: number;
+  free_events_active: number; // ⭐ NEW - Total active free events across all cities
   pending_review: number;
   avg_confidence: number;
   total_tokens_used_7d: number;
