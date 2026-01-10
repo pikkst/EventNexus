@@ -68,7 +68,7 @@ serve(async (req) => {
       .select('*', { count: 'exact', head: true })
       .eq('city_id', city_id)
       .eq('status', 'active')
-      .eq('is_free', true)
+      .eq('price', 0)
 
     if (countError) throw countError
 
@@ -111,9 +111,12 @@ serve(async (req) => {
 
     if (unpublishedError) throw unpublishedError
 
-    // Filter for free events only
+    // Filter for free events only (check structured_json.price or is_free)
     const freeUnpublished = (unpublishedFree || []).filter(
-      pe => pe.structured_json?.is_free === true
+      pe => {
+        const json = pe.structured_json || {}
+        return json.is_free === true || json.price === 0 || json.price === '0' || !json.price
+      }
     ).slice(0, needed)
 
     if (freeUnpublished.length > 0) {
@@ -180,7 +183,10 @@ serve(async (req) => {
       .limit(50)
 
     if (!pendingError && pendingFree) {
-      const freePending = pendingFree.filter(pe => pe.structured_json?.is_free === true)
+      const freePending = pendingFree.filter(pe => {
+        const json = pe.structured_json || {}
+        return json.is_free === true || json.price === 0 || json.price === '0' || !json.price
+      })
       
       if (freePending.length > 0) {
         console.log(`  ⏳ Found ${freePending.length} pending free events, triggering validation`)
@@ -303,7 +309,7 @@ serve(async (req) => {
       .select('*', { count: 'exact', head: true })
       .eq('city_id', city_id)
       .eq('status', 'active')
-      .eq('is_free', true)
+      .eq('price', 0)
 
     const success = finalCount >= target_free_events
     const message = success

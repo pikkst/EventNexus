@@ -39,7 +39,7 @@ SET
 FROM (
   SELECT 
     re.source_id,
-    COUNT(e.id) FILTER (WHERE e.is_free = true) AS free_count,
+    COUNT(e.id) FILTER (WHERE e.price = 0) AS free_count,
     COUNT(e.id) AS total_count
   FROM raw_events re
   JOIN parsed_events pe ON pe.raw_event_id = re.id
