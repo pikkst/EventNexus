@@ -194,12 +194,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get parsed_event_id from request body if provided
-    let parsedEventId: string | null = null
+    // Get city_id from request body if provided
+    let cityId: string | null = null
     if (req.method === 'POST') {
       try {
         const body = await req.json()
-        parsedEventId = body.parsed_event_id || null
+        cityId = body.city_id || null
       } catch {
         // No body or invalid JSON - will fetch all validated events
       }
@@ -219,9 +219,10 @@ serve(async (req) => {
       .gte('event_confidence.final_score', 60)
       .is('event_confidence.event_id', null) // Not yet published
 
-    // If specific parsed_event_id provided, filter for it
-    if (parsedEventId) {
-      query = query.eq('id', parsedEventId)
+    // Filter by city_id if provided
+    if (cityId) {
+      query = query.eq('raw_events.event_sources.city_id', cityId)
+      console.log(`🎯 Publishing events for city: ${cityId}`)
     } else {
       query = query.limit(20)
     }

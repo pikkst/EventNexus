@@ -51,10 +51,10 @@ function calculateDataCompleteness(event: any): number {
   return Math.round(score)
 }
 
-function calculateTimeValidity(event: any): number {
+function calculateTimeValidity(event: any, timezone: string = 'Europe/Tallinn'): number {
   try {
-    // 🔧 Use central date validator
-    const validation = validateEventDate(event.start_time, 'Europe/Tallinn')
+    // 🔧 Use central date validator with city timezone
+    const validation = validateEventDate(event.start_time, timezone)
     
     if (!validation.valid) {
       console.log(`Time validation failed: ${validation.reason} - ${validation.details}`)
@@ -125,7 +125,8 @@ async function calculateSemanticValidity(event: any): Promise<number> {
 
 async function validateEvent(
   parsedEvent: any,
-  sourceScore: number
+  sourceScore: number,
+  timezone: string = 'Europe/Tallinn'
 ): Promise<ValidationResult> {
   const event = parsedEvent.structured_json
   const errors: string[] = []
@@ -133,7 +134,7 @@ async function validateEvent(
 
   // Calculate individual scores
   const dataCompleteness = calculateDataCompleteness(event)
-  const timeValidity = calculateTimeValidity(event)
+  const timeValidity = calculateTimeValidity(event, timezone)
   const geoAccuracy = calculateGeoAccuracy(event)
   const semanticValidity = await calculateSemanticValidity(event)
 
@@ -214,12 +215,30 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get pending parsed events
-    const { data: parsedEvents, error: parsedError } = await supabaseClient
+    // Get city_id from request body
+    let cityId: string | null = null
+    if (req.method === 'POST') {
+      try {
+        const body = await req.json()
+        cityId = body.city_id || null
+      } catch {
+        // No body or invalid JSON
+      }
+    }
+
+    // Build query for pending parsed events
+    let query = supabaseClient
       .from('parsed_events')
-      .select('*')
+      .select('*, raw_events!inner(event_sources!inner(city_id))')
       .eq('validation_status', 'pending')
       .limit(10)
+
+    // Filter by city_id if provided
+    if (cityId) {
+      query = query.eq('raw_events.event_sources.city_id', cityId)
+    }
+
+    const { data: parsedEvents, error: parsedError } = await query
 
     if (parsedError) throw parsedError
 
@@ -237,6 +256,25 @@ serve(async (req) => {
           .from('parsed_events')
           .update({ validation_status: 'validating' })
           .eq('id', parsedEvent.id)
+
+        // Get city_id from nested structure
+        const eventCityId = parsedEvent.raw_events?.event_sources?.city_id
+
+        // Fetch city config for timezone
+        let cityConfig = { timezone: 'Europe/Tallinn', city_name: 'Unknown', country: 'Unknown' }
+        if (eventCityId) {
+          const { data: cityConfigData, error: cityError } = await supabaseClient
+            .from('city_configs')
+            .select('city_name, country, timezone')
+            .eq('city_id', eventCityId)
+            .single()
+
+          if (!cityError && cityConfigData) {
+            cityConfig = cityConfigData
+          }
+        }
+
+        console.log(`Validating event for ${cityConfig.city_name}, ${cityConfig.country} (${cityConfig.timezone})`)
 
         // Fetch source_score separately to avoid complex JOIN issues
         let sourceScore = 50 // Default score if not found
@@ -262,7 +300,7 @@ serve(async (req) => {
           console.warn(`Failed to fetch source_score for event ${parsedEvent.id}:`, err)
         }
 
-        const validation = await validateEvent(parsedEvent, sourceScore)
+        const validation = await validateEvent(parsedEvent, sourceScore, cityConfig.timezone)
 
         // Store confidence scores
         await supabaseClient
