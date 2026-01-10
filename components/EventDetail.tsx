@@ -21,7 +21,7 @@ import {
   Star,
   Edit3
 } from 'lucide-react';
-import { getEvents, getEventById, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates, isEventCompleted } from '../services/dbService';
+import { getEvents, getEventById, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates } from '../services/dbService';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
 import { isEventExpired } from '../utils/eventUtils';
@@ -149,9 +149,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         setTicketTemplates(templates);
         
         // Check if event is completed (either from DB status or from date/time)
-        const completed = await isEventCompleted(id);
+        // Note: isEventCompleted RPC may not exist, so we do local check only
         const expired = isEventExpired(foundEvent);
-        setEventCompleted(completed || expired);
+        setEventCompleted(expired);
         
         // Load organizer name and payment status
         try {
@@ -266,7 +266,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
     : event.maxAttendees - currentAttendees;
   
   const totalRevenue = currentAttendees * event.price;
-  const isFollowing = user?.followedOrganizers.includes(event.organizerId) ?? false;
+  const isFollowing = user?.followedOrganizers?.includes(event.organizerId) ?? false;
 
   const handleLike = async () => {
     if (!user) {
