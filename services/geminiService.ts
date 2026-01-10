@@ -2,6 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { supabase } from './supabase';
 import { deductUserCredits, checkUserCredits } from './dbService';
+import { SUPPORTED_LANGUAGES } from './languageService';
 
 const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -425,13 +426,36 @@ export const translateDescription = async (text: string, targetLanguage: string,
   }
 
   try {
+    // Normalize target language: accept code (et) or name (Estonian)
+    const lower = (targetLanguage || '').toLowerCase();
+    const byCode = SUPPORTED_LANGUAGES.find(l => l.code.toLowerCase() === lower);
+    const byName = SUPPORTED_LANGUAGES.find(l => l.name.toLowerCase() === lower || l.nativeName.toLowerCase() === lower);
+    const targetLabel = (byCode?.name || byName?.name || targetLanguage).trim();
+
     const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Translate the following text to ${targetLanguage}: "${text}"`
+      contents: `Translate the following text to ${targetLabel}. Output only the translated text, with no quotes or extra commentary. Preserve emojis, URLs, and formatting.
+
+Text:
+${text}`
     });
 
-    const result = response.text?.trim() || text;
+    let result = response.text?.trim() || text;
+
+    // If no change, try a stricter prompt once using normalized name
+    if (result === text && targetLabel && targetLabel.length > 1) {
+      const second = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Translate into ${targetLabel}. Return only the translated text.
+
+${text}`
+      });
+      const alt = second.text?.trim();
+      if (alt && alt.length > 0) {
+        result = alt;
+      }
+    }
 
     // Deduct credits after successful generation (Free tier only)
     if (userId && userTier === 'free' && result !== text) {
