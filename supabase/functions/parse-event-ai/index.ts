@@ -132,7 +132,7 @@ CRITICAL - PAID vs FREE (Default to FREE):
 Return ONLY valid JSON array of FUTURE events (preferably free). No markdown, no explanations.
 
 Content to parse (HTML/RSS/iCal):
-${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
+${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate limits and timeouts
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -161,9 +161,16 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
       clearTimeout(timeoutId);
 
       if (response.status === 429 && attempt < retries) {
-        // Rate limit - wait with exponential backoff
-        const waitTime = Math.pow(2, attempt) * 5000 // 5s, 10s, 20s
-        console.log(`Rate limited, retrying in ${waitTime}ms (attempt ${attempt + 1}/${retries})`)
+        // Rate limit - wait with exponential backoff + jitter
+        const baseWait = Math.pow(2, attempt) * 8000 // 8s, 16s, 32s (more aggressive)
+        const jitter = Math.random() * 2000 // 0-2s random jitter to avoid thundering herd
+        const waitTime = baseWait + jitter
+        console.log(`⏳ Rate limited (429), retrying in ${Math.round(waitTime/1000)}s (attempt ${attempt + 1}/${retries})`)
+        await log(supabaseClient, 'parse-event-ai', 'warning', 'Rate limit hit - waiting', { 
+          attempt: attempt + 1, 
+          wait_ms: Math.round(waitTime),
+          city: cityName 
+        })
         await new Promise(resolve => setTimeout(resolve, waitTime))
         continue
       }
