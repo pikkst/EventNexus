@@ -64,7 +64,45 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     currentStep: '',
     recentLogs: [] as string[],
     fullLogs: [] as string[], // Complete log history for download
-    errors: [] as string[] // Error log for debugging
+    errors: [] as string[], // Error log for debugging
+    
+    // Enhanced debugging data
+    detailedErrors: [] as Array<{
+      timestamp: string;
+      city: string;
+      step: string;
+      error: string;
+      context?: any;
+      stackTrace?: string;
+    }>,
+    performanceMetrics: [] as Array<{
+      city: string;
+      fetchTime: number;
+      parseTime: number;
+      validateTime: number;
+      publishTime: number;
+      totalTime: number;
+    }>,
+    validationFailures: [] as Array<{
+      city: string;
+      eventName: string;
+      reason: string;
+      data?: any;
+    }>,
+    geocodingStats: {
+      attempts: 0,
+      successes: 0,
+      failures: 0,
+      avgTime: 0,
+      failureReasons: {} as Record<string, number>
+    },
+    aiStats: {
+      totalRequests: 0,
+      timeouts: 0,
+      rateLimits: 0,
+      modelUsage: {} as Record<string, number>,
+      avgResponseTime: 0
+    }
   });
   
   // City management state
@@ -1054,9 +1092,31 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
         totalPublished: pipelineProgress.totalPublished,
       },
       logs: pipelineProgress.fullLogs.length > 0 ? pipelineProgress.fullLogs : pipelineProgress.recentLogs,
-      errors: pipelineProgress.errors, // Include all errors for debugging
-      totalLogEntries: pipelineProgress.fullLogs.length > 0 ? pipelineProgress.fullLogs.length : pipelineProgress.recentLogs.length,
-      totalErrors: pipelineProgress.errors.length,
+      errors: pipelineProgress.errors,
+      
+      // Enhanced debugging data
+      detailedErrors: pipelineProgress.detailedErrors,
+      performanceMetrics: pipelineProgress.performanceMetrics,
+      validationFailures: pipelineProgress.validationFailures,
+      geocodingStats: pipelineProgress.geocodingStats,
+      aiStats: pipelineProgress.aiStats,
+      
+      // Summaries for quick analysis
+      summary: {
+        totalLogEntries: pipelineProgress.fullLogs.length > 0 ? pipelineProgress.fullLogs.length : pipelineProgress.recentLogs.length,
+        totalErrors: pipelineProgress.errors.length,
+        totalDetailedErrors: pipelineProgress.detailedErrors.length,
+        totalValidationFailures: pipelineProgress.validationFailures.length,
+        avgCityProcessingTime: pipelineProgress.performanceMetrics.length > 0 
+          ? (pipelineProgress.performanceMetrics.reduce((sum, m) => sum + m.totalTime, 0) / pipelineProgress.performanceMetrics.length).toFixed(2)
+          : 0,
+        geocodingSuccessRate: pipelineProgress.geocodingStats.attempts > 0
+          ? ((pipelineProgress.geocodingStats.successes / pipelineProgress.geocodingStats.attempts) * 100).toFixed(1) + '%'
+          : 'N/A',
+        aiErrorRate: pipelineProgress.aiStats.totalRequests > 0
+          ? (((pipelineProgress.aiStats.timeouts + pipelineProgress.aiStats.rateLimits) / pipelineProgress.aiStats.totalRequests) * 100).toFixed(1) + '%'
+          : 'N/A',
+      }
     };
 
     const jsonString = JSON.stringify(logData, null, 2);
@@ -1064,7 +1124,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `pipeline-logs-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    link.download = `pipeline-debug-report-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -2709,6 +2769,196 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                         <Play className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                         <p className="font-medium">No pipeline logs yet</p>
                         <p className="text-sm">Click "Run Pipeline" to see logs here</p>
+                      </div>
+                    )}
+
+                    {/* 📊 ENHANCED DEBUG SECTIONS */}
+                    
+                    {/* Performance Metrics */}
+                    {pipelineProgress.performanceMetrics.length > 0 && (
+                      <div className="mb-6 border-t pt-4">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-blue-600" />
+                          Performance Metrics (Last 10 Cities)
+                        </h4>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead className="bg-gray-100">
+                              <tr>
+                                <th className="px-3 py-2 text-left">City</th>
+                                <th className="px-3 py-2 text-right">Fetch</th>
+                                <th className="px-3 py-2 text-right">Parse</th>
+                                <th className="px-3 py-2 text-right">Validate</th>
+                                <th className="px-3 py-2 text-right">Publish</th>
+                                <th className="px-3 py-2 text-right">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {pipelineProgress.performanceMetrics.slice(-10).map((metric, idx) => (
+                                <tr key={idx} className="border-b border-gray-200">
+                                  <td className="px-3 py-2">{metric.city}</td>
+                                  <td className="px-3 py-2 text-right text-blue-600">{metric.fetchTime.toFixed(2)}s</td>
+                                  <td className="px-3 py-2 text-right text-purple-600">{metric.parseTime.toFixed(2)}s</td>
+                                  <td className="px-3 py-2 text-right text-orange-600">{metric.validateTime.toFixed(2)}s</td>
+                                  <td className="px-3 py-2 text-right text-green-600">{metric.publishTime.toFixed(2)}s</td>
+                                  <td className="px-3 py-2 text-right font-bold">{metric.totalTime.toFixed(2)}s</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* AI Stats */}
+                    {pipelineProgress.aiStats.totalRequests > 0 && (
+                      <div className="mb-6 border-t pt-4">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          <Bot className="w-4 h-4 text-purple-600" />
+                          AI Performance Stats
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="bg-purple-50 rounded p-3">
+                            <div className="text-xs text-purple-600">Total Requests</div>
+                            <div className="text-lg font-bold text-purple-900">{pipelineProgress.aiStats.totalRequests}</div>
+                          </div>
+                          <div className="bg-red-50 rounded p-3">
+                            <div className="text-xs text-red-600">Timeouts</div>
+                            <div className="text-lg font-bold text-red-900">{pipelineProgress.aiStats.timeouts}</div>
+                          </div>
+                          <div className="bg-orange-50 rounded p-3">
+                            <div className="text-xs text-orange-600">Rate Limits</div>
+                            <div className="text-lg font-bold text-orange-900">{pipelineProgress.aiStats.rateLimits}</div>
+                          </div>
+                          <div className="bg-blue-50 rounded p-3">
+                            <div className="text-xs text-blue-600">Avg Response</div>
+                            <div className="text-lg font-bold text-blue-900">{pipelineProgress.aiStats.avgResponseTime.toFixed(2)}s</div>
+                          </div>
+                        </div>
+                        {Object.keys(pipelineProgress.aiStats.modelUsage).length > 0 && (
+                          <div className="mt-3">
+                            <div className="text-xs text-gray-600 mb-2">Model Usage:</div>
+                            <div className="flex flex-wrap gap-2">
+                              {Object.entries(pipelineProgress.aiStats.modelUsage).map(([model, count]) => (
+                                <span key={model} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
+                                  {model}: {count}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Geocoding Stats */}
+                    {pipelineProgress.geocodingStats.attempts > 0 && (
+                      <div className="mb-6 border-t pt-4">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-green-600" />
+                          Geocoding Statistics
+                        </h4>
+                        <div className="grid grid-cols-4 gap-3 mb-3">
+                          <div className="bg-blue-50 rounded p-3">
+                            <div className="text-xs text-blue-600">Attempts</div>
+                            <div className="text-lg font-bold text-blue-900">{pipelineProgress.geocodingStats.attempts}</div>
+                          </div>
+                          <div className="bg-green-50 rounded p-3">
+                            <div className="text-xs text-green-600">Successes</div>
+                            <div className="text-lg font-bold text-green-900">{pipelineProgress.geocodingStats.successes}</div>
+                          </div>
+                          <div className="bg-red-50 rounded p-3">
+                            <div className="text-xs text-red-600">Failures</div>
+                            <div className="text-lg font-bold text-red-900">{pipelineProgress.geocodingStats.failures}</div>
+                          </div>
+                          <div className="bg-purple-50 rounded p-3">
+                            <div className="text-xs text-purple-600">Success Rate</div>
+                            <div className="text-lg font-bold text-purple-900">
+                              {((pipelineProgress.geocodingStats.successes / pipelineProgress.geocodingStats.attempts) * 100).toFixed(1)}%
+                            </div>
+                          </div>
+                        </div>
+                        {Object.keys(pipelineProgress.geocodingStats.failureReasons).length > 0 && (
+                          <div>
+                            <div className="text-xs text-gray-600 mb-2">Top Failure Reasons:</div>
+                            <div className="space-y-1">
+                              {Object.entries(pipelineProgress.geocodingStats.failureReasons)
+                                .sort(([, a], [, b]) => b - a)
+                                .slice(0, 5)
+                                .map(([reason, count]) => (
+                                  <div key={reason} className="flex justify-between items-center bg-red-50 rounded px-3 py-2">
+                                    <span className="text-xs text-red-700">{reason}</span>
+                                    <span className="text-xs font-bold text-red-900">{count}</span>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Validation Failures */}
+                    {pipelineProgress.validationFailures.length > 0 && (
+                      <div className="mb-6 border-t pt-4">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-orange-600" />
+                          Validation Failures ({pipelineProgress.validationFailures.length})
+                        </h4>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {pipelineProgress.validationFailures.slice(0, 20).map((failure, idx) => (
+                            <div key={idx} className="bg-orange-50 rounded p-3 text-xs">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="font-semibold text-orange-900">{failure.eventName}</span>
+                                <span className="text-orange-600">{failure.city}</span>
+                              </div>
+                              <div className="text-orange-700">{failure.reason}</div>
+                              {failure.data && (
+                                <details className="mt-2">
+                                  <summary className="cursor-pointer text-orange-600 hover:text-orange-700">View Details</summary>
+                                  <pre className="mt-2 bg-white p-2 rounded text-xs overflow-x-auto">
+                                    {JSON.stringify(failure.data, null, 2)}
+                                  </pre>
+                                </details>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Detailed Errors */}
+                    {pipelineProgress.detailedErrors.length > 0 && (
+                      <div className="mb-6 border-t pt-4">
+                        <h4 className="text-sm font-semibold text-red-800 mb-3 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Detailed Error Log ({pipelineProgress.detailedErrors.length})
+                        </h4>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {pipelineProgress.detailedErrors.map((error, idx) => (
+                            <div key={idx} className="bg-red-50 rounded p-3 text-xs">
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="font-semibold text-red-900">{error.city} - {error.step}</span>
+                                <span className="text-red-600">{new Date(error.timestamp).toLocaleTimeString()}</span>
+                              </div>
+                              <div className="text-red-700 mb-2">{error.error}</div>
+                              {error.context && (
+                                <details className="mb-2">
+                                  <summary className="cursor-pointer text-red-600 hover:text-red-700">Context</summary>
+                                  <pre className="mt-2 bg-white p-2 rounded text-xs overflow-x-auto">
+                                    {JSON.stringify(error.context, null, 2)}
+                                  </pre>
+                                </details>
+                              )}
+                              {error.stackTrace && (
+                                <details>
+                                  <summary className="cursor-pointer text-red-600 hover:text-red-700">Stack Trace</summary>
+                                  <pre className="mt-2 bg-white p-2 rounded text-xs overflow-x-auto font-mono">
+                                    {error.stackTrace}
+                                  </pre>
+                                </details>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
 
