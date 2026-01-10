@@ -2599,11 +2599,150 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
 
             {activeTab === 'logs' && (
               <div className="space-y-6">
-                <AgentLogsViewer 
-                  maxLogs={200}
-                  autoRefresh={true}
-                  refreshInterval={5000}
-                />
+                {/* Pipeline Logs Section */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-4 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Play className="w-5 h-5 text-indigo-600" />
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">Pipeline Logs</h3>
+                          <p className="text-sm text-gray-600">Real-time logs from "Run Pipeline" execution</p>
+                        </div>
+                      </div>
+                      {pipelineProgress.fullLogs.length > 0 && (
+                        <button
+                          onClick={downloadPipelineLogs}
+                          className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                          title="Download full pipeline logs as JSON"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download JSON
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pipeline Status */}
+                  {pipelineProgress.isRunning && (
+                    <div className="p-4 bg-blue-50 border-b border-blue-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
+                        <span className="font-semibold text-blue-900">Pipeline Running</span>
+                        <span className="text-sm text-blue-700">
+                          ({pipelineProgress.currentCityIndex}/{pipelineProgress.totalCities} cities)
+                        </span>
+                      </div>
+                      <div className="text-sm text-blue-800">
+                        {pipelineProgress.currentStep} - {pipelineProgress.currentCity}
+                      </div>
+                      {/* Progress Bar */}
+                      <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${(pipelineProgress.currentCityIndex / pipelineProgress.totalCities) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pipeline Stats */}
+                  {pipelineProgress.totalCities > 0 && (
+                    <div className="p-4 bg-gray-50 border-b border-gray-200">
+                      <div className="grid grid-cols-5 gap-3">
+                        <div className="text-center">
+                          <div className="text-xs text-gray-600 mb-1">Completed</div>
+                          <div className="text-lg font-bold text-green-600">{pipelineProgress.citiesCompleted}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-gray-600 mb-1">Fetched</div>
+                          <div className="text-lg font-bold text-blue-600">{pipelineProgress.totalFetched}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-gray-600 mb-1">Parsed</div>
+                          <div className="text-lg font-bold text-purple-600">{pipelineProgress.totalParsed}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-gray-600 mb-1">Validated</div>
+                          <div className="text-lg font-bold text-orange-600">{pipelineProgress.totalValidated}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-gray-600 mb-1">Published</div>
+                          <div className="text-lg font-bold text-green-600">{pipelineProgress.totalPublished}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pipeline Full Logs */}
+                  {pipelineProgress.fullLogs.length > 0 ? (
+                    <div className="p-4">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Full Pipeline Log ({pipelineProgress.fullLogs.length} entries)
+                      </h4>
+                      <div className="bg-gray-900 text-gray-100 rounded-lg p-4 max-h-96 overflow-y-auto font-mono text-xs">
+                        {pipelineProgress.fullLogs.map((log, idx) => (
+                          <div 
+                            key={idx} 
+                            className={`leading-tight py-0.5 ${
+                              log.includes('❌') || log.includes('Failed') ? 'text-red-400' :
+                              log.includes('⚠️') ? 'text-yellow-400' :
+                              log.includes('✅') ? 'text-green-400' :
+                              log.includes('🚀') ? 'text-blue-400' :
+                              'text-gray-300'
+                            }`}
+                          >
+                            {log}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-gray-500">
+                      <Play className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                      <p className="font-medium">No pipeline logs yet</p>
+                      <p className="text-sm">Click "Run Pipeline" to see logs here</p>
+                    </div>
+                  )}
+
+                  {/* Error Logs */}
+                  {pipelineProgress.errors.length > 0 && (
+                    <div className="p-4 border-t border-red-200 bg-red-50">
+                      <h4 className="text-sm font-semibold text-red-800 mb-2 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        Errors ({pipelineProgress.errors.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {pipelineProgress.errors.map((error, idx) => (
+                          <div key={idx} className="bg-white rounded p-2 text-xs text-red-700 font-mono">
+                            {error}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Supabase Function Logs Section */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="p-4 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <Database className="w-5 h-5 text-purple-600" />
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Supabase Function Logs</h3>
+                        <p className="text-sm text-gray-600">System-level logs from Edge Functions</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <AgentLogsViewer 
+                      maxLogs={200}
+                      autoRefresh={true}
+                      refreshInterval={5000}
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
