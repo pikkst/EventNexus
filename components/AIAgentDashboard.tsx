@@ -2962,16 +2962,14 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                       </div>
                     )}
 
-                    {/* Supabase Function Logs (always visible) */}
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2 border-t pt-4">
-                      <Database className="w-4 h-4 text-purple-600" />
-                      System Function Logs (parse-event-ai, publish-event, etc.)
-                    </h4>
-                    <AgentLogsViewer 
-                      maxLogs={200}
-                      autoRefresh={true}
-                      refreshInterval={5000}
-                    />
+                    {/* AgentLogsViewer - Supabase Function Logs integrated */}
+                    <div className="border-t pt-4">
+                      <AgentLogsViewer 
+                        maxLogs={200}
+                        autoRefresh={true}
+                        refreshInterval={5000}
+                      />
+                    </div>
                   </div>
 
                   {/* Error Logs */}
