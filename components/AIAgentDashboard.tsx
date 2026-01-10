@@ -78,6 +78,10 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   const [liveActivity, setLiveActivity] = useState<AIDecisionLog[]>([]);
   const [activityFilter, setActivityFilter] = useState<string>('all'); // all, fetch, parse, validate, publish
 
+  // Batch bootstrap state
+  const [batchBootstrapping, setBatchBootstrapping] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, currentCity: '' });
+
   useEffect(() => {
     loadDashboardData();
     
@@ -517,7 +521,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     }
   }
   
-  async function triggerBootstrapForCity(cityId: string) {
+  async function triggerBootstrapForCity(cityId: string, silent = false) {
     try {
       console.log('🚀 Triggering bootstrap for city:', cityId);
       
@@ -566,7 +570,11 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       const updatedMetrics = await loadCityMetrics();
       setCityMetrics(updatedMetrics);
       
-      alert(`✅ Bootstrap completed!\n\nDiscovered ${result.sources_added || 0} event sources.\n\nCheck Agent Logs for details.`);
+      if (!silent) {
+        alert(`✅ Bootstrap completed!\n\nDiscovered ${result.sources_added || 0} event sources.\n\nCheck Agent Logs for details.`);
+      }
+      
+      return { success: true, sources_added: result.sources_added || 0 };
       
     } catch (error) {
       console.error('❌ Bootstrap error:', error);
@@ -578,8 +586,93 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           : m
       ));
       
-      alert(`❌ Bootstrap failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      if (!silent) {
+        alert(`❌ Bootstrap failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+      
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
+  }
+
+  async function batchBootstrapAllPendingCities() {
+    // Find all cities that need bootstrapping
+    const pendingCities = cityMetrics.filter(m => 
+      m.active_sources === 0 && 
+      m.city?.active && 
+      m.bootstrap_status !== 'bootstrapping'
+    );
+
+    if (pendingCities.length === 0) {
+      alert('✅ No pending cities to bootstrap!');
+      return;
+    }
+
+    const confirmed = confirm(
+      `🚀 Start batch bootstrap?\n\n` +
+      `Cities to process: ${pendingCities.length}\n\n` +
+      pendingCities.map(c => `• ${c.city?.city_name}, ${c.city?.country}`).join('\n') +
+      `\n\nThis will process cities one by one.\nContinue?`
+    );
+
+    if (!confirmed) return;
+
+    setBatchBootstrapping(true);
+    setBatchProgress({ current: 0, total: pendingCities.length, currentCity: '' });
+
+    const results = {
+      success: [] as string[],
+      failed: [] as { city: string, error: string }[],
+      totalSources: 0
+    };
+
+    for (let i = 0; i < pendingCities.length; i++) {
+      const city = pendingCities[i];
+      const cityName = `${city.city?.city_name}, ${city.city?.country}`;
+      
+      setBatchProgress({ 
+        current: i + 1, 
+        total: pendingCities.length, 
+        currentCity: cityName 
+      });
+
+      console.log(`\n🔄 [${i + 1}/${pendingCities.length}] Bootstrapping: ${cityName}`);
+
+      const result = await triggerBootstrapForCity(city.city_id, true);
+
+      if (result.success) {
+        results.success.push(cityName);
+        results.totalSources += result.sources_added || 0;
+        console.log(`✅ Success: ${cityName} - ${result.sources_added} sources`);
+      } else {
+        results.failed.push({ city: cityName, error: result.error || 'Unknown error' });
+        console.log(`❌ Failed: ${cityName}`);
+      }
+
+      // Wait 2 seconds between cities to avoid rate limiting
+      if (i < pendingCities.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+
+    setBatchBootstrapping(false);
+    setBatchProgress({ current: 0, total: 0, currentCity: '' });
+
+    // Show summary
+    const summary = `
+🎉 Batch Bootstrap Complete!
+
+✅ Success: ${results.success.length}/${pendingCities.length}
+📋 Total sources discovered: ${results.totalSources}
+
+${results.success.length > 0 ? 'Successful cities:\n' + results.success.map(c => `✓ ${c}`).join('\n') : ''}
+
+${results.failed.length > 0 ? '\n❌ Failed cities:\n' + results.failed.map(f => `✗ ${f.city}: ${f.error}`).join('\n') : ''}
+    `.trim();
+
+    alert(summary);
+
+    // Refresh metrics one final time
+    await loadCityMetrics().then(metrics => setCityMetrics(metrics));
   }
   
   async function runManualBootstrap() {
@@ -1472,25 +1565,66 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">City Health & Pipeline Status</h3>
-                  <button
-                    onClick={async () => {
-                      setLoading(true);
-                      try {
-                        const metrics = await loadCityMetrics();
-                        setCityMetrics(metrics);
-                      } catch (error) {
-                        console.error('Failed to refresh city metrics:', error);
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    disabled={loading}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={batchBootstrapAllPendingCities}
+                      disabled={batchBootstrapping || loading}
+                      className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {batchBootstrapping ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Bootstrapping {batchProgress.current}/{batchProgress.total}...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-4 h-4" />
+                          Bootstrap All Pending
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setLoading(true);
+                        try {
+                          const metrics = await loadCityMetrics();
+                          setCityMetrics(metrics);
+                        } catch (error) {
+                          console.error('Failed to refresh city metrics:', error);
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                      disabled={loading}
+                      className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </button>
+                  </div>
                 </div>
+                
+                {batchBootstrapping && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
+                      <div className="flex-1">
+                        <p className="font-medium text-blue-900">
+                          Processing: {batchProgress.currentCity}
+                        </p>
+                        <p className="text-sm text-blue-700">
+                          Progress: {batchProgress.current} / {batchProgress.total} cities
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 bg-blue-200 rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-blue-600 h-full transition-all duration-500"
+                        style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
                 
                 {cityMetrics.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
