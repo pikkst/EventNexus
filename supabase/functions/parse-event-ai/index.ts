@@ -306,68 +306,66 @@ async function geocodeAddress(address: string, country: string, countryCode: str
     // Add 1.1 second delay to respect Nominatim rate limit
     await new Promise(resolve => setTimeout(resolve, 1100))
     
-    // Add country to address if not already present for better results
-    let searchAddress = address
+    // Prepare search variations (try multiple approaches)
+    const searchVariations = []
+    
+    // 1. Full address with country (if not present)
     const lowerAddress = address.toLowerCase()
     const lowerCountry = country.toLowerCase()
     if (!lowerAddress.includes(lowerCountry)) {
-      searchAddress = `${address}, ${country}`
+      searchVariations.push(`${address}, ${country}`)
+    } else {
+      searchVariations.push(address)
     }
     
-    // Try full address first with country code filter
-    let response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1&countrycodes=${countryCode}`,
-      {
-        headers: {
-          'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
-          'Accept-Language': 'et,en'
-        }
-      }
-    )
-
-    if (!response.ok) {
-      console.error(`❌ Nominatim API error ${response.status}`)
-      await log(supabaseClient, 'parse-event-ai', 'error', 'Nominatim API error', { status: response.status, address })
-      return null
+    // 2. Venue name only + country (for cases like "NART Kunstiresidentuur, Joala 18, Narva")
+    const venueName = address.split(',')[0].trim()
+    if (venueName && venueName !== address) {
+      searchVariations.push(`${venueName}, ${country}`)
     }
-
-    let data = await response.json()
     
-    // If no results, try simplified query (venue name only, without street)
-    if (!data || data.length === 0) {
-      const venueName = address.split(',')[0].trim() // Extract venue name before first comma
-      if (venueName && venueName !== address) {
-        console.log(`🔄 Retrying with venue name only: ${venueName}`)
-        await new Promise(resolve => setTimeout(resolve, 1100))
-        
-        const venueSearch = `${venueName}, ${country}`
-        response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(venueSearch)}&limit=1&countrycodes=${countryCode}`,
-          {
-            headers: {
-              'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
-              'Accept-Language': 'et,en'
-            }
+    // Try each search variation
+    for (const searchAddress of searchVariations) {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1&countrycodes=${countryCode}`,
+        {
+          headers: {
+            'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
+            'Accept-Language': 'et,en'
           }
-        )
-        
-        if (response.ok) {
-          data = await response.json()
+        }
+      )
+
+      if (!response.ok) {
+        console.error(`❌ Nominatim API error ${response.status}`)
+        await log(supabaseClient, 'parse-event-ai', 'error', 'Nominatim API error', { status: response.status, address, searchAddress })
+        continue // Try next variation
+      }
+
+      const data = await response.json()
+      
+      if (data && data.length > 0) {
+        console.log(`✓ Geocoded: "${address}" → ${data[0].lat}, ${data[0].lon} (using: "${searchAddress}")`)
+        await log(supabaseClient, 'parse-event-ai', 'success', 'Geocoded address', { 
+          original: address, 
+          search_query: searchAddress,
+          lat: data[0].lat, 
+          lng: data[0].lon 
+        })
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon),
         }
       }
-    }
-    
-    if (data && data.length > 0) {
-      console.log(`✓ Geocoded: ${address} → ${data[0].lat}, ${data[0].lon}`)
-      await log(supabaseClient, 'parse-event-ai', 'success', 'Geocoded address', { address, lat: data[0].lat, lng: data[0].lon })
-      return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon),
+      
+      // Wait before trying next variation (respect rate limit)
+      if (searchVariations.indexOf(searchAddress) < searchVariations.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1100))
       }
     }
     
-    console.log(`⚠️ Nominatim found no results for: ${address}`)
-    await log(supabaseClient, 'parse-event-ai', 'warning', 'Geocoding failed - no results', { address })
+    console.log(`⚠️ Nominatim found no results for any variation of: ${address}`)
+    await log(supabaseClient, 'parse-event-ai', 'warning', 'Geocoding failed - no results', { address, tried: searchVariations })
   } catch (error) {
     console.error('❌ Geocoding failed:', error)
     await log(supabaseClient, 'parse-event-ai', 'error', 'Geocoding exception', { address, error: String(error) })
@@ -502,8 +500,18 @@ serve(async (req) => {
         // Geocode addresses
         for (const event of parseResult.events) {
           if (event.location_address && !event.location_lat) {
+            // Enhance address with city name if not present
+            let enhancedAddress = event.location_address
+            const lowerAddress = event.location_address.toLowerCase()
+            const lowerCity = cityConfig.city_name.toLowerCase()
+            
+            // Add city name if not in address (helps geocoding)
+            if (!lowerAddress.includes(lowerCity)) {
+              enhancedAddress = `${event.location_address}, ${cityConfig.city_name}`
+            }
+            
             const coords = await geocodeAddress(
-              event.location_address,
+              enhancedAddress,
               cityConfig.country,
               cityConfig.country_code || 'ee',
               supabaseClient
