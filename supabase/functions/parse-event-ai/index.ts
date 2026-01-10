@@ -12,7 +12,7 @@ const corsHeaders = {
 }
 
 const GEMINI_API_KEY = Deno.env.get('API_KEY') || Deno.env.get('GEMINI_API_KEY')
-const GEMINI_MODEL = 'gemini-2.0-flash-exp' // Faster model for HTML parsing
+const GEMINI_MODEL = 'gemini-2.5-pro' // Higher rate limits (150 RPM) for production
 
 interface ParsedEvent {
   name: string
