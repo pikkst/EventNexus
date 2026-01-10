@@ -521,6 +521,12 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     try {
       console.log('🚀 Triggering bootstrap for city:', cityId);
       
+      // Get city details from metrics (which has city info already)
+      const cityMetric = cityMetrics.find(m => m.city_id === cityId);
+      if (!cityMetric?.city) {
+        throw new Error('City details not found');
+      }
+      
       // Update UI to show bootstrapping status
       setCityMetrics(prev => prev.map(m => 
         m.city_id === cityId 
@@ -536,7 +542,13 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
           },
-          body: JSON.stringify({ city_id: cityId })
+          body: JSON.stringify({ 
+            city_id: cityId,
+            city_name: cityMetric.city.city_name,
+            country: cityMetric.city.country,
+            auto_discover: true,
+            seed_events: false // Don't seed events, just discover sources
+          })
         }
       );
       
