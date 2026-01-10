@@ -1105,15 +1105,15 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
       summary: {
         totalLogEntries: pipelineProgress.fullLogs.length > 0 ? pipelineProgress.fullLogs.length : pipelineProgress.recentLogs.length,
         totalErrors: pipelineProgress.errors.length,
-        totalDetailedErrors: pipelineProgress.detailedErrors.length,
-        totalValidationFailures: pipelineProgress.validationFailures.length,
-        avgCityProcessingTime: pipelineProgress.performanceMetrics.length > 0 
+        totalDetailedErrors: pipelineProgress.detailedErrors?.length ?? 0,
+        totalValidationFailures: pipelineProgress.validationFailures?.length ?? 0,
+        avgCityProcessingTime: (pipelineProgress.performanceMetrics?.length ?? 0) > 0 
           ? (pipelineProgress.performanceMetrics.reduce((sum, m) => sum + m.totalTime, 0) / pipelineProgress.performanceMetrics.length).toFixed(2)
           : 0,
-        geocodingSuccessRate: pipelineProgress.geocodingStats.attempts > 0
+        geocodingSuccessRate: (pipelineProgress.geocodingStats?.attempts ?? 0) > 0
           ? ((pipelineProgress.geocodingStats.successes / pipelineProgress.geocodingStats.attempts) * 100).toFixed(1) + '%'
           : 'N/A',
-        aiErrorRate: pipelineProgress.aiStats.totalRequests > 0
+        aiErrorRate: (pipelineProgress.aiStats?.totalRequests ?? 0) > 0
           ? (((pipelineProgress.aiStats.timeouts + pipelineProgress.aiStats.rateLimits) / pipelineProgress.aiStats.totalRequests) * 100).toFixed(1) + '%'
           : 'N/A',
       }
@@ -2775,7 +2775,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                     {/* 📊 ENHANCED DEBUG SECTIONS */}
                     
                     {/* Performance Metrics */}
-                    {pipelineProgress.performanceMetrics.length > 0 && (
+                    {(pipelineProgress.performanceMetrics?.length ?? 0) > 0 && (
                       <div className="mb-6 border-t pt-4">
                         <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                           <Clock className="w-4 h-4 text-blue-600" />
@@ -2811,7 +2811,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                     )}
 
                     {/* AI Stats */}
-                    {pipelineProgress.aiStats.totalRequests > 0 && (
+                    {(pipelineProgress.aiStats?.totalRequests ?? 0) > 0 && (
                       <div className="mb-6 border-t pt-4">
                         <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                           <Bot className="w-4 h-4 text-purple-600" />
@@ -2839,7 +2839,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                           <div className="mt-3">
                             <div className="text-xs text-gray-600 mb-2">Model Usage:</div>
                             <div className="flex flex-wrap gap-2">
-                              {Object.entries(pipelineProgress.aiStats.modelUsage).map(([model, count]) => (
+                              {Object.entries(pipelineProgress.aiStats?.modelUsage ?? {}).map(([model, count]) => (
                                 <span key={model} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
                                   {model}: {count}
                                 </span>
@@ -2851,7 +2851,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                     )}
 
                     {/* Geocoding Stats */}
-                    {pipelineProgress.geocodingStats.attempts > 0 && (
+                    {(pipelineProgress.geocodingStats?.attempts ?? 0) > 0 && (
                       <div className="mb-6 border-t pt-4">
                         <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-green-600" />
@@ -2860,28 +2860,28 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                         <div className="grid grid-cols-4 gap-3 mb-3">
                           <div className="bg-blue-50 rounded p-3">
                             <div className="text-xs text-blue-600">Attempts</div>
-                            <div className="text-lg font-bold text-blue-900">{pipelineProgress.geocodingStats.attempts}</div>
+                            <div className="text-lg font-bold text-blue-900">{pipelineProgress.geocodingStats?.attempts ?? 0}</div>
                           </div>
                           <div className="bg-green-50 rounded p-3">
                             <div className="text-xs text-green-600">Successes</div>
-                            <div className="text-lg font-bold text-green-900">{pipelineProgress.geocodingStats.successes}</div>
+                            <div className="text-lg font-bold text-green-900">{pipelineProgress.geocodingStats?.successes ?? 0}</div>
                           </div>
                           <div className="bg-red-50 rounded p-3">
                             <div className="text-xs text-red-600">Failures</div>
-                            <div className="text-lg font-bold text-red-900">{pipelineProgress.geocodingStats.failures}</div>
+                            <div className="text-lg font-bold text-red-900">{pipelineProgress.geocodingStats?.failures ?? 0}</div>
                           </div>
                           <div className="bg-purple-50 rounded p-3">
                             <div className="text-xs text-purple-600">Success Rate</div>
                             <div className="text-lg font-bold text-purple-900">
-                              {((pipelineProgress.geocodingStats.successes / pipelineProgress.geocodingStats.attempts) * 100).toFixed(1)}%
+                              {((pipelineProgress.geocodingStats?.successes ?? 0) / (pipelineProgress.geocodingStats?.attempts ?? 1) * 100).toFixed(1)}%
                             </div>
                           </div>
                         </div>
-                        {Object.keys(pipelineProgress.geocodingStats.failureReasons).length > 0 && (
+                        {Object.keys(pipelineProgress.geocodingStats?.failureReasons ?? {}).length > 0 && (
                           <div>
                             <div className="text-xs text-gray-600 mb-2">Top Failure Reasons:</div>
                             <div className="space-y-1">
-                              {Object.entries(pipelineProgress.geocodingStats.failureReasons)
+                              {Object.entries(pipelineProgress.geocodingStats?.failureReasons ?? {})
                                 .sort(([, a], [, b]) => b - a)
                                 .slice(0, 5)
                                 .map(([reason, count]) => (
@@ -2897,7 +2897,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                     )}
 
                     {/* Validation Failures */}
-                    {pipelineProgress.validationFailures.length > 0 && (
+                    {(pipelineProgress.validationFailures?.length ?? 0) > 0 && (
                       <div className="mb-6 border-t pt-4">
                         <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-orange-600" />
@@ -2926,14 +2926,14 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                     )}
 
                     {/* Detailed Errors */}
-                    {pipelineProgress.detailedErrors.length > 0 && (
+                    {(pipelineProgress.detailedErrors?.length ?? 0) > 0 && (
                       <div className="mb-6 border-t pt-4">
                         <h4 className="text-sm font-semibold text-red-800 mb-3 flex items-center gap-2">
                           <AlertCircle className="w-4 h-4" />
-                          Detailed Error Log ({pipelineProgress.detailedErrors.length})
+                          Detailed Error Log ({pipelineProgress.detailedErrors?.length ?? 0})
                         </h4>
                         <div className="space-y-2 max-h-64 overflow-y-auto">
-                          {pipelineProgress.detailedErrors.map((error, idx) => (
+                          {(pipelineProgress.detailedErrors ?? []).map((error, idx) => (
                             <div key={idx} className="bg-red-50 rounded p-3 text-xs">
                               <div className="flex justify-between items-start mb-1">
                                 <span className="font-semibold text-red-900">{error.city} - {error.step}</span>
