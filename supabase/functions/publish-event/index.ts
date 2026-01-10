@@ -244,13 +244,14 @@ serve(async (req) => {
         const confidenceScore = parsedEvent.event_confidence[0]?.final_score || 0
 
         // Fetch city config for geocoding
-        const { data: cityConfig, error: cityError } = await supabaseClient
+        let cityConfig;
+        const { data: cityConfigData, error: cityError } = await supabaseClient
           .from('city_configs')
           .select('city_name, country, country_code')
           .eq('city_id', cityId)
           .single()
 
-        if (cityError || !cityConfig) {
+        if (cityError || !cityConfigData) {
           console.error(`❌ Failed to load city config for ${cityId}:`, cityError)
           // Fallback to default values
           cityConfig = {
@@ -258,6 +259,8 @@ serve(async (req) => {
             country: 'Estonia',
             country_code: 'ee'
           }
+        } else {
+          cityConfig = cityConfigData
         }
 
         console.log(`Publishing event for ${cityConfig.city_name}, ${cityConfig.country}`)
