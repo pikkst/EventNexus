@@ -43,11 +43,11 @@ interface ParseResult {
   }
 }
 
-async function parseEventWithGemini(rawContent: string, sourceType: string, supabaseClient: any, retries = 3): Promise<ParseResult> {
-  // Get current time in Europe/Tallinn timezone
+async function parseEventWithGemini(rawContent: string, sourceType: string, cityTimezone: string, cityName: string, supabaseClient: any, retries = 3): Promise<ParseResult> {
+  // Get current time in city timezone
   const now = new Date()
-  const estoniaTime = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/Tallinn',
+  const cityTime = new Intl.DateTimeFormat('en-GB', {
+    timeZone: cityTimezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -57,7 +57,7 @@ async function parseEventWithGemini(rawContent: string, sourceType: string, supa
     hour12: false
   }).format(now)
   
-  const prompt = `You are an expert event data extractor. Current date and time in Estonia is: ${estoniaTime} (DD/MM/YYYY HH:MM:SS).
+  const prompt = `You are an expert event data extractor. Current date and time in ${cityName} is: ${cityTime} (DD/MM/YYYY HH:MM:SS).
 
 CRITICAL - EVENT TIME WINDOW:
 Today is 09/01/2026. Extract ONLY events within the next 30 DAYS.
@@ -197,7 +197,7 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
           }
           
           // Use central date validator
-          const validation = validateEventDate(event.start_time, 'Europe/Tallinn')
+          const validation = validateEventDate(event.start_time, cityTimezone)
           
           if (!validation.valid) {
             console.log(`Filtered out event: "${event.name}" - ${validation.reason}: ${validation.details}`)
@@ -251,22 +251,24 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
   }
 }
 
-async function geocodeAddress(address: string, supabaseClient: any): Promise<{ lat: number; lng: number } | null> {
+async function geocodeAddress(address: string, country: string, countryCode: string, supabaseClient: any): Promise<{ lat: number; lng: number } | null> {
   // Use OpenStreetMap Nominatim for geocoding (free, no API key needed)
   // Rate limit: max 1 request per second
   try {
     // Add 1.1 second delay to respect Nominatim rate limit
     await new Promise(resolve => setTimeout(resolve, 1100))
     
-    // Add Estonia to address if not already present for better results
+    // Add country to address if not already present for better results
     let searchAddress = address
-    if (!address.toLowerCase().includes('estonia') && !address.toLowerCase().includes('eesti')) {
-      searchAddress = `${address}, Estonia`
+    const lowerAddress = address.toLowerCase()
+    const lowerCountry = country.toLowerCase()
+    if (!lowerAddress.includes(lowerCountry)) {
+      searchAddress = `${address}, ${country}`
     }
     
     // Try full address first with country code filter
     let response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1&countrycodes=ee`,
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1&countrycodes=${countryCode}`,
       {
         headers: {
           'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
@@ -290,9 +292,9 @@ async function geocodeAddress(address: string, supabaseClient: any): Promise<{ l
         console.log(`🔄 Retrying with venue name only: ${venueName}`)
         await new Promise(resolve => setTimeout(resolve, 1100))
         
-        const venueSearch = `${venueName}, Estonia`
+        const venueSearch = `${venueName}, ${country}`
         response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(venueSearch)}&limit=1&countrycodes=ee`,
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(venueSearch)}&limit=1&countrycodes=${countryCode}`,
           {
             headers: {
               'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
@@ -384,6 +386,26 @@ serve(async (req) => {
 
         console.log(`Processing raw event ${rawEvent.id} from ${rawEvent.event_sources?.type}`)
 
+        // Fetch city config for this event source
+        const { data: cityConfig, error: cityError } = await supabaseClient
+          .from('city_configs')
+          .select('city_name, country, timezone, country_code')
+          .eq('city_id', rawEvent.event_sources.city_id)
+          .single()
+
+        if (cityError || !cityConfig) {
+          console.error(`❌ Failed to load city config for ${rawEvent.event_sources.city_id}:`, cityError)
+          // Fallback to default values
+          cityConfig = {
+            city_name: 'Unknown',
+            country: 'Estonia',
+            timezone: 'Europe/Tallinn',
+            country_code: 'ee'
+          }
+        }
+
+        console.log(`City config: ${cityConfig.city_name}, ${cityConfig.country} (${cityConfig.timezone})`)
+
         // Check if content is substantial enough to contain events
         const contentLength = rawEvent.raw_content?.length || 0
         if (contentLength < 500) {
@@ -403,6 +425,8 @@ serve(async (req) => {
         const parseResult = await parseEventWithGemini(
           rawEvent.raw_content,
           rawEvent.event_sources.type,
+          cityConfig.timezone,
+          cityConfig.city_name,
           supabaseClient
         )
 
@@ -429,7 +453,12 @@ serve(async (req) => {
         // Geocode addresses
         for (const event of parseResult.events) {
           if (event.location_address && !event.location_lat) {
-            const coords = await geocodeAddress(event.location_address, supabaseClient)
+            const coords = await geocodeAddress(
+              event.location_address,
+              cityConfig.country,
+              cityConfig.country_code || 'ee',
+              supabaseClient
+            )
             if (coords) {
               event.location_lat = coords.lat
               event.location_lng = coords.lng

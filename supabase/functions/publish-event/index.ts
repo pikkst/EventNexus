@@ -56,17 +56,19 @@ async function uploadImageToStorage(
 }
 
 // Nominatim geocoding fallback for addresses without coordinates
-async function geocodeAddress(address: string): Promise<{lat: number, lng: number} | null> {
+async function geocodeAddress(address: string, country: string, countryCode: string): Promise<{lat: number, lng: number} | null> {
   try {
-    // Add Estonia to address if not already present for better Nominatim results
+    // Add country to address if not already present for better Nominatim results
     let searchAddress = address
-    if (!address.toLowerCase().includes('estonia') && !address.toLowerCase().includes('eesti')) {
-      searchAddress = `${address}, Estonia`
+    const lowerAddress = address.toLowerCase()
+    const lowerCountry = country.toLowerCase()
+    if (!lowerAddress.includes(lowerCountry)) {
+      searchAddress = `${address}, ${country}`
     }
     
     const encodedAddress = encodeURIComponent(searchAddress)
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1&countrycodes=ee`,
+      `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1&countrycodes=${countryCode}`,
       {
         headers: {
           'User-Agent': 'EventNexus/1.0 (contact: huntersest@gmail.com)',
@@ -95,9 +97,9 @@ async function geocodeAddress(address: string): Promise<{lat: number, lng: numbe
       const venueName = address.split(',')[0].trim()
       console.log(`🔄 Retrying with venue name: ${venueName}`)
       
-      const venueAddress = `${venueName}, Estonia`
+      const venueAddress = `${venueName}, ${country}`
       const retryResponse = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(venueAddress)}&format=json&limit=1&countrycodes=ee`,
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(venueAddress)}&format=json&limit=1&countrycodes=${countryCode}`,
         {
           headers: {
             'User-Agent': 'EventNexus/1.0 (contact: huntersest@gmail.com)',
@@ -241,6 +243,25 @@ serve(async (req) => {
         const cityId = parsedEvent.raw_events.event_sources.city_id
         const confidenceScore = parsedEvent.event_confidence[0]?.final_score || 0
 
+        // Fetch city config for geocoding
+        const { data: cityConfig, error: cityError } = await supabaseClient
+          .from('city_configs')
+          .select('city_name, country, country_code')
+          .eq('city_id', cityId)
+          .single()
+
+        if (cityError || !cityConfig) {
+          console.error(`❌ Failed to load city config for ${cityId}:`, cityError)
+          // Fallback to default values
+          cityConfig = {
+            city_name: 'Unknown',
+            country: 'Estonia',
+            country_code: 'ee'
+          }
+        }
+
+        console.log(`Publishing event for ${cityConfig.city_name}, ${cityConfig.country}`)
+
         // CRITICAL: Only publish FREE events (we don't sell tickets)
         // If is_free is explicitly false AND there's a price, skip it
         // If price is unknown/null, assume free (benefit of doubt)
@@ -320,7 +341,11 @@ serve(async (req) => {
         if ((!eventData.location_lat || !eventData.location_lng) && eventData.location_address) {
           console.log(`🌍 Geocoding address: ${eventData.location_address}`)
           
-          const geocoded = await geocodeAddress(eventData.location_address)
+          const geocoded = await geocodeAddress(
+            eventData.location_address,
+            cityConfig.country,
+            cityConfig.country_code || 'ee'
+          )
           
           if (geocoded) {
             eventData.location_lat = geocoded.lat
