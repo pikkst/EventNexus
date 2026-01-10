@@ -121,11 +121,13 @@ IMPORTANT - DESCRIPTION QUALITY:
 - Add context about the venue if it's well-known (e.g., "at the historic Humboldt Forum")
 
 CRITICAL - PAID vs FREE (Default to FREE):
-- Set is_free=true (default) unless you see clear evidence of paid admission
-- Set is_free=false ONLY if: "Buy tickets", "Admission €X", "Tickets from €X", "Paid entry" mentioned
-- If unclear or no price info → DEFAULT to is_free=true
-- Free indicators: "Free admission", "Free entry", "Free of charge", no ticket/price mentions
-- We prefer publishing free events, so when in doubt, assume FREE
+- **ALWAYS SET is_free=true** unless you see EXPLICIT paid admission indicators
+- Set is_free=false ONLY if you see: "Buy tickets", "€X admission", "Tickets €X", "Price: €X", "Paid entry", "Entry fee"
+- **DEFAULT to is_free=true** for ALL events WITHOUT clear price mentions
+- Free indicators: "Free admission", "Free entry", "Free of charge", NO price/ticket mentions
+- **If no price info is visible → ASSUME FREE (is_free=true, price=0)**
+- Libraries, community centers, galleries, parks → ASSUME FREE unless stated otherwise
+- **BIAS TOWARDS FREE** - we want to maximize free event discovery for users
 
 Return ONLY valid JSON array of FUTURE events (preferably free). No markdown, no explanations.
 
@@ -232,13 +234,29 @@ ${rawContent.slice(0, 20000)}` // Limit to 20KB to avoid timeout
     } catch (error) {
       if (error.name === 'AbortError') {
         console.error('Gemini API timeout after 25s')
-        await log(supabaseClient, 'parse-event-ai', 'error', 'Gemini API timeout (25s)', { attempt: attempt + 1 })
+        await log(supabaseClient, 'parse-event-ai', 'error', 'Gemini API timeout (25s)', { 
+          attempt: attempt + 1,
+          content_length: rawContent.length,
+          source_type: sourceType,
+          city: cityName
+        })
         if (attempt < retries) {
           console.log(`Retrying... (attempt ${attempt + 2}/${retries + 1})`)
           continue
         }
         throw new Error('Gemini API timeout - content may be too large')
       }
+      
+      // Log detailed error for debugging
+      console.error(`Parse attempt ${attempt + 1}/${retries + 1} failed:`, error)
+      await log(supabaseClient, 'parse-event-ai', 'error', 'Parse attempt failed', {
+        attempt: attempt + 1,
+        error: String(error),
+        source_type: sourceType,
+        content_length: rawContent.length,
+        city: cityName
+      })
+      
       if (attempt === retries) throw error
     }
   }
@@ -372,6 +390,7 @@ serve(async (req) => {
       processed: 0,
       failed: 0,
       events_extracted: 0,
+      parsed: 0, // Add this key for dashboard compatibility
     }
 
     for (const rawEvent of rawEvents || []) {
@@ -480,6 +499,7 @@ serve(async (req) => {
 
           if (!insertError) {
             results.events_extracted++
+            results.parsed++ // Sync both counters
           }
         }
 
