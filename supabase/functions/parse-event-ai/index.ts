@@ -12,7 +12,12 @@ const corsHeaders = {
 }
 
 const GEMINI_API_KEY = Deno.env.get('API_KEY') || Deno.env.get('GEMINI_API_KEY')
-const GEMINI_MODEL = 'gemini-2.5-pro' // Higher rate limits (150 RPM) for production
+const GEMINI_MODELS = [
+  'gemini-2.5-pro',    // Primary: 150 RPM, 2M tokens
+  'gemini-2.5-flash',  // Fallback 1: 1000 RPM, 1M tokens
+  'gemini-3-flash'     // Fallback 2: 1000 RPM, 1M tokens (preview)
+] as const
+let currentModelIndex = 0 // Track which model we're using
 
 interface ParsedEvent {
   name: string
@@ -136,12 +141,15 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      // Get current model (with fallback if rate limited)
+      const currentModel = GEMINI_MODELS[currentModelIndex]
+      
       // Add timeout to prevent 504 Gateway Timeout (Edge Functions have 30s limit)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout (before Edge Function 30s limit)
       
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -160,9 +168,23 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
       
       clearTimeout(timeoutId);
 
-      if (response.status === 429 && attempt < retries) {
-        // Rate limit - wait with exponential backoff + jitter
-        const baseWait = Math.pow(2, attempt) * 8000 // 8s, 16s, 32s (more aggressive)
+      if (response.status === 429) {
+        // Try fallback model if available
+        if (currentModelIndex < GEMINI_MODELS.length - 1) {
+          currentModelIndex++
+          const fallbackModel = GEMINI_MODELS[currentModelIndex]
+          console.log(`⚠️ Rate limit on ${currentModel}, switching to ${fallbackModel}`)
+          await log(supabaseClient, 'parse-event-ai', 'warning', `Model fallback: ${currentModel} → ${fallbackModel}`, { 
+            from: currentModel,
+            to: fallbackModel,
+            city: cityName 
+          })
+          continue // Retry immediately with new model
+        }
+        
+        // All models rate limited - wait with backoff
+        if (attempt < retries) {
+          const baseWait = Math.pow(2, attempt) * 8000 // 8s, 16s, 32s (more aggressive)
         const jitter = Math.random() * 2000 // 0-2s random jitter to avoid thundering herd
         const waitTime = baseWait + jitter
         console.log(`⏳ Rate limited (429), retrying in ${Math.round(waitTime/1000)}s (attempt ${attempt + 1}/${retries})`)
@@ -173,6 +195,7 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
         })
         await new Promise(resolve => setTimeout(resolve, waitTime))
         continue
+        }
       }
 
       if (!response.ok) {
@@ -182,8 +205,8 @@ ${rawContent.slice(0, 50000)}` // Reduced from 20KB to 50KB max to avoid rate li
       const data = await response.json()
       const text = data.candidates[0]?.content?.parts[0]?.text || '[]'
 
-      // Log AI response for debugging
-      console.log(`AI response (first 500 chars): ${text.substring(0, 500)}`)
+      // Log successful response with model used
+      console.log(`✅ ${currentModel} response (first 500 chars): ${text.substring(0, 500)}`)
 
       // Extract JSON from markdown code blocks if present
       const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/```\n?([\s\S]*?)\n?```/)
@@ -500,7 +523,7 @@ serve(async (req) => {
               raw_event_id: rawEvent.id,
               structured_json: event,
               original_language: event.original_language,
-              ai_model: GEMINI_MODEL,
+              ai_model: GEMINI_MODELS[currentModelIndex],
               validation_status: 'pending',
             })
 
@@ -522,7 +545,7 @@ serve(async (req) => {
               events_rejected: parseResult.meta.total_rejected,
               source_type: rawEvent.event_sources.type,
             },
-            ai_model: GEMINI_MODEL,
+            ai_model: GEMINI_MODELS[currentModelIndex],
             processing_time_ms: Date.now() - startTime,
           })
 
