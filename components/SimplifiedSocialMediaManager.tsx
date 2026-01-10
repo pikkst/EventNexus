@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Facebook, Instagram, Linkedin, RefreshCw, CheckCircle2, AlertCircle, Settings, Sparkles } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import logger from '../utils/logger';
 import type { User } from '../types';
 
 interface SocialAccount {
