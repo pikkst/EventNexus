@@ -43,7 +43,8 @@ FROM (
     COUNT(e.id) AS total_count
   FROM raw_events re
   JOIN parsed_events pe ON pe.raw_event_id = re.id
-  LEFT JOIN events e ON e.parsed_event_id = pe.id AND e.status = 'active'
+  JOIN event_confidence ec ON ec.parsed_event_id = pe.id
+  LEFT JOIN events e ON e.id = ec.event_id AND e.status = 'active'
   GROUP BY re.source_id
 ) stats
 WHERE es.id = stats.source_id;

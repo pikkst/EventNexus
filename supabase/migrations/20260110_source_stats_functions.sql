@@ -26,7 +26,8 @@ BEGIN
     ) AS free_ratio
   FROM raw_events re
   JOIN parsed_events pe ON pe.raw_event_id = re.id
-  LEFT JOIN events e ON e.parsed_event_id = pe.id AND e.status = 'active'
+  JOIN event_confidence ec ON ec.parsed_event_id = pe.id
+  LEFT JOIN events e ON e.id = ec.event_id AND e.status = 'active'
   WHERE re.source_id = p_source_id;
 END;
 $$;
@@ -40,12 +41,23 @@ AS $$
 DECLARE
   v_source_id UUID;
   v_stats RECORD;
+  v_parsed_event_id UUID;
 BEGIN
+  -- Get parsed_event_id from event_confidence (NEW is from events table)
+  SELECT parsed_event_id INTO v_parsed_event_id
+  FROM event_confidence
+  WHERE event_id = NEW.id
+  LIMIT 1;
+
+  IF v_parsed_event_id IS NULL THEN
+    RETURN NEW; -- No parsed event linked
+  END IF;
+
   -- Get source_id from parsed_event → raw_event
   SELECT re.source_id INTO v_source_id
   FROM parsed_events pe
   JOIN raw_events re ON re.id = pe.raw_event_id
-  WHERE pe.id = NEW.parsed_event_id;
+  WHERE pe.id = v_parsed_event_id;
 
   IF v_source_id IS NOT NULL THEN
     -- Calculate new stats
@@ -83,13 +95,24 @@ AS $$
 DECLARE
   v_source_id UUID;
   v_stats RECORD;
+  v_parsed_event_id UUID;
 BEGIN
   -- Only trigger if status changes to archived
   IF OLD.status = 'active' AND NEW.status = 'archived' THEN
+    -- Get parsed_event_id from event_confidence
+    SELECT parsed_event_id INTO v_parsed_event_id
+    FROM event_confidence
+    WHERE event_id = NEW.id
+    LIMIT 1;
+
+    IF v_parsed_event_id IS NULL THEN
+      RETURN NEW; -- No parsed event linked
+    END IF;
+
     SELECT re.source_id INTO v_source_id
     FROM parsed_events pe
     JOIN raw_events re ON re.id = pe.raw_event_id
-    WHERE pe.id = NEW.parsed_event_id;
+    WHERE pe.id = v_parsed_event_id;
 
     IF v_source_id IS NOT NULL THEN
       SELECT * INTO v_stats FROM calculate_source_free_ratio(v_source_id);
