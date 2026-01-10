@@ -63,7 +63,8 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     totalPublished: 0,
     currentStep: '',
     recentLogs: [] as string[],
-    fullLogs: [] as string[] // Complete log history for download
+    fullLogs: [] as string[], // Complete log history for download
+    errors: [] as string[] // Error log for debugging
   });
   
   // City management state
@@ -805,7 +806,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         totalPublished: 0,
         currentStep: 'Starting pipeline...',
         recentLogs: [`Started processing ${activeCities.length} cities`],
-        fullLogs: [`Started processing ${activeCities.length} cities`]
+        fullLogs: [`Started processing ${activeCities.length} cities`],
+        errors: [] // Reset errors at pipeline start
       });
 
       // Process each city through full pipeline
@@ -833,12 +835,14 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
           });
           
           if (fetchResp.error) {
-            totalResults.cityErrors.push(`${city.city_name}: Fetch failed - ${fetchResp.error.message}`);
+            const errorMsg = fetchResp.error.message || String(fetchResp.error);
+            totalResults.cityErrors.push(`${city.city_name}: Fetch failed - ${errorMsg}`);
             setPipelineProgress(prev => ({
               ...prev,
               citiesFailed: prev.citiesFailed + 1,
               recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Fetch failed`],
-              fullLogs: [...prev.fullLogs, `  ❌ Fetch failed`]
+              fullLogs: [...prev.fullLogs, `  ❌ Fetch failed`],
+              errors: [...prev.errors, `[${city.city_name}] Fetch: ${errorMsg}`]
             }));
             continue; // Skip to next city
           }
@@ -866,7 +870,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             setPipelineProgress(prev => ({
               ...prev,
               recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Parse failed: ${errorMsg}`],
-              fullLogs: [...prev.fullLogs, `  ⚠️ Parse failed: ${errorMsg}`]
+              fullLogs: [...prev.fullLogs, `  ⚠️ Parse failed: ${errorMsg}`],
+              errors: [...prev.errors, `[${city.city_name}] Parse: ${errorMsg}`]
             }));
           } else {
             // Try both .parsed and .events_extracted keys for backward compatibility
@@ -894,7 +899,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             setPipelineProgress(prev => ({
               ...prev,
               recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Validate failed: ${errorMsg}`],
-              fullLogs: [...prev.fullLogs, `  ⚠️ Validate failed: ${errorMsg}`]
+              fullLogs: [...prev.fullLogs, `  ⚠️ Validate failed: ${errorMsg}`],
+              errors: [...prev.errors, `[${city.city_name}] Validate: ${errorMsg}`]
             }));
           } else {
             const validated = validateResp.data?.results?.validated || 0;
@@ -921,7 +927,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             setPipelineProgress(prev => ({
               ...prev,
               recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Publish failed: ${errorMsg}`],
-              fullLogs: [...prev.fullLogs, `  ⚠️ Publish failed: ${errorMsg}`]
+              fullLogs: [...prev.fullLogs, `  ⚠️ Publish failed: ${errorMsg}`],
+              errors: [...prev.errors, `[${city.city_name}] Publish: ${errorMsg}`]
             }));
           } else {
             const published = publishResp.data?.results?.published || 0;
@@ -981,7 +988,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             ...prev,
             citiesFailed: prev.citiesFailed + 1,
             recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Error: ${cityError.message}`],
-            fullLogs: [...prev.fullLogs, `  ❌ Error: ${cityError.message}`]
+            fullLogs: [...prev.fullLogs, `  ❌ Error: ${cityError.message}`],
+            errors: [...prev.errors, `[${city.city_name}] General: ${cityError.message}`]
           }));
         }
       }
@@ -1046,7 +1054,9 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
         totalPublished: pipelineProgress.totalPublished,
       },
       logs: pipelineProgress.fullLogs.length > 0 ? pipelineProgress.fullLogs : pipelineProgress.recentLogs,
+      errors: pipelineProgress.errors, // Include all errors for debugging
       totalLogEntries: pipelineProgress.fullLogs.length > 0 ? pipelineProgress.fullLogs.length : pipelineProgress.recentLogs.length,
+      totalErrors: pipelineProgress.errors.length,
     };
 
     const jsonString = JSON.stringify(logData, null, 2);
