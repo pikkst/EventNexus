@@ -249,15 +249,25 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         // Load organizer name and payment status
         try {
           const { getUser, checkConnectStatus } = await import('../services/dbService');
+          logger.log('Loading event details:', { eventId: id, organizerId: foundEvent.organizerId });
+          
           const organizer = await getUser(foundEvent.organizerId);
+          logger.log('Organizer loaded:', { 
+            organizerId: foundEvent.organizerId, 
+            organizerEmail: organizer?.email,
+            organizerName: organizer?.name
+          });
+          
           if (organizer) {
             // If organizer is an agency/organization, show company name
             setOrganizerName(organizer.company_name || organizer.name || 'EventNexus User');
             
             // Check if organizer has completed Stripe Connect onboarding
             const connectStatus = await checkConnectStatus(foundEvent.organizerId);
-            logger.log('Organizer Connect Status:', {
+            logger.log('Organizer Connect Status from DB:', {
               organizerId: foundEvent.organizerId,
+                            organizerEmail: organizer?.email,
+                            stripe_connect_account_id: organizer?.stripe_connect_account_id,
               hasAccount: connectStatus?.hasAccount,
               onboardingComplete: connectStatus?.onboardingComplete,
               chargesEnabled: connectStatus?.chargesEnabled,
@@ -266,8 +276,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
             // Allow ticket sales if organizer has a connect account (even if webhook hasn't updated all flags yet)
             // In live mode, Stripe will handle payment rejection if account isn't fully onboarded
             const isReady = connectStatus?.hasAccount || (connectStatus?.onboardingComplete && connectStatus?.chargesEnabled);
-            logger.log('Payment ready status:', isReady);
+            logger.log('Payment ready status:', { isReady, hasAccount: connectStatus?.hasAccount, onboardingComplete: connectStatus?.onboardingComplete, chargesEnabled: connectStatus?.chargesEnabled });
             setOrganizerPaymentReady(isReady || false);
+                      } else {
+                        logger.warn('Organizer not found for ID:', foundEvent.organizerId);
             setCheckingOrganizerStatus(false);
           }
         } catch (err) {
