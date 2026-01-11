@@ -6,7 +6,10 @@
 UPDATE users
 SET 
   stripe_connect_account_id = NULL,
-  stripe_connect_onboarded = false
+  stripe_connect_onboarding_complete = false,
+  stripe_connect_details_submitted = false,
+  stripe_connect_charges_enabled = false,
+  stripe_connect_payouts_enabled = false
 WHERE stripe_connect_account_id IS NOT NULL;
 
 -- Verify results
@@ -14,7 +17,7 @@ SELECT
   id,
   email,
   stripe_connect_account_id,
-  stripe_connect_onboarded
+  stripe_connect_onboarding_complete
 FROM users
 WHERE stripe_connect_account_id IS NOT NULL;
 

@@ -333,7 +333,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         .from('users')
         .update({
           stripe_connect_account_id: null,
-          stripe_connect_onboarded: false
+          stripe_connect_onboarding_complete: false,
+          stripe_connect_details_submitted: false,
+          stripe_connect_charges_enabled: false,
+          stripe_connect_payouts_enabled: false
         })
         .eq('id', user.id);
 
