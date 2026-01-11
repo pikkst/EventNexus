@@ -15,10 +15,10 @@ echo "║  STRIPE SECRETS SETUP FOR EVENTNEXUS                           ║"
 echo "╚════════════════════════════════════════════════════════════════╝"
 echo ""
 echo "⚠️  You need your Stripe API keys from:"
-echo "   https://dashboard.stripe.com/test/apikeys"
+echo "   https://dashboard.stripe.com/apikeys (LIVE) or /test/apikeys (TEST)"
 echo ""
 echo "📋 Required keys:"
-echo "   1. Secret key (sk_test_...)"
+echo "   1. Secret key (sk_live_... or sk_test_...)"
 echo "   2. Webhook signing secret (whsec_...)"
 echo "   3. Price IDs (already have these)"
 echo ""
@@ -30,14 +30,14 @@ read -p "Press ENTER to continue, or CTRL+C to cancel..." dummy
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "1️⃣  STRIPE SECRET KEY (sk_test_...)"
+echo "1️⃣  STRIPE SECRET KEY (sk_live_... or sk_test_...)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-read -sp "Enter your Stripe SECRET key (sk_test_...): " STRIPE_SECRET_KEY
+read -sp "Enter your Stripe SECRET key (sk_live_... or sk_test_...): " STRIPE_SECRET_KEY
 echo ""
 
-if [[ ! "$STRIPE_SECRET_KEY" =~ ^sk_test_ ]]; then
-  echo "❌ Error: Secret key must start with 'sk_test_'"
+if [[ ! "$STRIPE_SECRET_KEY" =~ ^sk_(live|test)_ ]]; then
+  echo "❌ Error: Secret key must start with 'sk_live_' or 'sk_test_'"
   exit 1
 fi
 
@@ -50,7 +50,7 @@ echo "2️⃣  STRIPE WEBHOOK SECRET (whsec_...)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "Get this from:"
-echo "https://dashboard.stripe.com/test/webhooks"
+echo "https://dashboard.stripe.com/webhooks (LIVE) or /test/webhooks (TEST)"
 echo "Endpoint: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/stripe-webhook"
 echo ""
 read -sp "Enter your Stripe WEBHOOK secret (whsec_...): " STRIPE_WEBHOOK_SECRET
@@ -66,23 +66,28 @@ npx supabase secrets set STRIPE_WEBHOOK_SECRET="$STRIPE_WEBHOOK_SECRET" --projec
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "3️⃣  STRIPE PRICE IDs (already configured)"
+echo "3️⃣  STRIPE PRICE IDs"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# These are already set from previous fix
-STRIPE_PRICE_PRO="price_1SgXusJ9WsSrj5gMbJdADsvy"
-STRIPE_PRICE_PREMIUM="price_1SgXwZJ9WsSrj5gMehBiDgWp"
-STRIPE_PRICE_ENTERPRISE="price_1SgXxRJ9WsSrj5gMLhDEB26O"
+read -p "Enter STRIPE_PRICE_PRO (price_...): " STRIPE_PRICE_PRO
+read -p "Enter STRIPE_PRICE_PREMIUM (price_...): " STRIPE_PRICE_PREMIUM
+read -p "Enter STRIPE_PRICE_ENTERPRISE (price_...): " STRIPE_PRICE_ENTERPRISE
 
-echo "✓ Setting STRIPE_PRICE_PRO ($STRIPE_PRICE_PRO)..."
-npx supabase secrets set STRIPE_PRICE_PRO="$STRIPE_PRICE_PRO" --project-ref "$PROJECT_REF"
+if [[ -n "$STRIPE_PRICE_PRO" ]]; then
+  echo "✓ Setting STRIPE_PRICE_PRO ($STRIPE_PRICE_PRO)..."
+  npx supabase secrets set STRIPE_PRICE_PRO="$STRIPE_PRICE_PRO" --project-ref "$PROJECT_REF"
+fi
 
-echo "✓ Setting STRIPE_PRICE_PREMIUM ($STRIPE_PRICE_PREMIUM)..."
-npx supabase secrets set STRIPE_PRICE_PREMIUM="$STRIPE_PRICE_PREMIUM" --project-ref "$PROJECT_REF"
+if [[ -n "$STRIPE_PRICE_PREMIUM" ]]; then
+  echo "✓ Setting STRIPE_PRICE_PREMIUM ($STRIPE_PRICE_PREMIUM)..."
+  npx supabase secrets set STRIPE_PRICE_PREMIUM="$STRIPE_PRICE_PREMIUM" --project-ref "$PROJECT_REF"
+fi
 
-echo "✓ Setting STRIPE_PRICE_ENTERPRISE ($STRIPE_PRICE_ENTERPRISE)..."
-npx supabase secrets set STRIPE_PRICE_ENTERPRISE="$STRIPE_PRICE_ENTERPRISE" --project-ref "$PROJECT_REF"
+if [[ -n "$STRIPE_PRICE_ENTERPRISE" ]]; then
+  echo "✓ Setting STRIPE_PRICE_ENTERPRISE ($STRIPE_PRICE_ENTERPRISE)..."
+  npx supabase secrets set STRIPE_PRICE_ENTERPRISE="$STRIPE_PRICE_ENTERPRISE" --project-ref "$PROJECT_REF"
+fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -102,11 +107,11 @@ echo "║  ✅ ALL STRIPE SECRETS CONFIGURED!                             ║"
 echo "╚════════════════════════════════════════════════════════════════╝"
 echo ""
 echo "📊 Summary:"
-echo "  ✓ STRIPE_SECRET_KEY          (sk_test_...)"
+echo "  ✓ STRIPE_SECRET_KEY          (sk_live_/sk_test_)"
 echo "  ✓ STRIPE_WEBHOOK_SECRET      (whsec_...)"
-echo "  ✓ STRIPE_PRICE_PRO           ($STRIPE_PRICE_PRO)"
-echo "  ✓ STRIPE_PRICE_PREMIUM       ($STRIPE_PRICE_PREMIUM)"
-echo "  ✓ STRIPE_PRICE_ENTERPRISE    ($STRIPE_PRICE_ENTERPRISE)"
+echo "  ✓ STRIPE_PRICE_PRO           (${STRIPE_PRICE_PRO:-not set})"
+echo "  ✓ STRIPE_PRICE_PREMIUM       (${STRIPE_PRICE_PREMIUM:-not set})"
+echo "  ✓ STRIPE_PRICE_ENTERPRISE    (${STRIPE_PRICE_ENTERPRISE:-not set})"
 echo ""
 echo "🚀 Edge Functions redeployed:"
 echo "  ✓ create-checkout"

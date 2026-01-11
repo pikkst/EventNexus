@@ -4,39 +4,70 @@
 
 The webhook is needed to automatically update user subscriptions after payment.
 
-### Step 1: Create Webhook Endpoint
+### Step 1: Create Webhook Endpoint #1 (Your Account)
 
-1. Go to https://dashboard.stripe.com/test/webhooks
+**Important:** Stripe only allows selecting ONE "Events from" option per webhook. You need TWO webhooks pointing to the same endpoint.
+
+1. Go to https://dashboard.stripe.com/webhooks (use /test/webhooks in Test mode)
 2. Click **"Add endpoint"**
 3. **Endpoint URL:** `https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/stripe-webhook`
-4. **Description:** EventNexus Payment Webhook
+4. **Description:** EventNexus Platform Events
+5. **Events from:** Select **"Your account"** (platform payments)
 
-### Step 2: Select Events to Listen
+### Step 2: Select Events for Webhook #1 (Your Account)
 
-Add these events (click "Select events" → search for each):
+Subscribe to these events:
 
-**For Subscriptions:**
+**Subscriptions:**
 - `checkout.session.completed`
+- `invoice.payment_succeeded`
+- `invoice.payment_failed`
 - `customer.subscription.created`
 - `customer.subscription.updated`
 - `customer.subscription.deleted`
 
-**For Tickets:**
+**Ticket Payments:**
 - `payment_intent.succeeded`
+- `payment_intent.payment_failed`
+- `checkout.session.expired`
 - `charge.refunded`
+- `refund.updated`
 
-**For Connect Payouts:**
-- `account.updated`
+**Transfers & Disputes:**
+- `transfer.created`
+- `transfer.updated`
+- `transfer.reversed`
+- `charge.dispute.created`
+- `charge.dispute.closed`
 
-### Step 3: Get Webhook Signing Secret
+### Step 3: Create Webhook Endpoint #2 (Connected Accounts)
 
-After creating the webhook:
-1. Click on the webhook you just created
-2. Copy the **Signing secret** (starts with `whsec_...`)
-3. Run this command:
+1. Click **"Add endpoint"** again
+2. **Endpoint URL:** `https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/stripe-webhook` (same URL!)
+3. **Description:** EventNexus Connected Accounts
+4. **Events from:** Select **"Connected and v2 accounts"** (organizer Connect accounts)
+
+### Step 4: Select Events for Webhook #2 (Connected Accounts)
+
+Subscribe to:
+- `account.updated` (critical for Connect onboarding status)
+- `account.external_account.created`
+- `account.external_account.updated`
+
+### Step 5: Get Webhook Signing Secrets
+
+You now have TWO webhooks with **different** signing secrets. Set both in Supabase:
+
+1. Copy the signing secret from webhook #1 "EventNexus Platform Events"
+2. Copy the signing secret from webhook #2 "EventNexus Connected Accounts"
+3. Set both in Supabase:
 
 ```bash
-npx supabase secrets set STRIPE_WEBHOOK_SECRET="whsec_YOUR_SECRET_HERE" --project-ref anlivujgkjmajkcgbaxw
+# Platform Events secret (Your account)
+npx supabase secrets set STRIPE_WEBHOOK_SECRET="whsec_YOUR_PLATFORM_SECRET" --project-ref anlivujgkjmajkcgbaxw
+
+# Connected Accounts secret
+npx supabase secrets set STRIPE_WEBHOOK_SECRET_CONNECTED="whsec_YOUR_CONNECTED_SECRET" --project-ref anlivujgkjmajkcgbaxw
 ```
 
 4. Redeploy the webhook function:
@@ -45,15 +76,21 @@ npx supabase secrets set STRIPE_WEBHOOK_SECRET="whsec_YOUR_SECRET_HERE" --projec
 npx supabase functions deploy stripe-webhook --no-verify-jwt --project-ref anlivujgkjmajkcgbaxw
 ```
 
-### Step 4: Test the Webhook
+**How it works:** The webhook handler will try both secrets when verifying incoming events. This allows one endpoint to handle webhooks from both "Your account" and "Connected accounts".
 
-1. In Stripe Dashboard, go to your webhook
+### Step 6: Test Both Webhooks
+
+1. In Stripe Dashboard, go to webhook #1 (Your account)
 2. Click **"Send test webhook"**
 3. Select `checkout.session.completed` event
 4. Click **"Send test webhook"**
-5. Check the webhook logs - should show 200 OK
+5. Check logs - should show 200 OK
 
-### Step 5: Fix Existing Subscription (if needed)
+6. Repeat for webhook #2 (Connected accounts):
+7. Select `account.updated` event
+8. Should also show 200 OK
+
+### Step 7: Fix Existing Subscription (if needed)
 
 If you already paid but your subscription wasn't updated, run this in Supabase SQL Editor:
 
@@ -77,7 +114,8 @@ https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/stripe-webhook
 ## Current Configuration Status
 
 - ✅ Webhook function deployed
-- ❌ Webhook endpoint not configured in Stripe
+- ❌ Webhook #1 (Your account) not configured in Stripe
+- ❌ Webhook #2 (Connected accounts) not configured in Stripe
 - ❌ Events not selected
 
 ## After Setup

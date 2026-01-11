@@ -2347,32 +2347,25 @@ const DiagnosticModal: React.FC<{
           <div className="p-8 space-y-6 max-h-[calc(90vh-300px)] overflow-y-auto">
             {/* Warning Box */}
             <div className="bg-red-500/10 border-2 border-red-500/30 rounded-2xl p-6 space-y-3">
-              <h3 className="font-black text-red-500 text-sm uppercase tracking-widest flex items-center gap-2">
-                <AlertOctagon size={18} /> Critical Changes
+              <h3 className="font-black text-emerald-500 text-sm uppercase tracking-widest flex items-center gap-2">
+                <CheckCircle size={18} /> ✅ Production Status
               </h3>
               <ul className="space-y-2 text-sm text-slate-300">
-                <li className="flex gap-2"><span className="text-red-500 font-black">⚠️</span> <span>Stripe will switch from <strong>SANDBOX</strong> to <strong>LIVE</strong> mode</span></li>
-                <li className="flex gap-2"><span className="text-red-500 font-black">⚠️</span> <span>All <strong>beta tester features</strong> will be permanently disabled</span></li>
-                <li className="flex gap-2"><span className="text-red-500 font-black">⚠️</span> <span><strong>Development APIs</strong> will be replaced with production endpoints</span></li>
-                <li className="flex gap-2"><span className="text-red-500 font-black">⚠️</span> <span><strong>All active beta invitations</strong> will be archived</span></li>
-                <li className="flex gap-2"><span className="text-red-500 font-black">⚠️</span> <span>Production <strong>safeguards</strong> will be activated (2FA, audit logging, backups)</span></li>
+                <li className="flex gap-2"><span className="text-emerald-500 font-black">✓</span> <span>Stripe is in <strong>LIVE</strong> mode - real payments active</span></li>
+                <li className="flex gap-2"><span className="text-emerald-500 font-black">✓</span> <span><strong>All production APIs</strong> are deployed and operational</span></li>
+                <li className="flex gap-2"><span className="text-emerald-500 font-black">✓</span> <span>Platform operates with <strong>full security protocols</strong> enabled</span></li>
+                <li className="flex gap-2"><span className="text-emerald-500 font-black">✓</span> <span><strong>Audit logging & monitoring</strong> are active</span></li>
+                <li className="flex gap-2"><span className="text-emerald-500 font-black">✓</span> <span>System backups are running on <strong>schedule</strong></span></li>
               </ul>
             </div>
 
             {/* Confirmation Input */}
             <div className="space-y-3">
               <label className="block text-sm font-black text-slate-400 uppercase tracking-widest">
-                Type to confirm transition:
+                System Status:
               </label>
-              <input
-                type="text"
-                value={transitionConfirmation}
-                onChange={(e) => setTransitionConfirmation(e.target.value.toUpperCase())}
-                placeholder="TRANSITION_TO_PRODUCTION"
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-50 font-mono text-sm placeholder-slate-600 focus:outline-none focus:border-red-500/50"
-              />
-              <p className="text-[10px] text-slate-500 font-mono">
-                Match case-sensitive text exactly: <span className="text-red-500 font-black">TRANSITION_TO_PRODUCTION</span>
+              <p className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-50 font-mono text-sm">
+                ✓ Platform is LIVE and operational
               </p>
             </div>
 
@@ -2382,15 +2375,15 @@ const DiagnosticModal: React.FC<{
               <div className="grid grid-cols-2 gap-4 text-xs">
                 <div>
                   <p className="text-slate-500 font-bold mb-1">Environment</p>
-                  <p className="text-slate-300 font-mono bg-slate-950 px-3 py-2 rounded">Development</p>
+                  <p className="text-emerald-500 font-mono font-black bg-slate-950 px-3 py-2 rounded">PRODUCTION</p>
                 </div>
                 <div>
                   <p className="text-slate-500 font-bold mb-1">Stripe Mode</p>
-                  <p className="text-amber-500 font-mono font-black bg-slate-950 px-3 py-2 rounded">TEST (Sandbox)</p>
+                  <p className="text-emerald-500 font-mono font-black bg-slate-950 px-3 py-2 rounded">LIVE (Real Payments)</p>
                 </div>
                 <div>
-                  <p className="text-slate-500 font-bold mb-1">Beta Features</p>
-                  <p className="text-emerald-500 font-mono font-black bg-slate-950 px-3 py-2 rounded">ENABLED</p>
+                  <p className="text-slate-500 font-bold mb-1">Security</p>
+                  <p className="text-emerald-500 font-mono font-black bg-slate-950 px-3 py-2 rounded">ACTIVE</p>
                 </div>
                 <div>
                   <p className="text-slate-500 font-bold mb-1">API Base URL</p>

@@ -28,6 +28,20 @@ const COMMISSION_RATES: Record<string, number> = {
   enterprise: 0.015, // 1.5%
 };
 
+// Build a safe, short statement descriptor suffix
+function buildDescriptorSuffix(source: string, fallback: string = 'EVENT'): string {
+  try {
+    const normalized = source.normalize('NFKD');
+    const lettersDigits = normalized.replace(/[^A-Za-z0-9 ]+/g, '');
+    const compact = lettersDigits.replace(/\s+/g, '');
+    const upper = compact.toUpperCase();
+    const trimmed = upper.substring(0, 10); // keep short; combined prefix+suffix must fit
+    return trimmed.length >= 5 ? trimmed : fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+
 serve(async (req: Request) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -100,7 +114,8 @@ serve(async (req: Request) => {
     let session;
 
     // Check if this is a subscription or ticket purchase
-    if (tier && priceId) {
+    // Subscription checkout: tier provided, priceId optional (prefer env STRIPE_PRICE_*)
+    if (tier) {
       // Subscription checkout
       console.log(`Creating subscription checkout for user ${userId}, tier: ${tier}`);
       
@@ -205,6 +220,9 @@ serve(async (req: Request) => {
         ],
         success_url: successUrl + (successUrl.includes('?') ? '&' : '?') + 'session_id={CHECKOUT_SESSION_ID}',
         cancel_url: cancelUrl,
+        payment_intent_data: {
+          statement_descriptor_suffix: buildDescriptorSuffix(eventName || 'Event', 'EVENT')
+        },
         metadata: {
           user_id: userId,
           event_id: eventId,
