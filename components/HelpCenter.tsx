@@ -31,6 +31,14 @@ const HelpCenter: React.FC = () => {
     {
       q: "How does the AI translation work?",
       a: "EventNexus uses Gemini AI to automatically translate your event name and description into over 12 languages. This happens automatically when you publish, ensuring global reach without extra work."
+    },
+    {
+      q: "Why does my first payout have a waiting period?",
+      a: "Stripe requires a mandatory 7-14 day waiting period for your first payout as part of their risk mitigation process. This cannot be waived under any circumstances. Any changes to your payout method or schedule during this time will take effect after the waiting period ends. You can check your estimated payout date in your Stripe Dashboard."
+    },
+    {
+      q: "When will I receive my payout after an event?",
+      a: "Payouts are processed automatically 2 days after your event completes. This allows time for refund requests and ensures secure transactions. Your first payout will include the 7-14 day Stripe waiting period. After that, subsequent payouts follow the standard 2-day schedule from Supabase."
     }
   ];
 

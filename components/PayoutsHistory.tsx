@@ -407,6 +407,24 @@ export const PayoutsHistory: React.FC<PayoutsHistoryProps> = ({ userId, user }) 
         )}
       </div>
 
+      {/* First Payout Waiting Period Info */}
+      {stats.totalEarned === 0 && stats.pendingAmount > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <Clock className="w-5 h-5 text-amber-600 mt-0.5" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-medium text-amber-900">First Payout Waiting Period</h4>
+              <p className="text-sm text-amber-800 mt-1">
+                Your first payout has a mandatory 7-14 day waiting period for risk mitigation. This is a Stripe requirement and cannot be waived. 
+                Any changes to your payout method during this time will take effect after the waiting period ends. You can check your estimated payout date in your Stripe Dashboard.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Info Box */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start space-x-3">
