@@ -321,6 +321,57 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
     }
   };
 
+  const handleDisconnectStripe = async () => {
+    if (!confirm('⚠️ Disconnect Stripe Connect account?\n\nThis will:\n- Remove your current payout setup\n- Require re-onboarding to accept payments\n- Not affect past payouts\n\nYou can reconnect anytime.')) {
+      return;
+    }
+
+    setIsConnectLoading(true);
+    try {
+      // Clear connect account from database
+      const { error } = await supabase
+        .from('users')
+        .update({
+          stripe_connect_account_id: null,
+          stripe_connect_onboarded: false
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setConnectStatus({
+        hasAccount: false,
+        onboardingComplete: false,
+        chargesEnabled: false,
+        payoutsEnabled: false
+      });
+
+      alert('✅ Stripe Connect disconnected successfully. You can reconnect anytime to accept payments.');
+      
+      // Refresh user data
+      if (onUserUpdate) {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData.user) {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userData.user.id)
+            .single();
+          
+          if (profile) {
+            onUserUpdate(profile);
+          }
+        }
+      }
+    } catch (error) {
+      logger.error('Error disconnecting Stripe:', error);
+      alert('Failed to disconnect. Please try again.');
+    } finally {
+      setIsConnectLoading(false);
+    }
+  };
+
   const handleOpenStripeDashboard = async () => {
     setIsConnectLoading(true);
     try {
@@ -1215,24 +1266,38 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                   </button>
 
                   {/* Stripe Connect Payout Dashboard */}
-                  <button
-                    onClick={handleOpenStripeDashboard}
-                    disabled={isConnectLoading}
-                    className="w-full flex items-center justify-between p-4 rounded-2xl bg-emerald-600/10 border border-emerald-500/30 hover:bg-emerald-600/20 transition-all group disabled:opacity-50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="w-5 h-5 text-emerald-400" />
-                      <div className="text-left">
-                        <span className="font-bold text-sm text-white block">
-                          {connectStatus?.onboardingComplete ? 'Manage Payouts' : 'Set Up Payouts'}
-                        </span>
-                        {connectStatus?.onboardingComplete && (
-                          <span className="text-[10px] text-emerald-400 font-medium">Bank account & payout settings</span>
-                        )}
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleOpenStripeDashboard}
+                      disabled={isConnectLoading}
+                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-emerald-600/10 border border-emerald-500/30 hover:bg-emerald-600/20 transition-all group disabled:opacity-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <DollarSign className="w-5 h-5 text-emerald-400" />
+                        <div className="text-left">
+                          <span className="font-bold text-sm text-white block">
+                            {connectStatus?.onboardingComplete ? 'Manage Payouts' : 'Set Up Payouts'}
+                          </span>
+                          {connectStatus?.onboardingComplete && (
+                            <span className="text-[10px] text-emerald-400 font-medium">Bank account & payout settings</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <ExternalLink size={16} className="text-emerald-600 group-hover:translate-x-1 transition-transform" />
-                  </button>
+                      <ExternalLink size={16} className="text-emerald-600 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                    
+                    {/* Disconnect button - only show if connected */}
+                    {connectStatus?.hasAccount && (
+                      <button
+                        onClick={handleDisconnectStripe}
+                        disabled={isConnectLoading}
+                        className="w-full flex items-center justify-center gap-2 p-2 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:bg-red-600/10 hover:border-red-500/30 transition-all group disabled:opacity-50 text-xs"
+                      >
+                        <X size={14} className="text-slate-400 group-hover:text-red-400" />
+                        <span className="text-slate-400 group-hover:text-red-400 font-medium">Disconnect Stripe</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
