@@ -447,11 +447,6 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       return;
     }
 
-    // Check if organizer has completed payment setup
-    if (!organizerPaymentReady) {
-      alert('⚠️ Ticket sales are not yet available for this event.\n\nThe event organizer needs to complete their payment setup first. Please check back later or contact the organizer.');
-      return;
-    }
 
     const quantity = ticketQuantities[template.id] || 0;
     
@@ -488,7 +483,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       }
     } catch (error) {
       console.error('Purchase failed:', error);
-      alert('Failed to start checkout. Please try again or contact support.');
+      alert('Failed to start checkout. If the organizer’s payout setup is incomplete, Stripe may block payment. Please try again later or contact the organizer.');
       setIsPurchasing(false);
     }
   };
@@ -873,7 +868,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                           
                           <button 
                             onClick={() => handlePurchaseTicket(template)}
-                            disabled={isPurchasing || quantity === 0 || !organizerPaymentReady || eventCompleted}
+                            disabled={isPurchasing || quantity === 0 || eventCompleted}
                             className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
                               event.isFeatured
                                 ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600'
@@ -882,9 +877,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                             aria-label={
                               eventCompleted
                                 ? 'Event has ended, tickets unavailable'
-                                : !organizerPaymentReady
-                                  ? 'Tickets not available for purchase'
-                                  : quantity === 0
+                                : quantity === 0
                                     ? 'Select ticket quantity to purchase'
                                     : isPurchasing
                                       ? 'Processing payment'
@@ -893,9 +886,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                           >
                             {eventCompleted
                               ? 'Event Ended'
-                              : !organizerPaymentReady 
-                                ? 'Not Available' 
-                                : quantity === 0 
+                              : quantity === 0 
                                   ? 'Select quantity' 
                                   : isPurchasing 
                                     ? 'Processing...' 
