@@ -104,7 +104,7 @@ serve(async (req: Request) => {
       // Calculate total ticket sales for this event
       const { data: tickets, error: ticketsError } = await supabase
         .from('tickets')
-        .select('id, price, status, payment_status')
+        .select('id, price_paid, status, payment_status')
         .eq('event_id', event.id)
         .eq('payment_status', 'paid')
         .neq('status', 'cancelled')
@@ -136,7 +136,7 @@ serve(async (req: Request) => {
       }
 
       // Calculate revenue
-      const totalRevenue = tickets.reduce((sum, t) => sum + (t.price || 0), 0);
+      const totalRevenue = tickets.reduce((sum, t: any) => sum + (t.price_paid || 0), 0);
       const grossAmountCents = Math.round(totalRevenue * 100);
 
       console.log(`Ticket sales: ${tickets.length} tickets, €${totalRevenue.toFixed(2)}`);
