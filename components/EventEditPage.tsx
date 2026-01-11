@@ -222,38 +222,41 @@ const EventEditPage: React.FC<EventEditPageProps> = ({ user, onOpenAuth }) => {
 
         {user && (
           <div className="mt-12 space-y-6">
-            {/* Mobile apps CTA */}
+            {/* Mobile apps CTA (temporarily disabled while apps are fixed) */}
             <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-3">
                 <Smartphone className="w-6 h-6 text-indigo-400" />
                 <div>
                   <h3 className="text-xl font-bold">Mobile Scanner App</h3>
-                  <p className="text-sm text-slate-400">Download the EventNexus Scanner app and link it to this event.</p>
+                  <p className="text-sm text-slate-400">Mobile apps are temporarily unavailable while we resolve issues.</p>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <a
-                  href="/downloads/EventNexusScanner.apk"
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-white font-semibold transition-colors"
+                <button
+                  type="button"
+                  disabled
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white font-semibold rounded-xl opacity-60 cursor-not-allowed"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Download Android APK
-                </a>
-                <a
-                  href="/mobile"
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-white font-semibold transition-colors"
+                  Android download paused
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white font-semibold rounded-xl opacity-60 cursor-not-allowed"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  iOS Install Guide
-                </a>
-                <a
-                  href="/mobile"
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-white font-semibold transition-colors"
+                  iOS guide unavailable
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white font-semibold rounded-xl opacity-60 cursor-not-allowed"
                 >
                   <QrCode className="w-4 h-4" />
-                  How scanner codes work
-                </a>
+                  Scanner codes temporarily paused
+                </button>
               </div>
             </div>
 

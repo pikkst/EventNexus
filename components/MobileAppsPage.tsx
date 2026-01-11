@@ -12,7 +12,8 @@ import {
   Camera,
   TrendingUp,
   Users,
-  ChevronRight
+  ChevronRight,
+  AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -23,6 +24,8 @@ import { Link } from 'react-router-dom';
 const MobileAppsPage: React.FC = () => {
   const [platform, setPlatform] = useState<'ios' | 'android'>('android');
   const [selectedApp, setSelectedApp] = useState<'scanner' | 'livemap'>('scanner');
+  const appsDisabled = true;
+  const appsDisabledMessage = 'Mobile apps are temporarily unavailable while we resolve issues.';
 
   const features = {
     scanner: [
@@ -129,16 +132,21 @@ const MobileAppsPage: React.FC = () => {
   };
 
   const handleDownload = (platform: 'ios' | 'android') => {
+    if (appsDisabled) {
+      alert(appsDisabledMessage);
+      return;
+    }
+
     if (platform === 'android') {
-      // Direct APK download
-          const appName = selectedApp === 'scanner' ? 'EventNexusScanner' : 'EventNexusLiveMap';
-          window.location.href = `/downloads/${appName}.apk`;
+      const appName = selectedApp === 'scanner' ? 'EventNexusScanner' : 'EventNexusLiveMap';
+      window.location.href = `/downloads/${appName}.apk`;
     } else {
-      // Link to TestFlight or App Store
-          const appTitle = selectedApp === 'scanner' ? 'Scanner' : 'Live Map';
-          alert(`🍎 iOS ${appTitle} App\n\nThe iOS version is coming soon!\n\nContact us at huntersest@gmail.com for TestFlight beta access.`);
+      const appTitle = selectedApp === 'scanner' ? 'Scanner' : 'Live Map';
+      alert(`🍎 iOS ${appTitle} App\n\nThe iOS version is coming soon!\n\nContact us at huntersest@gmail.com for TestFlight beta access.`);
     }
   };
+
+  const disabledButtonStyles = appsDisabled ? 'opacity-60 cursor-not-allowed pointer-events-none' : '';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
@@ -207,22 +215,33 @@ const MobileAppsPage: React.FC = () => {
               </>
             )}
 
+            <div className="inline-flex items-center gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-100 text-sm mb-4">
+              <AlertCircle className="w-5 h-5" />
+              <span>{appsDisabledMessage}</span>
+            </div>
+
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
               <button
+                type="button"
                 onClick={() => handleDownload('android')}
-                className="flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-500/20 transition-all group"
+                disabled={appsDisabled}
+                aria-disabled={appsDisabled}
+                className={`flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-500/20 transition-all group ${disabledButtonStyles}`}
               >
                 <PlayCircle className="w-6 h-6" />
-                Download for Android
+                Android download paused
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               
               <button
+                type="button"
                 onClick={() => handleDownload('ios')}
-                className="flex items-center gap-3 px-8 py-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl font-bold text-lg transition-all group"
+                disabled={appsDisabled}
+                aria-disabled={appsDisabled}
+                className={`flex items-center gap-3 px-8 py-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl font-bold text-lg transition-all group ${disabledButtonStyles}`}
               >
                 <Apple className="w-6 h-6" />
-                Download for iOS
+                iOS guide unavailable
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
@@ -416,11 +435,14 @@ const MobileAppsPage: React.FC = () => {
               </ul>
 
               <button
+                type="button"
                 onClick={() => handleDownload('ios')}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-semibold transition-all"
+                disabled={appsDisabled}
+                aria-disabled={appsDisabled}
+                className={`flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-semibold transition-all ${disabledButtonStyles}`}
               >
                 <Apple className="w-5 h-5" />
-                Request TestFlight Access
+                TestFlight access paused
               </button>
             </div>
 
@@ -451,11 +473,14 @@ const MobileAppsPage: React.FC = () => {
               </ul>
 
               <button
+                type="button"
                 onClick={() => handleDownload('android')}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-semibold transition-all"
+                disabled={appsDisabled}
+                aria-disabled={appsDisabled}
+                className={`flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-semibold transition-all ${disabledButtonStyles}`}
               >
                 <Download className="w-5 h-5" />
-                Download for Android
+                Android download paused
               </button>
             </div>
           </div>
@@ -582,29 +607,33 @@ const MobileAppsPage: React.FC = () => {
         <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-3xl p-12 text-center">
           <Users className="w-16 h-16 text-white mx-auto mb-6" />
           <h2 className="text-3xl font-bold text-white mb-4">
-            {selectedApp === 'scanner' ? 'Ready to Start Scanning?' : 'Ready to Discover Events?'}
+            Mobile apps temporarily offline
           </h2>
           <p className="text-xl text-indigo-100 mb-8">
-            {selectedApp === 'scanner'
-              ? 'Download the app now and start checking in attendees in minutes'
-              : 'Download the app now and start exploring events near you'}
+            We are fixing issues with both Android and iOS apps. Downloads are paused until the update is ready.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
+              type="button"
               onClick={() => handleDownload('android')}
-              className="flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 rounded-2xl font-bold hover:bg-indigo-50 transition-all"
+              disabled={appsDisabled}
+              aria-disabled={appsDisabled}
+              className={`flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 rounded-2xl font-bold hover:bg-indigo-50 transition-all ${disabledButtonStyles}`}
             >
               <PlayCircle className="w-5 h-5" />
-              Get Android App
+              Android download paused
             </button>
             
             <button
+              type="button"
               onClick={() => handleDownload('ios')}
-              className="flex items-center gap-2 px-8 py-4 bg-indigo-800 text-white rounded-2xl font-bold hover:bg-indigo-900 transition-all"
+              disabled={appsDisabled}
+              aria-disabled={appsDisabled}
+              className={`flex items-center gap-2 px-8 py-4 bg-indigo-800 text-white rounded-2xl font-bold hover:bg-indigo-900 transition-all ${disabledButtonStyles}`}
             >
               <Apple className="w-5 h-5" />
-              Get iOS App
+              iOS guide unavailable
             </button>
           </div>
 
