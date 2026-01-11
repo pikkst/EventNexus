@@ -212,27 +212,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         </div>
       </section>
 
-      {/* Beta Testing Banner */}
-      <section className="px-4">
-        <a href="/beta" className="block">
-          <div className="max-w-7xl mx-auto bg-gradient-to-r from-purple-900/50 to-indigo-900/50 border border-purple-500/50 rounded-[32px] p-6 md:p-8 hover:border-purple-400 transition-all shadow-2xl">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex-1">
-                <div className="inline-flex items-center gap-2 bg-purple-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white mb-3">
-                  🚀 Join the Beta
-                </div>
-                <h2 className="text-2xl md:text-3xl font-bold mb-2">Become a Beta Tester</h2>
-                <p className="text-slate-300">Get 1000 credits, early access to features, and help shape EventNexus</p>
-              </div>
-              <div className="flex items-center gap-3 whitespace-nowrap">
-                <span className="text-sm font-semibold text-purple-300">Limited spots available</span>
-                <ArrowRight size={20} className="text-purple-400" />
-              </div>
-            </div>
-          </div>
-        </a>
-      </section>
-
       {/* Active Growth Campaign Banner */}
       {activeBanner && !user && (
         <section className="px-4">
