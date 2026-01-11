@@ -254,7 +254,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
             
             // Check if organizer has completed Stripe Connect onboarding
             const connectStatus = await checkConnectStatus(foundEvent.organizerId);
-            const isReady = connectStatus?.onboardingComplete && connectStatus?.chargesEnabled;
+            // Allow ticket sales if organizer has a connect account (even if webhook hasn't updated all flags yet)
+            // In live mode, Stripe will handle payment rejection if account isn't fully onboarded
+            const isReady = connectStatus?.hasAccount || (connectStatus?.onboardingComplete && connectStatus?.chargesEnabled);
             setOrganizerPaymentReady(isReady || false);
             setCheckingOrganizerStatus(false);
           }
