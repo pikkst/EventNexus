@@ -34,6 +34,13 @@ import { FEATURE_UNLOCK_COSTS } from '../services/featureUnlockService';
 import { User, EventNexusEvent } from '../types';
 import { generateCreateEventSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 
+// Simple logger for debugging
+const logger = {
+  log: (...args: any[]) => console.log('[EventCreation]', ...args),
+  warn: (...args: any[]) => console.warn('[EventCreation]', ...args),
+  error: (...args: any[]) => console.error('[EventCreation]', ...args)
+};
+
 // Fix Leaflet default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
