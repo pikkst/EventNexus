@@ -18,6 +18,7 @@ import {
   BarChart3,
   UserPlus,
   UserMinus,
+  RotateCw,
   Star,
   Edit3
 } from 'lucide-react';
@@ -61,6 +62,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [organizerPaymentReady, setOrganizerPaymentReady] = useState(false);
   const [checkingOrganizerStatus, setCheckingOrganizerStatus] = useState(true);
   const [eventCompleted, setEventCompleted] = useState(false);
+  const [isRefreshingOrganizerStatus, setIsRefreshingOrganizerStatus] = useState(false);
   const [translatedName, setTranslatedName] = useState<string | null>(null);
   const [translatedAboutText, setTranslatedAboutText] = useState<string | null>(null);
   const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
@@ -254,9 +256,17 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
             
             // Check if organizer has completed Stripe Connect onboarding
             const connectStatus = await checkConnectStatus(foundEvent.organizerId);
+            logger.log('Organizer Connect Status:', {
+              organizerId: foundEvent.organizerId,
+              hasAccount: connectStatus?.hasAccount,
+              onboardingComplete: connectStatus?.onboardingComplete,
+              chargesEnabled: connectStatus?.chargesEnabled,
+              payoutsEnabled: connectStatus?.payoutsEnabled
+            });
             // Allow ticket sales if organizer has a connect account (even if webhook hasn't updated all flags yet)
             // In live mode, Stripe will handle payment rejection if account isn't fully onboarded
             const isReady = connectStatus?.hasAccount || (connectStatus?.onboardingComplete && connectStatus?.chargesEnabled);
+            logger.log('Payment ready status:', isReady);
             setOrganizerPaymentReady(isReady || false);
             setCheckingOrganizerStatus(false);
           }
@@ -277,6 +287,28 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       setIsLoading(false);
     }
   }, [id, user]);
+
+  // Refresh organizer payment status specifically
+  const refreshOrganizerStatus = React.useCallback(async () => {
+    if (!event) return;
+    setIsRefreshingOrganizerStatus(true);
+    try {
+      const { checkConnectStatus } = await import('../services/dbService');
+      const connectStatus = await checkConnectStatus(event.organizerId);
+      logger.log('Refreshed organizer Connect status:', {
+        organizerId: event.organizerId,
+        hasAccount: connectStatus?.hasAccount,
+        onboardingComplete: connectStatus?.onboardingComplete,
+        chargesEnabled: connectStatus?.chargesEnabled
+      });
+      const isReady = connectStatus?.hasAccount || (connectStatus?.onboardingComplete && connectStatus?.chargesEnabled);
+      setOrganizerPaymentReady(isReady || false);
+    } catch (err) {
+      logger.error('Error refreshing organizer status:', err);
+    } finally {
+      setIsRefreshingOrganizerStatus(false);
+    }
+  }, [event]);
 
   useEffect(() => {
     loadEvent();
@@ -750,9 +782,17 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                         </div>
                         <div className="flex-1">
                           <p className="font-bold text-amber-400 text-sm mb-1">Ticket Sales Not Available Yet</p>
-                          <p className="text-xs text-amber-300/80 leading-relaxed">
+                          <p className="text-xs text-amber-300/80 leading-relaxed mb-3">
                             The event organizer is still completing their payment setup. Tickets will be available for purchase once the setup is complete. Please check back later or contact the organizer for updates.
                           </p>
+                          <button
+                            onClick={refreshOrganizerStatus}
+                            disabled={isRefreshingOrganizerStatus}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-semibold transition-all disabled:opacity-50"
+                          >
+                            <RotateCw size={14} className={isRefreshingOrganizerStatus ? 'animate-spin' : ''} />
+                            Refresh Status
+                          </button>
                         </div>
                       </div>
                     </div>
