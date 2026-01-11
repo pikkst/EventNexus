@@ -2,7 +2,9 @@ import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import Stripe from 'https://esm.sh/stripe@12.17.0?dts';
 
+// Support multiple webhook secrets (Platform + Connected accounts)
 const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET') || '';
+const STRIPE_WEBHOOK_SECRET_CONNECTED = Deno.env.get('STRIPE_WEBHOOK_SECRET_CONNECTED') || '';
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY') || '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -62,7 +64,7 @@ serve(async (req: Request) => {
       method: req.method
     });
 
-    if (!stripe || !STRIPE_WEBHOOK_SECRET) {
+    if (!stripe || (!STRIPE_WEBHOOK_SECRET && !STRIPE_WEBHOOK_SECRET_CONNECTED)) {
       console.error('Stripe webhook not configured: missing secret key or signing secret');
       return new Response('Stripe webhook not configured', { status: 500, headers: corsHeaders });
     }
@@ -73,10 +75,32 @@ serve(async (req: Request) => {
     }
 
     let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
-    } catch (err) {
-      console.error('Stripe webhook verification failed:', err instanceof Error ? err.message : err);
+    let verificationError = null;
+    
+    // Try primary webhook secret first (Platform Events)
+    if (STRIPE_WEBHOOK_SECRET) {
+      try {
+        event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
+        console.log('✓ Verified with primary secret (Platform Events)');
+      } catch (err) {
+        verificationError = err;
+      }
+    }
+    
+    // If primary failed, try Connected accounts secret
+    if (!event && STRIPE_WEBHOOK_SECRET_CONNECTED) {
+      try {
+        event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET_CONNECTED);
+        console.log('✓ Verified with Connected accounts secret');
+        verificationError = null; // Clear error if successful
+      } catch (err) {
+        verificationError = err;
+      }
+    }
+    
+    // If both failed, return error
+    if (!event) {
+      console.error('Stripe webhook verification failed with both secrets:', verificationError instanceof Error ? verificationError.message : verificationError);
       return new Response('Invalid signature', { status: 400, headers: corsHeaders });
     }
 
@@ -226,6 +250,40 @@ serve(async (req: Request) => {
           const amount_cents = session.amount_total; // Already in cents
           const amount = amount_cents / 100; // Convert to euros for logging
           
+          // Check if user is admin - admins should not be charged
+          const { data: user } = await supabase
+            .from('users')
+            .select('id, role')
+            .eq('id', metadata.user_id)
+            .single();
+          
+          if (user?.role === 'admin') {
+            console.warn(`⚠️ Admin user ${metadata.user_id} attempted subscription payment - blocking charge. Tier: ${metadata.tier}`);
+            
+            // Still update subscription tier (admins get full access)
+            await supabase
+              .from('users')
+              .update({
+                subscription_tier: metadata.tier,
+                subscription_status: 'active',
+                stripe_customer_id: session.customer,
+                stripe_subscription_id: session.subscription
+              })
+              .eq('id', metadata.user_id);
+            
+            // Send notification that admin has full access
+            await supabase.from('notifications').insert({
+              user_id: metadata.user_id,
+              type: 'system',
+              title: 'Admin Access Active',
+              message: `You have admin access with ${metadata.tier} tier features. No payment charged.`,
+              sender_name: 'EventNexus',
+              isRead: false,
+            });
+            
+            break;
+          }
+          
           // Update user subscription status
           await supabase
             .from('users')
@@ -312,29 +370,35 @@ serve(async (req: Request) => {
         break;
       }
 
-      case 'transfer.paid': {
+      case 'transfer.updated': {
         const transfer = event.data.object;
-        console.log('Transfer paid:', transfer.id);
+        console.log('Transfer updated:', transfer.id, 'reversed:', transfer.reversed);
         
-        // Update payout record if exists
-        await supabase
-          .from('payouts')
-          .update({ status: 'paid' })
-          .eq('stripe_transfer_id', transfer.id);
+        // Stripe transfers don't have explicit "paid" status
+        // A successful transfer is created and not reversed
+        // We mark as completed when we see it's not reversed
+        if (!transfer.reversed) {
+          await supabase
+            .from('payouts')
+            .update({ status: 'completed' })
+            .eq('stripe_transfer_id', transfer.id);
+          
+          console.log('✓ Transfer completed:', transfer.id);
+        }
         
         break;
       }
 
-      case 'transfer.failed': {
+      case 'transfer.reversed': {
         const transfer = event.data.object;
-        console.error('Transfer failed:', transfer.id, transfer.failure_message);
+        console.error('Transfer reversed:', transfer.id, transfer.reversal_details?.reason);
         
-        // Update payout record
+        // Update payout record to failed
         await supabase
           .from('payouts')
           .update({
             status: 'failed',
-            error_message: transfer.failure_message || 'Transfer failed',
+            error_message: transfer.reversal_details?.reason || 'Transfer reversed',
           })
           .eq('stripe_transfer_id', transfer.id);
         
@@ -349,7 +413,7 @@ serve(async (req: Request) => {
           await supabase.from('notifications').insert({
             user_id: payout.user_id,
             type: 'system',
-            message: `⚠️ Payout failed for "${payout.event?.name}". Please update your bank account details.`,
+            message: `⚠️ Payout reversed for "${payout.event?.name}". ${transfer.reversal_details?.reason || 'Please contact support.'}`,
             read: false,
           });
         }
@@ -365,11 +429,20 @@ serve(async (req: Request) => {
         if (invoice.subscription) {
           const { data: user } = await supabase
             .from('users')
-            .select('id, subscription_tier')
+            .select('id, subscription_tier, role')
             .eq('stripe_subscription_id', invoice.subscription)
             .single();
 
           if (user) {
+            // Skip charging admin users
+            if (user.role === 'admin') {
+              console.warn(`⚠️ Admin user ${user.id} invoice payment received - not charging`);
+              
+              // Just log the attempted invoice without recording payment
+              console.log(`Admin invoice (not charged): €${(invoice.amount_paid / 100).toFixed(2)}`);
+              break;
+            }
+            
             const amount_cents = invoice.amount_paid; // Already in cents
             const amount = amount_cents / 100; // Convert cents to euros
             console.log(`Subscription payment received: €${amount} from user ${user.id} (${user.subscription_tier})`);

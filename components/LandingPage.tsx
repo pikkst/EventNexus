@@ -189,20 +189,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             </div>
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl md:text-2xl font-bold text-amber-50">Testing Phase Active</h2>
-                <span className="bg-amber-500 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-amber-950">Beta</span>
+                <h2 className="text-xl md:text-2xl font-bold text-emerald-50">Live & Active</h2>
+                <span className="bg-emerald-500 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-950">Live</span>
               </div>
-              <p className="text-amber-100/90 text-sm md:text-base leading-relaxed">
-                EventNexus is currently in <strong>testing phase</strong>. All payments are processed through a <strong>secure sandbox environment</strong> — no real money is charged. 
-                <span className="hidden md:inline"> You can explore all features risk-free and help us improve the platform.</span>
+              <p className="text-emerald-100/90 text-sm md:text-base leading-relaxed">
+                EventNexus is now <strong>live in production</strong>. All payments are processed securely through <strong>Stripe</strong> with real transactions. 
+                <span className="hidden md:inline"> Join thousands of organizers creating unforgettable events.</span>
               </p>
-              <div className="bg-amber-950/30 border border-amber-600/40 rounded-xl p-4 mt-3">
+              <div className="bg-emerald-950/30 border border-emerald-600/40 rounded-xl p-4 mt-3">
                 <div className="flex items-start gap-3">
-                  <Star className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <Star className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-amber-50 font-semibold text-sm md:text-base">Early Adopter Benefit</p>
-                    <p className="text-amber-100/80 text-xs md:text-sm mt-1">
-                      The first <strong>100 users</strong> will receive <strong>1 month of Pro access absolutely free</strong> when EventNexus officially launches. No credit card required during testing.
+                    <p className="text-emerald-50 font-semibold text-sm md:text-base">Secure & Trusted</p>
+                    <p className="text-emerald-100/80 text-xs md:text-sm mt-1">
+                      EventNexus is <strong>fully secured</strong> with enterprise-grade payment processing. Your data is protected with industry standards and PCI compliance.
                     </p>
                   </div>
                 </div>
@@ -837,12 +837,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
               answer: 'Yes! You can create a free account and browse all events. Attendees pay no platform fees. Organizers can start with our Free tier (100 welcome credits) or upgrade to unlock more features.'
             },
             {
-              question: 'How does ticketing work?',
-              answer: 'Purchase tickets securely with Stripe. You will receive a unique QR code via email instantly. Show it at the event entrance for instant validation. No printing needed!'
+              question: 'What happens during checkout?',
+              answer: 'Checkout is secure and processed through Stripe, our trusted payment partner. You will receive a unique QR code via email instantly. Show it at the event entrance for instant validation. No printing needed!'
             },
             {
-              question: 'What happens during the testing phase?',
-              answer: 'All payments are processed through a secure sandbox environment - no real money is charged. This allows you to test all features risk-free. The first 100 users get 1 month of Pro access free when we launch!'
+              question: 'Is EventNexus secure?',
+              answer: 'Yes! EventNexus is fully secure and compliant with industry standards. All payments are processed through Stripe (PCI DSS Level 1 certified). Your data is encrypted and protected at all times.'
             },
             {
               question: 'Can I translate my event to multiple languages?',

@@ -127,6 +127,12 @@ const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade, onOpenAuth }
       }
     }
 
+    // Admin users don't pay - they get full access
+    if (user.role === 'admin') {
+      alert('Admin account has full access. No payment required.');
+      return;
+    }
+
     // Free tier can be selected directly without payment
     if (tier === 'free') {
       setLoadingTier(tier);

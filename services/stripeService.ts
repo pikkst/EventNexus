@@ -38,13 +38,6 @@ export const createSubscriptionCheckout = async (
       return null;
     }
 
-    // Price mapping (actual Stripe price IDs from Stripe Dashboard)
-    const priceIds: Record<string, string> = {
-      pro: 'price_1SgXusJ9WsSrj5gMbJdADsvy',
-      premium: 'price_1SgXwZJ9WsSrj5gMehBiDgWp',
-      enterprise: 'price_1SgXxRJ9WsSrj5gMLhDEB26O'
-    };
-
     // Get the base URL (use origin for clean URLs with BrowserRouter)
     const baseUrl = window.location.origin;
     
@@ -53,7 +46,6 @@ export const createSubscriptionCheckout = async (
       body: {
         userId,
         tier,
-        priceId: priceIds[tier],
         customerEmail: userEmail,
         successUrl: `${baseUrl}/dashboard?checkout=success`,
         cancelUrl: `${baseUrl}/pricing?checkout=cancelled`
