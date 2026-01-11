@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import logger from '../utils/logger';
-import { translateDescription } from '../services/geminiService';
+import { translateDescription, translateDescriptionBatch } from '../services/geminiService';
 import { 
   MapPin, 
   Calendar, 
@@ -200,21 +200,25 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
 
       // Remote translate via Gemini service with graceful fallback
       try {
-        const nameTranslated = await translateDescription(event.name, targetLabel);
         const aboutSource = event.aboutText || '';
         const descSource = event.description || '';
-        const [aboutTranslated, descTranslated] = await Promise.all([
-          aboutSource ? translateDescription(aboutSource, targetLabel) : Promise.resolve(''),
-          descSource ? translateDescription(descSource, targetLabel) : Promise.resolve('')
-        ]);
+        
+        // Use batch translation to make a single API call instead of 3 separate calls
+        const textsToTranslate = {
+          name: event.name,
+          ...(aboutSource && { about: aboutSource }),
+          ...(descSource && { description: descSource })
+        };
+        
+        const translations = await translateDescriptionBatch(textsToTranslate, targetLabel);
 
-        setTranslatedName(nameTranslated || event.name);
-        setTranslatedAboutText(aboutTranslated || aboutSource);
-        setTranslatedDescription(descTranslated || descSource);
+        setTranslatedName(translations.name || event.name);
+        setTranslatedAboutText(translations.about || aboutSource);
+        setTranslatedDescription(translations.description || descSource);
         translationCache.current.set(key, {
-          name: nameTranslated || event.name,
-          aboutText: aboutTranslated || aboutSource,
-          description: descTranslated || descSource
+          name: translations.name || event.name,
+          aboutText: translations.about || aboutSource,
+          description: translations.description || descSource
         });
       } catch (e) {
         console.warn('Translation fallback due to error:', e);
