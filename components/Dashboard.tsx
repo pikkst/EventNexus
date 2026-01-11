@@ -269,17 +269,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     const loadRevenue = async () => {
       setIsLoadingRevenue(true);
       try {
+        console.log('[Dashboard] Loading revenue for organizer:', user.id);
         const [summary, byEvent, attendance] = await Promise.all([
           getOrganizerRevenueSummary(user.id),
           getOrganizerRevenue(user.id),
           getOrganizerAttendanceSummary(user.id)
         ]);
+        console.log('[Dashboard] Revenue summary:', summary);
+        console.log('[Dashboard] Revenue by event:', byEvent);
+        console.log('[Dashboard] Attendance summary:', attendance);
         setRevenueSummary(summary);
         setRevenueByEvent(byEvent);
         setAttendanceSummary(attendance);
         // Generate sales chart data from real revenue
         setSalesData(generateSalesData(byEvent));
       } catch (error) {
+        console.error('[Dashboard] Error loading revenue:', error);
         logger.error('Error loading revenue:', error);
       } finally {
         setIsLoadingRevenue(false);

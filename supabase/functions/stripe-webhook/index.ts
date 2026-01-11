@@ -584,9 +584,12 @@ serve(async (req: Request) => {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object;
         console.log('Payment succeeded:', paymentIntent.id);
-        
+
         // Update payment records
         const metadata = paymentIntent.metadata || {};
+
+        // Primary path: if checkout.session.completed already ran, this will be a no-op because tickets are paid.
+        // Fallback path: if checkout.session.completed was missed (e.g., webhook secret misconfigured), use metadata to mark tickets paid.
         if (metadata.ticket_id) {
           await supabase
             .from('tickets')
@@ -595,6 +598,72 @@ serve(async (req: Request) => {
               stripe_payment_id: paymentIntent.id
             })
             .eq('id', metadata.ticket_id);
+        } else if (metadata.type === 'ticket' && metadata.event_id && metadata.user_id) {
+          const ticketCount = metadata.ticket_count ? parseInt(metadata.ticket_count, 10) : null;
+
+          // Find pending tickets for this user + event (created during checkout), limit to ticketCount if provided
+          const { data: pendingTickets, error: pendingError } = await supabase
+            .from('tickets')
+            .select('id')
+            .eq('event_id', metadata.event_id)
+            .eq('user_id', metadata.user_id)
+            .eq('payment_status', 'pending')
+            .order('created_at', { ascending: true })
+            .limit(ticketCount || 50);
+
+          if (pendingError) {
+            console.error('Error fetching pending tickets for PI fallback:', pendingError);
+          } else if (pendingTickets && pendingTickets.length > 0) {
+            console.log(`Fallback: marking ${pendingTickets.length} tickets paid via payment_intent ${paymentIntent.id}`);
+
+            for (const ticket of pendingTickets) {
+              const qrData = await generateSecureQRCode(
+                ticket.id,
+                metadata.event_id,
+                metadata.user_id
+              );
+
+              const now = new Date().toISOString();
+              const { error: updateError } = await supabase
+                .from('tickets')
+                .update({
+                  payment_status: 'paid',
+                  stripe_payment_id: paymentIntent.id,
+                  qr_code: qrData,
+                  status: 'valid',
+                  purchased_at: now,
+                  purchase_date: now,
+                })
+                .eq('id', ticket.id);
+
+              if (updateError) {
+                console.error(`Error updating ticket ${ticket.id} in PI fallback:`, updateError);
+              }
+            }
+
+            // Refresh attendee count for the event
+            const { data: paidTickets } = await supabase
+              .from('tickets')
+              .select('id', { count: 'exact' })
+              .eq('event_id', metadata.event_id)
+              .eq('payment_status', 'paid');
+
+            const paidCount = paidTickets?.length || 0;
+            await supabase
+              .from('events')
+              .update({ attendees_count: paidCount })
+              .eq('id', metadata.event_id);
+
+            // Notify buyer their tickets are ready
+            await supabase.from('notifications').insert({
+              user_id: metadata.user_id,
+              type: 'event_update',
+              title: 'Tickets Ready!',
+              message: '✓ Payment confirmed! Your tickets are ready with QR codes. View them in your profile.',
+              sender_name: 'EventNexus',
+              isRead: false,
+            });
+          }
         }
         break;
       }

@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import Stripe from 'https://esm.sh/stripe@14.14.0?target=deno';
+import Stripe from 'https://esm.sh/stripe@12.17.0?dts';
 
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY') || '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
@@ -113,6 +113,18 @@ serve(async (req: Request) => {
 
     let session;
 
+    // Helper to recreate customer and persist, then return new id
+    const recreateCustomer = async () => {
+      const newCustomer = await stripe.customers.create({
+        email: customerEmail || user?.email,
+        name: user?.name,
+        metadata: { supabase_user_id: userId },
+      });
+      await supabase.from('users').update({ stripe_customer_id: newCustomer.id }).eq('id', userId);
+      customerId = newCustomer.id;
+      return newCustomer.id;
+    };
+
     // Check if this is a subscription or ticket purchase
     // Subscription checkout: tier provided, priceId optional (prefer env STRIPE_PRICE_*)
     if (tier) {
@@ -125,8 +137,8 @@ serve(async (req: Request) => {
         throw new Error(`Subscription price not configured for tier: ${tier}. Please contact support or see STRIPE_PRODUCTS_SETUP.md`);
       }
       
-      session = await stripe.checkout.sessions.create({
-        customer: customerId,
+      const buildSession = async (custId: string) => stripe.checkout.sessions.create({
+        customer: custId,
         payment_method_types: ['card'],
         mode: 'subscription',
         line_items: [
@@ -149,23 +161,25 @@ serve(async (req: Request) => {
           },
         },
       });
+
+      try {
+        session = await buildSession(customerId);
+      } catch (err: any) {
+        if (err?.message?.includes('No such customer')) {
+          console.warn('Stripe customer missing, recreating and retrying...');
+          const newCust = await recreateCustomer();
+          session = await buildSession(newCust);
+        } else {
+          throw err;
+        }
+      }
     } else if (eventId && ticketCount && pricePerTicket) {
       // Ticket purchase checkout - need to get organizer's Connect account
-      
-      // Get event with organizer details
+
+      // Get event with organizer_id only (avoid relying on FK alias names)
       const { data: event, error: eventError } = await supabase
         .from('events')
-        .select(`
-          id,
-          name,
-          organizer_id,
-          organizer:users!events_organizer_id_fkey(
-            id,
-            subscription_tier,
-            stripe_connect_account_id,
-            stripe_connect_charges_enabled
-          )
-        `)
+        .select('id, name, organizer_id')
         .eq('id', eventId)
         .single();
 
@@ -173,27 +187,32 @@ serve(async (req: Request) => {
         throw new Error('Event not found');
       }
 
-      // Check if organizer has completed Stripe Connect onboarding
-      if (!event.organizer.stripe_connect_account_id) {
-        throw new Error('Event organizer has not set up payment receiving. Please contact the organizer.');
+      // Fetch organizer details directly
+      const { data: organizer, error: orgError } = await supabase
+        .from('users')
+        .select('id, subscription_tier, stripe_connect_account_id, stripe_connect_charges_enabled')
+        .eq('id', event.organizer_id)
+        .single();
+
+      if (orgError || !organizer) {
+        throw new Error('Event organizer not found');
       }
 
-      // In test mode, allow charges even if charges_enabled is false (pending requirements don't block test payments)
-      // In live mode, strictly check charges_enabled
-      const isTestMode = event.organizer.stripe_connect_account_id.startsWith('acct_') && 
-                         Deno.env.get('STRIPE_SECRET_KEY')?.includes('_test_');
-      
-      if (!event.organizer.stripe_connect_charges_enabled && !isTestMode) {
-        throw new Error('Event organizer payment account is not fully activated yet.');
-      }
-      
-      if (!event.organizer.stripe_connect_charges_enabled && isTestMode) {
+      // Proceed with checkout even if organizer hasn't completed payout setup.
+      // Funds are captured on the platform; payouts will only run after the event
+      // when `process-scheduled-payouts` finds a valid destination account.
+      const isTestMode = Deno.env.get('STRIPE_SECRET_KEY')?.includes('_test_') || false;
+      if (!organizer.stripe_connect_account_id) {
+        console.log('⚠️ Organizer has no Stripe Connect account yet. Proceeding with payment; payout will be deferred.');
+      } else if (!organizer.stripe_connect_charges_enabled && !isTestMode) {
+        console.log('⚠️ Organizer charges are not enabled yet. Proceeding with payment; payout will be deferred.');
+      } else if (!organizer.stripe_connect_charges_enabled && isTestMode) {
         console.log('⚠️ Test mode: Allowing checkout despite pending account requirements');
       }
 
       // Calculate amounts for Stripe Connect transfer
       const totalAmount = Math.round(ticketCount * pricePerTicket * 100); // in cents
-      const platformFeeRate = COMMISSION_RATES[event.organizer.subscription_tier] || COMMISSION_RATES.free;
+      const platformFeeRate = COMMISSION_RATES[organizer.subscription_tier || 'free'] || COMMISSION_RATES.free;
       const platformFeeCents = Math.round(totalAmount * platformFeeRate);
       const netAmountCents = totalAmount - platformFeeCents;
 
@@ -201,8 +220,8 @@ serve(async (req: Request) => {
 
       // Create checkout session for ticket purchase
       // Money held on platform, transferred 2 days after event via automated payout system
-      session = await stripe.checkout.sessions.create({
-        customer: customerId,
+      const buildTicketSession = async (custId: string) => stripe.checkout.sessions.create({
+        customer: custId,
         payment_method_types: ['card'],
         mode: 'payment',
         line_items: [
@@ -221,7 +240,18 @@ serve(async (req: Request) => {
         success_url: successUrl + (successUrl.includes('?') ? '&' : '?') + 'session_id={CHECKOUT_SESSION_ID}',
         cancel_url: cancelUrl,
         payment_intent_data: {
-          statement_descriptor_suffix: buildDescriptorSuffix(eventName || 'Event', 'EVENT')
+          statement_descriptor_suffix: buildDescriptorSuffix(eventName || 'Event', 'EVENT'),
+          // Add metadata so payment_intent.succeeded webhook can reconcile if checkout.session.completed is missed
+          metadata: {
+            type: 'ticket',
+            user_id: userId,
+            event_id: eventId,
+            ticket_count: ticketCount.toString(),
+            ticket_template_id: ticketTemplateId || '',
+            ticket_type: ticketType || 'general',
+            ticket_name: ticketName || 'Standard',
+            organizer_id: event.organizer_id,
+          },
         },
         metadata: {
           user_id: userId,
@@ -231,14 +261,26 @@ serve(async (req: Request) => {
           ticket_type: ticketType || 'general',
           ticket_name: ticketName || 'Standard',
           organizer_id: event.organizer_id,
-          organizer_connect_account: event.organizer.stripe_connect_account_id,
-          organizer_tier: event.organizer.subscription_tier,
+          organizer_connect_account: organizer.stripe_connect_account_id || '',
+          organizer_tier: organizer.subscription_tier || 'free',
           platform_fee_cents: platformFeeCents.toString(),
           gross_amount_cents: totalAmount.toString(),
           net_amount_cents: netAmountCents.toString(),
           type: 'ticket',
         },
       });
+
+      try {
+        session = await buildTicketSession(customerId);
+      } catch (err: any) {
+        if (err?.message?.includes('No such customer')) {
+          console.warn('Stripe customer missing, recreating and retrying (tickets)...');
+          const newCust = await recreateCustomer();
+          session = await buildTicketSession(newCust);
+        } else {
+          throw err;
+        }
+      }
 
       // Create pending ticket records with template ID, type, and price_paid
       const now = new Date().toISOString();
