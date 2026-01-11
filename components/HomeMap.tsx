@@ -11,7 +11,7 @@ import L from 'leaflet';
 import { CATEGORIES } from '../constants';
 import { EventNexusEvent } from '../types';
 import { getEvents } from '../services/dbService';
-import { translateDescription } from '../services/geminiService';
+import { translateDescription, translateDescriptionBatch } from '../services/geminiService';
 import { filterActiveEvents } from '../utils/eventUtils';
 import { generateMapSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 
@@ -170,13 +170,22 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
 
       // Remote translate via Gemini service with graceful fallback
       try {
-        const nameTranslated = await translateDescription(selectedEvent.name, targetLang);
-        // Translate brief description; keep it short for map UI
         const descSource = selectedEvent.description || '';
-        const descTranslated = descSource ? await translateDescription(descSource, targetLang) : '';
-        setTranslatedTitle(nameTranslated || selectedEvent.name);
-        setTranslatedDesc(descTranslated || descSource);
-        translationCache.current.set(key, { name: nameTranslated || selectedEvent.name, desc: descTranslated || descSource });
+        
+        // Use batch translation to make a single API call instead of 2 separate calls
+        const textsToTranslate = {
+          name: selectedEvent.name,
+          ...(descSource && { description: descSource })
+        };
+        
+        const translations = await translateDescriptionBatch(textsToTranslate, targetLang);
+        
+        setTranslatedTitle(translations.name || selectedEvent.name);
+        setTranslatedDesc(translations.description || descSource);
+        translationCache.current.set(key, { 
+          name: translations.name || selectedEvent.name, 
+          desc: translations.description || descSource 
+        });
       } catch (e) {
         console.warn('Translation fallback due to error:', e);
         setTranslatedTitle(selectedEvent.name);
