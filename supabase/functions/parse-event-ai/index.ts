@@ -149,15 +149,24 @@ async function parseEventWithGemini(
   const prompt = `You are an expert event data extractor. Current date and time in ${cityName} is: ${cityTime} (DD/MM/YYYY HH:MM:SS).
 
 CRITICAL - EVENT TIME WINDOW:
-Today is 09/01/2026. Extract ONLY events within the next 30 DAYS.
-SKIP: past events AND events starting after 08/02/2026 (beyond 30 days)
-INCLUDE: events from 09/01/2026 to 08/02/2026 (within 30-day window)
+Today is ${cityTime.split(' ')[0]}. Extract ONLY events within the next 30 DAYS.
+SKIP: past events AND events starting more than 30 days from today.
+INCLUDE: events from today until 30 days from now (within 30-day window)
+
+CRITICAL - ONGOING EXHIBITIONS/SEASONAL EVENTS:
+For exhibitions, festivals, seasonal attractions that say "runs until [date]" or "open until [date]":
+- These are ONGOING events that started in the past
+- Use TODAY'S DATE as start_time (not the original opening date)
+- Use the closing/end date mentioned in the text as end_time
+- Example: "Exhibition runs until Jan 30, 2026" → start_time: TODAY, end_time: 2026-01-30T17:00:00
 
 CRITICAL - WHAT IS AN EVENT (vs VENUE/SERVICE):
 ✅ EXTRACT: Specific events with EXACT dates and times
   - "Concert on Jan 15, 2026 at 19:00"
   - "Workshop: Marketing Basics, Jan 20, 2026"
   - "Festival opening ceremony, Feb 1, 2026"
+  - "Exhibition runs until March 15" (ongoing - use today as start)
+  - "Ice rink open until January 30" (seasonal - use today as start)
   
 ❌ SKIP: Venue descriptions, rental services, generic information
   - "Event space available for rent"
