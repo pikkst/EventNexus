@@ -238,29 +238,45 @@ async function discoverSourcesViaGemini(cityName: string, country: string): Prom
   console.log(`🤖 Using Gemini AI to discover sources for ${cityName}, ${country}`)
   console.log(`   Gemini API Key set: ${!!GEMINI_API_KEY}`)
 
-  const prompt = `You are an expert at finding official public event data sources for cities.
+  const prompt = `You are an expert at finding FREE event data sources for cities. Focus on discovering sources that primarily list FREE, public events.
 
-Find official event sources for ${cityName}, ${country}.
+Find FREE event sources for ${cityName}, ${country}.
 
 Return ONLY valid JSON array of sources with this structure:
 [
   {
-    "name": "Official City Events Portal",
+    "name": "Source Name",
     "url": "https://...",
     "type": "html" or "rss" or "api" or "ical",
     "source_score": 0.8,
-    "description": "Official city government events"
+    "description": "Brief description emphasizing free events"
   }
 ]
 
-Prioritize:
-1. Official city/municipality websites
-2. Tourism boards
-3. Cultural institutions (museums, theaters)
-4. Open data portals
-5. iCal/RSS feeds from venues
+PRIORITY - Sources with HIGH concentration of FREE events:
+1. **FREE event aggregators** (e.g., "Free Events Amsterdam", "Gratis activiteiten", "Free things to do")
+2. **Official city/municipality FREE event pages** (often in tourism/culture sections)
+3. **Public libraries** - free workshops, readings, exhibitions
+4. **Community centers** - free activities, meetings
+5. **Public museums** - free admission days, free exhibitions
+6. **Parks & Recreation** - free outdoor events, concerts, sports
+7. **Universities** - free public lectures, open seminars
+8. **Cultural foundations** - free art events, performances
+9. **Embassies/Cultural institutes** - free cultural events
+10. **Local Facebook Events** filtered for "free" (if available as RSS/API)
 
-Return 3-10 sources. Be conservative - only return sources you're confident exist.
+**SPECIFIC SEARCH TERMS TO USE:**
+- "${cityName} free events"
+- "${cityName} gratis evenementen" (if Dutch/Flemish)
+- "${cityName} kostenlose Veranstaltungen" (if German-speaking)
+- "${cityName} ilmaiset tapahtumat" (if Finnish)
+- "${cityName} événements gratuits" (if French-speaking)
+- Plus: "public library events", "community center calendar", "free admission days"
+
+AVOID: Ticketing platforms (Eventbrite, Meetup) unless they have specific "free events" sections/filters
+INCLUDE: Actual event listing pages from the sources above
+
+Return 5-15 sources prioritized by free event density. Be specific with URLs - link to actual event calendar pages, not just homepages.
 NO markdown, NO explanations, ONLY the JSON array.`
 
   try {

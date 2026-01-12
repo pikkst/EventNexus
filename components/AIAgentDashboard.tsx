@@ -945,12 +945,50 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
           ...prev,
           currentCity: `${city.city_name}, ${city.country}`,
           currentCityIndex: i + 1,
-          currentStep: 'Fetching sources...',
+          currentStep: 'Checking sources...',
           recentLogs: [...prev.recentLogs.slice(-9), cityLogEntry],
           fullLogs: [...prev.fullLogs, cityLogEntry]
         }));
 
         try {
+          // Step 0: Check if city has sources, if not - bootstrap first
+          console.log(`  🔍 Step 0/5: Checking event sources...`);
+          const { data: sourcesCheck } = await supabase
+            .from('event_sources')
+            .select('source_id', { count: 'exact', head: true })
+            .eq('city_id', city.city_id)
+            .eq('active', true);
+          
+          if (!sourcesCheck || sourcesCheck.length === 0) {
+            console.log(`  ⚠️ No sources found - running bootstrap first...`);
+            setPipelineProgress(prev => ({
+              ...prev,
+              currentStep: '🚀 Bootstrapping (discovering sources)...',
+              recentLogs: [...prev.recentLogs.slice(-9), `  🚀 Running bootstrap...`],
+              fullLogs: [...prev.fullLogs, `  ⚠️ No sources - bootstrapping first`]
+            }));
+            
+            const bootstrapResult = await triggerBootstrapForCity(city.city_id, true);
+            
+            if (bootstrapResult.success && bootstrapResult.sources_added > 0) {
+              console.log(`  ✅ Bootstrap completed - discovered ${bootstrapResult.sources_added} sources`);
+              setPipelineProgress(prev => ({
+                ...prev,
+                recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Bootstrapped: ${bootstrapResult.sources_added} sources`],
+                fullLogs: [...prev.fullLogs, `  ✅ Bootstrap success: ${bootstrapResult.sources_added} sources discovered`]
+              }));
+            } else {
+              console.log(`  ⚠️ Bootstrap found no sources - skipping city`);
+              setPipelineProgress(prev => ({
+                ...prev,
+                citiesFailed: prev.citiesFailed + 1,
+                recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ No sources available`],
+                fullLogs: [...prev.fullLogs, `  ⚠️ Bootstrap found no sources - skipping`]
+              }));
+              continue; // Skip to next city
+            }
+          }
+          
           // Step 1: Fetch sources for this city
           console.log(`  📥 Step 1/4: Fetching sources...`);
           setPipelineProgress(prev => ({ ...prev, currentStep: '📥 Fetching sources...' }));
@@ -2304,30 +2342,33 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                           </div>
                         </div>
                         
-                        {metric.active_sources === 0 && metric.city?.active && (
-                          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded flex items-center justify-between">
-                            <div className="text-xs text-yellow-800">
-                              ⚠️ No event sources found. Run bootstrap to discover sources.
+                        <div className="mt-3 flex items-center justify-between gap-2">
+                          {metric.active_sources === 0 && metric.city?.active && (
+                            <div className="flex-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                              ⚠️ No event sources - Bootstrap needed
                             </div>
+                          )}
+                          {metric.city?.active && (
                             <button
                               onClick={() => triggerBootstrapForCity(metric.city_id)}
                               disabled={metric.bootstrap_status === 'bootstrapping'}
-                              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+                              className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-xs font-medium whitespace-nowrap"
+                              title={metric.active_sources > 0 ? 'Re-run bootstrap to discover more sources' : 'Run bootstrap to discover event sources'}
                             >
                               {metric.bootstrap_status === 'bootstrapping' ? (
                                 <>
-                                  <RefreshCw className="w-4 h-4 animate-spin" />
-                                  Discovering...
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                  Bootstrapping...
                                 </>
                               ) : (
                                 <>
-                                  <Zap className="w-4 h-4" />
-                                  Discover Sources
+                                  <Zap className="w-3 h-3" />
+                                  {metric.active_sources > 0 ? 'Re-bootstrap' : 'Bootstrap'}
                                 </>
                               )}
                             </button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                         
                         {!metric.city?.active && (
                           <div className="mt-3 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600">
