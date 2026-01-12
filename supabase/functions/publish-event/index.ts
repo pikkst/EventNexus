@@ -172,6 +172,28 @@ async function geocodeAddress(address: string, country: string, countryCode: str
   }
 }
 
+// Fallback: Get city center coordinates
+async function getCityCenterCoordinates(supabaseClient: any, cityId: string): Promise<{ lat: number, lng: number } | null> {
+  try {
+    const { data: cityData } = await supabaseClient
+      .from('supported_cities')
+      .select('location_point')
+      .eq('city_id', cityId)
+      .single()
+    
+    if (cityData?.location_point) {
+      const match = cityData.location_point.match(/POINT\(([^ ]+) ([^ ]+)\)/)
+      if (match) {
+        return { lat: parseFloat(match[2]), lng: parseFloat(match[1]) }
+      }
+    }
+    return null
+  } catch (error) {
+    console.error('Failed to get city center:', error)
+    return null
+  }
+}
+
 // Gemini API image generation (matches geminiService.ts logic)
 async function generateEventImage(
   eventName: string, 
@@ -316,19 +338,35 @@ serve(async (req) => {
 
         // FILTER OUT USA ADDRESSES - only if city is NOT in USA (prevents wrong "Amsterdam" mixing)
         const address = eventData.location_address || ''
-        const US_STATE_CODES = /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b/
+        const US_STATE_CODES = /\b(AL|AK|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b/
         const US_ZIP_CODES = /\b\d{5}(-\d{4})?\b/
         
         // Only block USA addresses if the city itself is NOT in USA
         const cityIsInUSA = cityConfig.country === 'United States' || cityConfig.country === 'USA' || cityConfig.country_code === 'us'
         
-        if (!cityIsInUSA && (US_STATE_CODES.test(address) || (US_ZIP_CODES.test(address) && !address.includes(cityConfig.country)))) {
+        // CRITICAL: Don't confuse country codes with US states!
+        // AZ = Arizona vs Azerbaijan (country code)
+        // AR = Arkansas vs Argentina/Andorra (country code)
+        // Check for USA context: zip codes, "USA" keyword, or city/state combinations
+        const hasUSAContext = address.match(/\bUSA\b/i) || address.match(/United States/i) || 
+                              (US_STATE_CODES.test(address) && US_ZIP_CODES.test(address))
+        
+        if (!cityIsInUSA && hasUSAContext) {
           console.log(`⊘ Skipping USA event: ${eventData.name} (address: ${address})`)
           await log(supabaseClient, 'publish-event', 'info', 'Skipped USA event', { event: eventData.name, address }, { city_id: cityId })
           results.skipped++
           continue
         }
 
+        // SKIP PLACEHOLDER ADDRESSES - Gemini sometimes generates fake addresses
+        const PLACEHOLDER_PATTERNS = /\b(Venue Name|Street Address|City Name|TBD|To Be Determined|Various [Ll]ocations)\b/i
+        if (PLACEHOLDER_PATTERNS.test(address)) {
+          console.log(`⊘ Skipping event with placeholder address: ${eventData.name} (${address})`)
+          await log(supabaseClient, 'publish-event', 'info', 'Skipped placeholder address', { event: eventData.name, address }, { city_id: cityId })
+          results.skipped++
+          continue
+        }
+        
         // CRITICAL: Only publish FREE events (we don't sell tickets)
         // If is_free is explicitly false AND there's a price, skip it
         // If price is unknown/null, assume free (benefit of doubt)
@@ -474,25 +512,37 @@ serve(async (req) => {
           }
         }
         
-        // CRITICAL: SKIP events without precise coordinates - we cannot show misleading locations on map
+        // CRITICAL: Try to geocode if missing coordinates
+        // Fallback to city center for vague locations (parks, "various locations", etc.)
         if (!eventData.location_lat || !eventData.location_lng || 
             typeof eventData.location_lat !== 'number' || typeof eventData.location_lng !== 'number' ||
             isNaN(eventData.location_lat) || isNaN(eventData.location_lng)) {
           
-          console.log(`❌ Skipping event "${eventData.name}" - no precise location found. Address: ${eventData.location_address || 'N/A'}`)
-          await log(supabaseClient, 'publish-event', 'warning', 'Skipped - no precise location', { event: eventData.name, address: eventData.location_address }, { city_id: cityId });
+          // Check if address is too vague for precise geocoding
+          const VAGUE_PATTERNS = /\b(various locations?|multiple venues?|city center|downtown|nature park|festival grounds?)\b/i
+          const isVagueLocation = VAGUE_PATTERNS.test(eventData.location_address || '')
           
-          // Mark as flagged for manual review (needs real venue address)
-          await supabaseClient
-            .from('parsed_events')
-            .update({ 
-              status: 'flagged',
-              validation_notes: 'Missing precise location - AI could not extract venue address or geocoding failed'
-            })
-            .eq('id', parsedEvent.id)
-          
-          results.skipped++
-          continue // Skip to next event
+          if (isVagueLocation) {
+            // Use city center as fallback for vague locations
+            console.log(`📍 Vague location detected, using city center: ${eventData.name}`)
+            const cityCenter = await getCityCenterCoordinates(supabaseClient, cityId)
+            if (cityCenter) {
+              eventData.location_lat = cityCenter.lat
+              eventData.location_lng = cityCenter.lng
+              console.log(`✓ Using city center coordinates: ${cityCenter.lat}, ${cityCenter.lng}`)
+            } else {
+              console.log(`❌ Skipping event "${eventData.name}" - no city center fallback available`)
+              await log(supabaseClient, 'publish-event', 'warning', 'Skipped - no precise location', { event: eventData.name, address: eventData.location_address }, { city_id: cityId })
+              results.skipped++
+              continue
+            }
+          } else {
+            // Not vague but still no coordinates - skip
+            console.log(`❌ Skipping event "${eventData.name}" - no precise location found. Address: ${eventData.location_address || 'N/A'}`)
+            await log(supabaseClient, 'publish-event', 'warning', 'Skipped - no precise location', { event: eventData.name, address: eventData.location_address }, { city_id: cityId })
+            results.skipped++
+            continue
+          }
         }
         
         const locationPoint = `POINT(${eventData.location_lng} ${eventData.location_lat})`

@@ -187,12 +187,25 @@ HTML PARSING TIPS:
 - Multiple dates like "09/01/2026 + 182 additional dates" means recurring/ongoing - extract the start date
 
 CRITICAL - LOCATION/ADDRESS EXTRACTION:
-- ALWAYS extract the full venue name and address
-- Examples: "Humboldt Forum, Schloßplatz 1, Berlin", "Pirita Vaba Aja Keskus, Tallinn", "Vanemuine Theatre, Tartu"
-- Include street name, building number, and city
+- ALWAYS extract the REAL, COMPLETE venue name and address from the event source
+- NEVER use placeholders like "Venue Name", "Street Address", "City", "TBD"
+- Examples of VALID addresses:
+  ✅ "Humboldt Forum, Schloßplatz 1, Berlin"
+  ✅ "Pirita Vaba Aja Keskus, Tallinn"
+  ✅ "Vanemuine Theatre, Tartu"
+  ✅ "OBA Olympisch Kwartier, Laan der Hesperiden 18, 1076 DE Amsterdam"
+- Examples of INVALID (NEVER USE):
+  ❌ "Venue Name, Street Address, City"
+  ❌ "TBD, Location TBA"
+  ❌ "Various locations"
+  ❌ "Downtown" (too vague)
+- If the source HTML contains ONLY vague locations like "Various locations", "City center", "Downtown":
+  → Still include them (we have fallback to city center)
+  → Format: "Various locations, [City Name]"
+- SKIP events if NO real venue name can be extracted at all (blank/missing location fields in HTML)
+- Include street name, building number, and city when available
 - If only venue name is available (e.g., "Kadrioru kunstimuuseum"), include it - we will geocode it
 - Look for address patterns in HTML: venue name + street + city
-- SKIP events without identifiable venue/location - we cannot show events on map without precise location
 
 For each valid event, provide:
 - name: event name (from title/heading)
