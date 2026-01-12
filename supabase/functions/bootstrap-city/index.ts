@@ -519,7 +519,8 @@ async function bootstrapCity(
       .from('city_configs')
       .update({
         bootstrap_status: finalStatus,
-        bootstrap_error: errorMessage
+        bootstrap_error: errorMessage,
+        last_bootstrap_at: new Date().toISOString()
       })
       .eq('city_id', cityId)
 

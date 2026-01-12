@@ -48,6 +48,7 @@ SELECT
   c.city_name,
   c.country,
   c.state,
+  c.last_bootstrap_at,
   
   -- Source metrics
   COUNT(DISTINCT es.id) FILTER (WHERE es.active AND es.source_state != 'dead') AS active_sources,

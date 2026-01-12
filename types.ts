@@ -768,6 +768,7 @@ export interface CityHealthMetrics {
   calculation_metadata?: Record<string, any>;
   calculated_at: string;
   last_fetch_at?: string | null;
+  last_bootstrap_at?: string | null;
   pipeline_enabled?: boolean;
   bootstrap_status?: 'pending' | 'bootstrapping' | 'completed' | 'failed';
   // ✅ Guardian health system fields (from city_health_view)
