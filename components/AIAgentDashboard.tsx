@@ -321,9 +321,9 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         id: health.city_id,
         city_id: health.city_id,
         active_sources: health.active_sources || 0,
-        total_events: 0, // not in health_view yet
+        total_events: health.total_events || 0, // ✅ NOW from health_view!
         events_this_week: health.events_7d || 0,
-        free_events_count: 0, // will be added to view later
+        free_events_count: health.free_events_count || 0, // ✅ NOW from health_view!
         avg_confidence: health.avg_confidence_score || 0,
         freshness_score: health.health_score || 0, // ✅ Use backend health_score
         last_fetch_at: null,
