@@ -590,7 +590,7 @@ async function bootstrapCity(
           const validationBoost = validation.score * 20 // Max +20 points for perfect validation
           const adjustedScore = Math.round(Math.min(100, baseScore + validationBoost))
           
-          // Use upsert with onConflict to handle duplicates gracefully
+          // Use upsert to update existing sources or insert new ones
           const { data: upsertedSource, error: sourceError } = await supabase
             .from('event_sources')
             .upsert({
@@ -601,8 +601,7 @@ async function bootstrapCity(
               source_score: Math.round(adjustedScore),
               active: true,
             }, {
-              onConflict: 'city_id,url', // Handle duplicate (city_id, url) pairs
-              ignoreDuplicates: false // Update if exists
+              onConflict: 'city_id, url' // IMPORTANT: Must match UNIQUE constraint columns (comma-separated, not as tuple)
             })
             .select()
 
