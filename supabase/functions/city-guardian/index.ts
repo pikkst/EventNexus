@@ -143,7 +143,12 @@ serve(async (req) => {
 
         if (action === 'BOOTSTRAP') {
           const { error } = await supabase.functions.invoke('bootstrap-city', {
-            body: { city_id: healthInfo.city_id, city_name: cityMeta.city_name, country: cityMeta.country }
+            body: { 
+              city_id: healthInfo.city_id, 
+              city_name: cityMeta.city_name, 
+              country: cityMeta.country,
+              seed_events: false // Skip event seeding to avoid timeout
+            }
           })
           if (error) throw error
           invoked = true

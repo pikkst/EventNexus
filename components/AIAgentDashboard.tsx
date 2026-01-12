@@ -327,6 +327,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         avg_confidence: health.avg_confidence_score || 0,
         freshness_score: health.health_score || 0, // ✅ Use backend health_score
         last_fetch_at: null,
+        last_bootstrap_at: health.last_bootstrap_at || null,
         calculated_at: new Date().toISOString(),
         city: {
           city_name: health.city_name,
@@ -2384,7 +2385,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                           <div className="bg-gray-50 rounded p-2">
                             <p className="text-gray-600 text-xs">Last Bootstrap</p>
                             <p className="font-medium text-gray-900 text-xs">
-                              {metric.last_fetch_at ? new Date(metric.last_fetch_at).toLocaleDateString() : 'Never'}
+                              {metric.last_bootstrap_at ? new Date(metric.last_bootstrap_at).toLocaleDateString() : 'Never'}
                             </p>
                           </div>
                         </div>
