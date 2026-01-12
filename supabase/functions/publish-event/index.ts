@@ -58,76 +58,106 @@ async function uploadImageToStorage(
 // Nominatim geocoding fallback for addresses without coordinates
 async function geocodeAddress(address: string, country: string, countryCode: string, cityName?: string): Promise<{lat: number, lng: number} | null> {
   try {
-    // Helper function to try geocoding with a specific search query
-    async function tryGeocode(searchQuery: string, label: string): Promise<{lat: number, lng: number} | null> {
-      console.log(`🌍 Geocoding ${label}: ${searchQuery}`)
+    await new Promise(resolve => setTimeout(resolve, 1100)) // Rate limit: 1 req/sec
+    
+    // 🔧 ENHANCED: Prepare MANY search variations (8+ strategies)
+    const searchVariations: string[] = []
+    
+    // Parse address components
+    const parts = address.split(',').map(p => p.trim())
+    const venueName = parts[0] || ''
+    const cityNameFromAddress = cityName || parts[parts.length - 1]?.trim() || parts[1]?.trim() || ''
+    
+    const lowerAddress = address.toLowerCase()
+    const lowerCountry = country.toLowerCase()
+    
+    // 1. Full address with country (if not present)
+    if (!lowerAddress.includes(lowerCountry)) {
+      searchVariations.push(`${address}, ${country}`)
+    } else {
+      searchVariations.push(address)
+    }
+    
+    // 2. Venue name + city + country (most specific)
+    if (venueName && cityNameFromAddress && venueName !== cityNameFromAddress) {
+      searchVariations.push(`${venueName}, ${cityNameFromAddress}, ${country}`)
+    }
+    
+    // 3. Venue name only + country (for institutional names)
+    if (venueName && venueName !== address) {
+      searchVariations.push(`${venueName}, ${country}`)
+    }
+    
+    // 4. Remove building/room numbers (e.g., "Room 123" → venue name only)
+    const cleanVenue = venueName.replace(/\b(room|suite|floor|bldg|building|apt|#)\s*\d+\w*/gi, '').trim()
+    if (cleanVenue && cleanVenue !== venueName && cleanVenue.length > 3) {
+      searchVariations.push(`${cleanVenue}, ${country}`)
+    }
+    
+    // 5. City + venue (reversed order - sometimes works better)
+    if (cityNameFromAddress && venueName && cityNameFromAddress !== venueName) {
+      searchVariations.push(`${cityNameFromAddress}, ${venueName}, ${country}`)
+    }
+    
+    // 6. Just venue name + city (no country - sometimes helps)
+    if (venueName && cityNameFromAddress && venueName !== cityNameFromAddress) {
+      searchVariations.push(`${venueName}, ${cityNameFromAddress}`)
+    }
+    
+    // 7. Remove special characters that might confuse geocoder
+    const cleanAddress = address.replace(/[()[\]]/g, '').replace(/\s+/g, ' ').trim()
+    if (cleanAddress !== address) {
+      searchVariations.push(`${cleanAddress}, ${country}`)
+    }
+    
+    // 8. If address contains street number, try without it
+    const addressWithoutNumber = address.replace(/\b\d+\w*\b/g, '').replace(/\s+/g, ' ').trim()
+    if (addressWithoutNumber !== address && addressWithoutNumber.length > 5) {
+      searchVariations.push(`${addressWithoutNumber}, ${country}`)
+    }
+    
+    // Remove duplicates while preserving order
+    const uniqueVariations = [...new Set(searchVariations)]
+    
+    console.log(`🔍 Geocoding with ${uniqueVariations.length} strategies: "${address}"`)
+    
+    // Try each search variation
+    for (const searchAddress of uniqueVariations) {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1&countrycodes=${countryCode}`,
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1&countrycodes=${countryCode}`,
         {
           headers: {
-            'User-Agent': 'EventNexus/1.0 (contact: huntersest@gmail.com)',
+            'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
             'Accept-Language': 'et,en'
           }
         }
       )
 
       if (!response.ok) {
-        console.error(`Nominatim API error: ${response.status}`)
-        return null
+        console.error(`❌ Nominatim API error ${response.status}`)
+        continue // Try next variation
       }
 
       const data = await response.json()
       
       if (data && data.length > 0) {
-        const result = data[0]
-        console.log(`✅ Geocoded via ${label}: ${result.display_name}`)
+        console.log(`✓ Geocoded: "${address}" → ${data[0].lat}, ${data[0].lon} (via: "${searchAddress}")`)
         return {
-          lat: parseFloat(result.lat),
-          lng: parseFloat(result.lon)
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon),
         }
       }
       
-      return null
-    }
-
-    // Strategy 1: Try full address with country
-    const lowerAddress = address.toLowerCase()
-    const lowerCountry = country.toLowerCase()
-    let searchAddress = address
-    
-    // Add city name to address if provided and not already present
-    if (cityName && !lowerAddress.includes(cityName.toLowerCase())) {
-      searchAddress = `${address}, ${cityName}`
+      // Wait before trying next variation (respect rate limit)
+      if (uniqueVariations.indexOf(searchAddress) < uniqueVariations.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1100))
+      }
     }
     
-    // Add country if not present
-    if (!lowerAddress.includes(lowerCountry)) {
-      searchAddress = `${searchAddress}, ${country}`
-    }
-    
-    let result = await tryGeocode(searchAddress, 'full address')
-    if (result) return result
-
-    // Strategy 2: Try venue name only with country
-    if (address.includes(',')) {
-      const venueName = address.split(',')[0].trim()
-      const venueSearch = `${venueName}, ${country}`
-      result = await tryGeocode(venueSearch, 'venue name')
-      if (result) return result
-    }
-
-    // Strategy 3: Try venue name with city name
-    if (cityName && address.includes(',')) {
-      const venueName = address.split(',')[0].trim()
-      const citySearch = `${venueName}, ${cityName}, ${country}`
-      result = await tryGeocode(citySearch, 'venue + city')
-      if (result) return result
-    }
-
-    console.warn(`❌ All geocoding strategies failed for: ${address}`)
+    console.warn(`❌ All ${uniqueVariations.length} geocoding strategies failed for: ${address}`)
     return null
   } catch (error) {
-    console.error('Geocoding failed:', error)
+    console.error(`Geocoding error for "${address}":`, error)
     return null
   }
 }

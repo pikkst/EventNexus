@@ -9,6 +9,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Helper: Sanitize content - remove NULL bytes and invalid Unicode
+function sanitizeContent(content: string): string {
+  // Remove NULL bytes (\u0000) that PostgreSQL can't handle
+  // Also remove other problematic control characters
+  return content
+    .replace(/\u0000/g, '') // Remove NULL bytes
+    .replace(/[\u0001-\u0008\u000B-\u000C\u000E-\u001F]/g, '') // Remove other control chars (except \n, \r, \t)
+    .trim()
+}
+
 // Helper: Generate SHA-256 hash using Web Crypto API
 async function generateContentHash(content: string): Promise<string> {
   const encoder = new TextEncoder()
@@ -87,7 +97,10 @@ serve(async (req) => {
       try {
         console.log(`Fetching source: ${source.name} (${source.url})`)
 
-        const content = await fetchSourceContent(source)
+        const rawContent = await fetchSourceContent(source)
+        
+        // 🛡️ Sanitize content before storing (remove NULL bytes, invalid Unicode)
+        const content = sanitizeContent(rawContent)
         const contentHash = await generateContentHash(content)
 
         // Check if content already exists (unchanged)
