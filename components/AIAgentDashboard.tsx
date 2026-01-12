@@ -1135,27 +1135,50 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
                   body: { city_id: city.city_id }
                 });
                 
-                // If successful or non-timeout error, break
-                if (!parseResp.error || !parseResp.error.message?.includes('504')) {
+                // If successful, break
+                if (!parseResp.error) {
                   break;
                 }
                 
-                // 504 timeout - retry
+                // Check if error is retryable (timeout, network, or 5xx)
+                const errorMsg = parseResp.error.message || String(parseResp.error);
+                const isRetryable = errorMsg.includes('504') || 
+                                    errorMsg.includes('timeout') || 
+                                    errorMsg.includes('Failed to send') ||
+                                    errorMsg.includes('connection') ||
+                                    errorMsg.includes('network');
+                
+                if (!isRetryable) {
+                  // Non-retryable error (4xx, validation, etc.) - break immediately
+                  break;
+                }
+                
+                // Retryable error - retry with backoff
                 parseAttempt++;
                 if (parseAttempt <= maxParseRetries) {
                   const retryDelay = 3000 * parseAttempt; // 3s, 6s
-                  console.log(`  ⏳ Parse timeout (loop ${parseLoop}, attempt ${parseAttempt}/${maxParseRetries + 1}), retrying in ${retryDelay}ms...`);
+                  console.log(`  ⏳ Parse error (loop ${parseLoop}, attempt ${parseAttempt}/${maxParseRetries + 1}), retrying in ${retryDelay}ms...`);
                   setPipelineProgress(prev => ({
                     ...prev,
-                    currentStep: `⏳ Parse timeout, retry ${parseAttempt}/${maxParseRetries + 1}...`,
+                    currentStep: `⏳ Parse retry ${parseAttempt}/${maxParseRetries + 1}...`,
                     recentLogs: [...prev.recentLogs.slice(-9), `  ⏳ Retry parse (loop ${parseLoop}, attempt ${parseAttempt}/${maxParseRetries + 1})`],
-                    fullLogs: [...prev.fullLogs, `  ⏳ Parse timeout, retrying (loop ${parseLoop}, attempt ${parseAttempt}/${maxParseRetries + 1})`]
+                    fullLogs: [...prev.fullLogs, `  ⏳ Parse retrying (loop ${parseLoop}, attempt ${parseAttempt}/${maxParseRetries + 1}): ${errorMsg.substring(0, 100)}`]
                   }));
                   await new Promise(resolve => setTimeout(resolve, retryDelay));
                 }
               } catch (error) {
                 parseResp = { error };
-                break;
+                // Network/connection errors are retryable
+                const errorMsg = error.message || String(error);
+                console.log(`  ⚠️ Parse exception (loop ${parseLoop}, attempt ${parseAttempt}): ${errorMsg}`);
+                
+                parseAttempt++;
+                if (parseAttempt <= maxParseRetries) {
+                  const retryDelay = 3000 * parseAttempt;
+                  await new Promise(resolve => setTimeout(resolve, retryDelay));
+                } else {
+                  break;
+                }
               }
             }
             

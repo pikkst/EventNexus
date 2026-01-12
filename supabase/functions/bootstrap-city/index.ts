@@ -99,26 +99,20 @@ async function discoverSourcesViaGoogleSearch(cityName: string, country: string)
   const getLocalizedQueries = (city: string, country: string) => {
     const countryLower = country.toLowerCase();
     
-    // ⭐ PRIORITY: Free-specific queries FIRST
+    // ⭐ PRIORITY: Free-specific queries FIRST (reduced to 5 to avoid 150s Edge Function timeout)
     const freeQueries = [
       `${city} free events`,
       `${city} free activities`,
-      `${city} free things to do`,
-      `${city} free calendar`,
       `${city} public library events`,
       `${city} community center calendar`,
-      `${city} parks events free`,
-      `${city} university public events`,
       `${city} free admission events`,
     ];
     
-    // Secondary: General event sources
+    // Secondary: General event sources (reduced to 3 to avoid timeout)
     const secondaryQueries = [
       `${city} ${country} events calendar`,
       `${city} ${country} what's on`,
       `${city} ${country} events RSS feed`,
-      `${city} ${country} calendar API`,
-      `${city} ${country} events iCal`,
     ];
     
     // Language-specific FREE event queries
