@@ -444,35 +444,29 @@ async function bootstrapCity(
         const isValid = await validateSource(source.url)
 
         if (isValid) {
-          // Check if source already exists (by URL)
-          const { data: existingSource } = await supabase
+          // Use upsert with onConflict to handle duplicates gracefully
+          const { data: upsertedSource, error: sourceError } = await supabase
             .from('event_sources')
-            .select('source_id')
-            .eq('city_id', cityId)
-            .eq('url', source.url)
-            .maybeSingle()
-          
-          if (existingSource) {
-            console.log(`  ⏭️ Source already exists: ${source.url}`)
-            continue // Skip duplicate
-          }
-          
-          const { error: sourceError } = await supabase
-            .from('event_sources')
-            .insert({
+            .upsert({
               city_id: cityId,
               name: source.name,
               type: source.type,
               url: source.url,
               source_score: source.source_score,
               active: true,
+            }, {
+              onConflict: 'city_id,url', // Handle duplicate (city_id, url) pairs
+              ignoreDuplicates: false // Update if exists
             })
             .select()
 
           if (sourceError) {
-            console.error(`  ❌ Failed to insert source ${source.name}:`, sourceError)
-          } else {
-            console.log(`  ✅ Added source: ${source.name}`)
+            // Only log if not a duplicate error (should not happen with upsert)
+            if (!sourceError.message?.includes('duplicate')) {
+              console.error(`  ❌ Failed to upsert source ${source.name}:`, sourceError)
+            }
+          } else if (upsertedSource && upsertedSource.length > 0) {
+            console.log(`  ✅ Added/Updated source: ${source.name}`)
             sourcesAdded++
           }
         } else {
