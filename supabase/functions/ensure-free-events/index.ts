@@ -90,10 +90,10 @@ serve(async (req) => {
     }
 
     const needed = target_free_events - currentFreeCount
-    console.log(`  ⚠️ Need ${needed} more free events`)
+    console.log(`  ⚠️ Need ${needed} more free events - being AGGRESSIVE`)
 
     // STEP 2: Check for unpublished validated free events
-    const { data: unpublishedFree, error: unpublishedError } = await supabaseClient
+    const { data: unpublishedFree, error: unpublishedError} = await supabaseClient
       .from('parsed_events')
       .select(`
         id,
@@ -107,7 +107,7 @@ serve(async (req) => {
       .eq('validation_status', 'validated')
       .gte('event_confidence.final_score', 60)
       .is('event_confidence.event_id', null)
-      .limit(needed * 2) // Fetch more to filter for free events
+      .limit(needed * 3) // ⚠️ Fetch 3x more to filter for free events
 
     if (unpublishedError) throw unpublishedError
 
@@ -117,7 +117,7 @@ serve(async (req) => {
         const json = pe.structured_json || {}
         return json.is_free === true || json.price === 0 || json.price === '0' || !json.price
       }
-    ).slice(0, needed)
+    ).slice(0, needed * 2) // ⚠️ Publish up to 2x needed (buffer)
 
     if (freeUnpublished.length > 0) {
       console.log(`  📤 Publishing ${freeUnpublished.length} unpublished free events`)
@@ -152,7 +152,7 @@ serve(async (req) => {
         .select('*', { count: 'exact', head: true })
         .eq('city_id', city_id)
         .eq('status', 'active')
-        .eq('is_free', true)
+        .eq('price', 0)
 
       if (newCount >= target_free_events) {
         return new Response(
@@ -180,7 +180,7 @@ serve(async (req) => {
       `)
       .eq('raw_events.event_sources.city_id', city_id)
       .eq('validation_status', 'pending')
-      .limit(50)
+      .limit(100) // ⚠️ Increased from 50 to 100
 
     if (!pendingError && pendingFree) {
       const freePending = pendingFree.filter(pe => {
@@ -229,22 +229,114 @@ serve(async (req) => {
       }
     }
 
-    // STEP 4: If still insufficient, fetch from free-focused sources
+    // STEP 4: AGGRESSIVE - Re-fetch ALL free-focused sources (not just 5)
     const { data: freeSources, error: sourceError } = await supabaseClient
       .from('event_sources')
       .select('id, name, url, type')
       .eq('city_id', city_id)
       .eq('active', true)
-      .or('url.ilike.%free%,url.ilike.%library%,url.ilike.%community%')
-      .limit(5)
+      .or('url.ilike.%free%,url.ilike.%gratis%,url.ilike.%library%,url.ilike.%community%,name.ilike.%free%,name.ilike.%gratis%')
+      .limit(15) // ⚠️ Increased from 5 to 15
 
     if (!sourceError && freeSources && freeSources.length > 0) {
-      console.log(`  🔄 Re-fetching ${freeSources.length} free-focused sources`)
+      console.log(`  🔄 AGGRESSIVE: Re-fetching ${freeSources.length} free-focused sources`)
       
       try {
-        // Fetch sources
-        const fetchResponse = await fetch(
-          `${Deno.env.get('SUPABASE_URL')}/functions/v1/fetch-sources`,
+        // ⚠️ Run fetch→parse→validate→publish pipeline TWICE for better yield
+        for (let cycle = 1; cycle <= 2; cycle++) {
+          console.log(`  🔁 Pipeline cycle ${cycle}/2`)
+          
+          const fetchResponse = await fetch(
+            `${Deno.env.get('SUPABASE_URL')}/functions/v1/fetch-sources`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ city_id }),
+            }
+          )
+
+          if (fetchResponse.ok) {
+            const fetchResult = await fetchResponse.json()
+            actions.push(`Cycle ${cycle}: Fetched ${fetchResult.results?.fetched || 0} items`)
+
+            // Parse
+            await fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/parse-event-ai`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ city_id }),
+              }
+            )
+
+            // Validate
+            await fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/validate-event`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ city_id }),
+              }
+            )
+
+            // Publish
+            await fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/publish-event`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ city_id }),
+              }
+            )
+
+            // Check if target reached
+            const { count: midCount } = await supabaseClient
+              .from('events')
+              .select('*', { count: 'exact', head: true })
+              .eq('city_id', city_id)
+              .eq('status', 'active')
+              .eq('price', 0)
+
+            if (midCount >= target_free_events) {
+              console.log(`  ✅ Target reached after cycle ${cycle}`)
+              break
+            }
+          }
+        }
+
+        actions.push('Ran 2 aggressive fetch cycles')
+      } catch (err) {
+        console.error('Aggressive pipeline retry failed:', err)
+      }
+    }
+
+    // STEP 5: If STILL insufficient, discover NEW free-only sources via AI
+    const { count: checkCount } = await supabaseClient
+      .from('events')
+      .select('*', { count: 'exact', head: true })
+      .eq('city_id', city_id)
+      .eq('status', 'active')
+      .eq('price', 0)
+
+    if (checkCount < target_free_events) {
+      console.log(`  🚨 DESPERATE MODE: Only ${checkCount}/${target_free_events} - discovering new sources`)
+      
+      try {
+        // Trigger discover-sources for free-only sources
+        const discoverResponse = await fetch(
+          `${Deno.env.get('SUPABASE_URL')}/functions/v1/discover-sources`,
           {
             method: 'POST',
             headers: {
@@ -255,11 +347,23 @@ serve(async (req) => {
           }
         )
 
-        if (fetchResponse.ok) {
-          const fetchResult = await fetchResponse.json()
-          actions.push(`Re-fetched ${fetchResult.results?.fetched || 0} sources`)
+        if (discoverResponse.ok) {
+          const discoverResult = await discoverResponse.json()
+          actions.push(`Discovered ${discoverResult.sources_added || 0} new sources`)
+          
+          // Run one more pipeline cycle on new sources
+          await fetch(
+            `${Deno.env.get('SUPABASE_URL')}/functions/v1/fetch-sources`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ city_id }),
+            }
+          )
 
-          // Parse → Validate → Publish chain
           await fetch(
             `${Deno.env.get('SUPABASE_URL')}/functions/v1/parse-event-ai`,
             {
@@ -296,14 +400,14 @@ serve(async (req) => {
             }
           )
 
-          actions.push('Ran full pipeline on free sources')
+          actions.push('Ran pipeline on newly discovered sources')
         }
       } catch (err) {
-        console.error('Pipeline retry failed:', err)
+        console.error('Source discovery failed:', err)
       }
     }
 
-    // STEP 5: Final count
+    // STEP 6: Final count
     const { count: finalCount } = await supabaseClient
       .from('events')
       .select('*', { count: 'exact', head: true })

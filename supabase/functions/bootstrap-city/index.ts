@@ -95,13 +95,25 @@ async function discoverCitySources(cityName: string, country: string): Promise<E
 async function discoverSourcesViaGoogleSearch(cityName: string, country: string): Promise<EventSource[]> {
   const sources: EventSource[] = []
   
-  // Build language-specific queries based on country
+  // Build language-specific queries based on country - PRIORITIZE FREE EVENTS
   const getLocalizedQueries = (city: string, country: string) => {
     const countryLower = country.toLowerCase();
     
-    // Base queries (always included)
-    const baseQueries = [
-      `${city} ${country} free events`,
+    // ⭐ PRIORITY: Free-specific queries FIRST
+    const freeQueries = [
+      `${city} free events`,
+      `${city} free activities`,
+      `${city} free things to do`,
+      `${city} free calendar`,
+      `${city} public library events`,
+      `${city} community center calendar`,
+      `${city} parks events free`,
+      `${city} university public events`,
+      `${city} free admission events`,
+    ];
+    
+    // Secondary: General event sources
+    const secondaryQueries = [
       `${city} ${country} events calendar`,
       `${city} ${country} what's on`,
       `${city} ${country} events RSS feed`,
@@ -109,37 +121,46 @@ async function discoverSourcesViaGoogleSearch(cityName: string, country: string)
       `${city} ${country} events iCal`,
     ];
     
-    // Language-specific queries
+    // Language-specific FREE event queries
     if (countryLower.includes('netherland') || countryLower.includes('dutch') || countryLower.includes('belgium')) {
-      return [...baseQueries,
+      return [...freeQueries,
         `${city} gratis evenementen`, // Dutch: free events
-        `${city} activiteiten`, // Dutch: activities
+        `${city} gratis activiteiten`, // Dutch: free activities
+        `${city} kosteloze evenementen`, // Dutch: free events (alt)
+        ...secondaryQueries,
         `${city} evenementenkalender`, // Dutch: events calendar
       ];
     } else if (countryLower.includes('german') || countryLower.includes('austria') || countryLower.includes('switzerland')) {
-      return [...baseQueries,
+      return [...freeQueries,
         `${city} kostenlose Veranstaltungen`, // German: free events
+        `${city} gratis Events`, // German: free events (alt)
+        ...secondaryQueries,
         `${city} Veranstaltungskalender`, // German: events calendar
       ];
     } else if (countryLower.includes('eston')) {
-      return [...baseQueries,
+      return [...freeQueries,
+        `${city} tasuta üritused`, // Estonian: free events
         `${city} üritused`, // Estonian: events
-        `${city} sündmused`, // Estonian: events
+        `${city} sündmused`, // Estonian: events (alt)
         `${city} kultuurikalender`, // Estonian: culture calendar
         `site:${city.toLowerCase()}.ee üritused`,
+        ...secondaryQueries,
       ];
     } else if (countryLower.includes('finn')) {
-      return [...baseQueries,
+      return [...freeQueries,
         `${city} ilmaiset tapahtumat`, // Finnish: free events
+        ...secondaryQueries,
         `${city} tapahtumakalenteri`, // Finnish: events calendar
       ];
     } else if (countryLower.includes('fran') || countryLower.includes('belg')) {
-      return [...baseQueries,
+      return [...freeQueries,
         `${city} événements gratuits`, // French: free events
+        `${city} activités gratuites`, // French: free activities
+        ...secondaryQueries,
         `${city} calendrier événements`, // French: events calendar
       ];
     } else {
-      return baseQueries; // English only for other countries
+      return [...freeQueries, ...secondaryQueries]; // English free + general
     }
   };
   
@@ -272,46 +293,69 @@ async function discoverSourcesViaGemini(cityName: string, country: string): Prom
   console.log(`🤖 Using Gemini AI to discover sources for ${cityName}, ${country}`)
   console.log(`   Gemini API Key set: ${!!GEMINI_API_KEY}`)
 
-  const prompt = `You are an expert at finding FREE event data sources for cities. Focus on discovering sources that primarily list FREE, public events.
+  const prompt = `You are an EXPERT at finding EXCLUSIVELY FREE event sources. Your goal: find 15-20 sources that list ONLY or PRIMARILY free events.
 
-Find FREE event sources for ${cityName}, ${country}.
+CRITICAL: ${cityName}, ${country} must have at least 5 FREE events published. Find sources with HIGH FREE event density.
 
-Return ONLY valid JSON array of sources with this structure:
+Return ONLY valid JSON array:
 [
   {
-    "name": "Source Name",
-    "url": "https://...",
+    "name": "Source Name - emphasize FREE",
+    "url": "https://exact-event-calendar-url.com",
     "type": "html" or "rss" or "api" or "ical",
-    "source_score": 0.8,
-    "description": "Brief description emphasizing free events"
+    "source_score": 0.95,
+    "description": "Why this has free events"
   }
 ]
 
-PRIORITY - Sources with HIGH concentration of FREE events:
-1. **FREE event aggregators** (e.g., "Free Events Amsterdam", "Gratis activiteiten", "Free things to do")
-2. **Official city/municipality FREE event pages** (often in tourism/culture sections)
-3. **Public libraries** - free workshops, readings, exhibitions
-4. **Community centers** - free activities, meetings
-5. **Public museums** - free admission days, free exhibitions
-6. **Parks & Recreation** - free outdoor events, concerts, sports
-7. **Universities** - free public lectures, open seminars
-8. **Cultural foundations** - free art events, performances
-9. **Embassies/Cultural institutes** - free cultural events
-10. **Local Facebook Events** filtered for "free" (if available as RSS/API)
+**MANDATORY TARGETS (find ALL that exist):**
+1. **"Free Events [City]" aggregator sites** - HIGHEST PRIORITY
+   Examples: "Free Events Springfield", "${cityName} Free Things To Do"
+2. **Public Library websites** - "${cityName} public library events" (usually 100% free)
+3. **Community Center calendars** - "${cityName} community center calendar"
+4. **City Parks & Recreation** - "${cityName} parks events" (concerts, sports)
+5. **University event calendars** - "${cityName} university public events" (lectures, seminars)
+6. **Public museums** - "${cityName} museum free days", "free admission"
+7. **Cultural centers/foundations** - Free art events, performances
+8. **City/municipal "Free Events" pages** - Official tourism/culture free calendars
+9. **Church/community hall events** - Usually free community gatherings
+10. **Local Facebook Events pages** - ONLY if RSS/API with free filter exists
 
-**SPECIFIC SEARCH TERMS TO USE:**
+**LOCALIZED SEARCH (use native language):**
+${country.toLowerCase().includes('netherland') || country.toLowerCase().includes('belgium') ? `
+- "${cityName} gratis evenementen"
+- "${cityName} gratis activiteiten"
+- "${cityName} kosteloze evenementen"
+` : ''}
+${country.toLowerCase().includes('german') || country.toLowerCase().includes('austria') || country.toLowerCase().includes('switzerland') ? `
+- "${cityName} kostenlose Veranstaltungen"
+- "${cityName} gratis Events"
+` : ''}
+${country.toLowerCase().includes('eston') ? `
+- "${cityName} tasuta üritused"
+- "${cityName} kultuurikalender"
+- "site:${cityName.toLowerCase()}.ee üritused"
+` : ''}
+${country.toLowerCase().includes('finn') ? `
+- "${cityName} ilmaiset tapahtumat"
+- "${cityName} tapahtumakalenteri"
+` : ''}
+${country.toLowerCase().includes('fran') || country.toLowerCase().includes('belg') ? `
+- "${cityName} événements gratuits"
+- "${cityName} activités gratuites"
+` : ''}
 - "${cityName} free events"
-- "${cityName} gratis evenementen" (if Dutch/Flemish)
-- "${cityName} kostenlose Veranstaltungen" (if German-speaking)
-- "${cityName} ilmaiset tapahtumat" (if Finnish)
-- "${cityName} événements gratuits" (if French-speaking)
-- Plus: "public library events", "community center calendar", "free admission days"
+- "${cityName} free activities"
 
-AVOID: Ticketing platforms (Eventbrite, Meetup) unless they have specific "free events" sections/filters
-INCLUDE: Actual event listing pages from the sources above
+**RULES:**
+- URLs must go to ACTUAL event calendar pages (not homepages!)
+- Prefer RSS/iCal feeds when available
+- Score 0.9+ for "free-only" sites, 0.7+ for "mostly free"
+- AVOID: Ticketmaster, Eventbrite, Meetup (unless free filter URL)
+- Include ALL relevant sources found (aim for 15-20)
 
-Return 5-15 sources prioritized by free event density. Be specific with URLs - link to actual event calendar pages, not just homepages.
-NO markdown, NO explanations, ONLY the JSON array.`
+Return 15-20 sources, sorted by free event concentration (highest first).
+NO explanations, NO markdown, ONLY JSON array.`
 
   try {
     const response = await fetch(

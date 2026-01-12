@@ -77,7 +77,19 @@ function calculateTimeValidity(event: any, timezone: string = 'Europe/Tallinn'):
   }
 }
 
-function calculateGeoAccuracy(event: any, cityBounds?: any): number {
+// Calculate distance between two coordinates (Haversine formula)
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371 // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+  return R * c
+}
+
+function calculateGeoAccuracy(event: any, cityCenter?: { lat: number, lng: number }): number {
   // No coordinates
   if (!event.location_lat || !event.location_lng) {
     return 30 // Has address but no coords
@@ -91,10 +103,24 @@ function calculateGeoAccuracy(event: any, cityBounds?: any): number {
     return 0
   }
 
-  // If city bounds available, check if within bounds
-  // (This would use PostGIS in production)
-  // For now, give high score if coords exist
-  return 100
+  // 🛡️ CRITICAL: Validate event is in correct city (within 50km radius)
+  if (cityCenter?.lat && cityCenter?.lng) {
+    const distance = calculateDistance(lat, lng, cityCenter.lat, cityCenter.lng)
+    console.log(`📍 Distance from city center: ${distance.toFixed(2)} km`)
+    
+    if (distance > 50) {
+      console.warn(`⚠️ Event too far from ${cityCenter.lat},${cityCenter.lng}: ${distance.toFixed(2)} km`)
+      return 0 // REJECT - event is in wrong city!
+    }
+    
+    // Score based on proximity: 100 points if < 10km, 70 points if < 30km, 40 points if < 50km
+    if (distance < 10) return 100
+    if (distance < 30) return 70
+    return 40
+  }
+
+  // If no city center provided, give medium score
+  return 70
 }
 
 async function calculateSemanticValidity(event: any): Promise<number> {
@@ -126,7 +152,8 @@ async function calculateSemanticValidity(event: any): Promise<number> {
 async function validateEvent(
   parsedEvent: any,
   sourceScore: number,
-  timezone: string = 'Europe/Tallinn'
+  timezone: string = 'Europe/Tallinn',
+  cityCenter?: { lat: number, lng: number }
 ): Promise<ValidationResult> {
   const event = parsedEvent.structured_json
   const errors: string[] = []
@@ -135,7 +162,7 @@ async function validateEvent(
   // Calculate individual scores
   const dataCompleteness = calculateDataCompleteness(event)
   const timeValidity = calculateTimeValidity(event, timezone)
-  const geoAccuracy = calculateGeoAccuracy(event)
+  const geoAccuracy = calculateGeoAccuracy(event, cityCenter)
   const semanticValidity = await calculateSemanticValidity(event)
 
   // Calculate final score (weighted average)
@@ -260,12 +287,12 @@ serve(async (req) => {
         // Get city_id from nested structure
         const eventCityId = parsedEvent.raw_events?.event_sources?.city_id
 
-        // Fetch city config for timezone
-        let cityConfig = { timezone: 'Europe/Tallinn', city_name: 'Unknown', country: 'Unknown' }
+        // Fetch city config for timezone and geographic center
+        let cityConfig = { timezone: 'Europe/Tallinn', city_name: 'Unknown', country: 'Unknown', lat: null, lng: null }
         if (eventCityId) {
           const { data: cityConfigData, error: cityError } = await supabaseClient
             .from('city_configs')
-            .select('city_name, country, timezone')
+            .select('city_name, country, timezone, lat, lng')
             .eq('city_id', eventCityId)
             .single()
 
@@ -274,7 +301,7 @@ serve(async (req) => {
           }
         }
 
-        console.log(`Validating event for ${cityConfig.city_name}, ${cityConfig.country} (${cityConfig.timezone})`)
+        console.log(`Validating event for ${cityConfig.city_name}, ${cityConfig.country} (${cityConfig.timezone}) at ${cityConfig.lat},${cityConfig.lng}`)
 
         // Fetch source_score separately to avoid complex JOIN issues
         let sourceScore = 50 // Default score if not found
@@ -300,7 +327,8 @@ serve(async (req) => {
           console.warn(`Failed to fetch source_score for event ${parsedEvent.id}:`, err)
         }
 
-        const validation = await validateEvent(parsedEvent, sourceScore, cityConfig.timezone)
+        const cityCenter = cityConfig.lat && cityConfig.lng ? { lat: cityConfig.lat, lng: cityConfig.lng } : undefined
+        const validation = await validateEvent(parsedEvent, sourceScore, cityConfig.timezone, cityCenter)
 
         // Store confidence scores
         await supabaseClient
