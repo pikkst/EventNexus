@@ -1,8 +1,9 @@
 // AI Agent: Source Watcher Service
-// Fetches raw content from configured public event sources
+// Fetches raw content from configured public event sources (with JavaScript rendering support)
 
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import puppeteer from 'https://deno.land/x/puppeteer@16.2.0/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,8 +40,53 @@ interface EventSource {
   auth_config?: Record<string, string>
 }
 
-// Helper: Fetch content from source
-async function fetchSourceContent(source: EventSource): Promise<string> {
+// Helper: Fetch content from source (with optional JavaScript rendering)
+async function fetchSourceContent(source: EventSource, useJavaScript = false): Promise<string> {
+  // Try JavaScript rendering for HTML sources if requested
+  if (useJavaScript && source.type === 'html') {
+    try {
+      console.log(`🎭 Rendering ${source.url} with JavaScript...`)
+      
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
+      })
+      
+      const page = await browser.newPage()
+      
+      // Set user agent
+      await page.setUserAgent('EventNexus-Bot/1.0 (https://www.eventnexus.eu)')
+      
+      // Navigate and wait for network to be idle (events loaded)
+      await page.goto(source.url, {
+        waitUntil: 'networkidle2',
+        timeout: 45000, // 45s timeout for JS-heavy pages
+      })
+      
+      // Wait extra 2 seconds for any lazy-loaded content
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Get fully rendered HTML
+      const content = await page.content()
+      
+      await browser.close()
+      
+      console.log(`✅ JS-rendered content: ${content.length} chars`)
+      return content
+      
+    } catch (jsError) {
+      console.warn(`⚠️ JavaScript rendering failed for ${source.url}:`, jsError.message)
+      console.log(`📄 Falling back to static fetch...`)
+      // Fall back to static fetch below
+    }
+  }
+  
+  // Standard static fetch (no JavaScript)
   const headers: HeadersInit = {
     'User-Agent': 'EventNexus-Bot/1.0 (https://www.eventnexus.eu)',
     ...source.headers,
@@ -97,10 +143,35 @@ serve(async (req) => {
       try {
         console.log(`Fetching source: ${source.name} (${source.url})`)
 
-        const rawContent = await fetchSourceContent(source)
+        // Step 1: Try static fetch first
+        let rawContent = await fetchSourceContent(source, false)
+        let content = sanitizeContent(rawContent)
         
-        // 🛡️ Sanitize content before storing (remove NULL bytes, invalid Unicode)
-        const content = sanitizeContent(rawContent)
+        // Step 2: Detect if page needs JavaScript (very small content or no event keywords)
+        const needsJavaScript = source.type === 'html' && (
+          content.length < 2000 || // Suspiciously small HTML (likely empty shell)
+          (!content.includes('event') && 
+           !content.includes('Event') &&
+           !content.includes('üritused') &&
+           !content.includes('Sündmused') &&
+           !content.includes('calendar') &&
+           !content.includes('kalender'))
+        )
+        
+        if (needsJavaScript) {
+          console.log(`🔍 Small/empty content detected (${content.length} chars), trying JavaScript rendering...`)
+          const jsContent = await fetchSourceContent(source, true)
+          const jsContentCleaned = sanitizeContent(jsContent)
+          
+          // Use JS-rendered content if it's significantly larger (has actual events)
+          if (jsContentCleaned.length > content.length * 1.5) {
+            console.log(`✅ JavaScript rendering successful: ${content.length} → ${jsContentCleaned.length} chars`)
+            content = jsContentCleaned
+          } else {
+            console.log(`⚠️ JavaScript rendering didn't improve content, keeping static version`)
+          }
+        }
+        
         const contentHash = await generateContentHash(content)
 
         // Check if content already exists (unchanged)

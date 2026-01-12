@@ -193,11 +193,14 @@ async function discoverSourcesViaGoogleSearch(cityName: string, country: string)
         const irrelevantDomains = ['microsoft.com', 'developer.', 'docs.', 'api-docs', 'github.com', 
                                    'stackoverflow.com', 'medium.com', 'wunderground.com', 'weather.com',
                                    'plausible.io', 'analytics', 'toggl.com', 'freshdesk.com', 'salesforce',
-                                   'guidelines', 'handbook', 'manual', 'documentation'];
+                                   'guidelines', 'handbook', 'manual', 'documentation', 'wikipedia.org',
+                                   'reddit.com', 'twitter.com', 'linkedin.com', 'instagram.com'];
         const irrelevantKeywords = ['documentation', 'tutorial', 'how to', 'guide', 'reference', 
                                     'weather', 'forecast', 'temperature', 'tracking software', 'guidelines',
                                     'api reference', 'stats api', 'booking system', 'event space rental',
-                                    'venue rental', 'rent our space', 'book our venue'];
+                                    'venue rental', 'rent our space', 'book our venue', 'parking', 'policy',
+                                    'benefits booklet', 'job posting', 'career', 'employment', 'tender',
+                                    'media release', 'press release', 'news archive', 'reports', 'publications'];
         const irrelevantPaths = ['/guidelines/', '/docs/', '/api-docs/', '/handbook/', '/manual/', '/event-space/', '/venue-rental/'];
         
         const isIrrelevantDomain = irrelevantDomains.some(domain => displayLink.includes(domain) || itemUrl.includes(domain));
@@ -403,7 +406,7 @@ NO explanations, NO markdown, ONLY JSON array.`
   }
 }
 
-async function validateSource(url: string): Promise<boolean> {
+async function validateSource(url: string, cityName: string): Promise<{ valid: boolean; hasEvents: boolean; score: number }> {
   try {
     const response = await fetch(url, {
       method: 'GET',
@@ -414,15 +417,57 @@ async function validateSource(url: string): Promise<boolean> {
       },
       redirect: 'follow'
     })
-    // Accept 200-399 status codes (including redirects)
-    const isValid = response.status >= 200 && response.status < 400
-    console.log(`Source ${url} validation: ${response.status} - ${isValid ? 'VALID' : 'INVALID'}`)
-    return isValid
+    
+    if (response.status < 200 || response.status >= 400) {
+      console.log(`Source ${url} validation: ${response.status} - INVALID`)
+      return { valid: false, hasEvents: false, score: 0 }
+    }
+    
+    // 🧠 SMART CHECK: Analyze page content to see if it ACTUALLY has events
+    const html = await response.text()
+    const contentPreview = html.slice(0, 5000) // First 5KB
+    
+    // Quick heuristics for event calendars
+    const hasCalendarStructure = /class=["']?event|class=["']?calendar|<article|<event/i.test(contentPreview)
+    const hasDatePatterns = /\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|jaanuar|veebruar|märts|aprill|mai|juuni|juuli|august|september|oktoober|november|detsember)\b/i.test(contentPreview)
+    const hasEventKeywords = /(event|üritused|sündmused|kalender|calendar|what's on|happening|concert|kontsert|festival|näitus|exhibition)/i.test(contentPreview)
+    const hasEventListStructure = /(event-list|events-grid|calendar-grid|ürituste-kalender)/i.test(contentPreview)
+    
+    // RED FLAGS: Single event pages, venue rentals, policy documents
+    const isSingleEvent = /single[-_]event|event[-_]id=\d+|\/events?\/\d+\/[a-z0-9-]+$/i.test(url) // Allow /events/ but not /events/123/slug
+    const isVenueRental = /(book our venue|rent our space|venue rental|facility rental|room booking)/i.test(contentPreview)
+    const isPolicyDoc = /(policy|guidelines|handbook|manual|bylaw|regulation).*?(pdf|document)/i.test(contentPreview + url)
+    const isNewArchive = /(news|media release|press release|archive|articles)/i.test(contentPreview)
+    const isParkingPage = /(parking rates|parking fees|parking information)/i.test(contentPreview)
+    
+    // Calculate smart score (balanced approach)
+    let score = 0.4 // Lower baseline to allow genuine calendars
+    if (hasCalendarStructure) score += 0.25
+    if (hasEventListStructure) score += 0.2
+    if (hasDatePatterns && hasEventKeywords) score += 0.3
+    if (hasEventKeywords) score += 0.15
+    if (url.includes('/events') || url.includes('/uritused') || url.includes('/kalender')) score += 0.1
+    
+    // Penalties
+    if (isSingleEvent) score -= 0.5 // Major penalty for single events
+    if (isVenueRental) score -= 0.6 // Not an event calendar
+    if (isPolicyDoc) score -= 0.7 // Definitely not events
+    if (isNewArchive) score -= 0.4 // News, not events
+    if (isParkingPage) score -= 0.7 // Parking info
+    
+    const hasEvents = score > 0.2 // Lower threshold - 0.3 was too strict
+    console.log(`Source ${url} validation: 200 - ${hasEvents ? 'HAS EVENTS' : 'NO EVENTS'} (score: ${score.toFixed(2)})`)
+    
+    return { 
+      valid: true, 
+      hasEvents, 
+      score: Math.max(0, Math.min(1, score)) 
+    }
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
-    console.log(`Source validation error for ${url}: ${errorMsg} - accepting anyway`)
-    // Still add source even if validation fails - let fetch-sources handle it
-    return true
+    console.log(`Source validation error for ${url}: ${errorMsg}`)
+    // If fetch fails, still try - might be temporarily unavailable
+    return { valid: true, hasEvents: true, score: 0.5 }
   }
 }
 
@@ -484,10 +529,15 @@ async function bootstrapCity(
       const discoveredSources = await discoverCitySources(city_name, country)
 
       for (const source of discoveredSources) {
-        // Validate source availability
-        const isValid = await validateSource(source.url)
+        // 🧠 Validate source with smart content analysis
+        const validation = await validateSource(source.url, city_name)
 
-        if (isValid) {
+        if (validation.valid && validation.hasEvents) {
+          // Convert source_score from 0-1 to 0-100 scale, then apply validation boost
+          const baseScore = (source.source_score || 0.5) * 100 // Convert 0.0-1.0 → 0-100
+          const validationBoost = validation.score * 20 // Max +20 points for perfect validation
+          const adjustedScore = Math.round(Math.min(100, baseScore + validationBoost))
+          
           // Use upsert with onConflict to handle duplicates gracefully
           const { data: upsertedSource, error: sourceError } = await supabase
             .from('event_sources')
@@ -496,7 +546,7 @@ async function bootstrapCity(
               name: source.name,
               type: source.type,
               url: source.url,
-              source_score: source.source_score,
+              source_score: Math.round(adjustedScore),
               active: true,
             }, {
               onConflict: 'city_id,url', // Handle duplicate (city_id, url) pairs
@@ -510,9 +560,11 @@ async function bootstrapCity(
               console.error(`  ❌ Failed to upsert source ${source.name}:`, sourceError)
             }
           } else if (upsertedSource && upsertedSource.length > 0) {
-            console.log(`  ✅ Added/Updated source: ${source.name}`)
+            console.log(`  ✅ Added/Updated source: ${source.name} (score: ${Math.round(adjustedScore)})`)
             sourcesAdded++
           }
+        } else if (!validation.hasEvents) {
+          console.log(`  ⏭️ Skipping non-event page: ${source.url} (score: ${validation.score.toFixed(2)})`)
         } else {
           console.log(`  ⏭️ Skipping invalid source: ${source.url}`)
         }

@@ -57,6 +57,9 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   // Selected cities for pipeline execution (using city_id)
   const [selectedCities, setSelectedCities] = useState<Set<string>>(new Set());
   
+  // Force refresh flag - clears all cached data before pipeline run
+  const [forceRefresh, setForceRefresh] = useState(false);
+  
   // Guardian test state
   const [isTestingGuardian, setIsTestingGuardian] = useState(false);
   
@@ -938,6 +941,51 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
       if (citiesToProcess.length === 0) {
         alert('⚠️ No cities selected. Please select at least one city to run the pipeline.');
         return;
+      }
+
+      // 🔄 FORCE REFRESH: Clear all cached data for selected cities
+      if (forceRefresh) {
+        console.log(`🧹 Force Refresh enabled - clearing cached data for ${citiesToProcess.length} cities...`);
+        
+        for (const city of citiesToProcess) {
+          try {
+            // Delete raw_events (cached HTML/API content)
+            await supabase
+              .from('raw_events')
+              .delete()
+              .in('source_id', 
+                supabase.from('event_sources')
+                  .select('id')
+                  .eq('city_id', city.city_id)
+              );
+            
+            // Delete parsed_events (AI-extracted events)
+            await supabase
+              .from('parsed_events')
+              .delete()
+              .in('raw_event_id',
+                supabase.from('raw_events')
+                  .select('id')
+                  .in('source_id',
+                    supabase.from('event_sources')
+                      .select('id')
+                      .eq('city_id', city.city_id)
+                  )
+              );
+            
+            // Delete published events
+            await supabase
+              .from('events')
+              .delete()
+              .eq('city_id', city.city_id);
+            
+            console.log(`  ✅ Cleared cache for ${city.city_name}`);
+          } catch (error: any) {
+            console.error(`  ❌ Failed to clear cache for ${city.city_name}:`, error.message);
+          }
+        }
+        
+        console.log(`✅ Force Refresh complete - starting fresh pipeline`);
       }
 
       totalResults.cities = citiesToProcess.length;
@@ -1889,6 +1937,22 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                   </>
                 )}
               </button>
+              
+              {/* Force Refresh Checkbox */}
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={forceRefresh}
+                  onChange={(e) => setForceRefresh(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                />
+                <span className="select-none">
+                  Force Refresh 
+                  <span className="text-gray-500 ml-1" title="Clear all cached data (raw_events, parsed_events, published events) before running pipeline. Use this when Edge Functions have been updated.">
+                    (clear cache)
+                  </span>
+                </span>
+              </label>
             </div>
 
             {/* Pipeline Progress Tracker */}
