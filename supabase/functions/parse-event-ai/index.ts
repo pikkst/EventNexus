@@ -695,14 +695,27 @@ serve(async (req) => {
         // Geocode addresses
         for (const event of parseResult.events) {
           if (event.location_address && !event.location_lat) {
-            // Enhance address with city name if not present
-            let enhancedAddress = event.location_address
-            const lowerAddress = event.location_address.toLowerCase()
+            // 🧹 Clean address - remove duplicate city names (AI sometimes adds full city name multiple times)
+            let cleanedAddress = event.location_address
             const lowerCity = cityConfig.city_name.toLowerCase()
             
-            // Add city name if not in address (helps geocoding)
+            // Remove "City of X" variants if already present
+            const cityOfPattern = new RegExp(`(,\\s*city of ${lowerCity.replace(/city of /i, '')}|,\\s*${lowerCity})`, 'gi')
+            const parts = cleanedAddress.split(cityOfPattern)
+            if (parts.length > 2) {
+              // Duplicate city found - keep only first occurrence
+              cleanedAddress = parts[0] + (parts[1] || '')
+            }
+            
+            // Enhance address with city name if not present
+            let enhancedAddress = cleanedAddress
+            const lowerAddress = cleanedAddress.toLowerCase()
+            
+            // Add city name ONCE if not in address (helps geocoding)
             if (!lowerAddress.includes(lowerCity)) {
-              enhancedAddress = `${event.location_address}, ${cityConfig.city_name}`
+              // Extract just the core city name (e.g., "Fredericton" from "City of Fredericton")
+              const coreCity = cityConfig.city_name.replace(/^city of\s+/i, '').trim()
+              enhancedAddress = `${cleanedAddress}, ${coreCity}`
             }
             
             const coords = await geocodeAddress(

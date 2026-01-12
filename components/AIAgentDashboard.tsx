@@ -2542,7 +2542,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                           </div>
                           <div className="bg-purple-50 rounded p-2">
                             <p className="text-purple-600 text-xs">Last 30 Days</p>
-                            <p className="font-bold text-purple-900 text-lg">{metric.events_this_week}</p>
+                            <p className="font-bold text-purple-900 text-lg">{metric.events_30d || 0}</p>
                           </div>
                           <div className="bg-orange-50 rounded p-2">
                             <p className="text-orange-600 text-xs">Bootstrap Status</p>
