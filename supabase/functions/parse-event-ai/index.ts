@@ -121,6 +121,18 @@ async function parseEventWithGemini(
   debugMetrics: DebugMetrics, 
   retries = 3
 ): Promise<ParseResult> {
+  // 🧹 CLEAN HTML - Remove tags, keep text (like user copy-paste)
+  let cleanedContent = rawContent
+  if (sourceType === 'html') {
+    cleanedContent = rawContent
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove scripts
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Remove styles
+      .replace(/<[^>]+>/g, ' ') // Remove all HTML tags
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim()
+    console.log(`📄 Cleaned HTML → ${cleanedContent.length} chars (was ${rawContent.length})`)
+  }
+
   // Get current time in city timezone
   const now = new Date()
   const cityTime = new Intl.DateTimeFormat('en-GB', {
@@ -228,10 +240,39 @@ is_free=false (ONLY) when CLEAR PAID INDICATORS:
 **BIAS TOWARDS FREE** - we want to maximize free event discovery for users.
 When ambiguous, choose FREE. Our users prefer free events.
 
+**ESTONIAN/EUROPEAN TABLE FORMATS:**
+Look for these keywords in tables:
+- ÜRITUS / EVENT / EVENEMENT → event name
+- KUUPÄEV / DATUM / DATE → date
+- AEG / ZEIT / TIME → time
+- KOHT / ORT / LOCATION → venue
+- HIND / PREIS / PRICE → price (tasuta/free/gratis = free)
+
+**ESTONIAN DATE FORMATS:**
+Estonian uses abbreviated day names and DD.MM format:
+- E = Esmaspäev (Monday)
+- T = Teisipäev (Tuesday)
+- K = Kolmapäev (Wednesday)
+- N = Neljapäev (Thursday)
+- R = Reede (Friday)
+- L = Laupäev (Saturday)
+- P = Pühapäev (Sunday)
+
+Examples:
+- "K, 14.01" = Wednesday, 14th January
+- "L, 17.01 12:00" = Saturday, 17th January at 12:00
+- "T, 20.01 11:00" = Tuesday, 20th January at 11:00
+
+**ESTONIAN MONTH NAMES:**
+- jaanuar = January, veebruar = February, märts = March
+- aprill = April, mai = May, juuni = June
+- juuli = July, august = August, september = September
+- oktoober = October, november = November, detsember = December
+
 Return ONLY valid JSON array of FUTURE events (prioritize free events). No markdown, no explanations.
 
-Content to parse (HTML/RSS/iCal):
-${rawContent.slice(0, 50000)}` // Limit to 50KB for comprehensive extraction (quality > speed)
+Content to parse (cleaned text):
+${cleanedContent.slice(0, 100000)}` // 100KB limit for large calendars
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {

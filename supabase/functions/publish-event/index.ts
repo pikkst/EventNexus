@@ -487,6 +487,7 @@ serve(async (req) => {
             name: eventData.name,
             description: finalDescription,
             category: eventData.category,
+            start_time: startTime.toISOString(), // CRITICAL: Store full timestamp for filtering
             date: dateStr,
             time: timeOnly,
             location: {
