@@ -1116,65 +1116,184 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             fullLogs: [...prev.fullLogs, `  ✅ Fetched ${fetched} events`]
           }));
 
-          // Step 2: Parse with AI (processes all pending for this city) with retry logic
+          // Step 2: Parse with AI (loop until all pending events processed)
           console.log(`  🤖 Step 2/4: Parsing with AI...`);
-          let parseResp;
-          let parseAttempt = 0;
-          const maxParseRetries = 2; // Retry up to 2 times on 504 timeout
+          let totalParsedForCity = 0;
+          let parseLoop = 0;
+          const maxParseLoops = 10; // Safety limit (10 loops * 3 events = 30 max)
           
-          while (parseAttempt <= maxParseRetries) {
-            try {
-              parseResp = await supabase.functions.invoke('parse-event-ai', {
-                body: { city_id: city.city_id }
-              });
-              
-              // If successful or non-timeout error, break
-              if (!parseResp.error || !parseResp.error.message?.includes('504')) {
+          // Keep calling parse-event-ai until no more pending events (Edge Function processes 3 at a time)
+          while (parseLoop < maxParseLoops) {
+            parseLoop++;
+            let parseResp;
+            let parseAttempt = 0;
+            const maxParseRetries = 2; // Retry up to 2 times on 504 timeout
+            
+            while (parseAttempt <= maxParseRetries) {
+              try {
+                parseResp = await supabase.functions.invoke('parse-event-ai', {
+                  body: { city_id: city.city_id }
+                });
+                
+                // If successful or non-timeout error, break
+                if (!parseResp.error || !parseResp.error.message?.includes('504')) {
+                  break;
+                }
+                
+                // 504 timeout - retry
+                parseAttempt++;
+                if (parseAttempt <= maxParseRetries) {
+                  const retryDelay = 3000 * parseAttempt; // 3s, 6s
+                  console.log(`  ⏳ Parse timeout (loop ${parseLoop}, attempt ${parseAttempt}/${maxParseRetries + 1}), retrying in ${retryDelay}ms...`);
+                  setPipelineProgress(prev => ({
+                    ...prev,
+                    currentStep: `⏳ Parse timeout, retry ${parseAttempt}/${maxParseRetries + 1}...`,
+                    recentLogs: [...prev.recentLogs.slice(-9), `  ⏳ Retry parse (loop ${parseLoop}, attempt ${parseAttempt}/${maxParseRetries + 1})`],
+                    fullLogs: [...prev.fullLogs, `  ⏳ Parse timeout, retrying (loop ${parseLoop}, attempt ${parseAttempt}/${maxParseRetries + 1})`]
+                  }));
+                  await new Promise(resolve => setTimeout(resolve, retryDelay));
+                }
+              } catch (error) {
+                parseResp = { error };
                 break;
               }
+            }
+            
+            if (parseResp.error) {
+              const errorMsg = parseResp.error.message || String(parseResp.error);
+              const is504 = errorMsg.includes('504');
+              totalResults.cityErrors.push(`${city.city_name}: Parse failed - ${errorMsg}`);
+              setPipelineProgress(prev => ({
+                ...prev,
+                recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Parse failed (loop ${parseLoop}): ${errorMsg}${is504 ? ' (timeout after retries)' : ''}`],
+                fullLogs: [...prev.fullLogs, `  ⚠️ Parse failed (loop ${parseLoop}): ${errorMsg}${is504 ? ' (timeout after retries)' : ''}`],
+                errors: [...prev.errors, `[${city.city_name}] Parse: ${errorMsg}`]
+              }));
+              break; // Stop loop on error
+            }
+            
+            // Get parsed count from response
+            const parsed = parseResp.data?.results?.parsed || parseResp.data?.results?.events_extracted || 0;
+            totalParsedForCity += parsed;
+            console.log(`  ✅ Parse loop ${parseLoop}: ${parsed} events (total: ${totalParsedForCity})`);
+            
+            // 📊 Collect debug metrics from parse-event-ai for detailed logging
+            if (parseResp.data?.debugMetrics) {
+              const metrics = parseResp.data.debugMetrics;
               
-              // 504 timeout - retry
-              parseAttempt++;
-              if (parseAttempt <= maxParseRetries) {
-                const retryDelay = 3000 * parseAttempt; // 3s, 6s
-                console.log(`  ⏳ Parse timeout (attempt ${parseAttempt}/${maxParseRetries + 1}), retrying in ${retryDelay}ms...`);
+              // Add detailed errors to pipeline logs
+              if (metrics.detailedErrors && metrics.detailedErrors.length > 0) {
+                metrics.detailedErrors.forEach((err: any) => {
+                  const errorLog = `    🔍 ${err.step}: ${err.error}`;
+                  setPipelineProgress(prev => ({
+                    ...prev,
+                    fullLogs: [...prev.fullLogs, errorLog],
+                    detailedErrors: [...prev.detailedErrors, { city: city.city_name, ...err }]
+                  }));
+                });
+              }
+              
+              // Add validation failures
+              if (metrics.validationFailures && metrics.validationFailures.length > 0) {
+                metrics.validationFailures.forEach((fail: any) => {
+                  const failLog = `    ⚠️ ${fail.eventName}: ${fail.reason}`;
+                  setPipelineProgress(prev => ({
+                    ...prev,
+                    fullLogs: [...prev.fullLogs, failLog],
+                    validationFailures: [...prev.validationFailures, { city: city.city_name, ...fail }]
+                  }));
+                });
+              }
+              
+              // Add AI stats
+              if (metrics.aiStats) {
+                const aiLog = `    🤖 AI: ${metrics.aiStats.requests} requests, ${metrics.aiStats.timeouts} timeouts, model: ${metrics.aiStats.modelUsed}`;
                 setPipelineProgress(prev => ({
                   ...prev,
-                  currentStep: `⏳ Parse timeout, retry ${parseAttempt}/${maxParseRetries + 1}...`,
-                  recentLogs: [...prev.recentLogs.slice(-9), `  ⏳ Retry parse (${parseAttempt}/${maxParseRetries + 1})`],
-                  fullLogs: [...prev.fullLogs, `  ⏳ Parse timeout, retrying (${parseAttempt}/${maxParseRetries + 1})`]
+                  fullLogs: [...prev.fullLogs, aiLog],
+                  aiStats: {
+                    totalRequests: prev.aiStats.totalRequests + metrics.aiStats.requests,
+                    timeouts: prev.aiStats.timeouts + metrics.aiStats.timeouts,
+                    rateLimits: prev.aiStats.rateLimits + metrics.aiStats.rateLimits,
+                    modelUsage: {
+                      ...prev.aiStats.modelUsage,
+                      [metrics.aiStats.modelUsed]: (prev.aiStats.modelUsage[metrics.aiStats.modelUsed] || 0) + 1
+                    },
+                    avgResponseTime: ((prev.aiStats.avgResponseTime * prev.aiStats.totalRequests) + 
+                                      (parseFloat(metrics.aiStats.avgResponseTime) * metrics.aiStats.requests)) / 
+                                     (prev.aiStats.totalRequests + metrics.aiStats.requests)
+                  }
                 }));
-                await new Promise(resolve => setTimeout(resolve, retryDelay));
               }
-            } catch (error) {
-              parseResp = { error };
+              
+              // Add geocoding stats
+              if (metrics.geocodingStats) {
+                setPipelineProgress(prev => ({
+                  ...prev,
+                  geocodingStats: {
+                    attempts: prev.geocodingStats.attempts + metrics.geocodingStats.attempts,
+                    successes: prev.geocodingStats.successes + metrics.geocodingStats.successes,
+                    failures: prev.geocodingStats.failures + metrics.geocodingStats.failures,
+                    avgTime: ((prev.geocodingStats.avgTime * prev.geocodingStats.attempts) + 
+                              (parseFloat(metrics.performance.geocodeTime) * metrics.geocodingStats.attempts)) /
+                             (prev.geocodingStats.attempts + metrics.geocodingStats.attempts),
+                    failureReasons: {
+                      ...prev.geocodingStats.failureReasons,
+                      ...Object.fromEntries(
+                        Object.entries(metrics.geocodingStats.failureReasons).map(([k, v]: [string, any]) => [
+                          k,
+                          (prev.geocodingStats.failureReasons[k] || 0) + v
+                        ])
+                      )
+                    }
+                  }
+                }));
+              }
+              
+              // Add performance metrics
+              setPipelineProgress(prev => ({
+                ...prev,
+                performanceMetrics: [
+                  ...prev.performanceMetrics,
+                  {
+                    city: city.city_name,
+                    step: 'parse',
+                    duration: metrics.performance.totalTime,
+                    timestamp: new Date().toISOString()
+                  }
+                ]
+              }));
+            }
+            
+            // If 0 events parsed, no more pending events - exit loop
+            if (parsed === 0) {
+              console.log(`  ℹ️ No more pending events to parse`);
               break;
             }
-          }
-          
-          if (parseResp.error) {
-            const errorMsg = parseResp.error.message || String(parseResp.error);
-            const is504 = errorMsg.includes('504');
-            totalResults.cityErrors.push(`${city.city_name}: Parse failed - ${errorMsg}`);
-            setPipelineProgress(prev => ({
-              ...prev,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Parse failed: ${errorMsg}${is504 ? ' (timeout after retries)' : ''}`],
-              fullLogs: [...prev.fullLogs, `  ⚠️ Parse failed: ${errorMsg}${is504 ? ' (timeout after retries)' : ''}`],
-              errors: [...prev.errors, `[${city.city_name}] Parse: ${errorMsg}`]
-            }));
-          } else {
-            // Try both .parsed and .events_extracted keys for backward compatibility
-            const parsed = parseResp.data?.results?.parsed || parseResp.data?.results?.events_extracted || 0;
-            totalResults.totalParsed += parsed;
-            console.log(`  ✅ Parsed ${parsed} events`);
+            
             setPipelineProgress(prev => ({
               ...prev,
               totalParsed: prev.totalParsed + parsed,
-              currentStep: '✅ Validating...',
-              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Parsed ${parsed} events`],
-              fullLogs: [...prev.fullLogs, `  ✅ Parsed ${parsed} events`]
+              currentStep: `🤖 Parsing... (${totalParsedForCity} processed)`,
+              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Parse loop ${parseLoop}: ${parsed} events`],
+              fullLogs: [...prev.fullLogs, `  ✅ Parse loop ${parseLoop}: ${parsed} events (total: ${totalParsedForCity})`]
             }));
+            
+            // Small delay between loops to avoid overwhelming the database
+            if (parsed > 0 && parseLoop < maxParseLoops) {
+              await new Promise(resolve => setTimeout(resolve, 1000)); // 1s delay
+            }
           }
+          
+          // Update final state
+          totalResults.totalParsed += totalParsedForCity;
+          console.log(`  ✅ Total parsed for ${city.city_name}: ${totalParsedForCity} events`);
+          setPipelineProgress(prev => ({
+            ...prev,
+            currentStep: '✅ Validating...',
+            recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Parsed ${totalParsedForCity} events total`],
+            fullLogs: [...prev.fullLogs, `  ✅ Parsed ${totalParsedForCity} events total`]
+          }));
 
           // Step 3: Validate events
           console.log(`  ✅ Step 3/4: Validating...`);

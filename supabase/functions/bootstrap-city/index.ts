@@ -194,14 +194,21 @@ async function discoverSourcesViaGoogleSearch(cityName: string, country: string)
                                    'stackoverflow.com', 'medium.com', 'wunderground.com', 'weather.com',
                                    'plausible.io', 'analytics', 'toggl.com', 'freshdesk.com', 'salesforce',
                                    'guidelines', 'handbook', 'manual', 'documentation', 'wikipedia.org',
-                                   'reddit.com', 'twitter.com', 'linkedin.com', 'instagram.com'];
+                                   'reddit.com', 'twitter.com', 'linkedin.com', 'instagram.com',
+                                   'pbs.org', 'hrw.org', 'theguardian.com', 'hurriyetdailynews.com']; // Add news sites
         const irrelevantKeywords = ['documentation', 'tutorial', 'how to', 'guide', 'reference', 
                                     'weather', 'forecast', 'temperature', 'tracking software', 'guidelines',
                                     'api reference', 'stats api', 'booking system', 'event space rental',
                                     'venue rental', 'rent our space', 'book our venue', 'parking', 'policy',
                                     'benefits booklet', 'job posting', 'career', 'employment', 'tender',
-                                    'media release', 'press release', 'news archive', 'reports', 'publications'];
-        const irrelevantPaths = ['/guidelines/', '/docs/', '/api-docs/', '/handbook/', '/manual/', '/event-space/', '/venue-rental/'];
+                                    'media release', 'press release', 'news archive', 'reports', 'publications',
+                                    'ban on', 'court ruling', 'human rights', 'course registration', 
+                                    'student activities course', 'etk301', 'regarding the']; // News/academic content
+        const irrelevantPaths = ['/guidelines/', '/docs/', '/api-docs/', '/handbook/', '/manual/', '/event-space/', '/venue-rental/',
+                                 '/news/', '/article/', '/world/', '/newshour/']; // News paths
+        
+        // STRICT: Single event pages (not calendars)
+        const isSingleEvent = /\/(event|events?)\/\d+\/|\/\d{4}\/\d{2}\/\d{2}\/|junior-grand-prix-\w+-\d{4}|\/season\d+/i.test(itemUrl)
         
         const isIrrelevantDomain = irrelevantDomains.some(domain => displayLink.includes(domain) || itemUrl.includes(domain));
         const isIrrelevantContent = irrelevantKeywords.some(kw => itemTitle.includes(kw) || itemSnippet.includes(kw));
@@ -211,8 +218,9 @@ async function discoverSourcesViaGoogleSearch(cityName: string, country: string)
         // Block .ca, .us, .au domains for Estonian cities
         const wrongCountry = (country === 'Estonia' && (itemUrl.includes('.ca') || itemUrl.includes('.us') || itemUrl.includes('.au') || displayLink.includes('.ca')));
         
-        if (isIrrelevantDomain || isIrrelevantContent || isIrrelevantPath || wrongCountry) {
-          console.log(`   Filtered out irrelevant: ${item.title} [${wrongCountry ? 'wrong country' : 'irrelevant'}]`)
+        if (isIrrelevantDomain || isIrrelevantContent || isIrrelevantPath || wrongCountry || isSingleEvent) {
+          const reason = wrongCountry ? 'wrong country' : isSingleEvent ? 'single event' : 'irrelevant'
+          console.log(`   Filtered out ${reason}: ${item.title}`)
           continue
         }
         
@@ -476,11 +484,61 @@ async function bootstrapCity(
   request: CityBootstrapRequest
 ): Promise<{ success: boolean; city_id: string; sources_added: number; events_seeded: number; error?: string }> {
   
-  const { city_name, country, languages = ['en'], timezone = 'UTC', auto_discover = true, seed_events = true } = request
+  const { city_name, country, languages = ['en'], auto_discover = true, seed_events = true } = request
+  let timezone = request.timezone || 'UTC' // Default to UTC if not provided
   
   let cityId = request.city_id  // Define at function scope
 
   try {
+    // 0. Auto-detect timezone from coordinates if not provided
+    if (!request.timezone) {
+      console.log(`🌍 Auto-detecting timezone for ${city_name}, ${country}...`)
+      
+      // Geocode city to get coordinates
+      try {
+        const geocodeResponse = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city_name + ', ' + country)}&limit=1`,
+          {
+            headers: {
+              'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
+              'Accept-Language': 'en'
+            }
+          }
+        )
+        
+        if (geocodeResponse.ok) {
+          const geocodeData = await geocodeResponse.json()
+          if (geocodeData && geocodeData.length > 0) {
+            const lat = parseFloat(geocodeData[0].lat)
+            const lng = parseFloat(geocodeData[0].lon)
+            
+            console.log(`   Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`)
+            
+            // Get timezone from coordinates using timeapi.io (free)
+            await new Promise(resolve => setTimeout(resolve, 1100)) // Rate limit
+            
+            const timezoneResponse = await fetch(
+              `https://timeapi.io/api/TimeZone/coordinate?latitude=${lat}&longitude=${lng}`,
+              {
+                headers: { 'Accept': 'application/json' }
+              }
+            )
+            
+            if (timezoneResponse.ok) {
+              const timezoneData = await timezoneResponse.json()
+              if (timezoneData && timezoneData.timeZone) {
+                timezone = timezoneData.timeZone
+                console.log(`   ✅ Auto-detected timezone: ${timezone}`)
+              }
+            }
+          }
+        }
+      } catch (tzError) {
+        console.error('Timezone auto-detection failed, using UTC:', tzError)
+        timezone = 'UTC'
+      }
+    }
+    
     // 1. Create or get city config
     if (!cityId) {
       const { data: existingCity, error: checkError } = await supabase
