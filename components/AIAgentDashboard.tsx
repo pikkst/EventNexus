@@ -53,6 +53,9 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   // Store Supabase agent logs for download
   const [supabaseLogs, setSupabaseLogs] = useState<AgentLog[]>([]);
   
+  // Selected cities for pipeline execution (using city_id)
+  const [selectedCities, setSelectedCities] = useState<Set<string>>(new Set());
+  
   // Load persisted pipeline progress from localStorage
   const loadPersistedProgress = () => {
     try {
@@ -878,9 +881,19 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         alert('⚠️ No active cities found. Please add and activate cities first.');
         return;
       }
+      
+      // Filter by selected cities if any are selected
+      const citiesToProcess = selectedCities.size > 0
+        ? activeCities.filter(city => selectedCities.has(city.city_id))
+        : activeCities;
+      
+      if (citiesToProcess.length === 0) {
+        alert('⚠️ No cities selected. Please select at least one city to run the pipeline.');
+        return;
+      }
 
-      totalResults.cities = activeCities.length;
-      console.log(`🌍 Processing ${activeCities.length} cities one by one...`);
+      totalResults.cities = citiesToProcess.length;
+      console.log(`🌍 Processing ${citiesToProcess.length} cities one by one...`);
 
       // Initialize progress
       const runStartTime = new Date().toISOString();
@@ -891,7 +904,7 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         runEndTime: null,
         currentCity: '',
         currentCityIndex: 0,
-        totalCities: activeCities.length,
+        totalCities: citiesToProcess.length,
         citiesCompleted: 0,
         citiesFailed: 0,
         totalFetched: 0,
@@ -899,8 +912,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         totalValidated: 0,
         totalPublished: 0,
         currentStep: 'Starting pipeline...',
-        recentLogs: [`Started processing ${activeCities.length} cities`],
-        fullLogs: [`Started processing ${activeCities.length} cities`],
+        recentLogs: [`Started processing ${citiesToProcess.length} cities`],
+        fullLogs: [`Started processing ${citiesToProcess.length} cities`],
         errors: [], // Reset errors at pipeline start
         detailedErrors: [],
         performanceMetrics: [],
@@ -922,12 +935,12 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
       });
 
       // Process each city through full pipeline
-      for (let i = 0; i < activeCities.length; i++) {
-        const city = activeCities[i];
-        console.log(`\n🏙️ [${i + 1}/${activeCities.length}] Processing: ${city.city_name}, ${city.country}`);
+      for (let i = 0; i < citiesToProcess.length; i++) {
+        const city = citiesToProcess[i];
+        console.log(`\n🏙️ [${i + 1}/${citiesToProcess.length}] Processing: ${city.city_name}, ${city.country}`);
 
         // Update progress - current city
-        const cityLogEntry = `[${i + 1}/${activeCities.length}] ${city.city_name}, ${city.country} ${city.country_code ? '(' + city.country_code.toUpperCase() + ')' : ''}`;
+        const cityLogEntry = `[${i + 1}/${citiesToProcess.length}] ${city.city_name}, ${city.country} ${city.country_code ? '(' + city.country_code.toUpperCase() + ')' : ''}`;
         setPipelineProgress(prev => ({
           ...prev,
           currentCity: `${city.city_name}, ${city.country}`,
@@ -1702,7 +1715,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                 ) : (
                   <>
                     <Play className="w-4 h-4" />
-                    Run Pipeline
+                    Run Pipeline {selectedCities.size > 0 && `(${selectedCities.size} selected)`}
                   </>
                 )}
               </button>
@@ -2112,6 +2125,26 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">City Health & Pipeline Status</h3>
                   <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mr-4 px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
+                      <span className="text-sm font-medium text-blue-700">
+                        {selectedCities.size} / {cityMetrics.length} selected
+                      </span>
+                      <button
+                        onClick={() => {
+                          const allCityIds = new Set(cityMetrics.map(m => m.id));
+                          setSelectedCities(allCityIds);
+                        }}
+                        className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        Select All
+                      </button>
+                      <button
+                        onClick={() => setSelectedCities(new Set())}
+                        className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                      >
+                        Deselect All
+                      </button>
+                    </div>
                     <button
                       onClick={batchBootstrapAllPendingCities}
                       disabled={batchBootstrapping || loading}
@@ -2183,6 +2216,20 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                       <div key={metric.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedCities.has(metric.id)}
+                              onChange={(e) => {
+                                const newSelected = new Set(selectedCities);
+                                if (e.target.checked) {
+                                  newSelected.add(metric.id);
+                                } else {
+                                  newSelected.delete(metric.id);
+                                }
+                                setSelectedCities(newSelected);
+                              }}
+                              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                            />
                             <MapPin className={`w-5 h-5 ${metric.city?.active ? 'text-green-500' : 'text-gray-400'}`} />
                             <div>
                               <h4 className="font-medium text-gray-900">
