@@ -286,94 +286,59 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   }
 
   async function loadCityMetrics(): Promise<CityHealthMetrics[]> {
-    // Load real-time city health metrics - active cities with event counts
-    const { data: cities, error } = await supabase
-      .from('city_configs')
-      .select(`
-        city_id,
-        city_name,
-        country,
-        is_active,
-        created_at
-      `)
-      .order('city_name');
+    // ✅ Load from city_health_view (backend health system)
+    const { data: healthData, error: healthError } = await supabase
+      .from('city_health_view')
+      .select('*')
+      .order('health_score', { ascending: false });
 
-    if (error) {
-      console.error('Failed to load cities:', error);
+    if (healthError) {
+      console.error('Failed to load city health:', healthError);
       return [];
     }
 
-    if (!cities || cities.length === 0) return [];
+    if (!healthData || healthData.length === 0) return [];
+    
+    // Get city configs for additional metadata
+    const { data: cities, error: cityError } = await supabase
+      .from('city_configs')
+      .select('city_id, city_name, country, active, state, recovery_attempts, recovery_cooldown_until, pipeline_enabled, bootstrap_status')
+      .order('city_name');
 
-    // For each city, get event sources count and events count
-    const metrics = await Promise.all(
-      cities.map(async (city) => {
-        // Count active event sources
-        const { count: sourcesCount } = await supabase
-          .from('event_sources')
-          .select('*', { count: 'exact', head: true })
-          .eq('city_id', city.city_id)
-          .eq('active', true);
+    if (cityError) {
+      console.error('Failed to load city configs:', cityError);
+      return [];
+    }
 
-        // Count events from last 30 days
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-        const { count: eventsCount } = await supabase
-          .from('events')
-          .select('*', { count: 'exact', head: true })
-          .eq('city_id', city.city_id)
-          .gte('created_at', thirtyDaysAgo);
-
-        // Count total events (all time)
-        const { count: totalEvents } = await supabase
-          .from('events')
-          .select('*', { count: 'exact', head: true })
-          .eq('city_id', city.city_id);
-
-        // Count active free events (⭐ NEW)
-        const { count: freeEventsCount } = await supabase
-          .from('events')
-          .select('*', { count: 'exact', head: true })
-          .eq('city_id', city.city_id)
-          .eq('status', 'active')
-          .eq('price', 0);
-
-        // Calculate freshness score (0-100) based on created_at (since last_bootstrap_at doesn't exist yet)
-        const daysSinceCreated = Math.floor((Date.now() - new Date(city.created_at).getTime()) / (1000 * 60 * 60 * 24));
-        
-        // 🔧 FIX: Health should be 0 if no sources
-        let freshness_score = 0;
-        
-        if (sourcesCount > 0) {
-          // Base health on source count and activity
-          freshness_score = 100;
-          if (daysSinceCreated > 7) freshness_score = 70;
-          if (daysSinceCreated > 30) freshness_score = 40;
-          if (daysSinceCreated > 90) freshness_score = 10;
-        }
-        
-        if (!city.is_active) freshness_score = 0;
-
-        return {
-          id: city.city_id,
-          city_id: city.city_id,
-          active_sources: sourcesCount || 0,
-          total_events: totalEvents || 0,
-          events_this_week: eventsCount || 0,
-          free_events_count: freeEventsCount || 0, // ⭐ NEW
-          avg_confidence: 0.85, // Placeholder
-          freshness_score,
-          last_fetch_at: null, // Will be populated after SQL migration
-          calculated_at: new Date().toISOString(),
-          city: {
-            city_name: city.city_name,
-            country: city.country,
-            active: city.is_active
-          },
-          pipeline_enabled: true, // Default until column exists
-          bootstrap_status: sourcesCount > 0 ? 'completed' : 'pending' // Infer from sources
-        };
-      })
-    );
+    // Map health view data to CityHealthMetrics
+    const metrics: CityHealthMetrics[] = healthData.map((health) => {
+      const cityConfig = cities?.find(c => c.city_id === health.city_id);
+      
+      return {
+        id: health.city_id,
+        city_id: health.city_id,
+        active_sources: health.active_sources || 0,
+        total_events: 0, // not in health_view yet
+        events_this_week: health.events_7d || 0,
+        free_events_count: 0, // will be added to view later
+        avg_confidence: health.avg_confidence_score || 0,
+        freshness_score: health.health_score || 0, // ✅ Use backend health_score
+        last_fetch_at: null,
+        calculated_at: new Date().toISOString(),
+        city: {
+          city_name: health.city_name,
+          country: health.country,
+          active: cityConfig?.active ?? true
+        },
+        pipeline_enabled: cityConfig?.pipeline_enabled ?? true,
+        bootstrap_status: cityConfig?.bootstrap_status || 'pending',
+        // ✅ Guardian fields
+        health_status: health.health_status, // 🟢🟡🟠🔴
+        recovery_attempts: cityConfig?.recovery_attempts || 0,
+        recovery_cooldown_until: cityConfig?.recovery_cooldown_until,
+        city_state: cityConfig?.state || 'ACTIVE'
+      };
+    });
 
     return metrics;
   }
@@ -2293,15 +2258,24 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                                 Bootstrapping...
                               </div>
                             ) : (
-                              <div className={`px-2 py-1 rounded text-xs font-medium ${
-                                metric.freshness_score >= 80 ? 'bg-green-100 text-green-700' :
-                                metric.freshness_score >= 60 ? 'bg-yellow-100 text-yellow-700' :
-                                metric.freshness_score >= 40 ? 'bg-orange-100 text-orange-700' :
-                                metric.freshness_score === 0 ? 'bg-gray-100 text-gray-600' :
-                                'bg-red-100 text-red-700'
-                              }`}>
-                                Health: {metric.freshness_score}%
-                              </div>
+                              <>
+                                {/* ✅ Show health_status from backend if available */}
+                                {metric.health_status && (
+                                  <div className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                    {metric.health_status}
+                                  </div>
+                                )}
+                                {/* Fallback to freshness_score color coding */}
+                                <div className={`px-2 py-1 rounded text-xs font-medium ${
+                                  metric.freshness_score >= 80 ? 'bg-green-100 text-green-700' :
+                                  metric.freshness_score >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                                  metric.freshness_score >= 40 ? 'bg-orange-100 text-orange-700' :
+                                  metric.freshness_score === 0 ? 'bg-gray-100 text-gray-600' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  Health: {metric.freshness_score}%
+                                </div>
+                              </>
                             )}
                             <div className={`w-3 h-3 rounded-full ${getHealthColor(metric.freshness_score)}`} />
                           </div>

@@ -762,7 +762,7 @@ export interface CityHealthMetrics {
   avg_confidence: number;
   failed_sources?: number;
   active_sources: number;
-  freshness_score: number;
+  freshness_score: number; // Alias for health_score for backwards compatibility
   unclaimed_events?: number;
   claimed_events?: number;
   calculation_metadata?: Record<string, any>;
@@ -770,6 +770,11 @@ export interface CityHealthMetrics {
   last_fetch_at?: string | null;
   pipeline_enabled?: boolean;
   bootstrap_status?: 'pending' | 'bootstrapping' | 'completed' | 'failed';
+  // ✅ Guardian health system fields (from city_health_view)
+  health_status?: string; // 🟢 ACTIVE, 🟡 DEGRADED, 🟠 STARVED, 🔴 RECOVERING
+  recovery_attempts?: number;
+  recovery_cooldown_until?: string | null;
+  city_state?: string; // ACTIVE, RECOVERING, DEGRADED, QUARANTINED
   // Joined data
   city?: CityConfig;
 }
