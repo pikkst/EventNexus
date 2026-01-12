@@ -197,16 +197,38 @@ IMPORTANT - DESCRIPTION QUALITY:
 - Include EVENT PROGRAM/SCHEDULE if mentioned (e.g., "14:00 Opening, 15:00 Main event")
 - Add context about the venue if it's well-known (e.g., "at the historic Humboldt Forum")
 
-CRITICAL - PAID vs FREE (Default to FREE):
-- **ALWAYS SET is_free=true** unless you see EXPLICIT paid admission indicators
-- Set is_free=false ONLY if you see: "Buy tickets", "€X admission", "Tickets €X", "Price: €X", "Paid entry", "Entry fee"
-- **DEFAULT to is_free=true** for ALL events WITHOUT clear price mentions
-- Free indicators: "Free admission", "Free entry", "Free of charge", NO price/ticket mentions
-- **If no price info is visible → ASSUME FREE (is_free=true, price=0)**
-- Libraries, community centers, galleries, parks → ASSUME FREE unless stated otherwise
-- **BIAS TOWARDS FREE** - we want to maximize free event discovery for users
+CRITICAL - PAID vs FREE (AGGRESSIVE FREE BIAS):
+**PRIORITY: We are building a FREE events platform. Default EVERYTHING to FREE unless payment is EXPLICIT and UNAVOIDABLE.**
 
-Return ONLY valid JSON array of FUTURE events (preferably free). No markdown, no explanations.
+is_free=true (DEFAULT) when:
+- NO price/ticket mention anywhere
+- "Free admission", "Free entry", "Open to public", "No charge"
+- "Suggested donation", "Pay what you want", "Voluntary contribution"
+- Libraries, community centers, public parks, embassies
+- Universities (public lectures, seminars, open days)
+- Public museums (general admission unless "special exhibition €X")
+- Street events, outdoor festivals, public spaces
+- Community gatherings, workshops at cultural centers
+- **IF IN DOUBT → FREE**
+
+is_free=false (ONLY) when CLEAR PAID INDICATORS:
+- "Tickets €X", "Admission €X", "Entry fee €X"
+- "Buy tickets at...", "Ticket required", "Ticketed event"
+- Concert/theater with ticket sales platforms linked
+- "Members only" or "Subscription required"
+- Restaurant/bar events with minimum consumption
+
+**AGGRESSIVE HEURISTICS:**
+1. No price mentioned anywhere → is_free=true, price=0
+2. Public institution (library, park, community center) → is_free=true, price=0
+3. "Free" appears ANYWHERE in description → is_free=true, price=0
+4. Only donation/contribution mentioned → is_free=true, price=0
+5. University/academic events → is_free=true unless ticket site linked
+
+**BIAS TOWARDS FREE** - we want to maximize free event discovery for users.
+When ambiguous, choose FREE. Our users prefer free events.
+
+Return ONLY valid JSON array of FUTURE events (prioritize free events). No markdown, no explanations.
 
 Content to parse (HTML/RSS/iCal):
 ${rawContent.slice(0, 30000)}` // Limit to 30KB to avoid timeouts on large HTML

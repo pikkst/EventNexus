@@ -51,35 +51,51 @@ serve(async (req) => {
       ? city.languages.join(', ') 
       : 'English'
 
-    // 2️⃣ Ask Gemini to suggest public event sources
-    const prompt = `You are an expert at discovering public event listing websites and resources.
+    // 2️⃣ Ask Gemini to suggest FREE event sources (PRIORITY)
+    const prompt = `You are an expert at discovering FREE event sources for cities. Focus on sources that primarily list FREE, public, no-cost events.
 
 City: ${city.city_name}, ${city.country}
 Languages: ${languages}
 
-Task: Find legitimate, publicly accessible event listing websites and resources for this city.
+Task: Find FREE event sources - websites and resources that list FREE events with high density.
+
+**PRIORITY TARGETS (in order):**
+1. **FREE event aggregators** - Sites specifically dedicated to free events
+   Examples: "Free Events [City]", "Gratis Evenementen", "Kostenlose Veranstaltungen"
+2. **Public libraries** - FREE workshops, readings, screenings, exhibitions
+3. **Community centers** - FREE classes, activities, community gatherings
+4. **Public museums** - FREE admission days, free exhibitions, open events
+5. **City parks & recreation** - FREE outdoor concerts, sports, festivals
+6. **Universities** - FREE public lectures, seminars, open houses
+7. **Cultural centers/foundations** - FREE art events, performances, workshops
+8. **Embassies/Cultural institutes** - FREE cultural events, language cafés
+9. **Official city "free events" pages** - Municipality free event calendars
+10. **Local Facebook Events / Eventbrite** - ONLY if they have "free" filters accessible via URL
+
+**SEARCH STRATEGIES:**
+- Use local language terms: "gratis" (Dutch/German), "ilmainen" (Finnish), "gratuit" (French), "free"
+- Look for: "[City] free events calendar", "[Institution] calendar", "what's on free"
+- Target: Actual event listing pages (with calendars), NOT just contact pages
 
 Rules:
-- Only public websites (no login required)
-- Prefer official city/cultural institution websites
-- Include Eventbrite, Meetup, Facebook Events search results
-- Include local tourism boards and cultural calendars
-- Include Wikipedia events, local radio/TV event listings
-- Exclude paywalls, subscription-only, or private social media
+- Only public websites (no login required for viewing events)
+- Prefer sources with 80%+ free events
+- Include RSS/iCal feeds if available
+- Verify URL goes to actual event listings
 - Output MUST be valid JSON array
 
 Return a JSON array with exactly this structure (no other text):
 [
   {
-    "name": "Official Website Name",
-    "url": "https://example.com/events",
+    "name": "Source Name (emphasize FREE)",
+    "url": "https://example.com/free-events-calendar",
     "type": "html",
     "confidence": 0.85,
-    "description": "Brief description of what this source provides"
+    "description": "Brief description - note FREE event focus"
   }
 ]
 
-Be thorough. Return 5-15 sources maximum, ranked by quality and reliability.`
+Return 5-20 sources prioritized by free event concentration. Be specific with URLs.`
 
     console.log(`📡 Querying Gemini for ${city.city_name}...`)
 
