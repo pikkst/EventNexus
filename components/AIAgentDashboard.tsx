@@ -56,6 +56,9 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   // Selected cities for pipeline execution (using city_id)
   const [selectedCities, setSelectedCities] = useState<Set<string>>(new Set());
   
+  // Guardian test state
+  const [isTestingGuardian, setIsTestingGuardian] = useState(false);
+  
   // Load persisted pipeline progress from localStorage
   const loadPersistedProgress = () => {
     try {
@@ -606,6 +609,58 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       alert('Failed to add city. Please try again.');
     } finally {
       setIsGeocoding(false);
+    }
+  }
+  
+  async function testGuardian() {
+    setIsTestingGuardian(true);
+    try {
+      console.log('🛡️ Testing city-guardian...');
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/city-guardian`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({})
+        }
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Guardian failed: ${response.status} - ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('🛡️ Guardian result:', result);
+      
+      // Show results
+      const actionsCount = result.actions?.length || 0;
+      const cities = result.cities_checked || 0;
+      const interventions = result.actions?.map((a: any) => 
+        `${a.city_name}: ${a.action} (${a.health_score}%)`
+      ).join('\n') || 'No interventions needed';
+      
+      alert(
+        `✅ Guardian Test Complete!\n\n` +
+        `Cities Checked: ${cities}\n` +
+        `Interventions: ${actionsCount}\n\n` +
+        `${interventions}\n\n` +
+        `Check Agent Logs for details.`
+      );
+      
+      // Reload city metrics to show updated health
+      const metrics = await loadCityMetrics();
+      setCityMetrics(metrics);
+      
+    } catch (error: any) {
+      console.error('Guardian test error:', error);
+      alert(`❌ Guardian test failed:\n\n${error.message}`);
+    } finally {
+      setIsTestingGuardian(false);
     }
   }
   
@@ -2148,6 +2203,24 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                         Deselect All
                       </button>
                     </div>
+                    <button
+                      onClick={testGuardian}
+                      disabled={isTestingGuardian || loading}
+                      className="flex items-center gap-2 px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Run city-guardian to check health and trigger recovery for degraded cities"
+                    >
+                      {isTestingGuardian ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Running Guardian...
+                        </>
+                      ) : (
+                        <>
+                          <Activity className="w-4 h-4" />
+                          🛡️ Test Guardian
+                        </>
+                      )}
+                    </button>
                     <button
                       onClick={batchBootstrapAllPendingCities}
                       disabled={batchBootstrapping || loading}
