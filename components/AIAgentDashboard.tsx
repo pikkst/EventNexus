@@ -35,6 +35,7 @@ import {
 } from '../types';
 import { supabase } from '../services/supabase';
 import { AgentLogsViewer, AgentLog } from './AgentLogsViewer';
+import CityFiltersPanel from './CityFiltersPanel';
 
 interface AIAgentDashboardProps {
   user: any;
@@ -58,6 +59,16 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   
   // Guardian test state
   const [isTestingGuardian, setIsTestingGuardian] = useState(false);
+  
+  // City filtering and sorting state
+  const [citySearchQuery, setCitySearchQuery] = useState('');
+  const [cityFilterCountry, setCityFilterCountry] = useState<string>('all');
+  const [cityFilterHealth, setCityFilterHealth] = useState<string>('all');
+  const [cityFilterActive, setCityFilterActive] = useState<string>('all');
+  const [cityFilterBootstrap, setCityFilterBootstrap] = useState<string>('all');
+  const [citySortBy, setCitySortBy] = useState<'name' | 'country' | 'health' | 'events' | 'free_events'>('name');
+  const [citySortOrder, setCitySortOrder] = useState<'asc' | 'desc'>('asc');
+  const [cityGroupByCountry, setCityGroupByCountry] = useState(false);
   
   // Load persisted pipeline progress from localStorage
   const loadPersistedProgress = () => {
@@ -1413,6 +1424,90 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
     return 'bg-red-500';
   }
 
+  // Get unique countries from city metrics
+  function getUniqueCountries(): string[] {
+    return Array.from(new Set(cityMetrics.map(m => m.city?.country).filter(Boolean) as string[])).sort();
+  }
+
+  // Filter and sort city metrics
+  function getFilteredAndSortedCities(): CityHealthMetrics[] {
+    // Apply filters
+    let filtered = cityMetrics.filter(metric => {
+      // Search filter
+      if (citySearchQuery) {
+        const query = citySearchQuery.toLowerCase();
+        const cityName = (metric.city?.city_name || '').toLowerCase();
+        const country = (metric.city?.country || '').toLowerCase();
+        if (!cityName.includes(query) && !country.includes(query)) {
+          return false;
+        }
+      }
+
+      // Country filter
+      if (cityFilterCountry !== 'all' && metric.city?.country !== cityFilterCountry) {
+        return false;
+      }
+
+      // Health status filter
+      if (cityFilterHealth !== 'all') {
+        const score = metric.freshness_score;
+        if (cityFilterHealth === 'healthy' && score < 80) return false;
+        if (cityFilterHealth === 'good' && (score < 60 || score >= 80)) return false;
+        if (cityFilterHealth === 'warning' && (score < 40 || score >= 60)) return false;
+        if (cityFilterHealth === 'critical' && (score > 0 && score < 40)) return false;
+        if (cityFilterHealth === 'inactive' && score !== 0) return false;
+      }
+
+      // Active/Inactive filter
+      if (cityFilterActive === 'active' && !metric.city?.active) return false;
+      if (cityFilterActive === 'inactive' && metric.city?.active) return false;
+
+      // Bootstrap status filter
+      if (cityFilterBootstrap !== 'all' && metric.bootstrap_status !== cityFilterBootstrap) {
+        return false;
+      }
+
+      return true;
+    });
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aVal: any, bVal: any;
+      
+      switch (citySortBy) {
+        case 'name':
+          aVal = (a.city?.city_name || '').toLowerCase();
+          bVal = (b.city?.city_name || '').toLowerCase();
+          break;
+        case 'country':
+          aVal = (a.city?.country || '').toLowerCase();
+          bVal = (b.city?.country || '').toLowerCase();
+          break;
+        case 'health':
+          aVal = a.freshness_score;
+          bVal = b.freshness_score;
+          break;
+        case 'events':
+          aVal = a.total_events || 0;
+          bVal = b.total_events || 0;
+          break;
+        case 'free_events':
+          aVal = a.free_events_count || 0;
+          bVal = b.free_events_count || 0;
+          break;
+        default:
+          aVal = (a.city?.city_name || '').toLowerCase();
+          bVal = (b.city?.city_name || '').toLowerCase();
+      }
+
+      if (aVal < bVal) return citySortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return citySortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }
+
   // City management functions
   async function loadCities() {
     try {
@@ -2298,15 +2393,70 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                   </div>
                 )}
                 
+                {/* City Filters Panel */}
+                <CityFiltersPanel
+                  totalCities={cityMetrics.length}
+                  searchQuery={citySearchQuery}
+                  onSearchChange={setCitySearchQuery}
+                  filterCountry={cityFilterCountry}
+                  onFilterCountryChange={setCityFilterCountry}
+                  filterHealth={cityFilterHealth}
+                  onFilterHealthChange={setCityFilterHealth}
+                  filterActive={cityFilterActive}
+                  onFilterActiveChange={setCityFilterActive}
+                  filterBootstrap={cityFilterBootstrap}
+                  onFilterBootstrapChange={setCityFilterBootstrap}
+                  sortBy={citySortBy}
+                  onSortByChange={setCitySortBy}
+                  sortOrder={citySortOrder}
+                  onSortOrderToggle={() => setCitySortOrder(citySortOrder === 'asc' ? 'desc' : 'asc')}
+                  groupByCountry={cityGroupByCountry}
+                  onGroupByCountryChange={setCityGroupByCountry}
+                  uniqueCountries={getUniqueCountries()}
+                />
+                
                 {cityMetrics.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
                     <MapPin className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                     <p>No cities configured yet. Add cities in "Manage Cities" tab.</p>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    {cityMetrics.map((metric) => (
-                      <div key={metric.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                ) : (() => {
+                  const filteredCities = getFilteredAndSortedCities();
+                  
+                  if (filteredCities.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-gray-500">
+                        <Info className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                        <p>No cities match the current filters.</p>
+                      </div>
+                    );
+                  }
+
+                  if (cityGroupByCountry) {
+                    // Group cities by country
+                    const grouped = filteredCities.reduce((acc, metric) => {
+                      const country = metric.city?.country || 'Unknown';
+                      if (!acc[country]) acc[country] = [];
+                      acc[country].push(metric);
+                      return acc;
+                    }, {} as Record<string, typeof filteredCities>);
+
+                    const sortedCountries = Object.keys(grouped).sort();
+
+                    return (
+                      <div className="space-y-6">
+                        {sortedCountries.map(country => (
+                          <div key={country} className="space-y-3">
+                            <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-lg border border-indigo-200">
+                              <MapPin className="w-5 h-5 text-indigo-600" />
+                              <h4 className="font-semibold text-indigo-900">{country}</h4>
+                              <span className="ml-auto text-sm text-indigo-700">
+                                {grouped[country].length} {grouped[country].length === 1 ? 'city' : 'cities'}
+                              </span>
+                            </div>
+                            <div className="space-y-3 pl-4">
+                              {grouped[country].map((metric) => (
+                                <div key={metric.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <input
@@ -2440,9 +2590,156 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                           </div>
                         )}
                       </div>
-                    ))}
-                  </div>
-                )}
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+
+                  // Regular list view (not grouped)
+                  return (
+                    <div className="space-y-4">
+                      <div className="text-sm text-gray-600 pb-2">
+                        Showing {filteredCities.length} of {cityMetrics.length} cities
+                      </div>
+                      {filteredCities.map((metric) => (
+                        <div key={metric.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedCities.has(metric.id)}
+                                onChange={(e) => {
+                                  const newSelected = new Set(selectedCities);
+                                  if (e.target.checked) {
+                                    newSelected.add(metric.id);
+                                  } else {
+                                    newSelected.delete(metric.id);
+                                  }
+                                  setSelectedCities(newSelected);
+                                }}
+                                className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                              />
+                              <MapPin className={`w-5 h-5 ${metric.city?.active ? 'text-green-500' : 'text-gray-400'}`} />
+                              <div>
+                                <h4 className="font-medium text-gray-900">
+                                  {metric.city?.city_name || 'Unknown'}, {metric.city?.country || ''}
+                                </h4>
+                                <p className="text-xs text-gray-500">
+                                  {metric.pipeline_enabled ? (
+                                    <span className="text-green-600 flex items-center gap-1">
+                                      <CheckCircle className="w-3 h-3" /> Pipeline Active
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-500 flex items-center gap-1">
+                                      <Pause className="w-3 h-3" /> Pipeline Paused
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {metric.bootstrap_status === 'bootstrapping' ? (
+                                <div className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 flex items-center gap-1 animate-pulse">
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                  Bootstrapping...
+                                </div>
+                              ) : (
+                                <>
+                                  {metric.health_status && (
+                                    <div className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                      {metric.health_status}
+                                    </div>
+                                  )}
+                                  <div className={`px-2 py-1 rounded text-xs font-medium ${
+                                    metric.freshness_score >= 80 ? 'bg-green-100 text-green-700' :
+                                    metric.freshness_score >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                                    metric.freshness_score >= 40 ? 'bg-orange-100 text-orange-700' :
+                                    metric.freshness_score === 0 ? 'bg-gray-100 text-gray-600' :
+                                    'bg-red-100 text-red-700'
+                                  }`}>
+                                    Health: {metric.freshness_score}%
+                                  </div>
+                                </>
+                              )}
+                              <div className={`w-3 h-3 rounded-full ${getHealthColor(metric.freshness_score)}`} />
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
+                            <div className="bg-blue-50 rounded p-2">
+                              <p className="text-blue-600 text-xs">Event Sources</p>
+                              <p className="font-bold text-blue-900 text-lg">{metric.active_sources}</p>
+                            </div>
+                            <div className="bg-green-50 rounded p-2">
+                              <p className="text-green-600 text-xs">Total Events</p>
+                              <p className="font-bold text-green-900 text-lg">{metric.total_events}</p>
+                            </div>
+                            <div className="bg-emerald-50 rounded p-2 border-2 border-emerald-200">
+                              <p className="text-emerald-700 text-xs font-semibold">Free Events</p>
+                              <p className="font-bold text-emerald-900 text-lg">
+                                {metric.free_events_count || 0}
+                                {metric.free_events_count !== undefined && metric.free_events_count < 5 && (
+                                  <span className="text-xs text-orange-600 ml-1">⚠️</span>
+                                )}
+                              </p>
+                            </div>
+                            <div className="bg-purple-50 rounded p-2">
+                              <p className="text-purple-600 text-xs">Last 30 Days</p>
+                              <p className="font-bold text-purple-900 text-lg">{metric.events_this_week}</p>
+                            </div>
+                            <div className="bg-orange-50 rounded p-2">
+                              <p className="text-orange-600 text-xs">Bootstrap Status</p>
+                              <p className="font-semibold text-orange-900 text-xs capitalize">{metric.bootstrap_status || 'pending'}</p>
+                            </div>
+                            <div className="bg-gray-50 rounded p-2">
+                              <p className="text-gray-600 text-xs">Last Bootstrap</p>
+                              <p className="font-medium text-gray-900 text-xs">
+                                {metric.last_bootstrap_at ? new Date(metric.last_bootstrap_at).toLocaleDateString() : 'Never'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-3 flex items-center justify-between gap-2">
+                            {metric.active_sources === 0 && metric.city?.active && (
+                              <div className="flex-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                                ⚠️ No event sources - Bootstrap needed
+                              </div>
+                            )}
+                            {metric.city?.active && (
+                              <button
+                                onClick={() => triggerBootstrapForCity(metric.city_id)}
+                                disabled={metric.bootstrap_status === 'bootstrapping'}
+                                className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-xs font-medium whitespace-nowrap"
+                                title={metric.active_sources > 0 ? 'Re-run bootstrap to discover more sources' : 'Run bootstrap to discover event sources'}
+                              >
+                                {metric.bootstrap_status === 'bootstrapping' ? (
+                                  <>
+                                    <RefreshCw className="w-3 h-3 animate-spin" />
+                                    Bootstrapping...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Zap className="w-3 h-3" />
+                                    {metric.active_sources > 0 ? 'Re-bootstrap' : 'Bootstrap'}
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                          
+                          {!metric.city?.active && (
+                            <div className="mt-3 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600">
+                              ℹ️ City is inactive. Enable in "Manage Cities" to start discovery.
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
