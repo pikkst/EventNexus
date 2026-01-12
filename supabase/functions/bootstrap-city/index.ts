@@ -95,21 +95,55 @@ async function discoverCitySources(cityName: string, country: string): Promise<E
 async function discoverSourcesViaGoogleSearch(cityName: string, country: string): Promise<EventSource[]> {
   const sources: EventSource[] = []
   
-  // Search queries: first find major event platforms, then structured data feeds
-  const queries = [
-    // Major event platforms and aggregators (broad search)
-    `${cityName} üritused`,
-    `${cityName} sündmused`,
-    `${cityName} events calendar`,
-    `${cityName} kultuurikalender`,
-    `${cityName} what's on`,
-    // Structured data feeds (narrow search for APIs/RSS)
-    `${cityName} events RSS feed`,
-    `${cityName} calendar API`,
-    `${cityName} events iCal`,
-    `${cityName} üritused RSS`,
-    `site:${cityName.toLowerCase()}.ee üritused`,
-  ]
+  // Build language-specific queries based on country
+  const getLocalizedQueries = (city: string, country: string) => {
+    const countryLower = country.toLowerCase();
+    
+    // Base queries (always included)
+    const baseQueries = [
+      `${city} ${country} free events`,
+      `${city} ${country} events calendar`,
+      `${city} ${country} what's on`,
+      `${city} ${country} events RSS feed`,
+      `${city} ${country} calendar API`,
+      `${city} ${country} events iCal`,
+    ];
+    
+    // Language-specific queries
+    if (countryLower.includes('netherland') || countryLower.includes('dutch') || countryLower.includes('belgium')) {
+      return [...baseQueries,
+        `${city} gratis evenementen`, // Dutch: free events
+        `${city} activiteiten`, // Dutch: activities
+        `${city} evenementenkalender`, // Dutch: events calendar
+      ];
+    } else if (countryLower.includes('german') || countryLower.includes('austria') || countryLower.includes('switzerland')) {
+      return [...baseQueries,
+        `${city} kostenlose Veranstaltungen`, // German: free events
+        `${city} Veranstaltungskalender`, // German: events calendar
+      ];
+    } else if (countryLower.includes('eston')) {
+      return [...baseQueries,
+        `${city} üritused`, // Estonian: events
+        `${city} sündmused`, // Estonian: events
+        `${city} kultuurikalender`, // Estonian: culture calendar
+        `site:${city.toLowerCase()}.ee üritused`,
+      ];
+    } else if (countryLower.includes('finn')) {
+      return [...baseQueries,
+        `${city} ilmaiset tapahtumat`, // Finnish: free events
+        `${city} tapahtumakalenteri`, // Finnish: events calendar
+      ];
+    } else if (countryLower.includes('fran') || countryLower.includes('belg')) {
+      return [...baseQueries,
+        `${city} événements gratuits`, // French: free events
+        `${city} calendrier événements`, // French: events calendar
+      ];
+    } else {
+      return baseQueries; // English only for other countries
+    }
+  };
+  
+  const queries = getLocalizedQueries(cityName, country)
 
   for (const query of queries) {
     try {
@@ -410,6 +444,19 @@ async function bootstrapCity(
         const isValid = await validateSource(source.url)
 
         if (isValid) {
+          // Check if source already exists (by URL)
+          const { data: existingSource } = await supabase
+            .from('event_sources')
+            .select('source_id')
+            .eq('city_id', cityId)
+            .eq('url', source.url)
+            .maybeSingle()
+          
+          if (existingSource) {
+            console.log(`  ⏭️ Source already exists: ${source.url}`)
+            continue // Skip duplicate
+          }
+          
           const { error: sourceError } = await supabase
             .from('event_sources')
             .insert({
@@ -422,13 +469,18 @@ async function bootstrapCity(
             })
             .select()
 
-          if (!sourceError) {
+          if (sourceError) {
+            console.error(`  ❌ Failed to insert source ${source.name}:`, sourceError)
+          } else {
+            console.log(`  ✅ Added source: ${source.name}`)
             sourcesAdded++
           }
         } else {
-          console.log(`Skipping invalid source: ${source.url}`)
+          console.log(`  ⏭️ Skipping invalid source: ${source.url}`)
         }
       }
+      
+      console.log(`📋 Total sources added: ${sourcesAdded}`)
     }
 
     // 3. Update bootstrap status
