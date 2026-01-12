@@ -1085,35 +1085,64 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             }
           }
           
-          // Step 1: Fetch sources for this city
-          console.log(`  📥 Step 1/4: Fetching sources...`);
+          // Step 1: Fetch sources for this city (batch processing to avoid timeout)
+          console.log(`  📥 Step 1/4: Fetching sources in batches...`);
           setPipelineProgress(prev => ({ ...prev, currentStep: '📥 Fetching sources...' }));
-          const fetchResp = await supabase.functions.invoke('fetch-sources', {
-            body: { city_id: city.city_id }
-          });
           
-          if (fetchResp.error) {
-            const errorMsg = fetchResp.error.message || String(fetchResp.error);
-            totalResults.cityErrors.push(`${city.city_name}: Fetch failed - ${errorMsg}`);
+          let totalFetchedForCity = 0;
+          let fetchBatchOffset = 0;
+          const fetchBatchSize = 5; // Process 5 sources at a time to avoid timeout
+          let hasMoreSources = true;
+          
+          while (hasMoreSources) {
+            const fetchResp = await supabase.functions.invoke('fetch-sources', {
+              body: { 
+                city_id: city.city_id,
+                batch_size: fetchBatchSize,
+                batch_offset: fetchBatchOffset
+              }
+            });
+            
+            if (fetchResp.error) {
+              const errorMsg = fetchResp.error.message || String(fetchResp.error);
+              totalResults.cityErrors.push(`${city.city_name}: Fetch failed (batch ${fetchBatchOffset}) - ${errorMsg}`);
+              setPipelineProgress(prev => ({
+                ...prev,
+                recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Fetch batch ${fetchBatchOffset} failed`],
+                fullLogs: [...prev.fullLogs, `  ❌ Fetch batch ${fetchBatchOffset} failed: ${errorMsg}`],
+                errors: [...prev.errors, `[${city.city_name}] Fetch: ${errorMsg}`]
+              }));
+              break; // Stop fetching on error
+            }
+            
+            const batchFetched = fetchResp.data?.results?.fetched || 0;
+            totalFetchedForCity += batchFetched;
+            hasMoreSources = fetchResp.data?.results?.batch_info?.has_more || false;
+            
+            console.log(`  📦 Batch ${fetchBatchOffset}-${fetchBatchOffset + fetchBatchSize}: ${batchFetched} events`);
             setPipelineProgress(prev => ({
               ...prev,
-              citiesFailed: prev.citiesFailed + 1,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Fetch failed`],
-              fullLogs: [...prev.fullLogs, `  ❌ Fetch failed`],
-              errors: [...prev.errors, `[${city.city_name}] Fetch: ${errorMsg}`]
+              recentLogs: [...prev.recentLogs.slice(-9), `  📦 Fetch batch ${Math.floor(fetchBatchOffset / fetchBatchSize) + 1}: ${batchFetched} events`],
+              fullLogs: [...prev.fullLogs, `  📦 Fetch batch ${Math.floor(fetchBatchOffset / fetchBatchSize) + 1}: ${batchFetched} events`]
             }));
-            continue; // Skip to next city
+            
+            fetchBatchOffset += fetchBatchSize;
+            
+            // Safety: max 20 batches (20 × 5 = 100 sources)
+            if (fetchBatchOffset >= 100) {
+              console.log(`  ⚠️ Reached max fetch batches (100 sources)`);
+              break;
+            }
           }
           
-          const fetched = fetchResp.data?.results?.fetched || 0;
-          totalResults.totalFetched += fetched;
-          console.log(`  ✅ Fetched ${fetched} new events`);
+          totalResults.totalFetched += totalFetchedForCity;
+          console.log(`  ✅ Fetched ${totalFetchedForCity} total events from ${Math.ceil(fetchBatchOffset / fetchBatchSize)} batches`);
           setPipelineProgress(prev => ({
             ...prev,
-            totalFetched: prev.totalFetched + fetched,
+            totalFetched: prev.totalFetched + totalFetchedForCity,
             currentStep: '🤖 Parsing with AI...',
-            recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Fetched ${fetched} events`],
-            fullLogs: [...prev.fullLogs, `  ✅ Fetched ${fetched} events`]
+            recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Fetched ${totalFetchedForCity} events`],
+            fullLogs: [...prev.fullLogs, `  ✅ Fetched ${totalFetchedForCity} events`]
           }));
 
           // Step 2: Parse with AI (loop until all pending events processed)
@@ -1174,7 +1203,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
                 
                 parseAttempt++;
                 if (parseAttempt <= maxParseRetries) {
-                  const retryDelay = 3000 * parseAttempt;
+                  // Exponential backoff: 2s, 5s, 10s (was linear 3s, 6s, 9s)
+                  const retryDelay = Math.min(10000, 1000 * Math.pow(2, parseAttempt));
                   await new Promise(resolve => setTimeout(resolve, retryDelay));
                 } else {
                   break;

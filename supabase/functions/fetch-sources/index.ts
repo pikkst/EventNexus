@@ -116,13 +116,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { city_id } = await req.json()
+    const { city_id, batch_size = 5, batch_offset = 0 } = await req.json()
 
     // Get active sources for city (or all if no city specified)
+    // Process in batches to avoid timeout (default: 5 sources at a time)
     let query = supabaseClient
       .from('event_sources')
       .select('*')
       .eq('active', true)
+      .range(batch_offset, batch_offset + batch_size - 1)
 
     if (city_id) {
       query = query.eq('city_id', city_id)
@@ -132,11 +134,19 @@ serve(async (req) => {
 
     if (sourcesError) throw sourcesError
 
+    console.log(`📦 Processing batch: offset ${batch_offset}, size ${batch_size}, found ${sources?.length || 0} sources`)
+
     const results = {
       fetched: 0,
       skipped: 0,
       failed: 0,
       errors: [] as string[],
+      batch_info: {
+        offset: batch_offset,
+        size: batch_size,
+        processed: sources?.length || 0,
+        has_more: (sources?.length || 0) === batch_size
+      }
     }
 
     for (const source of sources) {
