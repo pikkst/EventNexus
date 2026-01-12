@@ -618,6 +618,10 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     try {
       console.log('🛡️ Testing city-guardian...');
       
+      // Add timeout wrapper
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/city-guardian`,
         {
@@ -626,9 +630,12 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
           },
-          body: JSON.stringify({})
+          body: JSON.stringify({}),
+          signal: controller.signal
         }
       );
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -659,7 +666,16 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       
     } catch (error: any) {
       console.error('Guardian test error:', error);
-      alert(`❌ Guardian test failed:\n\n${error.message}`);
+      
+      // Better error messages
+      let errorMsg = error.message;
+      if (error.name === 'AbortError') {
+        errorMsg = 'Request timeout (>60s). Guardian may still be processing in background.';
+      } else if (errorMsg.includes('Failed to fetch')) {
+        errorMsg = 'Network error. Check:\n- CORS settings\n- Ad blocker disabled\n- Internet connection\n\nGuardian endpoint: ' + import.meta.env.VITE_SUPABASE_URL;
+      }
+      
+      alert(`❌ Guardian test failed:\n\n${errorMsg}`);
     } finally {
       setIsTestingGuardian(false);
     }

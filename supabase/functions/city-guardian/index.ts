@@ -6,6 +6,11 @@
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -29,6 +34,11 @@ interface CityRecord {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+  
   try {
     console.log('🛡️ cityGuardian started', new Date().toISOString())
 
@@ -42,7 +52,7 @@ serve(async (req) => {
       console.error('❌ Failed to load city health:', healthError)
       return new Response(
         JSON.stringify({ error: 'Failed to fetch city health', details: healthError }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -50,7 +60,7 @@ serve(async (req) => {
       console.log('✅ All cities healthy')
       return new Response(
         JSON.stringify({ status: 'ok', evaluated: 0, healed: 0, message: 'All cities healthy' }),
-        { headers: { 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -247,13 +257,13 @@ serve(async (req) => {
     console.log('🛡️ cityGuardian completed', response)
 
     return new Response(JSON.stringify(response), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (err) {
     console.error('🛡️ cityGuardian fatal error:', err)
     return new Response(
       JSON.stringify({ error: 'cityGuardian failed', details: String(err) }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
