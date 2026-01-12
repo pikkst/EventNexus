@@ -231,7 +231,7 @@ When ambiguous, choose FREE. Our users prefer free events.
 Return ONLY valid JSON array of FUTURE events (prioritize free events). No markdown, no explanations.
 
 Content to parse (HTML/RSS/iCal):
-${rawContent.slice(0, 30000)}` // Limit to 30KB to avoid timeouts on large HTML
+${rawContent.slice(0, 50000)}` // Limit to 50KB for comprehensive extraction (quality > speed)
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -240,9 +240,9 @@ ${rawContent.slice(0, 30000)}` // Limit to 30KB to avoid timeouts on large HTML
       debugMetrics.aiStats.modelUsed = currentModel
       debugMetrics.aiStats.requests++
       
-      // Add timeout to prevent 504 Gateway Timeout (Edge Functions have 60s limit with proper headers)
+      // Add timeout to prevent 504 Gateway Timeout (Edge Functions support up to 120s)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout (allow more time for large content)
+      const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for quality event extraction
       
       const aiCallStart = Date.now()
       const response = await fetch(
@@ -375,8 +375,8 @@ ${rawContent.slice(0, 30000)}` // Limit to 30KB to avoid timeouts on large HTML
     } catch (error) {
       if (error.name === 'AbortError') {
         debugMetrics.aiStats.timeouts++
-        console.error('Gemini API timeout after 45s')
-        await log(supabaseClient, 'parse-event-ai', 'error', 'Gemini API timeout (45s)', { 
+        console.error('Gemini API timeout after 90s')
+        await log(supabaseClient, 'parse-event-ai', 'error', 'Gemini API timeout (90s)', { 
           attempt: attempt + 1,
           content_length: rawContent.length,
           source_type: sourceType,
@@ -386,7 +386,7 @@ ${rawContent.slice(0, 30000)}` // Limit to 30KB to avoid timeouts on large HTML
         debugMetrics.detailedErrors.push({
           timestamp: new Date().toISOString(),
           step: 'AI Parse',
-          error: 'Timeout after 45s',
+          error: 'Timeout after 90s',
           context: { contentLength: rawContent.length, sourceType, city: cityName }
         })
         
@@ -394,7 +394,7 @@ ${rawContent.slice(0, 30000)}` // Limit to 30KB to avoid timeouts on large HTML
           console.log(`Retrying... (attempt ${attempt + 2}/${retries + 1})`)
           continue
         }
-        throw new Error('Gemini API timeout - content may be too large')
+        throw new Error('Gemini API timeout (90s) - content may be too large or complex')
       }
       
       // Log detailed error for debugging
