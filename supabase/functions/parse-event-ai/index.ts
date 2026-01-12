@@ -281,9 +281,9 @@ ${cleanedContent.slice(0, 100000)}` // 100KB limit for large calendars
       debugMetrics.aiStats.modelUsed = currentModel
       debugMetrics.aiStats.requests++
       
-      // Add timeout to prevent 504 Gateway Timeout (Edge Functions support up to 120s)
+      // Add timeout to prevent 504 Gateway Timeout (Edge Functions support up to 180s)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for quality event extraction
+      const timeoutId = setTimeout(() => controller.abort(), 180000); // 180s timeout for large calendars
       
       const aiCallStart = Date.now()
       const response = await fetch(

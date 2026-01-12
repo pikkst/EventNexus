@@ -71,32 +71,33 @@ async function geocodeAddress(address: string, country: string, countryCode: str
     const lowerAddress = address.toLowerCase()
     const lowerCountry = country.toLowerCase()
     
-    // 1. Full address with country (if not present)
-    if (!lowerAddress.includes(lowerCountry)) {
-      searchVariations.push(`${address}, ${country}`)
-    } else {
-      searchVariations.push(address)
+    // Helper: Add country only if not already present
+    const addCountry = (str: string) => {
+      return str.toLowerCase().includes(lowerCountry) ? str : `${str}, ${country}`
     }
+    
+    // 1. Full address with country (if not present)
+    searchVariations.push(addCountry(address))
     
     // 2. Venue name + city + country (most specific)
     if (venueName && cityNameFromAddress && venueName !== cityNameFromAddress) {
-      searchVariations.push(`${venueName}, ${cityNameFromAddress}, ${country}`)
+      searchVariations.push(addCountry(`${venueName}, ${cityNameFromAddress}`))
     }
     
     // 3. Venue name only + country (for institutional names)
     if (venueName && venueName !== address) {
-      searchVariations.push(`${venueName}, ${country}`)
+      searchVariations.push(addCountry(venueName))
     }
     
     // 4. Remove building/room numbers (e.g., "Room 123" → venue name only)
     const cleanVenue = venueName.replace(/\b(room|suite|floor|bldg|building|apt|#)\s*\d+\w*/gi, '').trim()
     if (cleanVenue && cleanVenue !== venueName && cleanVenue.length > 3) {
-      searchVariations.push(`${cleanVenue}, ${country}`)
+      searchVariations.push(addCountry(cleanVenue))
     }
     
     // 5. City + venue (reversed order - sometimes works better)
     if (cityNameFromAddress && venueName && cityNameFromAddress !== venueName) {
-      searchVariations.push(`${cityNameFromAddress}, ${venueName}, ${country}`)
+      searchVariations.push(addCountry(`${cityNameFromAddress}, ${venueName}`))
     }
     
     // 6. Just venue name + city (no country - sometimes helps)
@@ -107,13 +108,22 @@ async function geocodeAddress(address: string, country: string, countryCode: str
     // 7. Remove special characters that might confuse geocoder
     const cleanAddress = address.replace(/[()[\]]/g, '').replace(/\s+/g, ' ').trim()
     if (cleanAddress !== address) {
-      searchVariations.push(`${cleanAddress}, ${country}`)
+      searchVariations.push(addCountry(cleanAddress))
     }
     
     // 8. If address contains street number, try without it
     const addressWithoutNumber = address.replace(/\b\d+\w*\b/g, '').replace(/\s+/g, ' ').trim()
     if (addressWithoutNumber !== address && addressWithoutNumber.length > 5) {
-      searchVariations.push(`${addressWithoutNumber}, ${country}`)
+      searchVariations.push(addCountry(addressWithoutNumber))
+    }
+    
+    // 9. Extract street address if venue name + street present (e.g., "Web Bar, Sint Jacobsstraat 6")
+    if (parts.length >= 2 && /\d/.test(parts[1])) {
+      // parts[1] likely contains street + number
+      const streetAddress = parts.slice(1).join(', ').trim()
+      if (streetAddress.length > 5 && streetAddress !== address) {
+        searchVariations.push(addCountry(streetAddress))
+      }
     }
     
     // Remove duplicates while preserving order
@@ -266,6 +276,8 @@ serve(async (req) => {
     const { data: parsedEvents, error: parsedError } = await query
 
     if (parsedError) throw parsedError
+    
+    console.log(`📊 Found ${parsedEvents?.length || 0} validated events ready for publishing`)
 
     const results = {
       published: 0,
@@ -301,6 +313,21 @@ serve(async (req) => {
         }
 
         console.log(`Publishing event for ${cityConfig.city_name}, ${cityConfig.country}`)
+
+        // FILTER OUT USA ADDRESSES - only if city is NOT in USA (prevents wrong "Amsterdam" mixing)
+        const address = eventData.location_address || ''
+        const US_STATE_CODES = /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b/
+        const US_ZIP_CODES = /\b\d{5}(-\d{4})?\b/
+        
+        // Only block USA addresses if the city itself is NOT in USA
+        const cityIsInUSA = cityConfig.country === 'United States' || cityConfig.country === 'USA' || cityConfig.country_code === 'us'
+        
+        if (!cityIsInUSA && (US_STATE_CODES.test(address) || (US_ZIP_CODES.test(address) && !address.includes(cityConfig.country)))) {
+          console.log(`⊘ Skipping USA event: ${eventData.name} (address: ${address})`)
+          await log(supabaseClient, 'publish-event', 'info', 'Skipped USA event', { event: eventData.name, address }, { city_id: cityId })
+          results.skipped++
+          continue
+        }
 
         // CRITICAL: Only publish FREE events (we don't sell tickets)
         // If is_free is explicitly false AND there's a price, skip it
@@ -400,6 +427,51 @@ serve(async (req) => {
           
           // Rate limit: 1 request per second for Nominatim
           await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+        
+        // VALIDATE: Check if event is within city radius (50km)
+        // This filters out wrong "Amsterdam" events (e.g., Montana USA vs Netherlands)
+        if (eventData.location_lat && eventData.location_lng) {
+          const { data: cityData, error: cityDataError } = await supabaseClient
+            .from('supported_cities')
+            .select('name, country, location_point')
+            .eq('city_id', cityId)
+            .single()
+          
+          if (!cityDataError && cityData?.location_point) {
+            // Extract city coordinates from PostGIS POINT(lng lat)
+            const cityMatch = cityData.location_point.match(/POINT\(([^ ]+) ([^ ]+)\)/)
+            if (cityMatch) {
+              const cityLng = parseFloat(cityMatch[1])
+              const cityLat = parseFloat(cityMatch[2])
+              
+              // Haversine distance calculation
+              const R = 6371 // Earth radius in km
+              const dLat = (eventData.location_lat - cityLat) * Math.PI / 180
+              const dLng = (eventData.location_lng - cityLng) * Math.PI / 180
+              const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                        Math.cos(cityLat * Math.PI / 180) * Math.cos(eventData.location_lat * Math.PI / 180) *
+                        Math.sin(dLng/2) * Math.sin(dLng/2)
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+              const distance = R * c
+              
+              const MAX_DISTANCE_KM = 50 // 50km radius
+              
+              if (distance > MAX_DISTANCE_KM) {
+                console.log(`⊘ Event too far from city: "${eventData.name}" is ${distance.toFixed(1)}km from ${cityData.name} (max ${MAX_DISTANCE_KM}km)`)
+                console.log(`   Event: ${eventData.location_lat.toFixed(4)}, ${eventData.location_lng.toFixed(4)} | City: ${cityLat.toFixed(4)}, ${cityLng.toFixed(4)}`)
+                await log(supabaseClient, 'publish-event', 'info', 'Event outside city radius', { 
+                  event: eventData.name, 
+                  distance_km: distance.toFixed(1), 
+                  max_km: MAX_DISTANCE_KM,
+                  event_coords: `${eventData.location_lat},${eventData.location_lng}`,
+                  city_coords: `${cityLat},${cityLng}`
+                }, { city_id: cityId })
+                results.skipped++
+                continue
+              }
+            }
+          }
         }
         
         // CRITICAL: SKIP events without precise coordinates - we cannot show misleading locations on map
