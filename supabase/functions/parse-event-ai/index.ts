@@ -350,9 +350,54 @@ ${cleanedContent.slice(0, 100000)}` // 100KB limit for large calendars
       // Log successful response with model used
       console.log(`✅ ${currentModel} response (first 500 chars): ${text.substring(0, 500)}`)
 
-      // Extract JSON from markdown code blocks if present
-      const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/```\n?([\s\S]*?)\n?```/)
-      const jsonText = jsonMatch ? jsonMatch[1] : text
+      // Extract JSON from markdown code blocks if present (handle incomplete/truncated responses)
+      let jsonText = text.trim()
+      
+      // Remove markdown code fences (```json ... ``` or ``` ... ```)
+      if (jsonText.startsWith('```')) {
+        // Find the first newline after opening fence
+        const firstNewline = jsonText.indexOf('\n')
+        if (firstNewline > 0) {
+          jsonText = jsonText.substring(firstNewline + 1)
+        }
+        
+        // Remove closing fence if present (handle incomplete responses where closing fence is missing)
+        const closingFence = jsonText.lastIndexOf('```')
+        if (closingFence > 0) {
+          jsonText = jsonText.substring(0, closingFence)
+        }
+        
+        jsonText = jsonText.trim()
+      }
+      
+      // Handle incomplete JSON arrays - try to close them if they end abruptly
+      if (jsonText.startsWith('[') && !jsonText.endsWith(']')) {
+        // Count opening and closing braces to determine if we're mid-object
+        const openBraces = (jsonText.match(/\{/g) || []).length
+        const closeBraces = (jsonText.match(/\}/g) || []).length
+        
+        if (openBraces > closeBraces) {
+          // Incomplete object - truncate to last complete object
+          let lastCompleteEnd = -1
+          let depth = 0
+          
+          for (let i = 0; i < jsonText.length; i++) {
+            if (jsonText[i] === '{') depth++
+            if (jsonText[i] === '}') {
+              depth--
+              if (depth === 0) lastCompleteEnd = i + 1
+            }
+          }
+          
+          if (lastCompleteEnd > 0) {
+            jsonText = jsonText.substring(0, lastCompleteEnd) + ']'
+            console.log(`⚠️ Truncated incomplete JSON response to last complete object`)
+          }
+        } else {
+          // Just missing closing bracket
+          jsonText += ']'
+        }
+      }
 
       try {
         const events = JSON.parse(jsonText)
