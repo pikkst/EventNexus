@@ -4,6 +4,18 @@ import logger from '../utils/logger';
 
 // Helper function to transform database event to EventNexusEvent
 const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
+  // Parse location if it's a string (JSON string from DB)
+  let location = dbEvent.location;
+  if (typeof location === 'string') {
+    try {
+      location = JSON.parse(location);
+    } catch (e) {
+      logger.warn(`Failed to parse location for event ${dbEvent.id}:`, e);
+      // Fallback to default location if parse fails
+      location = { lat: 59.437, lng: 24.7536, address: 'Unknown', city: 'Tallinn' };
+    }
+  }
+
   return {
     id: dbEvent.id,
     name: dbEvent.name,
@@ -12,7 +24,7 @@ const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
     aboutText: dbEvent.about_text || undefined,
     date: dbEvent.date,
     time: dbEvent.time || '',
-    location: dbEvent.location,
+    location: location,
     price: dbEvent.price,
     visibility: dbEvent.visibility || 'public',
     organizerId: dbEvent.organizer_id,
