@@ -128,56 +128,55 @@ serve(async (req) => {
         continue
       }
 
-      // 6️⃣ Decide healing strategy
-      let action: 'BOOTSTRAP' | 'DISCOVER' | 'REPARSE' = 'REPARSE'
+      // 6️⃣ Decide healing strategy - UPDATED to use EventScout AI
+      let action: 'DISCOVER_AI' | 'REVALIDATE' = 'DISCOVER_AI'
       let reason = ''
 
-      if (healthInfo.active_sources === 0) {
-        action = 'BOOTSTRAP'
-        reason = 'No active event sources'
-      } else if (healthInfo.events_30d === 0) {
-        action = 'DISCOVER'
-        reason = 'No events in last 30 days'
+      if (healthInfo.active_sources === 0 || healthInfo.events_30d === 0) {
+        action = 'DISCOVER_AI'
+        reason = healthInfo.active_sources === 0 
+          ? 'No active event sources - using EventScout AI'
+          : 'No events in last 30 days - rediscovering with AI'
       } else {
-        action = 'REPARSE'
-        reason = 'Low health score, retrying event extraction'
+        action = 'REVALIDATE'
+        reason = 'Low health score, revalidating existing events'
       }
 
       console.log(
         `🧠 Healing action for ${cityMeta.city_name}: ${action} (${reason})`
       )
 
-      // 7️⃣ Execute healing action
+      // 7️⃣ Execute healing action using EventScout AI
       try {
         let invoked = false
 
-        if (action === 'BOOTSTRAP') {
-          const { error } = await supabase.functions.invoke('bootstrap-city', {
+        if (action === 'DISCOVER_AI') {
+          // Use EventScout AI - finds 15+ real events with Google Search
+          const { error } = await supabase.functions.invoke('discover-events-ai', {
             body: { 
-              city_id: healthInfo.city_id, 
-              city_name: cityMeta.city_name, 
-              country: cityMeta.country,
-              seed_events: false // Skip event seeding to avoid timeout
+              city_id: healthInfo.city_id,
+              target_events: 15 // Find 15 events minimum
             }
           })
           if (error) throw error
           invoked = true
+          console.log(`✅ EventScout AI triggered for ${cityMeta.city_name}`)
         }
 
-        if (action === 'DISCOVER') {
-          const { error } = await supabase.functions.invoke('discover-sources', {
+        if (action === 'REVALIDATE') {
+          // Revalidate and republish existing parsed events
+          const { error: validateError } = await supabase.functions.invoke('validate-event', {
             body: { city_id: healthInfo.city_id }
           })
-          if (error) throw error
-          invoked = true
-        }
-
-        if (action === 'REPARSE') {
-          const { error } = await supabase.functions.invoke('parse-event-ai', {
-            body: { city_id: healthInfo.city_id, force: true }
+          if (validateError) throw validateError
+          
+          const { error: publishError } = await supabase.functions.invoke('publish-event', {
+            body: { city_id: healthInfo.city_id }
           })
-          if (error) throw error
+          if (publishError) throw publishError
+          
           invoked = true
+          console.log(`✅ Revalidation triggered for ${cityMeta.city_name}`)
         }
 
         if (!invoked) throw new Error('No action was invoked')

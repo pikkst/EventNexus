@@ -69,14 +69,37 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
   const [translatedDesc, setTranslatedDesc] = useState<string | null>(null);
   const translationCache = useRef<Map<string, { name: string; desc: string }>>(new Map());
 
-  // Load events from database
+  // Load events from database with throttling to prevent map crashes
   useEffect(() => {
     const loadEvents = async () => {
       try {
         const eventsData = await getEvents();
         // Filter out expired events automatically
         const activeEvents = filterActiveEvents(eventsData);
-        setEvents(activeEvents);
+        
+        // Throttled loading: Add events in batches of 10 every 500ms
+        // This prevents map renderer from crashing when 100+ events load at once
+        const BATCH_SIZE = 10;
+        const BATCH_DELAY = 500; // ms
+        
+        if (activeEvents.length > BATCH_SIZE) {
+          console.log(`📍 Loading ${activeEvents.length} events in batches of ${BATCH_SIZE}...`);
+          setEvents([]); // Clear first
+          
+          for (let i = 0; i < activeEvents.length; i += BATCH_SIZE) {
+            const batch = activeEvents.slice(i, i + BATCH_SIZE);
+            setEvents(prev => [...prev, ...batch]);
+            
+            // Wait before next batch (except for last batch)
+            if (i + BATCH_SIZE < activeEvents.length) {
+              await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+            }
+          }
+          console.log(`✅ All ${activeEvents.length} events loaded`);
+        } else {
+          // Small number of events, load directly
+          setEvents(activeEvents);
+        }
       } catch (error) {
         console.error('Error loading events:', error);
       } finally {

@@ -308,7 +308,25 @@ serve(async (req) => {
       failed: 0,
     }
 
-    for (const parsedEvent of parsedEvents) {
+    // Process events ONE AT A TIME to ensure reliability
+    // Each event: AI image generation (3-8s) + geocoding (1-2s) + DB insert (1s)
+    // Total per event: ~5-10s. Edge Function timeout: 60s. 
+    // Therefore: process sequentially to avoid timeouts and server overload
+    const BATCH_SIZE = 1;  // ONE event at a time for maximum reliability
+    const BATCH_DELAY_MS = 5000; // 5 seconds between events for reliability and map rendering
+    
+    console.log(`📦 Processing ${parsedEvents.length} events in batches of ${BATCH_SIZE}`);
+    
+    for (let batchStart = 0; batchStart < parsedEvents.length; batchStart += BATCH_SIZE) {
+      const batchEnd = Math.min(batchStart + BATCH_SIZE, parsedEvents.length);
+      const batch = parsedEvents.slice(batchStart, batchEnd);
+      const batchNum = Math.floor(batchStart / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(parsedEvents.length / BATCH_SIZE);
+      
+      console.log(`\n📦 Batch ${batchNum}/${totalBatches}: Processing events ${batchStart + 1}-${batchEnd}`);
+      
+      // Process events in this batch sequentially (not parallel)
+      for (const parsedEvent of batch) {
       try {
         const eventData = parsedEvent.structured_json
         const cityId = parsedEvent.raw_events.event_sources.city_id
@@ -675,7 +693,14 @@ serve(async (req) => {
         console.error(`Failed to publish event ${parsedEvent.id}:`, error)
         results.failed++
       }
+    } // End of batch loop
+    
+    // Add delay between batches to avoid API rate limiting
+    if (batchEnd < parsedEvents.length) {
+      console.log(`⏳ Waiting ${BATCH_DELAY_MS}ms before next batch...`);
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
     }
+  } // End of batch iteration
 
     return new Response(
       JSON.stringify({
