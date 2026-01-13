@@ -11,6 +11,12 @@ const corsHeaders = {
 }
 
 const GEMINI_API_KEY = Deno.env.get('API_KEY') || Deno.env.get('GEMINI_API_KEY')
+const GEMINI_MODELS = [
+  'gemini-2.5-pro',    // Primary: 150 RPM, 2M tokens
+  'gemini-2.5-flash',  // Fallback 1: 1000 RPM, 1M tokens
+  'gemini-3-flash'     // Fallback 2: 1000 RPM, 1M tokens (preview)
+] as const
+let currentModelIndex = 0 // Track which model we're using
 
 interface ExternalEvent {
   name: string
@@ -38,6 +44,15 @@ async function geocodeAddress(
   countryCode: string
 ): Promise<{lat: number, lng: number} | null> {
   try {
+    // Try Gemini first if API key is available
+    if (GEMINI_API_KEY) {
+      const geminiCoords = await geocodeAddressWithGemini(address, cityName, country)
+      if (geminiCoords) {
+        return geminiCoords
+      }
+    }
+    
+    // Fallback to Nominatim
     await new Promise(resolve => setTimeout(resolve, 1100)) // Rate limit: 1 req/sec
     
     // Prepare search variations
@@ -61,7 +76,7 @@ async function geocodeAddress(
     // Remove duplicates
     const uniqueVariations = [...new Set(searchVariations)]
     
-    console.log(`🔍 Geocoding "${address}" in ${cityName} with ${uniqueVariations.length} strategies`)
+    console.log(`🔍 Geocoding "${address}" in ${cityName} with ${uniqueVariations.length} Nominatim strategies`)
     
     // Try each variation
     for (const searchAddress of uniqueVariations) {
@@ -84,7 +99,7 @@ async function geocodeAddress(
       
       if (results && results.length > 0) {
         const result = results[0]
-        console.log(`✅ Geocoded: ${result.display_name} → ${result.lat}, ${result.lon}`)
+        console.log(`✅ Geocoded via Nominatim: ${result.display_name} → ${result.lat}, ${result.lon}`)
         return {
           lat: parseFloat(result.lat),
           lng: parseFloat(result.lon)
@@ -99,6 +114,82 @@ async function geocodeAddress(
     console.error(`Geocoding failed for "${address}":`, error)
     return null
   }
+}
+
+// Geocode address using Gemini AI
+async function geocodeAddressWithGemini(
+  address: string,
+  cityName: string,
+  country: string
+): Promise<{lat: number, lng: number} | null> {
+  try {
+    if (!GEMINI_API_KEY) return null
+
+    const prompt = `You are a geocoding expert. Extract the precise latitude and longitude for this address:
+
+Address: ${address}
+City: ${cityName}
+Country: ${country}
+
+Respond with ONLY a JSON object on ONE line, no explanations:
+{"lat": 58.1234, "lng": 25.5678}
+
+Be as precise as possible. If you cannot find exact coordinates, respond with null.
+Use your knowledge of ${country} geography to provide accurate coordinates.`
+
+    const currentModel = GEMINI_MODELS[currentModelIndex]
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 100,
+          }
+        })
+      }
+    )
+
+    if (!response.ok) {
+      console.warn(`⚠️ Gemini geocoding API error ${response.status}`)
+      return null
+    }
+
+    const data = await response.json()
+    const text = data.candidates[0]?.content?.parts[0]?.text || ''
+    
+    if (text.trim() === 'null' || text.trim() === '') {
+      return null
+    }
+    
+    let coords: any = null
+    try {
+      coords = JSON.parse(text.trim())
+    } catch {
+      const jsonMatch = text.match(/\{.*"lat".*"lng".*\}/s)
+      if (jsonMatch) {
+        try {
+          coords = JSON.parse(jsonMatch[0])
+        } catch {
+          return null
+        }
+      }
+    }
+
+    if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number' &&
+        coords.lat >= -90 && coords.lat <= 90 && coords.lng >= -180 && coords.lng <= 180) {
+      console.log(`✅ Geocoded via Gemini: "${address}" → ${coords.lat}, ${coords.lng}`)
+      return coords
+    }
+  } catch (error) {
+    console.warn(`⚠️ Gemini geocoding error:`, error)
+  }
+  return null
 }
 
 // Parse human-readable time string to ISO 8601 using Gemini AI

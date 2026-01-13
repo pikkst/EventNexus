@@ -27,6 +27,7 @@ interface ParsedEvent {
   location_address: string
   location_lat?: number
   location_lng?: number
+  location_venue_name?: string
   category: string
   is_free: boolean
   price?: number
@@ -533,12 +534,116 @@ ${cleanedContent.slice(0, 100000)}` // 100KB limit for large calendars
   }
 }
 
+async function geocodeWithGemini(
+  address: string,
+  cityName: string,
+  country: string,
+  countryCode: string,
+  supabaseClient: any,
+  debugMetrics: DebugMetrics
+): Promise<{ lat: number; lng: number } | null> {
+  // Use Gemini to extract precise coordinates from address
+  // This is MORE ACCURATE than Nominatim for specific venue names
+  
+  // Check API key is available
+  if (!GEMINI_API_KEY) {
+    console.warn(`⚠️ Gemini API key not available, skipping Gemini geocoding`)
+    return null
+  }
+  
+  debugMetrics.geocodingStats.attempts++
+  
+  try {
+    const prompt = `You are a geocoding expert. Extract the precise latitude and longitude for this address:
+
+Address: ${address}
+City: ${cityName}
+Country: ${country}
+
+Respond with ONLY a JSON object on ONE line, no explanations:
+{"lat": 58.1234, "lng": 25.5678}
+
+Be as precise as possible. If you cannot find exact coordinates, respond with null.
+Use your knowledge of ${country} geography to provide accurate coordinates.`
+
+    const currentModel = GEMINI_MODELS[currentModelIndex]
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 100, // Just need coordinates
+          }
+        })
+      }
+    )
+
+    if (!response.ok) {
+      console.warn(`⚠️ Gemini geocoding API error ${response.status}`)
+      return null
+    }
+
+    const data = await response.json()
+    const text = data.candidates[0]?.content?.parts[0]?.text || ''
+    
+    // Handle "null" response from Gemini
+    if (text.trim() === 'null' || text.trim() === '') {
+      console.warn(`⚠️ Gemini returned null for: ${address}`)
+      return null
+    }
+    
+    // Extract JSON from response (handle various formats)
+    let coords: any = null
+    try {
+      // Try direct parse first
+      coords = JSON.parse(text.trim())
+    } catch {
+      // Try extracting from markdown code blocks
+      const jsonMatch = text.match(/\{.*"lat".*"lng".*\}/s)
+      if (jsonMatch) {
+        try {
+          coords = JSON.parse(jsonMatch[0])
+        } catch {
+          // JSON parsing failed
+          console.warn(`⚠️ Failed to parse Gemini response: ${text.substring(0, 100)}`)
+          return null
+        }
+      }
+    }
+
+    if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number' &&
+        coords.lat >= -90 && coords.lat <= 90 && coords.lng >= -180 && coords.lng <= 180) {
+      
+      debugMetrics.geocodingStats.successes++
+      console.log(`✓ Gemini geocoded: "${address}" → ${coords.lat}, ${coords.lng}`)
+      await log(supabaseClient, 'parse-event-ai', 'success', 'Gemini geocoded address', { 
+        address,
+        lat: coords.lat,
+        lng: coords.lng
+      })
+      return coords
+    }
+  } catch (error) {
+    console.warn(`⚠️ Gemini geocoding error:`, error)
+  }
+
+  debugMetrics.geocodingStats.failures++
+  return null
+}
+
 async function geocodeAddress(
   address: string, 
   country: string, 
   countryCode: string, 
   supabaseClient: any,
-  debugMetrics: DebugMetrics
+  debugMetrics: DebugMetrics,
+  cityName?: string
 ): Promise<{ lat: number; lng: number } | null> {
   // Use OpenStreetMap Nominatim for geocoding (free, no API key needed)
   // Rate limit: max 1 request per second
@@ -546,16 +651,28 @@ async function geocodeAddress(
   const geocodeStart = Date.now()
   
   try {
-    // Add 1.1 second delay to respect Nominatim rate limit
-    await new Promise(resolve => setTimeout(resolve, 1100))
+    // Add delay to respect rate limits
+    await new Promise(resolve => setTimeout(resolve, 500))
     
-    // 🔧 ENHANCED: Prepare MANY search variations (8+ strategies)
+    // 🔧 ENHANCED: Try Gemini FIRST for precise venue-specific coordinates
+    // Gemini understands context better and can handle Estonian addresses well
+    console.log(`🔍 Attempting Gemini geocoding for: "${address}"`)
+    const geminiCoords = await geocodeWithGemini(address, cityName, country, countryCode, supabaseClient, debugMetrics)
+    if (geminiCoords) {
+      debugMetrics.performance.geocodeTime += (Date.now() - geocodeStart) / 1000
+      return geminiCoords
+    }
+    
+    // FALLBACK: Use Nominatim if Gemini didn't work
+    console.log(`🔍 Falling back to Nominatim for: "${address}"`)
+    
+    // Prepare search variations for Nominatim
     const searchVariations: string[] = []
     
     // Parse address components
     const parts = address.split(',').map(p => p.trim())
     const venueName = parts[0] || ''
-    const cityName = parts[parts.length - 1]?.trim() || parts[1]?.trim() || ''
+    const cityName2 = parts[parts.length - 1]?.trim() || parts[1]?.trim() || ''
     
     const lowerAddress = address.toLowerCase()
     const lowerCountry = country.toLowerCase()
@@ -568,8 +685,8 @@ async function geocodeAddress(
     }
     
     // 2. Venue name + city + country (most specific)
-    if (venueName && cityName && venueName !== cityName) {
-      searchVariations.push(`${venueName}, ${cityName}, ${country}`)
+    if (venueName && cityName2 && venueName !== cityName2) {
+      searchVariations.push(`${venueName}, ${cityName2}, ${country}`)
     }
     
     // 3. Venue name only + country (for institutional names)
@@ -584,13 +701,13 @@ async function geocodeAddress(
     }
     
     // 5. City + venue (reversed order - sometimes works better)
-    if (cityName && venueName && cityName !== venueName) {
-      searchVariations.push(`${cityName}, ${venueName}, ${country}`)
+    if (cityName2 && venueName && cityName2 !== venueName) {
+      searchVariations.push(`${cityName2}, ${venueName}, ${country}`)
     }
     
     // 6. Just venue name + city (no country - sometimes helps)
-    if (venueName && cityName && venueName !== cityName) {
-      searchVariations.push(`${venueName}, ${cityName}`)
+    if (venueName && cityName2 && venueName !== cityName2) {
+      searchVariations.push(`${venueName}, ${cityName2}`)
     }
     
     // 7. Remove special characters that might confuse geocoder
@@ -608,7 +725,10 @@ async function geocodeAddress(
     // Remove duplicates while preserving order
     const uniqueVariations = [...new Set(searchVariations)]
     
-    console.log(`🔍 Geocoding with ${uniqueVariations.length} strategies: "${address}"`)
+    console.log(`🔍 Geocoding with ${uniqueVariations.length} Nominatim strategies: "${address}"`)
+    
+    // Add delay for Nominatim rate limit
+    await new Promise(resolve => setTimeout(resolve, 600))
     
     // Try each search variation
     for (const searchAddress of uniqueVariations) {
@@ -831,7 +951,8 @@ serve(async (req) => {
               cityConfig.country,
               cityConfig.country_code || 'ee',
               supabaseClient,
-              debugMetrics
+              debugMetrics,
+              cityConfig.city_name
             )
             if (coords) {
               event.location_lat = coords.lat
