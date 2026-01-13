@@ -42,9 +42,10 @@ const MapEffects = ({ center, isFollowing }: { center: [number, number], isFollo
 interface HomeMapProps {
   theme?: 'dark' | 'light';
   onToggleTheme?: () => void;
+  events?: EventNexusEvent[]; // Optional: use events from parent if provided
 }
 
-const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
+const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events: propEvents }) => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +71,18 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
   const translationCache = useRef<Map<string, { name: string; desc: string }>>(new Map());
 
   // Load events from database with throttling to prevent map crashes
+  // OR use events from parent if provided (for real-time updates)
   useEffect(() => {
+    // If parent provides events, use them (for real-time updates after event creation)
+    if (propEvents) {
+      console.log(`📍 Using ${propEvents.length} events from parent (real-time mode)`);
+      const activeEvents = filterActiveEvents(propEvents);
+      setEvents(activeEvents);
+      setIsLoading(false);
+      return;
+    }
+
+    // Otherwise, load from database (initial load)
     const loadEvents = async () => {
       try {
         const eventsData = await getEvents();
@@ -107,7 +119,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme }) => {
       }
     };
     loadEvents();
-  }, []);
+  }, [propEvents]);
 
   useEffect(() => {
     if ("geolocation" in navigator) {

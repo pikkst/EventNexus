@@ -737,7 +737,7 @@ const App: React.FC = () => {
           <Suspense fallback={<DashboardSkeleton />}>
             <Routes>
               <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/map" element={<HomeMap theme={mapTheme} onToggleTheme={handleToggleMapTheme} />} />
+              <Route path="/map" element={<HomeMap theme={mapTheme} onToggleTheme={handleToggleMapTheme} events={events} />} />
               <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
