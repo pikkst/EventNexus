@@ -288,6 +288,33 @@ const App: React.FC = () => {
   });
   const sessionRestoreAttempted = useRef(false);
   
+  // Global session keep-alive: prevents auto-logout during long-running operations
+  // Especially critical for admin pages with multi-city batch processing
+  useEffect(() => {
+    let keepAliveInterval: NodeJS.Timer;
+    
+    const startKeepAlive = async () => {
+      // Only start if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        keepAliveInterval = setInterval(async () => {
+          try {
+            await supabase.auth.refreshSession();
+            console.log('🔄 Global session keep-alive: session refreshed');
+          } catch (error) {
+            console.error('Global keep-alive failed:', error);
+          }
+        }, 30000); // Refresh every 30 seconds globally
+      }
+    };
+    
+    startKeepAlive();
+    
+    return () => {
+      if (keepAliveInterval) clearInterval(keepAliveInterval);
+    };
+  }, []);
+  
   useEffect(() => {
     let mounted = true;
     
