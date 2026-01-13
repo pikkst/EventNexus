@@ -354,28 +354,38 @@ async function discoverEventsWithAI(
   // Step 1: Broad search using Flash + Google Search Grounding
   const searchPrompt = `Search for REAL upcoming FREE events in ${cityName}, ${country} (SPECIFICALLY in ${country}, NOT USA).
 
+TODAY'S DATE: ${dateStr}
+CRITICAL: Find ONLY FUTURE events (starting from ${dateStr} or later, not events that already happened!)
+
 CRITICAL LOCATION FILTER:
 - ONLY events in ${cityName}, ${country}
 - EXCLUDE any events in USA cities with similar names
 - Verify each event is in the CORRECT country: ${country}
 - Check addresses contain ${country} or proper country indicators
 
+CRITICAL TIME FILTER:
+- Event start date MUST be ${dateStr} or later
+- For events today (${dateStr}), only include events that haven't started yet
+- EXCLUDE exhibitions/events that ended before ${dateStr}
+- For ongoing exhibitions, use the end date (when exhibition closes)
+
 IMPORTANT INSTRUCTIONS:
-- Find at least ${targetCount} real, verifiable events
+- Find at least ${targetCount} real, verifiable FUTURE events
 - Date range: ${dateStr} to ${endStr}
 - Focus on FREE events (no ticket required, or free admission)
 - Include diverse categories: concerts, art exhibitions, workshops, markets, festivals, sports, community gatherings
+- For ongoing exhibitions/displays, use the closing date as the event date
 - For EACH event, find:
   * Exact name
   * Detailed description (what happens, who organizes, why attend)
-  * Precise start date and time
-  * End date and time (if available)
+  * Precise start date and time (MUST be in the future!)
+  * End date and time (required for exhibitions/multi-day events)
   * Full street address with ${cityName}, ${country}
   * Link to official source/website
 
 Search in multiple languages if needed (English, local language).
 Use official tourism sites, event platforms, cultural institution websites, and local news.
-DOUBLE-CHECK: All events must be in ${cityName}, ${country}, NOT USA.`
+DOUBLE-CHECK: All events must be FUTURE events in ${cityName}, ${country}, NOT USA, NOT past events.`
 
   const searchResponse = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -414,30 +424,36 @@ DOUBLE-CHECK: All events must be in ${cityName}, ${country}, NOT USA.`
 RAW SEARCH DATA:
 ${rawText}
 
+TODAY'S DATE AND TIME: ${dateStr}T00:00:00${timezone}
+CRITICAL: Extract ONLY FUTURE events (start_time MUST be after today)
+
 EXTRACTION RULES:
-1. Extract ONLY real, verifiable events (ignore generic descriptions)
-2. Each event must have ALL required fields
-3. Times must be in ISO 8601 format with timezone offset (${timezone})
+1. Extract ONLY real, verifiable FUTURE events (ignore past events, generic descriptions)
+2. **CRITICAL:** start_time MUST be ${dateStr} or LATER (no past dates!)
+3. Each event must have ALL required fields
+4. Times must be in ISO 8601 format with timezone offset (${timezone})
    Example: "2026-01-18T19:00:00+02:00"
-4. If end_time is not found, estimate based on event type:
-   - Concerts/performances: +2-3 hours
-   - Exhibitions: same day 22:00
-   - Workshops: +1-2 hours
-   - Markets/festivals: same day 18:00-22:00
-5. location_lat and location_lng: Use precise coordinates for the address
+5. **REQUIRED:** end_time must be provided:
+   - For exhibitions: use official closing date (usually weeks/months later)
+   - For concerts/performances: +2-3 hours from start
+   - For workshops: +1-2 hours from start
+   - For markets/festivals: same day 18:00-22:00
+   - For ongoing displays: use the last day they are available
+6. **VALIDATION:** If event start date is before ${dateStr}, SKIP IT (it's in the past)
+7. location_lat and location_lng: Use precise coordinates for the address
    - Search for exact venue coordinates
    - Use city center as fallback ONLY if address is vague
-6. category: Choose from: Music, Arts & Culture, Sports & Fitness, Food & Drink, 
+8. category: Choose from: Music, Arts & Culture, Sports & Fitness, Food & Drink, 
    Markets & Fairs, Workshop, Festival, Community, Nature & Outdoors, Nightlife, Other
-7. is_free must be true
-8. price must be 0
-9. sourceUrl must be a real URL to event details
+9. is_free must be true
+10. price must be 0
+11. sourceUrl must be a real URL to event details
 
 Current date: ${dateStr}
 Target timezone: ${timezone}
 Target city: ${cityName}, ${country}
 
-Return ONLY valid JSON array, no markdown, no explanations.`
+Return ONLY valid JSON array with FUTURE events, no markdown, no explanations.`
 
   const structureResponse = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`,
@@ -699,6 +715,15 @@ serve(async (req) => {
         
         if (existingParsed && existingParsed.length > 0) {
           console.log(`  ⊘ Skip (already parsed): ${event.name}`)
+          insertResults.skipped = (insertResults.skipped || 0) + 1
+          continue
+        }
+
+        // ✅ VALIDATE: Event must be in the future
+        const now = new Date()
+        
+        if (eventStartTime < now) {
+          console.log(`  ⊘ Skip (past event): ${event.name} (${event.start_time})`)
           insertResults.skipped = (insertResults.skipped || 0) + 1
           continue
         }
