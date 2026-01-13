@@ -181,7 +181,7 @@ async function validateEvent(
     time_validity: timeValidity / 100,
     geo_accuracy: geoAccuracy / 100,
     semantic_validity: semanticValidity / 100,
-    final_score: Math.round(finalScore * 100) / 100, // Round to 2 decimals
+    final_score: Math.round(finalScore) / 100, // Store as 0-1 for DB (NUMERIC(5,2))
   }
 
   // Validation rules

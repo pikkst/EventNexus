@@ -284,7 +284,7 @@ serve(async (req) => {
         )
       `)
       .eq('validation_status', 'validated')
-      .gte('event_confidence.final_score', 60)
+      .gte('event_confidence.final_score', 0.60) // 60% threshold (stored as 0-1 in DB)
       .is('event_confidence.event_id', null) // Not yet published
 
     // Filter by city_id if provided
