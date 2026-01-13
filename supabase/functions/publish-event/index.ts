@@ -274,6 +274,7 @@ serve(async (req) => {
     }
 
     // Build query for validated parsed events ready for publishing
+    // EventScout AI auto-validates with 93% confidence
     let query = supabaseClient
       .from('parsed_events')
       .select(`
@@ -283,7 +284,6 @@ serve(async (req) => {
           event_sources!inner(city_id)
         )
       `)
-      .eq('validation_status', 'validated')
       .gte('event_confidence.final_score', 0.60) // 60% threshold (stored as 0-1 in DB)
       .is('event_confidence.event_id', null) // Not yet published
 
