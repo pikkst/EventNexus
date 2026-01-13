@@ -42,7 +42,8 @@ interface FreeEvent {
 
 /**
  * Validate and correct event coordinates using Gemini
- * If coordinates seem off, use Gemini to refine them
+ * Always use Gemini for precise venue coordinates
+ * Even if basic validation passes, Gemini provides better accuracy
  */
 async function validateAndRefineCoordinates(
   event: FreeEvent,
@@ -50,62 +51,84 @@ async function validateAndRefineCoordinates(
   country: string
 ): Promise<FreeEvent> {
   try {
-    // Basic validation: check if coordinates are within reasonable bounds for the city
-    if (typeof event.location_lat !== 'number' || typeof event.location_lng !== 'number' ||
-        event.location_lat < -90 || event.location_lat > 90 ||
-        event.location_lng < -180 || event.location_lng > 180) {
-      console.log(`⚠️ Invalid coordinates for ${event.name}, attempting to refine...`)
-      
-      // Use Gemini to get correct coordinates
-      const prompt = `You are a geocoding expert. Extract the precise latitude and longitude for this address:
+    console.log(`🔍 Validating coordinates for: ${event.name}`)
+    console.log(`   Address: ${event.location_address}`)
+    console.log(`   Current coords: ${event.location_lat}, ${event.location_lng}`)
+    
+    // ALWAYS try Gemini to get precise venue coordinates
+    // Even if coordinates exist, Gemini may refine them better
+    const prompt = `You are a precise geocoding expert. Extract the exact latitude and longitude for this venue:
 
+Venue Name: ${event.name}
 Address: ${event.location_address}
-Venue: ${event.name}
 City: ${cityName}
 Country: ${country}
+
+CRITICAL: Use exact venue coordinates, not city center or street center.
+For Estonian addresses, be very precise with street-level accuracy.
 
 Respond with ONLY a JSON object on ONE line:
 {"lat": 58.1234, "lng": 25.5678}
 
-Be as precise as possible.`
+MUST be valid coordinates: latitude -90 to 90, longitude -180 to 180.`
 
-      const currentModel = GEMINI_MODELS[currentModelIndex]
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.1,
-              maxOutputTokens: 100,
-            }
-          })
-        }
-      )
-
-      if (response.ok) {
-        const data = await response.json()
-        const text = data.candidates[0]?.content?.parts[0]?.text || ''
-        
-        if (text && text.trim() !== 'null') {
-          try {
-            const coords = JSON.parse(text.trim())
-            if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number' &&
-                coords.lat >= -90 && coords.lat <= 90 && coords.lng >= -180 && coords.lng <= 180) {
-              event.location_lat = coords.lat
-              event.location_lng = coords.lng
-              console.log(`✓ Refined coordinates for ${event.name}: ${coords.lat}, ${coords.lng}`)
-            }
-          } catch (e) {
-            console.warn(`Failed to parse Gemini response for coordinates`)
+    const currentModel = GEMINI_MODELS[currentModelIndex]
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 100,
           }
-        }
+        })
       }
+    )
+
+    if (response.ok) {
+      const data = await response.json()
+      const text = data.candidates[0]?.content?.parts[0]?.text || ''
+      
+      if (text && text.trim() !== 'null' && text.trim() !== '') {
+        try {
+          const coords = JSON.parse(text.trim())
+          if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number' &&
+              coords.lat >= -90 && coords.lat <= 90 && coords.lng >= -180 && coords.lng <= 180) {
+            
+            // Check if coordinates changed significantly
+            const oldLat = event.location_lat
+            const oldLng = event.location_lng
+            const latDiff = Math.abs(oldLat - coords.lat)
+            const lngDiff = Math.abs(oldLng - coords.lng)
+            
+            event.location_lat = coords.lat
+            event.location_lng = coords.lng
+            
+            if (latDiff > 0.001 || lngDiff > 0.001) {
+              console.log(`✓ REFINED coordinates for ${event.name}`)
+              console.log(`  Before: ${oldLat}, ${oldLng}`)
+              console.log(`  After:  ${coords.lat}, ${coords.lng}`)
+              console.log(`  Diff: ${(latDiff * 111).toFixed(1)}km, ${(lngDiff * 111).toFixed(1)}km`)
+            } else {
+              console.log(`✓ Coordinates verified for ${event.name}: ${coords.lat}, ${coords.lng}`)
+            }
+          } else {
+            console.warn(`⚠️ Gemini returned invalid coordinates for ${event.name}`)
+          }
+        } catch (parseError) {
+          console.warn(`⚠️ Failed to parse Gemini response for ${event.name}: ${text.substring(0, 100)}`)
+        }
+      } else {
+        console.warn(`⚠️ Gemini returned empty response for ${event.name}`)
+      }
+    } else {
+      console.warn(`⚠️ Gemini API error ${response.status} for ${event.name}`)
     }
   } catch (error) {
-    console.warn(`Coordinate refinement failed:`, error)
+    console.warn(`⚠️ Coordinate refinement failed for ${event.name}:`, error)
   }
   
   return event
