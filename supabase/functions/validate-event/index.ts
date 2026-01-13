@@ -331,7 +331,7 @@ serve(async (req) => {
         const validation = await validateEvent(parsedEvent, sourceScore, cityConfig.timezone, cityCenter)
 
         // Store confidence scores
-        await supabaseClient
+        const { error: confidenceError } = await supabaseClient
           .from('event_confidence')
           .insert({
             parsed_event_id: parsedEvent.id,
@@ -341,6 +341,13 @@ serve(async (req) => {
               warnings: validation.warnings,
             },
           })
+        
+        if (confidenceError) {
+          console.error(`❌ Failed to insert event_confidence for ${parsedEvent.id}:`, confidenceError)
+          // Don't fail the whole validation, but log it
+        } else {
+          console.log(`✅ Inserted event_confidence for ${parsedEvent.id} (score: ${validation.scores.final_score})`)
+        }
 
         // Log decision
         await supabaseClient
@@ -387,35 +394,11 @@ serve(async (req) => {
             .update({ validation_status: 'validated' })
             .eq('id', parsedEvent.id)
 
-          if (validation.action === 'auto_publish' || validation.action === 'publish_flagged') {
-            // Call publish-event function
-            try {
-              const publishResponse = await fetch(
-                `${Deno.env.get('SUPABASE_URL')}/functions/v1/publish-event`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ parsed_event_id: parsedEvent.id }),
-                }
-              )
-
-              if (publishResponse.ok) {
-                if (validation.action === 'auto_publish') {
-                  results.auto_published++
-                } else {
-                  results.flagged++
-                }
-              } else {
-                console.error(`Failed to publish event ${parsedEvent.id}:`, await publishResponse.text())
-                results.queued_for_review++
-              }
-            } catch (publishError) {
-              console.error(`Error calling publish-event for ${parsedEvent.id}:`, publishError)
-              results.queued_for_review++
-            }
+          // ✅ Mark as auto_publish or flagged for pipeline to handle
+          if (validation.action === 'auto_publish') {
+            results.auto_published++
+          } else if (validation.action === 'publish_flagged') {
+            results.flagged++
           } else {
             results.flagged++
           }
