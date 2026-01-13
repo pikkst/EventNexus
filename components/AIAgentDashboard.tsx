@@ -1719,17 +1719,17 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <Bot className="w-8 h-8 text-indigo-600" />
+              <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                <Bot className="w-8 h-8 text-indigo-400" />
                 AI Agent System
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-indigo-300 mt-1">
                 🚀 EventScout AI: Google Search → Gemini → Live Map (3 steps)
               </p>
             </div>
@@ -1737,7 +1737,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
               <button
                 onClick={loadDashboardData}
                 disabled={loading}
-                className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-2xl text-white font-bold shadow-xl shadow-indigo-500/20 flex items-center gap-2 transition-all disabled:opacity-50"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
@@ -1747,17 +1747,17 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
               <div className="relative">
                 <button
                   onClick={() => setShowManualJobs(!showManualJobs)}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                  className="px-6 py-3 bg-white/10 backdrop-blur-sm border border-indigo-500/30 rounded-2xl hover:bg-white/20 text-white font-bold shadow-xl flex items-center gap-2 transition-all"
                 >
                   <Settings className="w-4 h-4" />
                   Manual Jobs
                 </button>
                 
                 {showManualJobs && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                    <div className="p-4 border-b border-gray-200">
-                      <h3 className="font-semibold text-gray-900">Manual Job Triggers</h3>
-                      <p className="text-xs text-gray-500 mt-1">🚀 EventScout AI Pipeline (3 steps)</p>
+                  <div className="absolute right-0 mt-2 w-80 bg-gradient-to-br from-slate-800 to-indigo-900 border border-indigo-500/30 rounded-2xl shadow-2xl backdrop-blur-xl z-50">
+                    <div className="p-4 border-b border-indigo-500/30">
+                      <h3 className="font-semibold text-white">Manual Job Triggers</h3>
+                      <p className="text-xs text-indigo-300 mt-1">🚀 EventScout AI Pipeline (3 steps)</p>
                     </div>
                     
                     <div className="p-3 space-y-2">
@@ -1781,18 +1781,18 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                         <button
                           onClick={runManualBootstrap}
                           disabled={!selectedCityForBootstrap || runningManualJob}
-                          className="w-full px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
+                          className="w-full px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-30 disabled:cursor-not-allowed text-sm font-bold shadow-lg transition-all"
                         >
                           {runningManualJob ? 'Discovering...' : 'Step 1: Discover Events'}
                         </button>
-                        <p className="text-xs text-indigo-600 mt-1">Google Search + Gemini AI</p>
+                        <p className="text-xs text-indigo-300 mt-1">Google Search + Gemini AI</p>
                       </div>
                       
                       {/* Validate & Publish */}
                       <button
                         onClick={() => runManualJob('validate-event')}
                         disabled={runningManualJob}
-                        className="w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-300 text-sm text-left"
+                        className="w-full px-3 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-30 text-sm text-left font-bold shadow-lg transition-all"
                       >
                         Step 2: Validate Events
                       </button>
@@ -1800,7 +1800,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                       <button
                         onClick={() => runManualJob('publish-event')}
                         disabled={runningManualJob}
-                        className="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 text-sm text-left"
+                        className="w-full px-3 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-30 text-sm text-left font-bold shadow-lg transition-all"
                       >
                         Step 3: Publish to Map
                       </button>
@@ -1813,7 +1813,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                       <button
                         onClick={testGuardian}
                         disabled={isTestingGuardian || runningManualJob}
-                        className="w-full px-3 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:bg-gray-300 text-sm text-left"
+                        className="w-full px-3 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-30 text-sm text-left font-bold shadow-lg transition-all"
                       >
                         {isTestingGuardian ? 'Testing...' : '🛡️ City Guardian (Self-Heal)'}
                       </button>
@@ -1821,16 +1821,16 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                       <button
                         onClick={() => runManualJob('ensure-free-events')}
                         disabled={runningManualJob}
-                        className="w-full px-3 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:bg-gray-300 text-sm text-left"
+                        className="w-full px-3 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-30 text-sm text-left font-bold shadow-lg transition-all"
                       >
                         🎯 Ensure Free Events
                       </button>
                     </div>
                     
-                    <div className="p-3 border-t border-gray-200">
+                    <div className="p-3 border-t border-indigo-500/30">
                       <button
                         onClick={() => setShowManualJobs(false)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm"
+                        className="w-full px-3 py-2 border border-indigo-500/30 rounded-xl hover:bg-white/10 text-white text-sm font-bold transition-all"
                       >
                         Close
                       </button>
@@ -1965,72 +1965,72 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
         {/* Stats Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 backdrop-blur-sm border border-indigo-500/30 rounded-2xl shadow-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Cities Active</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.total_cities}</p>
+                  <p className="text-sm text-indigo-300">Cities Active</p>
+                  <p className="text-3xl font-bold text-white">{stats.total_cities}</p>
                 </div>
-                <MapPin className="w-10 h-10 text-blue-500" />
+                <MapPin className="w-10 h-10 text-indigo-400" />
               </div>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-indigo-400 mt-2">
                 {stats.active_sources} sources monitored
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-gradient-to-br from-emerald-900/40 to-green-900/40 backdrop-blur-sm border border-emerald-500/30 rounded-2xl shadow-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Events (24h)</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.events_discovered_24h}</p>
+                  <p className="text-sm text-emerald-300">Events (24h)</p>
+                  <p className="text-3xl font-bold text-white">{stats.events_discovered_24h}</p>
                 </div>
-                <Activity className="w-10 h-10 text-green-500" />
+                <Activity className="w-10 h-10 text-emerald-400" />
               </div>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-emerald-400 mt-2">
                 {stats.events_published_24h} published
               </p>
             </div>
 
             {/* ⭐ NEW: Free Events Card */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg shadow p-6 border-2 border-green-200">
+            <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm border-2 border-emerald-500/50 rounded-2xl shadow-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-700 font-medium">Free Events</p>
-                  <p className="text-3xl font-bold text-green-900">{stats.free_events_active || 0}</p>
+                  <p className="text-sm text-emerald-300 font-bold">Free Events</p>
+                  <p className="text-3xl font-bold text-white">{stats.free_events_active || 0}</p>
                 </div>
-                <TrendingUp className="w-10 h-10 text-green-600" />
+                <TrendingUp className="w-10 h-10 text-emerald-400" />
               </div>
-              <p className="text-sm text-green-600 mt-2 font-medium">
+              <p className="text-sm text-emerald-400 mt-2 font-bold">
                 {stats.total_cities > 0 
                   ? `${Math.round((stats.free_events_active || 0) / stats.total_cities * 10) / 10} per city avg`
                   : 'Across all cities'}
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-gradient-to-br from-orange-900/40 to-amber-900/40 backdrop-blur-sm border border-orange-500/30 rounded-2xl shadow-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Pending Review</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.pending_review}</p>
+                  <p className="text-sm text-orange-300">Pending Review</p>
+                  <p className="text-3xl font-bold text-white">{stats.pending_review}</p>
                 </div>
-                <AlertCircle className="w-10 h-10 text-orange-500" />
+                <AlertCircle className="w-10 h-10 text-orange-400" />
               </div>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-orange-400 mt-2">
                 Avg confidence: {(stats.avg_confidence || 0).toFixed(1)}%
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 backdrop-blur-sm border border-purple-500/30 rounded-2xl shadow-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">AI Cost (7d)</p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-sm text-purple-300">AI Cost (7d)</p>
+                  <p className="text-3xl font-bold text-white">
                     ${(stats.estimated_cost_7d || 0).toFixed(2)}
                   </p>
                 </div>
-                <DollarSign className="w-10 h-10 text-purple-500" />
+                <DollarSign className="w-10 h-10 text-purple-400" />
               </div>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-purple-400 mt-2">
                 {((stats.total_tokens_used_7d || 0) / 1000).toFixed(1)}k tokens
               </p>
             </div>
@@ -2038,9 +2038,9 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
         )}
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="flex -mb-px overflow-x-auto">
+        <div className="bg-gradient-to-br from-indigo-900/30 to-purple-900/30 backdrop-blur-sm border border-indigo-500/30 rounded-2xl shadow-2xl mb-6">
+          <div className="border-b border-indigo-500/30">
+            <nav className="flex -mb-px overflow-x-auto p-2">
               {[
                 { id: 'overview', label: 'Overview', icon: Activity },
                 { id: 'live-activity', label: 'Live Activity', icon: Radio },
@@ -2055,16 +2055,16 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 ${
+                  className={`flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl transition-all ${
                     activeTab === tab.id
-                      ? 'border-indigo-600 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-500/20'
+                      : 'text-indigo-300 hover:bg-white/10'
                   }`}
                 >
                   <tab.icon className="w-4 h-4" />
                   {tab.label}
                   {tab.badge && tab.badge > 0 && (
-                    <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full">
+                    <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full font-bold shadow-lg">
                       {tab.badge}
                     </span>
                   )}
@@ -2264,10 +2264,47 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                         Deselect All
                       </button>
                     </div>
+                    
+                    {/* Force Refresh Checkbox */}
+                    <label className="flex items-center gap-2 text-sm text-white cursor-pointer px-4 py-3 bg-white/10 backdrop-blur-sm border border-indigo-500/30 rounded-2xl hover:bg-white/20 transition-all">
+                      <input
+                        type="checkbox"
+                        checked={forceRefresh}
+                        onChange={(e) => setForceRefresh(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <span className="select-none font-bold">
+                        Force Refresh
+                      </span>
+                      <span className="text-indigo-300" title="Clear all cached data (raw_events, parsed_events, published events) before running pipeline. Use this when Edge Functions have been updated.">
+                        ℹ️
+                      </span>
+                    </label>
+                    
+                    {/* Run Pipeline Button */}
+                    <button
+                      onClick={triggerAgentPipeline}
+                      disabled={isProcessing || selectedCities.size === 0}
+                      className="flex items-center gap-2 px-6 py-3 text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-xl shadow-indigo-500/20 transition-all"
+                      title="Run EventScout AI pipeline for selected cities"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Pause className="w-5 h-5 animate-pulse" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-5 h-5" />
+                          Run Pipeline ({selectedCities.size})
+                        </>
+                      )}
+                    </button>
+                    
                     <button
                       onClick={testGuardian}
                       disabled={isTestingGuardian || loading}
-                      className="flex items-center gap-2 px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 px-6 py-3 text-sm bg-purple-600 text-white rounded-2xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-xl shadow-purple-500/20 transition-all"
                       title="Run city-guardian to check health and trigger recovery for degraded cities"
                     >
                       {isTestingGuardian ? (
