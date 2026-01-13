@@ -817,8 +817,28 @@ serve(async (req) => {
     console.log(`  ❌ Failed: ${insertResults.failed}`)
     console.log(`  ⏱️ Duration: ${duration}ms`)
 
-    // Note: Validation and publishing will be triggered by the pipeline (AIAgentDashboard)
-    // or cron jobs. We just insert into parsed_events here.
+    // AUTOMATICALLY PUBLISH: Trigger publish-event to move parsed_events to live map
+    console.log(`\n🚀 Auto-publishing ${insertResults.inserted} events to live map...`)
+    let publishedCount = 0
+    let publishError: string | null = null
+    
+    try {
+      // Use supabase client to invoke the function (handles auth automatically)
+      const { data: publishResult, error: publishErr } = await supabase.functions.invoke('publish-event', {
+        body: { city_id: cityData.city_id }
+      })
+      
+      if (publishErr) {
+        publishError = publishErr.message || String(publishErr)
+        console.error(`  ❌ Publish failed: ${publishError}`)
+      } else {
+        publishedCount = publishResult?.results?.published || 0
+        console.log(`  ✅ Published ${publishedCount} events to map`)
+      }
+    } catch (err) {
+      publishError = String(err)
+      console.error(`  ❌ Publish error: ${publishError}`)
+    }
 
     return new Response(
       JSON.stringify({
@@ -830,7 +850,10 @@ serve(async (req) => {
           events_skipped: insertResults.skipped,
           events_failed: insertResults.failed,
           errors: insertResults.errors.length > 0 ? insertResults.errors : undefined,
-          duration_ms: duration
+          duration_ms: duration,
+          // Include publishing results
+          events_published: publishedCount,
+          publish_error: publishError || undefined
         }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

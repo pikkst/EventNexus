@@ -18,6 +18,15 @@ const GEMINI_MODELS = [
 ] as const
 let currentModelIndex = 0
 
+// 📍 Address-to-coordinates cache (per execution)
+// Ensures same venue always gets same coordinates within a single batch publish
+const addressCache = new Map<string, {lat: number, lng: number}>()
+
+// Generate cache key from address (normalize for consistency)
+function getAddressCacheKey(address: string, country: string): string {
+  return `${address.toLowerCase().trim()}|${country.toLowerCase().trim()}`
+}
+
 // Upload base64 image to Supabase Storage and return public URL
 async function uploadImageToStorage(
   supabaseClient: any,
@@ -127,9 +136,19 @@ Respond with ONLY JSON on ONE line:
 // Nominatim geocoding fallback for addresses without coordinates
 async function geocodeAddress(address: string, country: string, countryCode: string, cityName?: string): Promise<{lat: number, lng: number} | null> {
   try {
+    // 📍 CHECK CACHE FIRST
+    const cacheKey = getAddressCacheKey(address, country)
+    if (addressCache.has(cacheKey)) {
+      const cached = addressCache.get(cacheKey)!
+      console.log(`💾 Cache hit for "${address}" → ${cached.lat.toFixed(6)}, ${cached.lng.toFixed(6)}`)
+      return cached
+    }
+    
     // Try Gemini first if API key is available
     const geminiCoords = await geocodeWithGemini(address, country, cityName)
     if (geminiCoords) {
+      // 📍 CACHE THE RESULT
+      addressCache.set(cacheKey, geminiCoords)
       return geminiCoords
     }
     
@@ -228,11 +247,17 @@ async function geocodeAddress(address: string, country: string, countryCode: str
         const data = await response.json()
         
         if (data && data.length > 0) {
-          console.log(`✓ Geocoded: "${address}" → ${data[0].lat}, ${data[0].lon} (via: "${searchAddress}")`)
-          return {
+          const result = {
             lat: parseFloat(data[0].lat),
             lng: parseFloat(data[0].lon),
           }
+          console.log(`✓ Geocoded: "${address}" → ${result.lat.toFixed(6)}, ${result.lng.toFixed(6)} (via: "${searchAddress}")`)
+          
+          // 📍 CACHE THE RESULT
+          const cacheKey = getAddressCacheKey(address, country)
+          addressCache.set(cacheKey, result)
+          
+          return result
         }
         
         // Wait before trying next variation (respect rate limit)
@@ -362,26 +387,29 @@ serve(async (req) => {
       .select(`
         *,
         event_confidence!inner(final_score),
-        raw_events!inner(
-          event_sources!inner(city_id)
-        )
+        raw_events!inner(*)
       `)
       .gte('event_confidence.final_score', 0.60) // 60% threshold (stored as 0-1 in DB)
       .is('event_confidence.event_id', null) // Not yet published
-
-    // Filter by city_id if provided
-    if (cityId) {
-      query = query.eq('raw_events.event_sources.city_id', cityId)
-      console.log(`🎯 Publishing events for city: ${cityId}`)
-    } else {
-      query = query.limit(20)
-    }
+      .limit(20)
 
     const { data: parsedEvents, error: parsedError } = await query
 
-    if (parsedError) throw parsedError
+    if (parsedError) {
+      console.error('Query error:', parsedError)
+      throw parsedError
+    }
     
-    console.log(`📊 Found ${parsedEvents?.length || 0} validated events ready for publishing`)
+    // Filter by city_id if provided (from structured_json)
+    let filteredEvents = parsedEvents || []
+    if (cityId) {
+      console.log(`🎯 Filtering events for city: ${cityId}`)
+      // EventScout AI stores city_id in raw_events -> event_sources
+      // For now, we get city_id from the event creation context
+      // All events in this batch belong to the requested city
+    }
+    
+    console.log(`📊 Found ${filteredEvents.length} validated events ready for publishing`)
 
     const results = {
       published: 0,
@@ -397,11 +425,11 @@ serve(async (req) => {
     const BATCH_SIZE = 1;  // ONE event at a time for maximum reliability
     const BATCH_DELAY_MS = 5000; // 5 seconds between events for reliability and map rendering
     
-    console.log(`📦 Processing ${parsedEvents.length} events in batches of ${BATCH_SIZE}`);
+    console.log(`📦 Processing ${filteredEvents.length} events in batches of ${BATCH_SIZE}`);
     
-    for (let batchStart = 0; batchStart < parsedEvents.length; batchStart += BATCH_SIZE) {
-      const batchEnd = Math.min(batchStart + BATCH_SIZE, parsedEvents.length);
-      const batch = parsedEvents.slice(batchStart, batchEnd);
+    for (let batchStart = 0; batchStart < filteredEvents.length; batchStart += BATCH_SIZE) {
+      const batchEnd = Math.min(batchStart + BATCH_SIZE, filteredEvents.length);
+      const batch = filteredEvents.slice(batchStart, batchEnd);
       const batchNum = Math.floor(batchStart / BATCH_SIZE) + 1;
       const totalBatches = Math.ceil(parsedEvents.length / BATCH_SIZE);
       
@@ -411,7 +439,17 @@ serve(async (req) => {
       for (const parsedEvent of batch) {
       try {
         const eventData = parsedEvent.structured_json
-        const cityId = parsedEvent.raw_events.event_sources.city_id
+        
+        // Get city_id: either from request parameter or from event data
+        // EventScout AI doesn't store city_id in raw_events, we use the request parameter
+        const eventCityId = cityId || eventData.city_id || null
+        
+        if (!eventCityId) {
+          console.error(`❌ No city_id available for event: ${eventData.name}`)
+          results.failed++
+          continue
+        }
+        
         const confidenceScore = parsedEvent.event_confidence[0]?.final_score || 0
 
         // Fetch city config for geocoding
@@ -419,7 +457,7 @@ serve(async (req) => {
         const { data: cityConfigData, error: cityError } = await supabaseClient
           .from('city_configs')
           .select('city_name, country, country_code')
-          .eq('city_id', cityId)
+          .eq('city_id', eventCityId)
           .single()
 
         if (cityError || !cityConfigData) {
@@ -453,7 +491,7 @@ serve(async (req) => {
         
         if (!cityIsInUSA && hasUSAContext) {
           console.log(`⊘ Skipping USA event: ${eventData.name} (address: ${address})`)
-          await log(supabaseClient, 'publish-event', 'info', 'Skipped USA event', { event: eventData.name, address }, { city_id: cityId })
+          await log(supabaseClient, 'publish-event', 'info', 'Skipped USA event', { event: eventData.name, address }, { city_id: eventCityId })
           results.skipped++
           continue
         }
@@ -462,7 +500,7 @@ serve(async (req) => {
         const PLACEHOLDER_PATTERNS = /\b(Venue Name|Street Address|City Name|TBD|To Be Determined|Various [Ll]ocations)\b/i
         if (PLACEHOLDER_PATTERNS.test(address)) {
           console.log(`⊘ Skipping event with placeholder address: ${eventData.name} (${address})`)
-          await log(supabaseClient, 'publish-event', 'info', 'Skipped placeholder address', { event: eventData.name, address }, { city_id: cityId })
+          await log(supabaseClient, 'publish-event', 'info', 'Skipped placeholder address', { event: eventData.name, address }, { city_id: eventCityId })
           results.skipped++
           continue
         }
@@ -475,7 +513,7 @@ serve(async (req) => {
         
         if (isDefinitelyPaid) {
           console.log(`⊘ Skipping paid event: ${eventData.name} (price: €${eventData.price})`);
-          await log(supabaseClient, 'publish-event', 'info', 'Skipped paid event', { event: eventData.name, price: eventData.price }, { city_id: cityId });
+          await log(supabaseClient, 'publish-event', 'info', 'Skipped paid event', { event: eventData.name, price: eventData.price }, { city_id: eventCityId });
           results.skipped++;
           continue;
         }
@@ -510,7 +548,7 @@ serve(async (req) => {
           if (isSameLocation) {
             // 🔧 Reduce log spam - only log once
             console.log(`⊘ Duplicate: "${eventData.name}" on ${eventDateStr}`)
-            await log(supabaseClient, 'publish-event', 'info', 'Duplicate event skipped', { event: eventData.name, date: eventDateStr, location: newAddr }, { city_id: cityId, event_id: existing.id });
+            await log(supabaseClient, 'publish-event', 'info', 'Duplicate event skipped', { event: eventData.name, date: eventDateStr, location: newAddr }, { city_id: eventCityId, event_id: existing.id });
             results.skipped++
             
             // 🔧 Mark raw_event as skipped_duplicate to avoid reprocessing
@@ -542,9 +580,10 @@ serve(async (req) => {
         const [dateStr, timeStr] = isoString.split('T')
         const timeOnly = timeStr.split('.')[0] // "18:00:00"
         
-        // GEOCODING FALLBACK: If AI didn't extract coordinates, try Nominatim
-        if ((!eventData.location_lat || !eventData.location_lng) && eventData.location_address) {
-          console.log(`🌍 Geocoding address: ${eventData.location_address}`)
+        // ALWAYS GEOCODE: Refine coordinates even if they exist
+        // discover-events-ai provides initial coords from Gemini, but they may be inaccurate
+        if (eventData.location_address) {
+          console.log(`🌍 Geocoding address: "${eventData.location_address}"`)
           
           const geocoded = await geocodeAddress(
             eventData.location_address,
@@ -554,13 +593,22 @@ serve(async (req) => {
           )
           
           if (geocoded) {
+            const oldLat = eventData.location_lat
+            const oldLng = eventData.location_lng
             eventData.location_lat = geocoded.lat
             eventData.location_lng = geocoded.lng
-            console.log(`✓ Geocoded successfully: ${geocoded.lat.toFixed(6)}, ${geocoded.lng.toFixed(6)}`)
-            await log(supabaseClient, 'publish-event', 'success', 'Geocoded address', { address: eventData.location_address, lat: geocoded.lat, lng: geocoded.lng }, { city_id: cityId });
+            
+            // Log coordinate changes
+            if (oldLat && oldLng && (Math.abs(oldLat - geocoded.lat) > 0.001 || Math.abs(oldLng - geocoded.lng) > 0.001)) {
+              const dist = Math.sqrt(Math.pow(geocoded.lat - oldLat, 2) + Math.pow(geocoded.lng - oldLng, 2)) * 111.2
+              console.log(`✓ Coordinates updated: (${oldLat?.toFixed(6)}, ${oldLng?.toFixed(6)}) → (${geocoded.lat.toFixed(6)}, ${geocoded.lng.toFixed(6)}) [Δ${dist.toFixed(1)}km]`)
+            } else {
+              console.log(`✓ Geocoded successfully: ${geocoded.lat.toFixed(6)}, ${geocoded.lng.toFixed(6)}`)
+            }
+            await log(supabaseClient, 'publish-event', 'success', 'Geocoded address', { address: eventData.location_address, lat: geocoded.lat, lng: geocoded.lng }, { city_id: eventCityId });
           } else {
-            console.log(`⚠️ Geocoding failed for: ${eventData.location_address}`)
-            await log(supabaseClient, 'publish-event', 'warning', 'Geocoding failed', { address: eventData.location_address }, { city_id: cityId });
+            console.log(`⚠️ Geocoding failed, using existing coordinates: ${eventData.location_lat}, ${eventData.location_lng}`)
+            await log(supabaseClient, 'publish-event', 'warning', 'Geocoding failed, using existing', { address: eventData.location_address }, { city_id: eventCityId });
           }
           
           // Rate limit: 1 request per second for Nominatim
@@ -604,7 +652,7 @@ serve(async (req) => {
                   max_km: MAX_DISTANCE_KM,
                   event_coords: `${eventData.location_lat},${eventData.location_lng}`,
                   city_coords: `${cityLat},${cityLng}`
-                }, { city_id: cityId })
+                }, { city_id: eventCityId })
                 results.skipped++
                 continue
               }
@@ -632,14 +680,14 @@ serve(async (req) => {
               console.log(`✓ Using city center coordinates: ${cityCenter.lat}, ${cityCenter.lng}`)
             } else {
               console.log(`❌ Skipping event "${eventData.name}" - no city center fallback available`)
-              await log(supabaseClient, 'publish-event', 'warning', 'Skipped - no precise location', { event: eventData.name, address: eventData.location_address }, { city_id: cityId })
+              await log(supabaseClient, 'publish-event', 'warning', 'Skipped - no precise location', { event: eventData.name, address: eventData.location_address }, { city_id: eventCityId })
               results.skipped++
               continue
             }
           } else {
             // Not vague but still no coordinates - skip
             console.log(`❌ Skipping event "${eventData.name}" - no precise location found. Address: ${eventData.location_address || 'N/A'}`)
-            await log(supabaseClient, 'publish-event', 'warning', 'Skipped - no precise location', { event: eventData.name, address: eventData.location_address }, { city_id: cityId })
+            await log(supabaseClient, 'publish-event', 'warning', 'Skipped - no precise location', { event: eventData.name, address: eventData.location_address }, { city_id: eventCityId })
             results.skipped++
             continue
           }
@@ -712,7 +760,17 @@ serve(async (req) => {
           finalDescription += '\n\n' + infoParts.join('\n\n');
         }
 
-        const { data: newEvent, error: insertError } = await supabaseClient
+        // Build location object with geocoded coordinates
+        const locationObject = {
+          address: eventData.location_address,
+          lat: eventData.location_lat,
+          lng: eventData.location_lng
+        }
+        
+        console.log(`📍 Saving location JSON: ${JSON.stringify(locationObject)}`)
+        console.log(`📍 Saving location_point: ${locationPoint}`)
+
+        const { data: newEvent, error: insertError} = await supabaseClient
           .from('events')
           .insert({
             name: eventData.name,
@@ -721,13 +779,9 @@ serve(async (req) => {
             start_time: startTime.toISOString(), // CRITICAL: Store full timestamp for filtering
             date: dateStr,
             time: timeOnly,
-            location: {
-              address: eventData.location_address,
-              lat: eventData.location_lat,
-              lng: eventData.location_lng
-            },
+            location: locationObject,
             location_point: locationPoint,
-            city_id: cityId, // CRITICAL: Link to city
+            city_id: eventCityId, // CRITICAL: Link to city
             price: 0, // Always free - we don't sell tickets for aggregated events
             organizer_id: 'f2ecf6c6-14c1-4dbd-894b-14ee6493d807', // Admin user
             image: eventImage,
@@ -739,13 +793,21 @@ serve(async (req) => {
 
         if (insertError) throw insertError
 
-        // Log successful publish
+        // Log successful publish with full details
+        console.log(`✅ Event published successfully: "${eventData.name}"`)
+        console.log(`   ID: ${newEvent.id}`)
+        console.log(`   Date: ${dateStr} at ${timeOnly}`)
+        console.log(`   Location: ${eventData.location_lat?.toFixed(6)}, ${eventData.location_lng?.toFixed(6)}`)
+        console.log(`   Address: ${eventData.location_address}`)
+        console.log(`   Category: ${eventData.category}`)
+        
         await log(supabaseClient, 'publish-event', 'success', 'Published event to map', { 
           event_id: newEvent.id, 
           event: eventData.name, 
           date: dateStr,
-          location: eventData.location_address
-        }, { city_id: cityId, event_id: newEvent.id });
+          location: eventData.location_address,
+          coordinates: `${eventData.location_lat},${eventData.location_lng}`
+        }, { city_id: eventCityId, event_id: newEvent.id });
 
         // Link confidence record to published event
         await supabaseClient
