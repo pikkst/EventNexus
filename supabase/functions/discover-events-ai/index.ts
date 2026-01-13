@@ -19,6 +19,25 @@ const GEMINI_MODELS = [
 ] as const
 let currentModelIndex = 0
 
+/**
+ * Utility to retry API calls with exponential backoff
+ * Matches the test program's reliable retry mechanism
+ */
+const callWithRetry = async <T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  delay = 1000
+): Promise<T> => {
+  try {
+    return await fn()
+  } catch (error: any) {
+    if (retries <= 0) throw error
+    console.warn(`🔄 API call failed, retrying in ${delay}ms... (${retries} retries left)`, error.message)
+    await new Promise(resolve => setTimeout(resolve, delay))
+    return callWithRetry(fn, retries - 1, delay * 2)
+  }
+}
+
 interface DiscoverEventsRequest {
   city_id?: string
   city_name?: string
@@ -61,8 +80,9 @@ async function geocodeAddress(
         if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
           console.log(`✓ Nominatim coordinates: ${lat}, ${lng}`)
           
-          // Now try Gemini to verify/refine
-          return await refineCoordinatesWithGemini(address, lat, lng, cityName, country)
+          // CRITICAL: Trust Nominatim for specific addresses. 
+          // Gemini refinement often introduces hallucinations in small towns.
+          return { lat, lng }
         }
       }
     }
@@ -157,14 +177,17 @@ async function geocodeWithGemini(
   country: string
 ): Promise<{ lat: number; lng: number }> {
   try {
-    const prompt = `You are a precise geocoding expert. Extract exact latitude and longitude for this address:
+    const prompt = `You are a precise geocoding expert. Find the EXACT latitude and longitude for this specific venue:
 
 Address: ${address}
 City: ${cityName}
 Country: ${country}
 
-CRITICAL: Use exact coordinates, not city center.
-For Estonian addresses, be very precise with street-level accuracy.
+CRITICAL: 
+1. Use exact venue coordinates, NOT city center or street center. 
+2. Ensure the venue is actually in ${cityName}. 
+3. Do NOT confuse the city with the county capital if they share a county name (e.g., Jõgevamaa is the county, but the city is Põltsamaa).
+4. Be extremely precise with street-level accuracy.
 
 Respond with ONLY a JSON object on ONE line:
 {"lat": 58.1234, "lng": 25.5678}
@@ -336,7 +359,9 @@ async function discoverEventsWithAI(
   cityName: string,
   country: string,
   timezone: string,
-  targetCount: number = 15
+  targetCount: number = 15,
+  cityLat?: number,
+  cityLng?: number
 ): Promise<FreeEvent[]> {
   if (!GEMINI_API_KEY) {
     throw new Error('Gemini API key not configured')
@@ -352,10 +377,10 @@ async function discoverEventsWithAI(
   console.log(`🔍 Step 1: Searching for events in ${cityName}, ${country}...`)
 
   // Step 1: Broad search using Flash + Google Search Grounding
-  const searchPrompt = `Search for REAL upcoming FREE events in ${cityName}, ${country} (SPECIFICALLY in ${country}, NOT USA).
+  const searchPrompt = `Search for REAL upcoming FREE events in ${cityName}, ${country} (Region: ${country}).
 
-TODAY'S DATE: ${dateStr}
-CRITICAL: Find ONLY FUTURE events (starting from ${dateStr} or later, not events that already happened!)
+TODAY'S DATE AND TIME: ${dateStr} ${new Date().toLocaleTimeString()}
+CRITICAL: Find ONLY FUTURE events (starting AFTER ${new Date().toLocaleTimeString()} today, or on later dates!)
 
 CRITICAL LOCATION FILTER:
 - ONLY events in ${cityName}, ${country}
@@ -364,156 +389,218 @@ CRITICAL LOCATION FILTER:
 - Check addresses contain ${country} or proper country indicators
 
 CRITICAL TIME FILTER:
-- Event start date MUST be ${dateStr} or later
-- For events today (${dateStr}), only include events that haven't started yet
-- EXCLUDE exhibitions/events that ended before ${dateStr}
-- For ongoing exhibitions, use the end date (when exhibition closes)
+- Event start date/time MUST be in the future (relative to ${dateStr} ${new Date().toLocaleTimeString()})
+- EXCLUDE any events that have already started or finished today
 
-IMPORTANT INSTRUCTIONS:
+Search Instructions:
 - Find at least ${targetCount} real, verifiable FUTURE events
 - Date range: ${dateStr} to ${endStr}
 - Focus on FREE events (no ticket required, or free admission)
-- Include diverse categories: concerts, art exhibitions, workshops, markets, festivals, sports, community gatherings
-- For ongoing exhibitions/displays, use the closing date as the event date
-- For EACH event, find:
-  * Exact name
-  * Detailed description (what happens, who organizes, why attend)
-  * Precise start date and time (MUST be in the future!)
-  * End date and time (required for exhibitions/multi-day events)
-  * Full street address with ${cityName}, ${country}
-  * Link to official source/website
+- For EACH event, find: Name, Description, Precise Start/End times, Exact Address, and Source URL.
 
-Search in multiple languages if needed (English, local language).
-Use official tourism sites, event platforms, cultural institution websites, and local news.
-DOUBLE-CHECK: All events must be FUTURE events in ${cityName}, ${country}, NOT USA, NOT past events.`
+Search in local language and English. 
+DOUBLE-CHECK: All events must be FUTURE events in ${cityName}, ${country}, NOT USA.`
 
-  const searchResponse = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: searchPrompt }] }],
-        tools: [{ googleSearch: {} }],  // Enable Google Search grounding
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 8000
-        }
-      })
+  // Step 1: Broad search using Flash + Google Search Grounding with RETRY
+  let rawText = ''
+  await callWithRetry(async () => {
+    const searchResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: searchPrompt }] }],
+          tools: [{ googleSearch: {} }],  // Enable Google Search grounding
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 8000
+          }
+        })
+      }
+    )
+
+    if (!searchResponse.ok) {
+      const errorText = await searchResponse.text()
+      throw new Error(`Gemini Flash search failed: ${searchResponse.status} - ${errorText}`)
     }
-  )
 
-  if (!searchResponse.ok) {
-    const errorText = await searchResponse.text()
-    throw new Error(`Gemini Flash search failed: ${searchResponse.status} - ${errorText}`)
-  }
-
-  const searchResult = await searchResponse.json()
-  const rawText = searchResult.candidates?.[0]?.content?.parts?.[0]?.text || ''
-  
-  if (!rawText || rawText.length < 100) {
-    throw new Error('No events found by Google Search')
-  }
+    const searchResult = await searchResponse.json()
+    rawText = searchResult.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    
+    if (!rawText || rawText.length < 100) {
+      throw new Error('No events found by Google Search')
+    }
+  }, 3, 2000) // Retry up to 3 times with 2s initial delay
 
   console.log(`✅ Step 1 complete: Found raw event data (${rawText.length} chars)`)
-  console.log(`🧠 Step 2: Structuring with Gemini Pro + Thinking Mode...`)
+  console.log(`🧠 Step 2: Structuring with Gemini Pro + Google Search verification...`)
 
-  // Step 2: Structure using Pro + Thinking Mode for precision
-  const structurePrompt = `Transform this event search data into a structured JSON array.
+  // Step 2: Structure using Pro + Google Search for precise geocoding
+  const centerInfo = (cityLat && cityLng) ? `The city center is [${cityLat}, ${cityLng}].` : ''
+  const structurePrompt = `Transform this event list into a structured JSON array.
 
 RAW SEARCH DATA:
 ${rawText}
 
 TODAY'S DATE AND TIME: ${dateStr}T00:00:00${timezone}
-CRITICAL: Extract ONLY FUTURE events (start_time MUST be after today)
+City: ${cityName}, ${country}. ${centerInfo}
 
-EXTRACTION RULES:
-1. Extract ONLY real, verifiable FUTURE events (ignore past events, generic descriptions)
-2. **CRITICAL:** start_time MUST be ${dateStr} or LATER (no past dates!)
-3. Each event must have ALL required fields
-4. Times must be in ISO 8601 format with timezone offset (${timezone})
-   Example: "2026-01-18T19:00:00+02:00"
-5. **REQUIRED:** end_time must be provided:
-   - For exhibitions: use official closing date (usually weeks/months later)
-   - For concerts/performances: +2-3 hours from start
-   - For workshops: +1-2 hours from start
-   - For markets/festivals: same day 18:00-22:00
-   - For ongoing displays: use the last day they are available
-6. **VALIDATION:** If event start date is before ${dateStr}, SKIP IT (it's in the past)
-7. location_lat and location_lng: Use precise coordinates for the address
-   - Search for exact venue coordinates
-   - Use city center as fallback ONLY if address is vague
-8. category: Choose from: Music, Arts & Culture, Sports & Fitness, Food & Drink, 
-   Markets & Fairs, Workshop, Festival, Community, Nature & Outdoors, Nightlife, Other
-9. is_free must be true
-10. price must be 0
-11. sourceUrl must be a real URL to event details
+CRITICAL GEOCODING TASK (THIS IS THE MOST IMPORTANT PART):
+For EACH address found in the search data, you MUST use your SEARCH TOOL to find its PRECISE latitude and longitude.
 
-Current date: ${dateStr}
-Target timezone: ${timezone}
-Target city: ${cityName}, ${country}
+DO NOT ESTIMATE coordinates. Use Google Search to find:
+1. The exact street address coordinates
+2. Or if building not found: the street intersection coordinates  
+3. Or if street not found: the specific venue/park coordinates in ${cityName}
 
-Return ONLY valid JSON array with FUTURE events, no markdown, no explanations.`
+VALIDATION RULES:
+- All coordinates MUST be within 20km of the city center ${centerInfo ? `[${cityLat}, ${cityLng}]` : cityName}
+- Verify each address is actually in ${cityName}, not a nearby city with similar name
+- If address shows coordinates in another city (different country/region), REJECT IT and search for the correct ${cityName} venue
 
-  const structureResponse = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: structurePrompt }] }],
-        generationConfig: {
-          temperature: 0.1,  // Low temperature for precision
-          maxOutputTokens: 16000,  // Increased from 8000 to prevent truncation
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'ARRAY',
-            items: {
-              type: 'OBJECT',
-              properties: {
-                name: { type: 'STRING' },
-                description: { type: 'STRING' },
-                start_time: { type: 'STRING' },
-                end_time: { type: 'STRING' },
-                location_address: { type: 'STRING' },
-                location_lat: { type: 'NUMBER' },
-                location_lng: { type: 'NUMBER' },
-                category: { type: 'STRING' },
-                is_free: { type: 'BOOLEAN' },
-                price: { type: 'NUMBER' },
-                sourceUrl: { type: 'STRING' }
-              },
-              required: [
-                'name', 'description', 'start_time', 'end_time',
-                'location_address', 'location_lat', 'location_lng',
-                'category', 'is_free', 'price', 'sourceUrl'
-              ]
+**Põltsamaa/Jõgewamaa SPECIAL RULE:** 
+- If the address is in Põltsamaa, the longitude MUST be approx 25.96
+- If coordinates show lng 26.38+, that is JÕGEVA CITY (30km away) - REJECT and search for correct Põltsamaa coordinates!
+
+Return ONLY valid JSON array with FUTURE events and ACCURATE coordinates.`
+
+  // Step 2: Try Pro with retry logic, then fallback to Flash
+  let structuredText = ''
+  let structureSuccess = false
+
+  // Try Pro first with retries
+  try {
+    await callWithRetry(async () => {
+      // CRITICAL FIX: Cannot use tools + responseMimeType together in REST API
+      // Use tools WITHOUT schema, then parse afterwards
+      const structureResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: structurePrompt }] }],
+            tools: [{ googleSearch: {} }], // Enable search for geocoding - no schema allowed with tools!
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 16000
+              // NOTE: NO responseMimeType or responseSchema when using tools!
+            },
+            systemInstruction: {
+              parts: [{
+                text: `You are a PRECISE EVENT GEOCODING EXPERT. Your PRIMARY task is to find EXACT street-level coordinates for every venue using Google Search.
+
+RESPONSE FORMAT: Return ONLY valid JSON array (no markdown, no explanation).
+
+GEOCODING PRIORITIES:
+1. Use Google Search tool to verify coordinates for EVERY event
+2. Find exact building/venue coordinates, NOT city center
+3. For Estonian events: verify the city name matches ${cityName} exactly
+4. Reject any venue that is not in ${cityName}
+5. Return coordinates accurate to street level (6+ decimal places)
+
+JSON array structure:
+[
+  {
+    "name": "string",
+    "description": "string",
+    "start_time": "ISO8601",
+    "end_time": "ISO8601",
+    "location_address": "string",
+    "location_lat": number,
+    "location_lng": number,
+    "category": "string",
+    "is_free": boolean,
+    "price": number,
+    "sourceUrl": "string"
+  }
+]`
+              }]
             }
-          }
-        },
-        systemInstruction: {
-          parts: [{
-            text: `You are a precise event data structuring agent. 
-Your job is to extract REAL events from search results and format them with exact coordinates and ISO timestamps.
-Never invent events - only use data from the search results provided.
-If a field is missing, use your best reasoning to fill it accurately based on context.`
-          }]
+          })
         }
-      })
-    }
-  )
+      )
 
-  if (!structureResponse.ok) {
-    const errorText = await structureResponse.text()
-    throw new Error(`Gemini Pro structuring failed: ${structureResponse.status} - ${errorText}`)
+      if (!structureResponse.ok) {
+        const errorText = await structureResponse.text()
+        throw new Error(`Pro structuring failed (${structureResponse.status}): ${errorText.substring(0, 200)}`)
+      }
+
+      const structureResult = await structureResponse.json()
+      // Get text response (not guaranteed to be JSON, may include tool use)
+      let responseText = ''
+      
+      // Check for tool use results
+      if (structureResult.candidates?.[0]?.content?.parts) {
+        for (const part of structureResult.candidates[0].content.parts) {
+          if (part.text) {
+            responseText += part.text
+          }
+        }
+      }
+      
+      structuredText = responseText || ''
+      
+      if (!structuredText || structuredText.length < 50) {
+        throw new Error('Pro returned empty response')
+      }
+
+      structureSuccess = true
+    }, 2, 2000) // Retry Pro up to 2 times only (it's slower)
+  } catch (proError: any) {
+    console.error(`❌ Pro model failed after retries: ${proError.message}`)
+    console.log('⏭️ Falling back to Flash model for structuring...')
+    structureSuccess = false
   }
 
-  const structureResult = await structureResponse.json()
-  const structuredText = structureResult.candidates?.[0]?.content?.parts?.[0]?.text || '[]'
+  // Fallback to Flash if Pro failed
+  if (!structureSuccess) {
+    try {
+      await callWithRetry(async () => {
+        const flashResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: `Convert this event search data to a JSON array. 
+
+CRITICAL: For each event, ensure:
+1. coordinates are EXACT street-level (not city center)
+2. all coordinates are within 20km of ${cityName} ${centerInfo ? `[${cityLat}, ${cityLng}]` : ''}
+3. Each event is actually IN ${cityName}, not a nearby city
+4. Põltsamaa events have lng ~25.96 (NOT 26.38+ which is Jõgeva)
+
+Return ONLY valid JSON array:\n\n${rawText}` }] }],
+              generationConfig: {
+                temperature: 0.1,
+                maxOutputTokens: 16000,
+                responseMimeType: 'application/json'
+              }
+            })
+          }
+        )
+
+        if (!flashResponse.ok) {
+          const errorText = await flashResponse.text()
+          throw new Error(`Flash structuring failed (${flashResponse.status}): ${errorText.substring(0, 200)}`)
+        }
+
+        const flashData = await flashResponse.json()
+        structuredText = flashData.candidates?.[0]?.content?.parts?.[0]?.text || ''
+
+        if (!structuredText || structuredText.length < 50) {
+          throw new Error('Flash returned empty response')
+        }
+      }, 3, 2000) // Retry Flash up to 3 times
+    } catch (flashError: any) {
+      console.error(`❌ Flash fallback also failed: ${flashError.message}`)
+      return [] // Return empty array if both fail
+    }
+  }
   
-  console.log(`📝 Raw structured response length: ${structuredText.length} chars`)
-  
-  // Clean and parse JSON with error handling
+  // Parse and validate structured JSON
   let events: FreeEvent[] = []
   try {
     // Remove any markdown code blocks that Gemini might add
@@ -535,11 +622,9 @@ If a field is missing, use your best reasoning to fill it accurately based on co
   } catch (parseError: any) {
     console.error('❌ JSON parsing failed:', parseError.message)
     console.error('First 500 chars of response:', structuredText.substring(0, 500))
-    console.error('Last 500 chars of response:', structuredText.substring(Math.max(0, structuredText.length - 500)))
     
-    // Try to salvage partial JSON by finding complete array
+    // Try to salvage partial JSON by finding last complete closing bracket
     try {
-      // Find last complete closing bracket
       const lastBracket = structuredText.lastIndexOf(']')
       if (lastBracket > 0) {
         const truncated = structuredText.substring(0, lastBracket + 1)
@@ -617,7 +702,9 @@ serve(async (req) => {
       cityData.city_name,
       cityData.country,
       cityData.timezone || 'Europe/Tallinn',
-      target_events
+      target_events,
+      cityData.latitude,
+      cityData.longitude
     )
 
     if (events.length === 0) {
