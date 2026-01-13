@@ -10,6 +10,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const GEMINI_API_KEY = Deno.env.get('API_KEY') || Deno.env.get('GEMINI_API_KEY')
+const GEMINI_MODELS = [
+  'gemini-2.5-pro',
+  'gemini-2.5-flash',
+  'gemini-3-flash'
+] as const
+let currentModelIndex = 0
+
 // Upload base64 image to Supabase Storage and return public URL
 async function uploadImageToStorage(
   supabaseClient: any,
@@ -55,9 +63,64 @@ async function uploadImageToStorage(
   }
 }
 
+// Gemini geocoding for precise coordinates
+async function geocodeWithGemini(address: string, country: string, cityName?: string): Promise<{lat: number, lng: number} | null> {
+  try {
+    if (!GEMINI_API_KEY) return null
+
+    const prompt = `You are a geocoding expert. Extract precise latitude and longitude for this address:
+
+Address: ${address}
+City: ${cityName || 'Unknown'}
+Country: ${country}
+
+Respond with ONLY JSON on ONE line:
+{"lat": 58.1234, "lng": 25.5678}`
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODELS[currentModelIndex]}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 100,
+          }
+        })
+      }
+    )
+
+    if (!response.ok) return null
+
+    const data = await response.json()
+    const text = data.candidates[0]?.content?.parts[0]?.text || ''
+    
+    if (text.trim() === 'null' || !text) return null
+    
+    const coords = JSON.parse(text.trim())
+    if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number' &&
+        coords.lat >= -90 && coords.lat <= 90 && coords.lng >= -180 && coords.lng <= 180) {
+      console.log(`✓ Gemini geocoded: "${address}" → ${coords.lat}, ${coords.lng}`)
+      return coords
+    }
+  } catch (error) {
+    console.warn(`Gemini geocoding error:`, error)
+  }
+  return null
+}
+
 // Nominatim geocoding fallback for addresses without coordinates
 async function geocodeAddress(address: string, country: string, countryCode: string, cityName?: string): Promise<{lat: number, lng: number} | null> {
   try {
+    // Try Gemini first if API key is available
+    const geminiCoords = await geocodeWithGemini(address, country, cityName)
+    if (geminiCoords) {
+      return geminiCoords
+    }
+    
+    // Fallback to Nominatim
     await new Promise(resolve => setTimeout(resolve, 1100)) // Rate limit: 1 req/sec
     
     // 🔧 ENHANCED: Prepare MANY search variations (8+ strategies)

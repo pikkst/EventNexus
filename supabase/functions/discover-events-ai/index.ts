@@ -12,6 +12,12 @@ const corsHeaders = {
 }
 
 const GEMINI_API_KEY = Deno.env.get('API_KEY') || Deno.env.get('GEMINI_API_KEY')
+const GEMINI_MODELS = [
+  'gemini-2.5-pro',    // Primary: 150 RPM, 2M tokens
+  'gemini-2.5-flash',  // Fallback 1: 1000 RPM, 1M tokens
+  'gemini-3-flash'     // Fallback 2: 1000 RPM, 1M tokens (preview)
+] as const
+let currentModelIndex = 0
 
 interface DiscoverEventsRequest {
   city_id?: string
@@ -32,6 +38,77 @@ interface FreeEvent {
   is_free: boolean
   price: number
   sourceUrl: string
+}
+
+/**
+ * Validate and correct event coordinates using Gemini
+ * If coordinates seem off, use Gemini to refine them
+ */
+async function validateAndRefineCoordinates(
+  event: FreeEvent,
+  cityName: string,
+  country: string
+): Promise<FreeEvent> {
+  try {
+    // Basic validation: check if coordinates are within reasonable bounds for the city
+    if (typeof event.location_lat !== 'number' || typeof event.location_lng !== 'number' ||
+        event.location_lat < -90 || event.location_lat > 90 ||
+        event.location_lng < -180 || event.location_lng > 180) {
+      console.log(`⚠️ Invalid coordinates for ${event.name}, attempting to refine...`)
+      
+      // Use Gemini to get correct coordinates
+      const prompt = `You are a geocoding expert. Extract the precise latitude and longitude for this address:
+
+Address: ${event.location_address}
+Venue: ${event.name}
+City: ${cityName}
+Country: ${country}
+
+Respond with ONLY a JSON object on ONE line:
+{"lat": 58.1234, "lng": 25.5678}
+
+Be as precise as possible.`
+
+      const currentModel = GEMINI_MODELS[currentModelIndex]
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 100,
+            }
+          })
+        }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        const text = data.candidates[0]?.content?.parts[0]?.text || ''
+        
+        if (text && text.trim() !== 'null') {
+          try {
+            const coords = JSON.parse(text.trim())
+            if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number' &&
+                coords.lat >= -90 && coords.lat <= 90 && coords.lng >= -180 && coords.lng <= 180) {
+              event.location_lat = coords.lat
+              event.location_lng = coords.lng
+              console.log(`✓ Refined coordinates for ${event.name}: ${coords.lat}, ${coords.lng}`)
+            }
+          } catch (e) {
+            console.warn(`Failed to parse Gemini response for coordinates`)
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.warn(`Coordinate refinement failed:`, error)
+  }
+  
+  return event
 }
 
 /**
@@ -410,19 +487,22 @@ serve(async (req) => {
           continue
         }
 
+        // 🔧 ENHANCED: Validate and refine coordinates using Gemini
+        const refinedEvent = await validateAndRefineCoordinates(event, cityData.city_name, cityData.country)
+
         // Create structured_json
         const structured = {
-          name: event.name,
-          description: event.description,
-          start_time: event.start_time,
-          end_time: event.end_time,
-          location_address: event.location_address,
-          location_lat: event.location_lat,
-          location_lng: event.location_lng,
-          category: event.category,
+          name: refinedEvent.name,
+          description: refinedEvent.description,
+          start_time: refinedEvent.start_time,
+          end_time: refinedEvent.end_time,
+          location_address: refinedEvent.location_address,
+          location_lat: refinedEvent.location_lat,
+          location_lng: refinedEvent.location_lng,
+          category: refinedEvent.category,
           is_free: true,
           price: 0,
-          source_url: event.sourceUrl,
+          source_url: refinedEvent.sourceUrl,
           organizer: null,
           image_url: null,
           original_language: 'en'
