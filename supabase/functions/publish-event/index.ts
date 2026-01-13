@@ -73,26 +73,41 @@ async function uploadImageToStorage(
 }
 
 // Gemini geocoding for precise coordinates
-async function geocodeWithGemini(address: string, country: string, cityName?: string): Promise<{lat: number, lng: number} | null> {
+async function geocodeWithGemini(
+  address: string, 
+  country: string, 
+  cityName?: string,
+  cityLat?: number,
+  cityLng?: number
+): Promise<{lat: number, lng: number} | null> {
   try {
     if (!GEMINI_API_KEY) return null
 
-    const prompt = `You are a geocoding expert. Extract precise latitude and longitude for this address:
+    const centerInfo = (cityLat && cityLng) ? `The city center is [${cityLat}, ${cityLng}].` : ''
+    const prompt = `You are a geocoding expert. Find the EXACT latitude and longitude for this specific venue:
 
 Address: ${address}
 City: ${cityName || 'Unknown'}
 Country: ${country}
+${centerInfo}
+
+CRITICAL: 
+1. Use exact venue coordinates, NOT city center or street center. 
+2. All coordinates MUST be within 20km of the center ${centerInfo ? `[${cityLat}, ${cityLng}]` : cityName}. 
+3. **Põltsamaa/Jõgewamaa RULE:** If the address is in Põltsamaa, the longitude MUST be approx 25.96. If it is 26.38+, it is in Jõgeva city, which is 30km away - DO NOT geocode Põltsamaa events to Jõgeva!
+4. Be extremely precise with street-level accuracy.
 
 Respond with ONLY JSON on ONE line:
 {"lat": 58.1234, "lng": 25.5678}`
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODELS[currentModelIndex]}:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ googleSearch: {} }], // Enable search for geocoding accuracy
           generationConfig: {
             temperature: 0.1,
             maxOutputTokens: 1024,
@@ -134,7 +149,14 @@ Respond with ONLY JSON on ONE line:
 }
 
 // Nominatim geocoding fallback for addresses without coordinates
-async function geocodeAddress(address: string, country: string, countryCode: string, cityName?: string): Promise<{lat: number, lng: number} | null> {
+async function geocodeAddress(
+  address: string, 
+  country: string, 
+  countryCode: string, 
+  cityName?: string,
+  cityLat?: number,
+  cityLng?: number
+): Promise<{lat: number, lng: number} | null> {
   try {
     // 📍 CHECK CACHE FIRST
     const cacheKey = getAddressCacheKey(address, country)
@@ -143,17 +165,6 @@ async function geocodeAddress(address: string, country: string, countryCode: str
       console.log(`💾 Cache hit for "${address}" → ${cached.lat.toFixed(6)}, ${cached.lng.toFixed(6)}`)
       return cached
     }
-    
-    // Try Gemini first if API key is available
-    const geminiCoords = await geocodeWithGemini(address, country, cityName)
-    if (geminiCoords) {
-      // 📍 CACHE THE RESULT
-      addressCache.set(cacheKey, geminiCoords)
-      return geminiCoords
-    }
-    
-    // Fallback to Nominatim
-    await new Promise(resolve => setTimeout(resolve, 1100)) // Rate limit: 1 req/sec
     
     // 🔧 ENHANCED: Prepare MANY search variations (8+ strategies)
     const searchVariations: string[] = []
@@ -251,10 +262,27 @@ async function geocodeAddress(address: string, country: string, countryCode: str
             lat: parseFloat(data[0].lat),
             lng: parseFloat(data[0].lon),
           }
-          console.log(`✓ Geocoded: "${address}" → ${result.lat.toFixed(6)}, ${result.lng.toFixed(6)} (via: "${searchAddress}")`)
+          
+          // VALIDATE RESULT: Must be within 30km of city center if provided
+          if (cityLat && cityLng) {
+            const R = 6371
+            const dLat = (result.lat - cityLat) * Math.PI / 180
+            const dLng = (result.lng - cityLng) * Math.PI / 180
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(cityLat * Math.PI / 180) * Math.cos(result.lat * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2)
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+            const distance = R * c
+            
+            if (distance > 30) {
+              console.warn(`⚠️ Nominatim result too far (${distance.toFixed(1)}km) for variation: "${searchAddress}"`)
+              continue
+            }
+          }
+
+          console.log(`✓ Geocoded via Nominatim: "${address}" → ${result.lat.toFixed(6)}, ${result.lng.toFixed(6)} (variation: "${searchAddress}")`)
           
           // 📍 CACHE THE RESULT
-          const cacheKey = getAddressCacheKey(address, country)
           addressCache.set(cacheKey, result)
           
           return result
@@ -271,7 +299,17 @@ async function geocodeAddress(address: string, country: string, countryCode: str
       }
     }
     
-    console.warn(`❌ All ${uniqueVariations.length} geocoding strategies failed for: ${address}`)
+    console.warn(`❌ All ${uniqueVariations.length} Nominatim strategies failed, falling back to Gemini...`)
+    
+    // Try Gemini as fallback if Nominatim fails
+    const geminiCoords = await geocodeWithGemini(address, country, cityName, cityLat, cityLng)
+    if (geminiCoords) {
+      console.log(`✓ Geocoded via Gemini fallback: "${address}" → ${geminiCoords.lat.toFixed(6)}, ${geminiCoords.lng.toFixed(6)}`)
+      // 📍 CACHE THE RESULT
+      addressCache.set(cacheKey, geminiCoords)
+      return geminiCoords
+    }
+    
     return null
   } catch (error) {
     console.error(`Geocoding error for "${address}":`, error)
@@ -418,12 +456,15 @@ serve(async (req) => {
       failed: 0,
     }
 
+    // Track coordinates to only jitter when multiple events would stack
+    const seenCoordinates = new Set<string>()
+
     // Process events ONE AT A TIME to ensure reliability
     // Each event: AI image generation (3-8s) + geocoding (1-2s) + DB insert (1s)
     // Total per event: ~5-10s. Edge Function timeout: 60s. 
     // Therefore: process sequentially to avoid timeouts and server overload
     const BATCH_SIZE = 1;  // ONE event at a time for maximum reliability
-    const BATCH_DELAY_MS = 5000; // 5 seconds between events for reliability and map rendering
+    const BATCH_DELAY_MS = 1000; // Reduced to 1 second to prevent Edge Function timeouts
     
     console.log(`📦 Processing ${filteredEvents.length} events in batches of ${BATCH_SIZE}`);
     
@@ -431,7 +472,7 @@ serve(async (req) => {
       const batchEnd = Math.min(batchStart + BATCH_SIZE, filteredEvents.length);
       const batch = filteredEvents.slice(batchStart, batchEnd);
       const batchNum = Math.floor(batchStart / BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(parsedEvents.length / BATCH_SIZE);
+      const totalBatches = Math.ceil(filteredEvents.length / BATCH_SIZE);
       
       console.log(`\n📦 Batch ${batchNum}/${totalBatches}: Processing events ${batchStart + 1}-${batchEnd}`);
       
@@ -456,7 +497,7 @@ serve(async (req) => {
         let cityConfig;
         const { data: cityConfigData, error: cityError } = await supabaseClient
           .from('city_configs')
-          .select('city_name, country, country_code')
+          .select('city_name, country, country_code, latitude, longitude')
           .eq('city_id', eventCityId)
           .single()
 
@@ -589,7 +630,9 @@ serve(async (req) => {
             eventData.location_address,
             cityConfig.country,
             cityConfig.country_code || 'ee',
-            cityConfig.city_name // Pass city name for better geocoding
+            cityConfig.city_name, // Pass city name for better geocoding
+            cityConfig.latitude,
+            cityConfig.longitude
           )
           
           if (geocoded) {
@@ -641,7 +684,7 @@ serve(async (req) => {
               const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
               const distance = R * c
               
-              const MAX_DISTANCE_KM = 50 // 50km radius
+              const MAX_DISTANCE_KM = 30 // 30km radius
               
               if (distance > MAX_DISTANCE_KM) {
                 console.log(`⊘ Event too far from city: "${eventData.name}" is ${distance.toFixed(1)}km from ${cityData.name} (max ${MAX_DISTANCE_KM}km)`)
@@ -691,6 +734,20 @@ serve(async (req) => {
             results.skipped++
             continue
           }
+        }
+        
+        // 📍 APPLY JITTER ONLY IF COORDINATES WOULD STACK
+        // Keep precision for dense cities; add ~2-6m offset only on duplicates
+        if (eventData.location_lat && eventData.location_lng) {
+          const coordKey = `${eventData.location_lat.toFixed(6)},${eventData.location_lng.toFixed(6)}`
+          if (seenCoordinates.has(coordKey)) {
+            const jitterLat = (Math.random() - 0.5) * 0.00006 // ~±6m
+            const jitterLng = (Math.random() - 0.5) * 0.00006 // ~±6m
+            eventData.location_lat += jitterLat
+            eventData.location_lng += jitterLng
+            console.log(`📍 Applied jitter to ${eventData.name}: Δ${(jitterLat * 111000).toFixed(1)}m, ${(jitterLng * 111000).toFixed(1)}m (duplicate coords)`)          
+          }
+          seenCoordinates.add(coordKey)
         }
         
         const locationPoint = `POINT(${eventData.location_lng} ${eventData.location_lat})`

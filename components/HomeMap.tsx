@@ -70,6 +70,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const [translatedDesc, setTranslatedDesc] = useState<string | null>(null);
   const translationCache = useRef<Map<string, { name: string; desc: string }>>(new Map());
 
+
   // Load events from database with throttling to prevent map crashes
   // OR use events from parent if provided (for real-time updates)
   useEffect(() => {
@@ -163,6 +164,36 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     console.log(`📍 HomeMap: ${filtered.length} events will be displayed on map`);
     return filtered;
   }, [events, activeCategory]);
+
+  // Group events that share (roughly) the same location so one marker opens a stack
+  const groupedEvents = useMemo(() => {
+    const groups = new Map<string, { lat: number; lng: number; address: string; events: EventNexusEvent[] }>();
+    const round = (n: number) => Number(n.toFixed(5)); // ~1m precision
+
+    filteredEvents.forEach((ev) => {
+      const key = `${ev.location.address.toLowerCase().trim()}|${round(ev.location.lat)},${round(ev.location.lng)}`;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          lat: ev.location.lat,
+          lng: ev.location.lng,
+          address: ev.location.address,
+          events: [],
+        });
+      }
+      groups.get(key)!.events.push(ev);
+    });
+
+    const getStartMs = (ev: EventNexusEvent) => {
+      const ts = `${ev.date}T${ev.time || '00:00'}`;
+      const ms = Date.parse(ts);
+      return Number.isFinite(ms) ? ms : Number.MAX_SAFE_INTEGER;
+    };
+
+    return Array.from(groups.values()).map((group) => ({
+      ...group,
+      events: group.events.sort((a, b) => getStartMs(a) - getStartMs(b)),
+    }));
+  }, [filteredEvents]);
 
   // Auto-translate selected event title/description based on viewer locale
   useEffect(() => {
@@ -319,14 +350,64 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           <MapEffects center={userLocation} isFollowing={isFollowingUser} />
           <Circle center={userLocation} radius={searchRadius * 1000} pathOptions={{ fillColor: '#6366f1', fillOpacity: 0.03, color: '#6366f1', weight: 1, dashArray: '8, 12' }} />
           <Marker position={userLocation} icon={userIcon} />
-          {filteredEvents.map((event) => (
-            <Marker 
-              key={event.id} 
-              position={[event.location.lat, event.location.lng]} 
-              icon={eventIcon(event.price, event.isFeatured || false)}
-              eventHandlers={{ click: () => { setSelectedEvent(event); setIsFollowingUser(false); } }}
-            />
-          ))}
+          {groupedEvents.map((group, idx) => {
+            const primary = group.events[0]; // soonest event at this location
+            const moreCount = group.events.length - 1;
+
+            return (
+              <Marker
+                key={`${group.address}-${idx}`}
+                position={[group.lat, group.lng]}
+                icon={eventIcon(primary.price, primary.isFeatured || false)}
+                eventHandlers={{ click: () => { setSelectedEvent(primary); setIsFollowingUser(false); } }}
+              >
+                <Popup minWidth={260} className="rounded-xl">
+                  <div className="space-y-3 text-sm">
+                    <div className="font-black text-base text-slate-900 dark:text-white leading-tight">{primary.name}</div>
+                    <div className="text-xs text-slate-500 flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      <span>{primary.date} {primary.time}</span>
+                    </div>
+                    <div className="text-xs text-slate-500 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      <span>{group.address}</span>
+                    </div>
+
+                    {moreCount > 0 && (
+                      <div className="border-t border-slate-200 dark:border-slate-800 pt-2">
+                        <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                          {moreCount} more event{moreCount > 1 ? 's' : ''} here:
+                        </div>
+                        <div className="flex flex-col gap-1 max-h-40 overflow-auto pr-1">
+                          {group.events.slice(0, 6).map((ev, i) => (
+                            <button
+                              key={ev.id}
+                              onClick={() => { setSelectedEvent(ev); setIsFollowingUser(false); }}
+                              className="text-left text-[11px] bg-slate-100 dark:bg-slate-800/70 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-lg px-2 py-1 transition"
+                            >
+                              <span className="font-semibold text-slate-800 dark:text-slate-100">{ev.name}</span>
+                              <span className="block text-[10px] text-slate-500">{ev.date} {ev.time}</span>
+                            </button>
+                          ))}
+                          {moreCount > 6 && (
+                            <div className="text-[10px] text-slate-500">...and {moreCount - 6} more</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => navigate(`/event/${primary.id}`)}
+                      className="w-full inline-flex items-center justify-center gap-2 text-xs font-semibold bg-indigo-600 text-white rounded-lg py-2 hover:bg-indigo-500 transition"
+                    >
+                      View details
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
           {routeToEvent && <Polyline positions={[userLocation, [routeToEvent.location.lat, routeToEvent.location.lng]]} pathOptions={{ color: '#6366f1', weight: 4, opacity: 0.8, dashArray: '10, 15' }} />}
         </MapContainer>
         <div className="leaflet-vignette" />
