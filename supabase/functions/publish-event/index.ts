@@ -684,7 +684,15 @@ serve(async (req) => {
           finalDescription += '.';
         }
         
-        // Add source link in a clean format
+        // Add structured information with clear separation
+        const infoParts: string[] = [];
+        
+        // Add location as separate section
+        if (eventData.location_address) {
+          infoParts.push(`📌 Location:\n${eventData.location_address}`);
+        }
+        
+        // Add source link in clean format with visual separation
         if (eventData.source_url) {
           // Extract domain for cleaner display
           let displayUrl = eventData.source_url;
@@ -695,12 +703,13 @@ serve(async (req) => {
             // Keep original if URL parsing fails
           }
           
-          finalDescription += `\n\n📍 More details: ${eventData.source_url}`;
+          // Format: [domain](url) for markdown-like rendering hint
+          infoParts.push(`📍 More information:\n${eventData.source_url}`);
         }
         
-        // Add location if available
-        if (eventData.location_address) {
-          finalDescription += `\n📌 Location: ${eventData.location_address}`;
+        // Combine with clear visual separation
+        if (infoParts.length > 0) {
+          finalDescription += '\n\n' + infoParts.join('\n\n');
         }
 
         const { data: newEvent, error: insertError } = await supabaseClient

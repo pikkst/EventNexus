@@ -28,6 +28,63 @@ import { User, EventNexusEvent, TicketTemplate } from '../types';
 import { isEventExpired } from '../utils/eventUtils';
 import { generateEventSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 
+// Helper component to render formatted description with clickable links
+const FormattedDescription: React.FC<{ text: string }> = ({ text }) => {
+  // Split text by double newlines for paragraphs and sections
+  const sections = text.split('\n\n');
+  
+  return (
+    <div className="space-y-4">
+      {sections.map((section, sectionIdx) => {
+        // Split each section by single newlines
+        const lines = section.split('\n');
+        
+        return (
+          <div key={sectionIdx} className="space-y-2">
+            {lines.map((line, lineIdx) => {
+              // Check if line contains emoji markers for structured info (📌, 📍)
+              const isStructuredInfo = line.match(/^(📌|📍)/);
+              
+              // Process line to make URLs clickable
+              const urlRegex = /(https?:\/\/[^\s]+)/g;
+              const parts = line.split(urlRegex);
+              
+              return (
+                <p
+                  key={lineIdx}
+                  className={`leading-relaxed ${
+                    isStructuredInfo
+                      ? 'font-semibold text-slate-300 mt-3'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  {parts.map((part, partIdx) => {
+                    if (urlRegex.test(part)) {
+                      // This is a URL
+                      return (
+                        <a
+                          key={partIdx}
+                          href={part}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-400 hover:text-indigo-300 underline break-all transition-colors"
+                        >
+                          {part}
+                        </a>
+                      );
+                    }
+                    return <span key={partIdx}>{part}</span>;
+                  })}
+                </p>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 interface EventDetailProps {
   user: User | null;
   onToggleFollow?: (orgId: string) => void;
@@ -678,7 +735,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                 )}
               </div>
               
-              <p className="text-slate-400 leading-relaxed text-sm sm:text-base md:text-lg">{displayDescription}</p>
+              <FormattedDescription text={displayDescription} />
               
               {/* About Text Section - Additional Event Details */}
               {event.aboutText && (
