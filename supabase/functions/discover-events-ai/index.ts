@@ -59,10 +59,17 @@ async function discoverEventsWithAI(
   console.log(`🔍 Step 1: Searching for events in ${cityName}, ${country}...`)
 
   // Step 1: Broad search using Flash + Google Search Grounding
-  const searchPrompt = `Search for REAL upcoming FREE events in ${cityName}, ${country} between ${dateStr} and ${endStr}.
+  const searchPrompt = `Search for REAL upcoming FREE events in ${cityName}, ${country} (SPECIFICALLY in ${country}, NOT USA).
+
+CRITICAL LOCATION FILTER:
+- ONLY events in ${cityName}, ${country}
+- EXCLUDE any events in USA cities with similar names
+- Verify each event is in the CORRECT country: ${country}
+- Check addresses contain ${country} or proper country indicators
 
 IMPORTANT INSTRUCTIONS:
 - Find at least ${targetCount} real, verifiable events
+- Date range: ${dateStr} to ${endStr}
 - Focus on FREE events (no ticket required, or free admission)
 - Include diverse categories: concerts, art exhibitions, workshops, markets, festivals, sports, community gatherings
 - For EACH event, find:
@@ -70,11 +77,12 @@ IMPORTANT INSTRUCTIONS:
   * Detailed description (what happens, who organizes, why attend)
   * Precise start date and time
   * End date and time (if available)
-  * Full street address with city
+  * Full street address with ${cityName}, ${country}
   * Link to official source/website
 
 Search in multiple languages if needed (English, local language).
-Use official tourism sites, event platforms, cultural institution websites, and local news.`
+Use official tourism sites, event platforms, cultural institution websites, and local news.
+DOUBLE-CHECK: All events must be in ${cityName}, ${country}, NOT USA.`
 
   const searchResponse = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -486,53 +494,8 @@ serve(async (req) => {
     console.log(`  ❌ Failed: ${insertResults.failed}`)
     console.log(`  ⏱️ Duration: ${duration}ms`)
 
-    // Auto-trigger validation and publishing using direct HTTP calls
-    if (insertResults.inserted > 0) {
-      console.log(`\n🚀 Triggering validation and publishing...`)
-
-      const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-      const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
-      // Validate events
-      try {
-        const validateResponse = await fetch(`${SUPABASE_URL}/functions/v1/validate-event`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ city_id: cityData.city_id })
-        })
-
-        if (!validateResponse.ok) {
-          console.warn('⚠️ Validation trigger failed:', await validateResponse.text())
-        } else {
-          console.log('✅ Validation triggered successfully')
-        }
-      } catch (validateError) {
-        console.warn('⚠️ Validation trigger error:', validateError)
-      }
-
-      // Publish events
-      try {
-        const publishResponse = await fetch(`${SUPABASE_URL}/functions/v1/publish-event`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ city_id: cityData.city_id })
-        })
-
-        if (!publishResponse.ok) {
-          console.warn('⚠️ Publishing trigger failed:', await publishResponse.text())
-        } else {
-          console.log('✅ Publishing triggered successfully')
-        }
-      } catch (publishError) {
-        console.warn('⚠️ Publishing trigger error:', publishError)
-      }
-    }
+    // Note: Validation and publishing will be triggered by the pipeline (AIAgentDashboard)
+    // or cron jobs. We just insert into parsed_events here.
 
     return new Response(
       JSON.stringify({
