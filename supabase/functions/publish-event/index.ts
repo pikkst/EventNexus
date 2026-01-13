@@ -86,7 +86,7 @@ Respond with ONLY JSON on ONE line:
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.1,
-            maxOutputTokens: 100,
+            maxOutputTokens: 1024,
           }
         })
       }
@@ -95,7 +95,20 @@ Respond with ONLY JSON on ONE line:
     if (!response.ok) return null
 
     const data = await response.json()
-    const text = data.candidates[0]?.content?.parts[0]?.text || ''
+    
+    // Defensive checks for response structure
+    if (!data || !data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
+      console.warn(`⚠️ Gemini returned empty candidates for: ${address}`)
+      return null
+    }
+    
+    const candidate = data.candidates[0]
+    if (!candidate || !candidate.content || !candidate.content.parts || !Array.isArray(candidate.content.parts) || candidate.content.parts.length === 0) {
+      console.warn(`⚠️ Gemini returned invalid structure for: ${address}`)
+      return null
+    }
+    
+    const text = candidate.content.parts[0]?.text || ''
     
     if (text.trim() === 'null' || !text) return null
     
@@ -196,34 +209,40 @@ async function geocodeAddress(address: string, country: string, countryCode: str
     
     // Try each search variation
     for (const searchAddress of uniqueVariations) {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1&countrycodes=${countryCode}`,
-        {
-          headers: {
-            'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
-            'Accept-Language': 'et,en'
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchAddress)}&limit=1&countrycodes=${countryCode}`,
+          {
+            headers: {
+              'User-Agent': 'EventNexus/1.0 (https://www.eventnexus.eu)',
+              'Accept-Language': 'et,en'
+            }
+          }
+        )
+
+        if (!response.ok) {
+          console.error(`❌ Nominatim API error ${response.status}`)
+          continue // Try next variation
+        }
+
+        const data = await response.json()
+        
+        if (data && data.length > 0) {
+          console.log(`✓ Geocoded: "${address}" → ${data[0].lat}, ${data[0].lon} (via: "${searchAddress}")`)
+          return {
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon),
           }
         }
-      )
-
-      if (!response.ok) {
-        console.error(`❌ Nominatim API error ${response.status}`)
-        continue // Try next variation
-      }
-
-      const data = await response.json()
-      
-      if (data && data.length > 0) {
-        console.log(`✓ Geocoded: "${address}" → ${data[0].lat}, ${data[0].lon} (via: "${searchAddress}")`)
-        return {
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon),
+        
+        // Wait before trying next variation (respect rate limit)
+        if (uniqueVariations.indexOf(searchAddress) < uniqueVariations.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1100))
         }
-      }
-      
-      // Wait before trying next variation (respect rate limit)
-      if (uniqueVariations.indexOf(searchAddress) < uniqueVariations.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1100))
+      } catch (fetchError) {
+        console.warn(`⚠️ Network error for "${searchAddress}": ${fetchError.message}`)
+        // Continue to next variation on network error
+        continue
       }
     }
     
