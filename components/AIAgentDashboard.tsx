@@ -1730,7 +1730,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                 AI Agent System
               </h1>
               <p className="text-gray-600 mt-1">
-                Autonomous event discovery, validation & publishing
+                🚀 EventScout AI: Google Search → Gemini → Live Map (3 steps)
               </p>
             </div>
             <div className="flex gap-3">
@@ -1757,14 +1757,14 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                   <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                     <div className="p-4 border-b border-gray-200">
                       <h3 className="font-semibold text-gray-900">Manual Job Triggers</h3>
-                      <p className="text-xs text-gray-500 mt-1">Run individual pipeline steps</p>
+                      <p className="text-xs text-gray-500 mt-1">🚀 EventScout AI Pipeline (3 steps)</p>
                     </div>
                     
                     <div className="p-3 space-y-2">
-                      {/* Bootstrap City */}
-                      <div className="border border-gray-200 rounded p-3">
-                        <label className="text-sm font-medium text-gray-700 block mb-2">
-                          Bootstrap City
+                      {/* Discover Events with EventScout AI */}
+                      <div className="border border-indigo-200 bg-indigo-50 rounded p-3">
+                        <label className="text-sm font-medium text-indigo-900 block mb-2">
+                          🤖 EventScout AI Discovery
                         </label>
                         <select
                           value={selectedCityForBootstrap}
@@ -1781,43 +1781,49 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                         <button
                           onClick={runManualBootstrap}
                           disabled={!selectedCityForBootstrap || runningManualJob}
-                          className="w-full px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
+                          className="w-full px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
                         >
-                          {runningManualJob ? 'Running...' : 'Discover Sources'}
+                          {runningManualJob ? 'Discovering...' : 'Step 1: Discover Events'}
                         </button>
+                        <p className="text-xs text-indigo-600 mt-1">Google Search + Gemini AI</p>
                       </div>
                       
-                      {/* Other Jobs */}
-                      <button
-                        onClick={() => runManualJob('fetch-sources')}
-                        disabled={runningManualJob}
-                        className="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 text-sm text-left"
-                      >
-                        Fetch Sources
-                      </button>
-                      
-                      <button
-                        onClick={() => runManualJob('parse-event-ai')}
-                        disabled={runningManualJob}
-                        className="w-full px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-300 text-sm text-left"
-                      >
-                        Parse Event AI
-                      </button>
-                      
+                      {/* Validate & Publish */}
                       <button
                         onClick={() => runManualJob('validate-event')}
                         disabled={runningManualJob}
                         className="w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-300 text-sm text-left"
                       >
-                        Validate Event
+                        Step 2: Validate Events
                       </button>
                       
                       <button
                         onClick={() => runManualJob('publish-event')}
                         disabled={runningManualJob}
-                        className="w-full px-3 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 disabled:bg-gray-300 text-sm text-left"
+                        className="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 text-sm text-left"
                       >
-                        Publish Event
+                        Step 3: Publish to Map
+                      </button>
+                      
+                      <div className="border-t border-gray-200 my-2"></div>
+                      
+                      {/* Helper Agents */}
+                      <p className="text-xs font-medium text-gray-600 px-2">Helper Agents:</p>
+                      
+                      <button
+                        onClick={testGuardian}
+                        disabled={isTestingGuardian || runningManualJob}
+                        className="w-full px-3 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:bg-gray-300 text-sm text-left"
+                      >
+                        {isTestingGuardian ? 'Testing...' : '🛡️ City Guardian (Self-Heal)'}
+                      </button>
+                      
+                      <button
+                        onClick={() => runManualJob('ensure-free-events')}
+                        disabled={runningManualJob}
+                        className="w-full px-3 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:bg-gray-300 text-sm text-left"
+                      >
+                        🎯 Ensure Free Events
                       </button>
                     </div>
                     
@@ -1832,44 +1838,12 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                   </div>
                 )}
               </div>
-              
-              <button
-                onClick={triggerAgentPipeline}
-                disabled={isProcessing}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {isProcessing ? (
-                  <>
-                    <Pause className="w-4 h-4 animate-pulse" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4" />
-                    Run Pipeline {selectedCities.size > 0 && `(${selectedCities.size} selected)`}
-                  </>
-                )}
-              </button>
-              
-              {/* Force Refresh Checkbox */}
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={forceRefresh}
-                  onChange={(e) => setForceRefresh(e.target.checked)}
-                  className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
-                />
-                <span className="select-none">
-                  Force Refresh 
-                  <span className="text-gray-500 ml-1" title="Clear all cached data (raw_events, parsed_events, published events) before running pipeline. Use this when Edge Functions have been updated.">
-                    (clear cache)
-                  </span>
-                </span>
-              </label>
             </div>
+          </div>
+        </div>
 
-            {/* Pipeline Progress Tracker */}
-            {pipelineProgress.isRunning && (
+        {/* Pipeline Progress Tracker */}
+        {pipelineProgress.isRunning && (
               <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -1987,8 +1961,6 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                 </div>
               </div>
             )}
-          </div>
-        </div>
 
         {/* Stats Cards */}
         {stats && (
