@@ -1047,309 +1047,65 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         }));
 
         try {
-          // Step 0: Check if city has sources, if not - bootstrap first
-          console.log(`  🔍 Step 0/5: Checking event sources...`);
-          const { data: sourcesCheck } = await supabase
-            .from('event_sources')
-            .select('source_id', { count: 'exact', head: true })
-            .eq('city_id', city.city_id)
-            .eq('active', true);
-          
-          if (!sourcesCheck || sourcesCheck.length === 0) {
-            console.log(`  ⚠️ No sources found - running bootstrap first...`);
-            setPipelineProgress(prev => ({
-              ...prev,
-              currentStep: '🚀 Bootstrapping (discovering sources)...',
-              recentLogs: [...prev.recentLogs.slice(-9), `  🚀 Running bootstrap...`],
-              fullLogs: [...prev.fullLogs, `  ⚠️ No sources - bootstrapping first`]
-            }));
-            
-            const bootstrapResult = await triggerBootstrapForCity(city.city_id, true);
-            
-            if (bootstrapResult.success && bootstrapResult.sources_added > 0) {
-              console.log(`  ✅ Bootstrap completed - discovered ${bootstrapResult.sources_added} sources`);
-              setPipelineProgress(prev => ({
-                ...prev,
-                recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Bootstrapped: ${bootstrapResult.sources_added} sources`],
-                fullLogs: [...prev.fullLogs, `  ✅ Bootstrap success: ${bootstrapResult.sources_added} sources discovered`]
-              }));
-            } else {
-              console.log(`  ⚠️ Bootstrap found no sources - skipping city`);
-              setPipelineProgress(prev => ({
-                ...prev,
-                citiesFailed: prev.citiesFailed + 1,
-                recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ No sources available`],
-                fullLogs: [...prev.fullLogs, `  ⚠️ Bootstrap found no sources - skipping`]
-              }));
-              continue; // Skip to next city
-            }
-          }
-          
-          // Step 1: Fetch sources for this city (batch processing to avoid timeout)
-          console.log(`  📥 Step 1/4: Fetching sources in batches...`);
-          setPipelineProgress(prev => ({ ...prev, currentStep: '📥 Fetching sources...' }));
-          
-          let totalFetchedForCity = 0;
-          let fetchBatchOffset = 0;
-          const fetchBatchSize = 5; // Process 5 sources at a time to avoid timeout
-          let hasMoreSources = true;
-          
-          while (hasMoreSources) {
-            const fetchResp = await supabase.functions.invoke('fetch-sources', {
-              body: { 
-                city_id: city.city_id,
-                batch_size: fetchBatchSize,
-                batch_offset: fetchBatchOffset
-              }
-            });
-            
-            if (fetchResp.error) {
-              const errorMsg = fetchResp.error.message || String(fetchResp.error);
-              totalResults.cityErrors.push(`${city.city_name}: Fetch failed (batch ${fetchBatchOffset}) - ${errorMsg}`);
-              setPipelineProgress(prev => ({
-                ...prev,
-                recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Fetch batch ${fetchBatchOffset} failed`],
-                fullLogs: [...prev.fullLogs, `  ❌ Fetch batch ${fetchBatchOffset} failed: ${errorMsg}`],
-                errors: [...prev.errors, `[${city.city_name}] Fetch: ${errorMsg}`]
-              }));
-              break; // Stop fetching on error
-            }
-            
-            const batchFetched = fetchResp.data?.results?.fetched || 0;
-            totalFetchedForCity += batchFetched;
-            hasMoreSources = fetchResp.data?.results?.batch_info?.has_more || false;
-            
-            console.log(`  📦 Batch ${fetchBatchOffset}-${fetchBatchOffset + fetchBatchSize}: ${batchFetched} events`);
-            setPipelineProgress(prev => ({
-              ...prev,
-              recentLogs: [...prev.recentLogs.slice(-9), `  📦 Fetch batch ${Math.floor(fetchBatchOffset / fetchBatchSize) + 1}: ${batchFetched} events`],
-              fullLogs: [...prev.fullLogs, `  📦 Fetch batch ${Math.floor(fetchBatchOffset / fetchBatchSize) + 1}: ${batchFetched} events`]
-            }));
-            
-            fetchBatchOffset += fetchBatchSize;
-            
-            // Safety: max 20 batches (20 × 5 = 100 sources)
-            if (fetchBatchOffset >= 100) {
-              console.log(`  ⚠️ Reached max fetch batches (100 sources)`);
-              break;
-            }
-          }
-          
-          totalResults.totalFetched += totalFetchedForCity;
-          console.log(`  ✅ Fetched ${totalFetchedForCity} total events from ${Math.ceil(fetchBatchOffset / fetchBatchSize)} batches`);
-          setPipelineProgress(prev => ({
-            ...prev,
-            totalFetched: prev.totalFetched + totalFetchedForCity,
-            currentStep: '🤖 Parsing with AI...',
-            recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Fetched ${totalFetchedForCity} events`],
-            fullLogs: [...prev.fullLogs, `  ✅ Fetched ${totalFetchedForCity} events`]
+          // Step 1: Discover events using EventScout AI (replaces bootstrap + fetch + parse)
+          console.log(`  🤖 Step 1/3: EventScout AI discovering events...`);
+          setPipelineProgress(prev => ({ 
+            ...prev, 
+            currentStep: '🤖 EventScout AI discovering events...' 
           }));
-
-          // Step 2: Parse with AI (loop until all pending events processed)
-          console.log(`  🤖 Step 2/4: Parsing with AI...`);
-          let totalParsedForCity = 0;
-          let parseLoop = 0;
-          const maxParseLoops = 10; // Safety limit (10 loops * 3 events = 30 max)
           
-          // Keep calling parse-event-ai until no more pending events (Edge Function processes 3 at a time)
-          while (parseLoop < maxParseLoops) {
-            parseLoop++;
-            let parseResp;
-            let parseAttempt = 0;
-            const maxParseRetries = 2; // Retry up to 2 times on 504 timeout
-            
-            while (parseAttempt <= maxParseRetries) {
-              try {
-                parseResp = await supabase.functions.invoke('parse-event-ai', {
-                  body: { city_id: city.city_id }
-                });
-                
-                // If successful, break
-                if (!parseResp.error) {
-                  break;
-                }
-                
-                // Check if error is retryable (timeout, network, or 5xx)
-                const errorMsg = parseResp.error.message || String(parseResp.error);
-                const isRetryable = errorMsg.includes('504') || 
-                                    errorMsg.includes('timeout') || 
-                                    errorMsg.includes('Failed to send') ||
-                                    errorMsg.includes('connection') ||
-                                    errorMsg.includes('network');
-                
-                if (!isRetryable) {
-                  // Non-retryable error (4xx, validation, etc.) - break immediately
-                  break;
-                }
-                
-                // Retryable error - retry with backoff
-                parseAttempt++;
-                if (parseAttempt <= maxParseRetries) {
-                  const retryDelay = 3000 * parseAttempt; // 3s, 6s
-                  console.log(`  ⏳ Parse error (loop ${parseLoop}, attempt ${parseAttempt}/${maxParseRetries + 1}), retrying in ${retryDelay}ms...`);
-                  setPipelineProgress(prev => ({
-                    ...prev,
-                    currentStep: `⏳ Parse retry ${parseAttempt}/${maxParseRetries + 1}...`,
-                    recentLogs: [...prev.recentLogs.slice(-9), `  ⏳ Retry parse (loop ${parseLoop}, attempt ${parseAttempt}/${maxParseRetries + 1})`],
-                    fullLogs: [...prev.fullLogs, `  ⏳ Parse retrying (loop ${parseLoop}, attempt ${parseAttempt}/${maxParseRetries + 1}): ${errorMsg.substring(0, 100)}`]
-                  }));
-                  await new Promise(resolve => setTimeout(resolve, retryDelay));
-                }
-              } catch (error) {
-                parseResp = { error };
-                // Network/connection errors are retryable
-                const errorMsg = error.message || String(error);
-                console.log(`  ⚠️ Parse exception (loop ${parseLoop}, attempt ${parseAttempt}): ${errorMsg}`);
-                
-                parseAttempt++;
-                if (parseAttempt <= maxParseRetries) {
-                  // Exponential backoff: 2s, 5s, 10s (was linear 3s, 6s, 9s)
-                  const retryDelay = Math.min(10000, 1000 * Math.pow(2, parseAttempt));
-                  await new Promise(resolve => setTimeout(resolve, retryDelay));
-                } else {
-                  break;
-                }
-              }
+          const discoverResp = await supabase.functions.invoke('discover-events-ai', {
+            body: { 
+              city_id: city.city_id,
+              target_events: 15  // Find 15 free events minimum
             }
-            
-            if (parseResp.error) {
-              const errorMsg = parseResp.error.message || String(parseResp.error);
-              const is504 = errorMsg.includes('504');
-              totalResults.cityErrors.push(`${city.city_name}: Parse failed - ${errorMsg}`);
-              setPipelineProgress(prev => ({
-                ...prev,
-                recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Parse failed (loop ${parseLoop}): ${errorMsg}${is504 ? ' (timeout after retries)' : ''}`],
-                fullLogs: [...prev.fullLogs, `  ⚠️ Parse failed (loop ${parseLoop}): ${errorMsg}${is504 ? ' (timeout after retries)' : ''}`],
-                errors: [...prev.errors, `[${city.city_name}] Parse: ${errorMsg}`]
-              }));
-              break; // Stop loop on error
-            }
-            
-            // Get parsed count from response
-            const parsed = parseResp.data?.results?.parsed || parseResp.data?.results?.events_extracted || 0;
-            totalParsedForCity += parsed;
-            console.log(`  ✅ Parse loop ${parseLoop}: ${parsed} events (total: ${totalParsedForCity})`);
-            
-            // 📊 Collect debug metrics from parse-event-ai for detailed logging
-            if (parseResp.data?.debugMetrics) {
-              const metrics = parseResp.data.debugMetrics;
-              
-              // Add detailed errors to pipeline logs
-              if (metrics.detailedErrors && metrics.detailedErrors.length > 0) {
-                metrics.detailedErrors.forEach((err: any) => {
-                  const errorLog = `    🔍 ${err.step}: ${err.error}`;
-                  setPipelineProgress(prev => ({
-                    ...prev,
-                    fullLogs: [...prev.fullLogs, errorLog],
-                    detailedErrors: [...prev.detailedErrors, { city: city.city_name, ...err }]
-                  }));
-                });
-              }
-              
-              // Add validation failures
-              if (metrics.validationFailures && metrics.validationFailures.length > 0) {
-                metrics.validationFailures.forEach((fail: any) => {
-                  const failLog = `    ⚠️ ${fail.eventName}: ${fail.reason}`;
-                  setPipelineProgress(prev => ({
-                    ...prev,
-                    fullLogs: [...prev.fullLogs, failLog],
-                    validationFailures: [...prev.validationFailures, { city: city.city_name, ...fail }]
-                  }));
-                });
-              }
-              
-              // Add AI stats
-              if (metrics.aiStats) {
-                const aiLog = `    🤖 AI: ${metrics.aiStats.requests} requests, ${metrics.aiStats.timeouts} timeouts, model: ${metrics.aiStats.modelUsed}`;
-                setPipelineProgress(prev => ({
-                  ...prev,
-                  fullLogs: [...prev.fullLogs, aiLog],
-                  aiStats: {
-                    totalRequests: prev.aiStats.totalRequests + metrics.aiStats.requests,
-                    timeouts: prev.aiStats.timeouts + metrics.aiStats.timeouts,
-                    rateLimits: prev.aiStats.rateLimits + metrics.aiStats.rateLimits,
-                    modelUsage: {
-                      ...prev.aiStats.modelUsage,
-                      [metrics.aiStats.modelUsed]: (prev.aiStats.modelUsage[metrics.aiStats.modelUsed] || 0) + 1
-                    },
-                    avgResponseTime: ((prev.aiStats.avgResponseTime * prev.aiStats.totalRequests) + 
-                                      (parseFloat(metrics.aiStats.avgResponseTime) * metrics.aiStats.requests)) / 
-                                     (prev.aiStats.totalRequests + metrics.aiStats.requests)
-                  }
-                }));
-              }
-              
-              // Add geocoding stats
-              if (metrics.geocodingStats) {
-                setPipelineProgress(prev => ({
-                  ...prev,
-                  geocodingStats: {
-                    attempts: prev.geocodingStats.attempts + metrics.geocodingStats.attempts,
-                    successes: prev.geocodingStats.successes + metrics.geocodingStats.successes,
-                    failures: prev.geocodingStats.failures + metrics.geocodingStats.failures,
-                    avgTime: ((prev.geocodingStats.avgTime * prev.geocodingStats.attempts) + 
-                              (parseFloat(metrics.performance.geocodeTime) * metrics.geocodingStats.attempts)) /
-                             (prev.geocodingStats.attempts + metrics.geocodingStats.attempts),
-                    failureReasons: {
-                      ...prev.geocodingStats.failureReasons,
-                      ...Object.fromEntries(
-                        Object.entries(metrics.geocodingStats.failureReasons).map(([k, v]: [string, any]) => [
-                          k,
-                          (prev.geocodingStats.failureReasons[k] || 0) + v
-                        ])
-                      )
-                    }
-                  }
-                }));
-              }
-              
-              // Add performance metrics
-              setPipelineProgress(prev => ({
-                ...prev,
-                performanceMetrics: [
-                  ...prev.performanceMetrics,
-                  {
-                    city: city.city_name,
-                    step: 'parse',
-                    duration: metrics.performance.totalTime,
-                    timestamp: new Date().toISOString()
-                  }
-                ]
-              }));
-            }
-            
-            // If 0 events parsed, no more pending events - exit loop
-            if (parsed === 0) {
-              console.log(`  ℹ️ No more pending events to parse`);
-              break;
-            }
-            
+          });
+          
+          if (discoverResp.error) {
+            const errorMsg = discoverResp.error.message || String(discoverResp.error);
+            totalResults.cityErrors.push(`${city.city_name}: EventScout AI failed - ${errorMsg}`);
             setPipelineProgress(prev => ({
               ...prev,
-              totalParsed: prev.totalParsed + parsed,
-              currentStep: `🤖 Parsing... (${totalParsedForCity} processed)`,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Parse loop ${parseLoop}: ${parsed} events`],
-              fullLogs: [...prev.fullLogs, `  ✅ Parse loop ${parseLoop}: ${parsed} events (total: ${totalParsedForCity})`]
+              citiesFailed: prev.citiesFailed + 1,
+              recentLogs: [...prev.recentLogs.slice(-9), `  ❌ Discovery failed: ${errorMsg}`],
+              fullLogs: [...prev.fullLogs, `  ❌ EventScout AI failed: ${errorMsg}`],
+              errors: [...prev.errors, `[${city.city_name}] Discovery: ${errorMsg}`]
             }));
-            
-            // Small delay between loops to avoid overwhelming the database
-            if (parsed > 0 && parseLoop < maxParseLoops) {
-              await new Promise(resolve => setTimeout(resolve, 1000)); // 1s delay
-            }
+            continue; // Skip to next city
           }
           
-          // Update final state
-          totalResults.totalParsed += totalParsedForCity;
-          console.log(`  ✅ Total parsed for ${city.city_name}: ${totalParsedForCity} events`);
+          const discoverResults = discoverResp.data?.results || {};
+          const eventsFound = discoverResults.events_found || 0;
+          const eventsInserted = discoverResults.events_inserted || 0;
+          
+          console.log(`  ✅ EventScout AI: Found ${eventsFound}, inserted ${eventsInserted} events`);
+          
+          totalResults.totalFetched += eventsFound;
+          totalResults.totalParsed += eventsInserted;
+          
           setPipelineProgress(prev => ({
             ...prev,
+            totalFetched: prev.totalFetched + eventsFound,
+            totalParsed: prev.totalParsed + eventsInserted,
             currentStep: '✅ Validating...',
-            recentLogs: [...prev.recentLogs.slice(-9), `  ✅ Parsed ${totalParsedForCity} events total`],
-            fullLogs: [...prev.fullLogs, `  ✅ Parsed ${totalParsedForCity} events total`]
+            recentLogs: [...prev.recentLogs.slice(-9), `  ✅ EventScout: ${eventsInserted}/${eventsFound} events`],
+            fullLogs: [...prev.fullLogs, `  ✅ EventScout AI discovered ${eventsFound} events, inserted ${eventsInserted}`]
           }));
-
-          // Step 3: Validate events
-          console.log(`  ✅ Step 3/4: Validating...`);
+          
+          if (eventsInserted === 0) {
+            console.log(`  ⚠️ No events found for ${city.city_name}`);
+            setPipelineProgress(prev => ({
+              ...prev,
+              citiesFailed: prev.citiesFailed + 1,
+              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ No events found`],
+              fullLogs: [...prev.fullLogs, `  ⚠️ No events discovered for this city`]
+            }));
+            continue; // Skip validation/publishing
+          }
+          
+          // Step 2: Validate events (EventScout AI already inserted into parsed_events)
+          // Step 2: Validate events (already structured by EventScout AI)
+          console.log(`  ✅ Step 2/3: Validating...`);
           const validateResp = await supabase.functions.invoke('validate-event', {
             body: { city_id: city.city_id }
           });
@@ -1376,8 +1132,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             }));
           }
 
-          // Step 4: Publish to live map
-          console.log(`  🚀 Step 4/4: Publishing...`);
+          // Step 3: Publish to live map
+          console.log(`  🚀 Step 3/3: Publishing...`);
           const publishResp = await supabase.functions.invoke('publish-event', {
             body: { city_id: city.city_id }
           });
@@ -1404,41 +1160,14 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             }));
           }
 
-          // Step 5: Ensure minimum free events (NEW)
-          console.log(`  🎯 Step 5/5: Ensuring free events...`);
-          const ensureResp = await supabase.functions.invoke('ensure-free-events', {
-            body: { 
-              city_id: city.city_id,
-              target_free_events: 5 
-            }
-          });
-          
-          if (ensureResp.error) {
-            console.warn(`  ⚠️ Free event check failed: ${ensureResp.error.message}`);
-            setPipelineProgress(prev => ({
-              ...prev,
-              citiesCompleted: prev.citiesCompleted + 1,
-              recentLogs: [...prev.recentLogs.slice(-9), `  ⚠️ Free check failed`, `✅ Complete!`],
-              fullLogs: [...prev.fullLogs, `  ⚠️ Free check failed`, `✅ Complete!`]
-            }));
-          } else {
-            const { current_free_count, target, success } = ensureResp.data || {};
-            console.log(`  ${success ? '✅' : '⚠️'} Free events: ${current_free_count}/${target}`);
-            setPipelineProgress(prev => ({
-              ...prev,
-              citiesCompleted: prev.citiesCompleted + 1,
-              recentLogs: [
-                ...prev.recentLogs.slice(-9), 
-                `  ${success ? '✅' : '⚠️'} ${current_free_count}/${target} free events`,
-                `✅ Complete!`
-              ],
-              fullLogs: [
-                ...prev.fullLogs,
-                `  ${success ? '✅' : '⚠️'} ${current_free_count}/${target} free events`,
-                `✅ Complete!`
-              ]
-            }));
-          }
+          // EventScout AI already ensures free events, skip this step
+          console.log(`  ✅ EventScout AI guarantees free events - skipping ensure step`);
+          setPipelineProgress(prev => ({
+            ...prev,
+            citiesCompleted: prev.citiesCompleted + 1,
+            recentLogs: [...prev.recentLogs.slice(-9), `✅ Complete!`],
+            fullLogs: [...prev.fullLogs, `✅ Pipeline complete for ${city.city_name}!`]
+          }));
 
           console.log(`✅ ${city.city_name} complete!\n`);
 
