@@ -137,14 +137,31 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
 
   // Show ALL events on map (only filter by category, not distance)
   const filteredEvents = useMemo(() => {
-    return events.filter(event => {
+    console.log(`📍 HomeMap: Filtering ${events.length} events (category: ${activeCategory || 'all'})`);
+    
+    const filtered = events.filter(event => {
       // CRITICAL: Filter out events with null/invalid coordinates to prevent map crashes
-      if (!event.location || typeof event.location.lat !== 'number' || typeof event.location.lng !== 'number') {
-        console.warn(`Skipping event ${event.id} (${event.name}) - invalid location:`, event.location);
+      if (!event.location) {
+        console.warn(`❌ Skipping event ${event.id} (${event.name}) - location is null/undefined`);
         return false;
       }
-      return !activeCategory || event.category === activeCategory;
+      
+      if (typeof event.location.lat !== 'number' || typeof event.location.lng !== 'number') {
+        console.warn(`❌ Skipping event ${event.id} (${event.name}) - invalid coordinates:`, 
+          `lat=${event.location.lat} (${typeof event.location.lat}), lng=${event.location.lng} (${typeof event.location.lng})`);
+        return false;
+      }
+      
+      if (!activeCategory || event.category === activeCategory) {
+        console.log(`✅ Event passes filter: ${event.name} at [${event.location.lat}, ${event.location.lng}]`);
+        return true;
+      }
+      
+      return false;
     });
+    
+    console.log(`📍 HomeMap: ${filtered.length} events will be displayed on map`);
+    return filtered;
   }, [events, activeCategory]);
 
   // Auto-translate selected event title/description based on viewer locale
