@@ -1,7 +1,0 @@
-{
-  "name": "EventScout AI",
-  "description": "A smart event discovery tool that geolocates cities and uses AI agents with web search to find free local events, allowing you to export results as JSON.",
-  "requestFramePermissions": [
-    "geolocation"
-  ]
-}

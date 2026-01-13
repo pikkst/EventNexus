@@ -147,7 +147,7 @@ Return ONLY valid JSON array, no markdown, no explanations.`
         contents: [{ parts: [{ text: structurePrompt }] }],
         generationConfig: {
           temperature: 0.1,  // Low temperature for precision
-          maxOutputTokens: 8000,
+          maxOutputTokens: 16000,  // Increased from 8000 to prevent truncation
           responseMimeType: 'application/json',
           responseSchema: {
             type: 'ARRAY',
@@ -194,9 +194,46 @@ If a field is missing, use your best reasoning to fill it accurately based on co
   const structureResult = await structureResponse.json()
   const structuredText = structureResult.candidates?.[0]?.content?.parts?.[0]?.text || '[]'
   
-  const events: FreeEvent[] = JSON.parse(structuredText)
+  console.log(`📝 Raw structured response length: ${structuredText.length} chars`)
   
-  console.log(`✅ Step 2 complete: Structured ${events.length} events`)
+  // Clean and parse JSON with error handling
+  let events: FreeEvent[] = []
+  try {
+    // Remove any markdown code blocks that Gemini might add
+    const cleanedText = structuredText
+      .replace(/```json\n?/g, '')
+      .replace(/```\n?/g, '')
+      .trim()
+    
+    // Try to parse
+    events = JSON.parse(cleanedText)
+    
+    // Validate it's an array
+    if (!Array.isArray(events)) {
+      console.error('❌ Parsed result is not an array:', typeof events)
+      events = []
+    }
+    
+    console.log(`✅ Step 2 complete: Structured ${events.length} events`)
+  } catch (parseError: any) {
+    console.error('❌ JSON parsing failed:', parseError.message)
+    console.error('First 500 chars of response:', structuredText.substring(0, 500))
+    console.error('Last 500 chars of response:', structuredText.substring(Math.max(0, structuredText.length - 500)))
+    
+    // Try to salvage partial JSON by finding complete array
+    try {
+      // Find last complete closing bracket
+      const lastBracket = structuredText.lastIndexOf(']')
+      if (lastBracket > 0) {
+        const truncated = structuredText.substring(0, lastBracket + 1)
+        events = JSON.parse(truncated)
+        console.log(`⚠️ Recovered ${events.length} events from truncated JSON`)
+      }
+    } catch (recoveryError) {
+      console.error('❌ Recovery also failed, returning empty array')
+      events = []
+    }
+  }
   
   return events
 }
@@ -285,15 +322,86 @@ serve(async (req) => {
 
     console.log(`\n📦 Inserting ${events.length} events into database...`)
 
+    // First, ensure EventScout AI source exists for this city
+    const { data: existingSource } = await supabase
+      .from('event_sources')
+      .select('id')
+      .eq('city_id', cityData.city_id)
+      .eq('name', 'EventScout AI - Google Search')
+      .single()
+
+    let sourceId: string
+
+    if (existingSource) {
+      sourceId = existingSource.id
+      console.log(`  ✓ Using existing EventScout AI source: ${sourceId}`)
+    } else {
+      // Create EventScout AI source for this city
+      const { data: newSource, error: sourceError } = await supabase
+        .from('event_sources')
+        .insert({
+          city_id: cityData.city_id,
+          name: 'EventScout AI - Google Search',
+          type: 'api',
+          url: 'https://www.google.com/search',
+          source_score: 95,  // High score - Google Search grounded
+          active: true
+        })
+        .select('id')
+        .single()
+
+      if (sourceError || !newSource) {
+        throw new Error(`Failed to create EventScout AI source: ${sourceError?.message}`)
+      }
+
+      sourceId = newSource.id
+      console.log(`  ✓ Created EventScout AI source: ${sourceId}`)
+    }
+
     // Insert events into parsed_events table
     const insertResults = {
       inserted: 0,
+      skipped: 0,
       failed: 0,
       errors: [] as string[]
     }
 
     for (const event of events) {
       try {
+        // CRITICAL: Check for duplicates BEFORE inserting
+        // Check both parsed_events and events tables to avoid duplicates
+        const eventStartTime = new Date(event.start_time)
+        const eventDateStr = eventStartTime.toISOString().split('T')[0]
+        
+        // Check if already in events table (published)
+        const { data: existingPublished } = await supabase
+          .from('events')
+          .select('id, name')
+          .eq('city_id', cityData.city_id)
+          .eq('name', event.name)
+          .eq('date', eventDateStr)
+          .limit(1)
+        
+        if (existingPublished && existingPublished.length > 0) {
+          console.log(`  ⊘ Skip (already published): ${event.name}`)
+          insertResults.skipped = (insertResults.skipped || 0) + 1
+          continue
+        }
+        
+        // Check if already in parsed_events table (awaiting validation/publishing)
+        const { data: existingParsed } = await supabase
+          .from('parsed_events')
+          .select('id')
+          .eq('structured_json->>name', event.name)
+          .gte('parsed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last 7 days
+          .limit(1)
+        
+        if (existingParsed && existingParsed.length > 0) {
+          console.log(`  ⊘ Skip (already parsed): ${event.name}`)
+          insertResults.skipped = (insertResults.skipped || 0) + 1
+          continue
+        }
+
         // Create structured_json
         const structured = {
           name: event.name,
@@ -313,13 +421,35 @@ serve(async (req) => {
         }
 
         // Insert into parsed_events
+        // First create raw_event with proper source_id
+        const { data: rawEvent, error: rawError } = await supabase
+          .from('raw_events')
+          .insert({
+            source_id: sourceId,  // Link to EventScout AI source
+            raw_content: null,
+            raw_content_json: event,
+            content_type: 'json',
+            content_hash: `eventscout-${event.name}-${event.start_time}`.substring(0, 100),
+            processing_status: 'parsed'
+          })
+          .select('id')
+          .single()
+
+        if (rawError || !rawEvent) {
+          console.error(`❌ Failed to create raw_event for ${event.name}:`, rawError)
+          insertResults.failed++
+          insertResults.errors.push(`${event.name}: ${rawError?.message || 'Unknown error'}`)
+          continue
+        }
+
+        // Now insert into parsed_events with all required fields
         const { error: insertError } = await supabase
           .from('parsed_events')
           .insert({
-            raw_event_id: null,  // EventScout AI has no raw_event
+            raw_event_id: rawEvent.id,
             structured_json: structured,
-            parsing_confidence: 0.95,  // High confidence (Google Search grounded)
-            created_at: new Date().toISOString()
+            original_language: 'en',
+            confidence_partial: 0.95  // High confidence (Google Search grounded)
           })
 
         if (insertError) {
@@ -339,11 +469,12 @@ serve(async (req) => {
     const duration = Date.now() - startTime
 
     await log(supabase, 'discover-events-ai', 'success',
-      `Discovered ${insertResults.inserted} events in ${duration}ms`,
+      `Discovered ${insertResults.inserted} events (${insertResults.skipped} skipped duplicates) in ${duration}ms`,
       {
         ...logContext,
         events_found: events.length,
         events_inserted: insertResults.inserted,
+        events_skipped: insertResults.skipped,
         duration_ms: duration
       }
     )
@@ -351,29 +482,55 @@ serve(async (req) => {
     console.log(`\n✅ EventScout AI complete!`)
     console.log(`  📊 Found: ${events.length} events`)
     console.log(`  ✅ Inserted: ${insertResults.inserted}`)
+    console.log(`  ⊘ Skipped: ${insertResults.skipped}`)
     console.log(`  ❌ Failed: ${insertResults.failed}`)
     console.log(`  ⏱️ Duration: ${duration}ms`)
 
-    // Auto-trigger validation and publishing
+    // Auto-trigger validation and publishing using direct HTTP calls
     if (insertResults.inserted > 0) {
       console.log(`\n🚀 Triggering validation and publishing...`)
 
-      // Validate events
-      const { error: validateError } = await supabase.functions.invoke('validate-event', {
-        body: { city_id: cityData.city_id }
-      })
+      const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+      const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-      if (validateError) {
-        console.warn('⚠️ Validation trigger failed:', validateError)
+      // Validate events
+      try {
+        const validateResponse = await fetch(`${SUPABASE_URL}/functions/v1/validate-event`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ city_id: cityData.city_id })
+        })
+
+        if (!validateResponse.ok) {
+          console.warn('⚠️ Validation trigger failed:', await validateResponse.text())
+        } else {
+          console.log('✅ Validation triggered successfully')
+        }
+      } catch (validateError) {
+        console.warn('⚠️ Validation trigger error:', validateError)
       }
 
       // Publish events
-      const { error: publishError } = await supabase.functions.invoke('publish-event', {
-        body: { city_id: cityData.city_id }
-      })
+      try {
+        const publishResponse = await fetch(`${SUPABASE_URL}/functions/v1/publish-event`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ city_id: cityData.city_id })
+        })
 
-      if (publishError) {
-        console.warn('⚠️ Publishing trigger failed:', publishError)
+        if (!publishResponse.ok) {
+          console.warn('⚠️ Publishing trigger failed:', await publishResponse.text())
+        } else {
+          console.log('✅ Publishing triggered successfully')
+        }
+      } catch (publishError) {
+        console.warn('⚠️ Publishing trigger error:', publishError)
       }
     }
 
@@ -384,6 +541,7 @@ serve(async (req) => {
         results: {
           events_found: events.length,
           events_inserted: insertResults.inserted,
+          events_skipped: insertResults.skipped,
           events_failed: insertResults.failed,
           errors: insertResults.errors.length > 0 ? insertResults.errors : undefined,
           duration_ms: duration
