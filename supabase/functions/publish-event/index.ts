@@ -589,7 +589,7 @@ serve(async (req) => {
             eventData.location_address,
             cityConfig.country,
             cityConfig.country_code || 'ee',
-            cityConfig.name // Pass city name for better geocoding
+            cityConfig.city_name // Pass city name for better geocoding
           )
           
           if (geocoded) {
@@ -846,14 +846,14 @@ serve(async (req) => {
         console.error(`Failed to publish event ${parsedEvent.id}:`, error)
         results.failed++
       }
-    } // End of batch loop
-    
-    // Add delay between batches to avoid API rate limiting
-    if (batchEnd < parsedEvents.length) {
-      console.log(`⏳ Waiting ${BATCH_DELAY_MS}ms before next batch...`);
-      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
-    }
-  } // End of batch iteration
+    } // End of batch events loop
+      
+      // Add delay between batches to avoid API rate limiting
+      if (batchEnd < filteredEvents.length) {
+        console.log(`⏳ Waiting ${BATCH_DELAY_MS}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+      }
+    } // End of outer batch loop
 
     return new Response(
       JSON.stringify({
