@@ -1182,6 +1182,18 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             errors: [...prev.errors, `[${city.city_name}] General: ${cityError.message}`]
           }));
         }
+        
+        // Add 5 second delay between cities to prevent server overload
+        // This ensures AI image generation and map rendering don't crash
+        if (i < citiesToProcess.length - 1) {
+          console.log(`⏳ Waiting 5s before processing next city...`);
+          setPipelineProgress(prev => ({
+            ...prev,
+            currentStep: '⏳ Cooling down...',
+            recentLogs: [...prev.recentLogs.slice(-9), `⏳ Waiting 5s before next city...`]
+          }));
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
       }
 
       // Show comprehensive results
