@@ -703,11 +703,9 @@ serve(async (req) => {
           continue
         }
 
-        // 🔧 ENHANCED: Geocode address using Nominatim + Gemini refinement
-        // This mirrors publish-event logic - single source of truth
-        const coords = await geocodeAddress(event.location_address, cityData.city_name, cityData.country)
-        event.location_lat = coords.lat
-        event.location_lng = coords.lng
+        // ✅ Use coordinates from Gemini structuring
+        // publish-event will refine/validate them later with full geocoding logic
+        console.log(`✅ ${event.name}`)
 
         // Create structured_json
         const structured = {
