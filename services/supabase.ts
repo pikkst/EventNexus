@@ -38,6 +38,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     headers: {
       'X-Client-Info': 'eventnexus-web'
     }
+  },
+  // Disable inactivity timeout - admin pages with long-running operations need persistent sessions
+  db: {
+    schema: 'public',
   }
 });
 
