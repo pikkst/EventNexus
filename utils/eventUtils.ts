@@ -12,6 +12,7 @@ export const isEventExpired = (event: EventNexusEvent): boolean => {
   const endTimeStr = event.end_time || event.time;
   
   if (!endDateStr || !endTimeStr) {
+    console.log(`⚠️ Event ${event.name}: No end date/time, considering NOT expired`);
     return false; // Can't determine if expired without date/time
   }
   
@@ -19,12 +20,23 @@ export const isEventExpired = (event: EventNexusEvent): boolean => {
   const eventEndDateTime = new Date(`${endDateStr}T${endTimeStr}`);
   
   // Event has expired if the end time is in the past
-  return eventEndDateTime < now;
+  const expired = eventEndDateTime < now;
+  
+  if (expired) {
+    console.log(`❌ Event EXPIRED: ${event.name} (ended ${endDateStr} ${endTimeStr})`);
+  } else {
+    console.log(`✅ Event ACTIVE: ${event.name} (ends ${endDateStr} ${endTimeStr})`);
+  }
+  
+  return expired;
 };
 
 /**
  * Filter out expired events from an array
  */
 export const filterActiveEvents = (events: EventNexusEvent[]): EventNexusEvent[] => {
-  return events.filter(event => !isEventExpired(event));
+  console.log(`\n🔍 Filtering ${events.length} events for expiration...`);
+  const active = events.filter(event => !isEventExpired(event));
+  console.log(`✅ ${active.length} active events after filtering (${events.length - active.length} expired)\n`);
+  return active;
 };
