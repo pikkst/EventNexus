@@ -38,6 +38,69 @@ const callWithRetry = async <T>(
   }
 }
 
+// Levenshtein distance for fuzzy matching (detect minor title variations)
+function levenshteinDistance(a: string, b: string): number {
+  const aLen = a.length
+  const bLen = b.length
+  const matrix: number[][] = []
+  
+  for (let i = 0; i <= bLen; i++) {
+    matrix[i] = [i]
+  }
+  for (let j = 0; j <= aLen; j++) {
+    matrix[0][j] = j
+  }
+  
+  for (let i = 1; i <= bLen; i++) {
+    for (let j = 1; j <= aLen; j++) {
+      if (b.charCodeAt(i - 1) === a.charCodeAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1]
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        )
+      }
+    }
+  }
+  
+  return matrix[bLen][aLen]
+}
+
+// Normalize title for comparison
+function normalizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\sáéíóúäöõ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// Normalize address for comparison
+function normalizeAddress(address: string): string {
+  return address
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// Calculate similarity score (0 to 1, where 1 is identical)
+function calculateSimilarity(str1: string, str2: string): number {
+  const normalized1 = normalizeTitle(str1)
+  const normalized2 = normalizeTitle(str2)
+  
+  if (normalized1 === normalized2) return 1.0
+  
+  const maxLen = Math.max(normalized1.length, normalized2.length)
+  if (maxLen === 0) return 1.0
+  
+  const distance = levenshteinDistance(normalized1, normalized2)
+  return 1.0 - (distance / maxLen)
+}
+
 interface DiscoverEventsRequest {
   city_id?: string
   city_name?: string
@@ -773,37 +836,72 @@ serve(async (req) => {
     for (const event of events) {
       try {
         // CRITICAL: Check for duplicates BEFORE inserting
-        // Check both parsed_events and events tables to avoid duplicates
+        // Use fuzzy matching to catch title variations from AI/OCR
         const eventStartTime = new Date(event.start_time)
         const eventDateStr = eventStartTime.toISOString().split('T')[0]
         
-        // Check if already in events table (published)
+        // 1. Check if already in events table (published)
         const { data: existingPublished } = await supabase
           .from('events')
-          .select('id, name')
+          .select('id, name, location')
           .eq('city_id', cityData.city_id)
-          .eq('name', event.name)
           .eq('date', eventDateStr)
-          .limit(1)
+          .limit(20) // Fetch multiple to check similarity
         
         if (existingPublished && existingPublished.length > 0) {
-          console.log(`  ⊘ Skip (already published): ${event.name}`)
-          insertResults.skipped = (insertResults.skipped || 0) + 1
-          continue
+          // Fuzzy match against existing published events
+          let foundDuplicate = false
+          
+          for (const existing of existingPublished) {
+            const titleSimilarity = calculateSimilarity(event.name, existing.name)
+            const existingAddr = normalizeAddress(existing.location?.address || '')
+            const newAddr = normalizeAddress(event.location_address || '')
+            const addressMatch = existingAddr.substring(0, 100) === newAddr.substring(0, 100)
+            
+            // If title is 85%+ similar AND same location = duplicate
+            if (titleSimilarity >= 0.85 && addressMatch) {
+              console.log(`  ⊘ Skip (already published): ${event.name} (matches "${existing.name}" @${titleSimilarity.toFixed(2)})`)
+              insertResults.skipped = (insertResults.skipped || 0) + 1
+              foundDuplicate = true
+              break
+            }
+          }
+          
+          if (foundDuplicate) continue
         }
         
-        // Check if already in parsed_events table (awaiting validation/publishing)
-        const { data: existingParsed } = await supabase
+        // 2. Check if already in parsed_events table (awaiting validation/publishing)
+        // Fuzzy match against recently parsed events
+        const { data: recentParsed } = await supabase
           .from('parsed_events')
-          .select('id')
-          .eq('structured_json->>name', event.name)
+          .select('id, structured_json')
+          .eq('city_id', cityData.city_id || '')
           .gte('parsed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last 7 days
-          .limit(1)
+          .limit(50) // Fetch multiple to check similarity
         
-        if (existingParsed && existingParsed.length > 0) {
-          console.log(`  ⊘ Skip (already parsed): ${event.name}`)
-          insertResults.skipped = (insertResults.skipped || 0) + 1
-          continue
+        if (recentParsed && recentParsed.length > 0) {
+          let foundDuplicate = false
+          
+          for (const parsed of recentParsed) {
+            const existing = parsed.structured_json
+            const titleSimilarity = calculateSimilarity(event.name, existing.name)
+            const existingAddr = normalizeAddress(existing.location_address || '')
+            const newAddr = normalizeAddress(event.location_address || '')
+            const addressMatch = existingAddr.substring(0, 100) === newAddr.substring(0, 100)
+            
+            // If title is 85%+ similar AND same location AND same date = duplicate
+            if (titleSimilarity >= 0.85 && addressMatch) {
+              const parsedDate = new Date(existing.start_time).toISOString().split('T')[0]
+              if (parsedDate === eventDateStr) {
+                console.log(`  ⊘ Skip (already parsed): ${event.name} (matches "${existing.name}" @${titleSimilarity.toFixed(2)})`)
+                insertResults.skipped = (insertResults.skipped || 0) + 1
+                foundDuplicate = true
+                break
+              }
+            }
+          }
+          
+          if (foundDuplicate) continue
         }
 
         // ✅ VALIDATE: Event must be in the future

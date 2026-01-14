@@ -37,6 +37,7 @@ import LandingPage from './components/LandingPage';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import { DashboardSkeleton, PageSkeleton } from './components/LoadingSkeleton';
+import { initializePerformanceOptimizations } from './utils/performanceOptimization';
 
 // Heavy components - lazy load on demand
 const HomeMap = lazy(() => import('./components/HomeMap'));
@@ -226,6 +227,9 @@ const App: React.FC = () => {
     (window as any).gtag('js', new Date());
     (window as any).gtag('config', GA_MEASUREMENT_ID, { page_path: window.location.pathname + window.location.search + window.location.hash });
     console.log(`✅ GA fallback initialized with ${GA_MEASUREMENT_ID}`);
+    
+    // Initialize performance optimizations after GA is set up
+    initializePerformanceOptimizations();
   }, []);
 
   // Helper to cache user data

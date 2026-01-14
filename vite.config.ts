@@ -51,25 +51,18 @@ export default defineConfig(({ mode }) => {
         reportCompressedSize: true,
         rollupOptions: {
           output: {
-            manualChunks(id) {
-              // Only split truly independent heavy libraries
-              if (id.includes('node_modules')) {
-                // Large chart library (independent)
-                if (id.includes('recharts')) {
-                  return 'charts';
-                }
-                // QR Scanner (independent)
-                if (id.includes('qr-scanner')) {
-                  return 'qr';
-                }
-                // AI/Gemini (independent)
-                if (id.includes('@google/generative-ai')) {
-                  return 'ai';
-                }
-                // Don't split React, maps, or other React-dependent libs
-                // Let Vite handle them automatically
-              }
-            }
+            manualChunks: {
+              // Vendor libraries split for parallel loading
+              'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+              'vendor-charts': ['recharts'],
+              'vendor-geo': ['leaflet', 'react-leaflet'],
+              'vendor-qr': ['qr-scanner', 'qrcode', 'jsqr'],
+              'vendor-ai': ['@google/generative-ai', '@google/genai'],
+              'vendor-supabase': ['@supabase/supabase-js'],
+            },
+            // Use descriptive chunk names for debugging
+            chunkFileNames: 'assets/[name]-[hash].js',
+            entryFileNames: 'assets/[name]-[hash].js',
           }
         },
         // Compression & optimization
@@ -78,14 +71,17 @@ export default defineConfig(({ mode }) => {
           compress: {
             drop_console: true, // Remove console.log in production
             drop_debugger: true,
-            pure_funcs: ['console.log', 'console.debug', 'console.trace']
+            pure_funcs: ['console.log', 'console.debug', 'console.trace'],
+            passes: 3 // Multiple optimization passes
           },
           output: {
             comments: false
           }
         },
-        // Enable gzip compression
-        cssCodeSplit: true
+        // Enable CSS code splitting
+        cssCodeSplit: true,
+        // Increase the size warning limit for chunks
+        polyfillModulePreload: true
       }
     };
 });
