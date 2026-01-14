@@ -66,6 +66,35 @@
 
 ---
 
+## 🌍 City Management & Bulk Import (NEW!)
+
+### Quick Start
+1. **[docs/BULK_CITY_IMPORT_ET.md](docs/BULK_CITY_IMPORT_ET.md)** ⭐ KIIRJUHEND (EESTI KEELES)
+   - Kuidas kasutada masslisamiset
+   - Näited (Saksamaa, USA, Jaapan)
+   - Parimad praktikad
+   - Tõrkeotsing
+
+2. **[docs/BULK_CITY_IMPORT.md](docs/BULK_CITY_IMPORT.md)** 📖 FULL GUIDE (ENGLISH)
+   - Complete feature documentation
+   - AI-powered city discovery
+   - Smart duplicate detection
+   - Technical details and API reference
+
+### Features
+- **Mass Import**: Add 15-20 major cities from a country at once
+- **AI Discovery**: Gemini AI finds cities with coordinates & timezones
+- **Smart Filtering**: Automatic duplicate detection
+- **Auto-Bootstrap**: Cities automatically enter event discovery pipeline
+- **Time Savings**: 90% faster than manual entry
+
+### Related Documentation
+- [AI Agent System](docs/AI_AGENT_IMPROVEMENTS_DEPLOYMENT.md)
+- [City Management Guide](docs/ADMIN_IMPLEMENTATION.md)
+- [Auto Country Code System](docs/AUTO_COUNTRY_CODE_SYSTEM.md)
+
+---
+
 ## 📋 Social Media Hub Fix
 
 ### For Quick Overview
