@@ -285,8 +285,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               console.log('🆕 REALTIME: New event added:', payload.new);
               const newEvent = payload.new as EventNexusEvent;
               
-              // Only add if active and has valid location
-              if (newEvent.location && newEvent.location.coordinates) {
+              // Only add if active and has valid location (check for lat/lng, not coordinates)
+              if (newEvent.location && newEvent.location.lat && newEvent.location.lng) {
                 setEvents(prev => [...prev, newEvent]);
                 setNewEventIds(prev => new Set(prev).add(newEvent.id));
                 setLiveUpdateCount(c => c + 1);
@@ -410,6 +410,11 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         
         let addedCount = 0;
         newData.forEach((newEvent: any) => {
+          // Check if event has valid location (lat/lng fields)
+          if (!newEvent.location || !newEvent.location.lat || !newEvent.location.lng) {
+            return; // Skip events without valid location
+          }
+          
           if (!currentEventIds.has(newEvent.id)) {
             console.log('📡 POLL: Found new event:', newEvent.name);
             setEvents(prev => [...prev, newEvent as EventNexusEvent]);
