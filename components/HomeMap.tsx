@@ -16,19 +16,6 @@ import { filterActiveEvents } from '../utils/eventUtils';
 import { generateMapSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 import { supabase } from '../services/supabase';
 
-// Distance calculation helper (Haversine formula)
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
 interface MapEffectsProps {
   center: [number, number];
   isFollowing: boolean;
@@ -276,98 +263,124 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   useEffect(() => {
     console.log('🔴 Setting up real-time event subscription...');
     
-    const channel = supabase
-      .channel('public:events')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'events'
-        },
-        (payload) => {
-          console.log('🆕 New event added:', payload.new);
-          const newEvent = payload.new as EventNexusEvent;
-          
-          // Only add if active and has valid location
-          if (newEvent.location && newEvent.location.coordinates) {
-            setEvents(prev => [...prev, newEvent]);
-            setNewEventIds(prev => new Set(prev).add(newEvent.id));
-            setLiveUpdateCount(c => c + 1);
-            
-            // Play notification sound
-            playNotificationSound();
-            
-            // Check if event is nearby (within search radius)
-            const distance = calculateDistance(
-              userLocation[0],
-              userLocation[1],
-              newEvent.location.lat,
-              newEvent.location.lng
-            );
-            
-            if (distance <= searchRadius) {
-              setNearbyNewEvents(prev => [...prev, newEvent]);
-              setNearbyNewEventsCount(c => c + 1);
+    let isSubscribed = true;
+    
+    const setupRealtime = async () => {
+      try {
+        const channel = supabase
+          .channel('events-channel', {
+            config: {
+              broadcast: { self: false },
+            },
+          })
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'events'
+            },
+            (payload) => {
+              if (!isSubscribed) return;
+              console.log('🆕 REALTIME: New event added:', payload.new);
+              const newEvent = payload.new as EventNexusEvent;
+              
+              // Only add if active and has valid location
+              if (newEvent.location && newEvent.location.coordinates) {
+                setEvents(prev => [...prev, newEvent]);
+                setNewEventIds(prev => new Set(prev).add(newEvent.id));
+                setLiveUpdateCount(c => c + 1);
+                
+                // Play notification sound
+                playNotificationSound();
+                
+                // Check if event is nearby (within search radius)
+                const distance = calculateDistance(
+                  userLocation[0],
+                  userLocation[1],
+                  newEvent.location.lat,
+                  newEvent.location.lng
+                );
+                
+                if (distance <= searchRadius) {
+                  setNearbyNewEvents(prev => [...prev, newEvent]);
+                  setNearbyNewEventsCount(c => c + 1);
+                }
+                
+                // Auto-pan to new event if enabled
+                if (autoPanEnabled && mapRef.current) {
+                  mapRef.current.flyTo([newEvent.location.lat, newEvent.location.lng], 14, {
+                    duration: 1.5
+                  });
+                }
+                
+                // Remove animation flag after 5 seconds
+                setTimeout(() => {
+                  setNewEventIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(newEvent.id);
+                    return next;
+                  });
+                }, 5000);
+              }
             }
-            
-            // Auto-pan to new event if enabled
-            if (autoPanEnabled && mapRef.current) {
-              mapRef.current.flyTo([newEvent.location.lat, newEvent.location.lng], 14, {
-                duration: 1.5
-              });
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'events'
+            },
+            (payload) => {
+              if (!isSubscribed) return;
+              console.log('🔄 REALTIME: Event updated:', payload.new);
+              const updatedEvent = payload.new as EventNexusEvent;
+              
+              setEvents(prev => prev.map(e => 
+                e.id === updatedEvent.id ? updatedEvent : e
+              ));
             }
-            
-            // Remove animation flag after 5 seconds
-            setTimeout(() => {
-              setNewEventIds(prev => {
-                const next = new Set(prev);
-                next.delete(newEvent.id);
-                return next;
-              });
-            }, 5000);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'events'
-        },
-        (payload) => {
-          console.log('🔄 Event updated:', payload.new);
-          const updatedEvent = payload.new as EventNexusEvent;
-          
-          setEvents(prev => prev.map(e => 
-            e.id === updatedEvent.id ? updatedEvent : e
-          ));
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'events'
-        },
-        (payload) => {
-          console.log('🗑️ Event deleted:', payload.old);
-          const deletedId = (payload.old as any).id;
-          
-          setEvents(prev => prev.filter(e => e.id !== deletedId));
-          setLiveUpdateCount(c => c + 1);
-        }
-      )
-      .subscribe();
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'DELETE',
+              schema: 'public',
+              table: 'events'
+            },
+            (payload) => {
+              if (!isSubscribed) return;
+              console.log('🗑️ REALTIME: Event deleted:', payload.old);
+              const deletedId = (payload.old as any).id;
+              
+              setEvents(prev => prev.filter(e => e.id !== deletedId));
+              setLiveUpdateCount(c => c + 1);
+            }
+          )
+          .subscribe((status, err) => {
+            if (err) {
+              console.error('❌ Realtime subscription error:', err);
+            } else {
+              console.log('✅ Realtime subscription status:', status);
+            }
+          });
 
-    // Cleanup subscription on unmount
-    return () => {
-      console.log('🔴 Cleaning up real-time subscription');
-      supabase.removeChannel(channel);
+        // Cleanup subscription
+        return () => {
+          isSubscribed = false;
+          console.log('🔴 Cleaning up real-time subscription');
+          supabase.removeChannel(channel);
+        };
+      } catch (error) {
+        console.error('Error setting up realtime:', error);
+      }
     };
-  }, [playNotificationSound, calculateDistance, userLocation, searchRadius, autoPanEnabled]);
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
 
   // Auto-hide live update toast after 3 seconds
   useEffect(() => {
