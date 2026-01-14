@@ -29,13 +29,7 @@ class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log app open event
-        CoroutineScope(Dispatchers.IO).launch {
-            val analytics = AnalyticsRepository()
-            analytics.logEvent(AnalyticsRepository.EventType.APP_OPEN)
-        }
         
-        // 
         // Initialize Supabase client
         SupabaseClient.initialize(this)
         
