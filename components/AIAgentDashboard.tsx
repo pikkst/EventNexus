@@ -96,13 +96,24 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       const saved = localStorage.getItem('ai_pipeline_progress');
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Only restore if pipeline was running
-        if (parsed.isRunning) {
-          return parsed;
+        // Only restore if pipeline was running AND started recently (within last 2 hours)
+        if (parsed.isRunning && parsed.runStartTime) {
+          const startTime = new Date(parsed.runStartTime).getTime();
+          const now = Date.now();
+          const twoHoursInMs = 2 * 60 * 60 * 1000;
+          
+          if (now - startTime < twoHoursInMs) {
+            console.log('📋 Restoring pipeline progress from localStorage');
+            return parsed;
+          } else {
+            console.warn('⚠️ Stale pipeline progress found (>2 hours old), clearing...');
+            localStorage.removeItem('ai_pipeline_progress');
+          }
         }
       }
     } catch (error) {
       console.error('Failed to load persisted progress:', error);
+      localStorage.removeItem('ai_pipeline_progress');
     }
     return null;
   };
@@ -1289,7 +1300,9 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
     
     if (!confirmed) return;
 
-    console.log('🛑 Stop button clicked - setting stop flag');
+    console.log('🛑 Stop button clicked - stopping pipeline immediately');
+    
+    // Set stop flags
     setPipelineShouldStop(true);
     pipelineShouldStopRef.current = true;
     
@@ -1299,12 +1312,21 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
       pipelinePausedRef.current = false;
     }
     
+    // Immediately set isRunning to false and clear localStorage
     setPipelineProgress(prev => ({
       ...prev,
-      currentStep: '🛑 Stopping...',
-      recentLogs: [...prev.recentLogs.slice(-9), '🛑 Stopping pipeline...'],
-      fullLogs: [...prev.fullLogs, '🛑 Pipeline stop requested by user']
+      isRunning: false,
+      runEndTime: new Date().toISOString(),
+      currentStep: '🛑 Stopped by user',
+      recentLogs: [...prev.recentLogs.slice(-9), '🛑 Pipeline stopped by user'],
+      fullLogs: [...prev.fullLogs, '🛑 Pipeline stopped by user at ' + new Date().toISOString()]
     }));
+    
+    // Force clear localStorage immediately
+    localStorage.removeItem('ai_pipeline_progress');
+    
+    // Reset processing state
+    setIsProcessing(false);
   }
 
   // Download pipeline logs as JSON (includes both pipeline execution and Supabase agent logs)
