@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, SlidersHorizontal, MapPin, Calendar, 
@@ -124,14 +124,14 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const translationCache = useRef<Map<string, { name: string; desc: string }>>(new Map());
   
   // Save map position to localStorage whenever it changes
-  const saveMapPosition = (center: [number, number], zoom: number) => {
+  const saveMapPosition = useCallback((center: [number, number], zoom: number) => {
     try {
       localStorage.setItem('homemap_last_center', JSON.stringify(center));
       localStorage.setItem('homemap_last_zoom', JSON.stringify(zoom));
     } catch (error) {
       console.error('Failed to save map position:', error);
     }
-  };
+  }, []);
 
 
   // Load events from database with throttling to prevent map crashes
