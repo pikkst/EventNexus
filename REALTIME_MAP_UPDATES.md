@@ -65,6 +65,30 @@ setTimeout(() => {
 }, 5000);
 ```
 
+### 5. **Sound Notifications** 🔊 (NEW)
+- Toggle button with speaker icon in map controls (right side)
+- Pleasant sine wave notification sound (800Hz, 0.5s)
+- Web Audio API for browser-native sound
+- Preference saved to localStorage
+- Default: Enabled
+- Plays when new event appears nearby
+
+### 6. **Auto-Pan to New Events** 🧭 (NEW)
+- Toggle button with compass icon in map controls
+- Automatically flies to new event location with smooth animation
+- 1.5 second transition duration
+- Zoom level: 14 (detailed street view)
+- Preference saved to localStorage
+- Default: Disabled (user opt-in)
+
+### 7. **Nearby New Events Counter** 📍 (NEW)
+- Badge shows "X New Events Near You!" when events appear within search radius
+- Clickable badge flies to latest nearby event
+- Uses Haversine formula for accurate distance calculation
+- Auto-updates as new events arrive
+- Purple gradient design with Radar icon
+- Positioned below live update toast
+
 ## User Experience
 
 ### For Visitors
@@ -78,6 +102,13 @@ setTimeout(() => {
    - Toast notification at top
    - Animated marker with "NEW" badge
    - No manual refresh needed!
+5. **Interactive controls** (NEW):
+   - 🔊 **Sound toggle**: Enable/disable notification sounds (green = on)
+   - 🧭 **Auto-pan toggle**: Fly to new events automatically (amber = on)
+   - 📍 **Nearby badge**: Click to jump to latest nearby event
+6. **Proximity alerts**:
+   - "X New Events Near You!" badge appears for events within search radius
+   - Click badge to view latest nearby event with smooth fly-to animation
 
 ### For Event Creators
 - Create event → instantly visible to all map viewers
@@ -132,6 +163,18 @@ All animations are hardware-accelerated via CSS transforms:
    - Updated `eventIcon()` to accept `isNew` parameter
    - Updated marker rendering to pass animation flag
    - Added live update toast notification UI
+   - **NEW**: Added `soundEnabled` state with localStorage persistence
+   - **NEW**: Added `autoPanEnabled` state with localStorage persistence
+   - **NEW**: Added `nearbyNewEventsCount` and `nearbyNewEvents` state
+   - **NEW**: Added `mapRef` to access Leaflet map instance
+   - **NEW**: Added `playNotificationSound()` using Web Audio API
+   - **NEW**: Added `calculateDistance()` Haversine formula
+   - **NEW**: Added `toggleSound()` and `toggleAutoPan()` handlers
+   - **NEW**: Updated real-time subscription to play sound, check proximity, and auto-pan
+   - **NEW**: Added sound toggle button (speaker icon)
+   - **NEW**: Added auto-pan toggle button (compass icon)
+   - **NEW**: Added nearby events counter badge with click handler
+   - **NEW**: Updated `MapEffects` to accept and set `mapRef`
 
 2. **[styles/tailwind.css](styles/tailwind.css)**
    - Added `pulse-in` keyframe animation
@@ -171,9 +214,9 @@ All animations are hardware-accelerated via CSS transforms:
 ## Future Enhancements
 
 ### Phase 2 Ideas
-- [ ] Sound notification toggle for new events
-- [ ] Map auto-pan to new event location (optional)
-- [ ] "X new events near you" counter badge
+- [x] Sound notification toggle for new events ✅ **IMPLEMENTED**
+- [x] Map auto-pan to new event location (optional) ✅ **IMPLEMENTED**
+- [x] "X new events near you" counter badge ✅ **IMPLEMENTED**
 - [ ] Event categories in real-time filter
 - [ ] Spatial subscription (only visible map bounds)
 - [ ] WebSocket reconnection toast

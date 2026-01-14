@@ -33,10 +33,18 @@ interface MapEffectsProps {
   center: [number, number];
   isFollowing: boolean;
   onMapMove?: (center: [number, number], zoom: number) => void;
+  mapRef?: React.MutableRefObject<any>;
 }
 
-const MapEffects = ({ center, isFollowing, onMapMove }: MapEffectsProps) => {
+const MapEffects = ({ center, isFollowing, onMapMove, mapRef }: MapEffectsProps) => {
   const map = useMap();
+  
+  // Expose map instance to parent via ref
+  useEffect(() => {
+    if (mapRef) {
+      mapRef.current = map;
+    }
+  }, [map, mapRef]);
   
   useEffect(() => {
     setTimeout(() => { map.invalidateSize(); }, 100);
@@ -128,6 +136,80 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
   const [liveUpdateCount, setLiveUpdateCount] = useState(0); // Track how many live updates received
   
+  // New features: Sound, auto-pan, nearby counter
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('homemap_sound_enabled');
+      return saved !== null ? JSON.parse(saved) : true; // Default: enabled
+    } catch {
+      return true;
+    }
+  });
+  
+  const [autoPanEnabled, setAutoPanEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('homemap_autopan_enabled');
+      return saved !== null ? JSON.parse(saved) : false; // Default: disabled
+    } catch {
+      return false;
+    }
+  });
+  
+  const [nearbyNewEventsCount, setNearbyNewEventsCount] = useState(0);
+  const [nearbyNewEvents, setNearbyNewEvents] = useState<EventNexusEvent[]>([]);
+  const mapRef = useRef<any>(null);
+  
+  // Play notification sound
+  const playNotificationSound = useCallback(() => {
+    if (!soundEnabled) return;
+    try {
+      // Use Web Audio API for a pleasant notification sound
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800; // Hz
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (error) {
+      console.error('Failed to play notification sound:', error);
+    }
+  }, [soundEnabled]);
+  
+  // Calculate distance between two coordinates (Haversine formula)
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+  
+  // Toggle sound preference
+  const toggleSound = useCallback(() => {
+    const newValue = !soundEnabled;
+    setSoundEnabled(newValue);
+    localStorage.setItem('homemap_sound_enabled', JSON.stringify(newValue));
+  }, [soundEnabled]);
+  
+  // Toggle auto-pan preference
+  const toggleAutoPan = useCallback(() => {
+    const newValue = !autoPanEnabled;
+    setAutoPanEnabled(newValue);
+    localStorage.setItem('homemap_autopan_enabled', JSON.stringify(newValue));
+  }, [autoPanEnabled]);
+  
   // Save map position to localStorage whenever it changes
   const saveMapPosition = useCallback((center: [number, number], zoom: number) => {
     try {
@@ -213,6 +295,29 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
             setNewEventIds(prev => new Set(prev).add(newEvent.id));
             setLiveUpdateCount(c => c + 1);
             
+            // Play notification sound
+            playNotificationSound();
+            
+            // Check if event is nearby (within search radius)
+            const distance = calculateDistance(
+              userLocation[0],
+              userLocation[1],
+              newEvent.location.lat,
+              newEvent.location.lng
+            );
+            
+            if (distance <= searchRadius) {
+              setNearbyNewEvents(prev => [...prev, newEvent]);
+              setNearbyNewEventsCount(c => c + 1);
+            }
+            
+            // Auto-pan to new event if enabled
+            if (autoPanEnabled && mapRef.current) {
+              mapRef.current.flyTo([newEvent.location.lat, newEvent.location.lng], 14, {
+                duration: 1.5
+              });
+            }
+            
             // Remove animation flag after 5 seconds
             setTimeout(() => {
               setNewEventIds(prev => {
@@ -262,7 +367,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       console.log('🔴 Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, []); // Empty deps - subscribe once on mount
+  }, [playNotificationSound, calculateDistance, userLocation, searchRadius, autoPanEnabled]);
 
   // Auto-hide live update toast after 3 seconds
   useEffect(() => {
@@ -505,6 +610,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
             center={userLocation} 
             isFollowing={isFollowingUser}
             onMapMove={saveMapPosition}
+            mapRef={mapRef}
           />
           <Circle center={userLocation} radius={searchRadius * 1000} pathOptions={{ fillColor: '#6366f1', fillOpacity: 0.03, color: '#6366f1', weight: 1, dashArray: '8, 12' }} />
           <Marker position={userLocation} icon={userIcon} />
@@ -617,6 +723,35 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           </div>
         </div>
       )}
+      
+      {/* Nearby New Events Counter Badge */}
+      {nearbyNewEventsCount > 0 && (
+        <div className="absolute top-32 left-1/2 -translate-x-1/2 z-[500]">
+          <button
+            onClick={() => {
+              if (nearbyNewEvents.length > 0 && mapRef.current) {
+                const latest = nearbyNewEvents[nearbyNewEvents.length - 1];
+                mapRef.current.flyTo([latest.location.lat, latest.location.lng], 15, {
+                  duration: 1.5
+                });
+                setSelectedEvent(latest);
+                setEventCardExpanded(true);
+              }
+            }}
+            className={`${
+              theme === 'light'
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-700 text-white'
+            } px-5 py-2.5 rounded-2xl shadow-2xl border-2 border-white flex items-center gap-2 hover:scale-105 transition-transform`}
+          >
+            <Radar className="w-5 h-5 animate-pulse" aria-hidden="true" />
+            <span className="text-sm font-black uppercase tracking-widest">
+              {nearbyNewEventsCount} New Event{nearbyNewEventsCount > 1 ? 's' : ''} Near You!
+            </span>
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       {/* Overlays */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-2 sm:px-4 z-[400] space-y-3">
@@ -682,6 +817,50 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         >
           {theme === 'light' ? <Moon className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" /> : <Sun className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />}
         </button>
+        
+        {/* Sound Notification Toggle */}
+        <button 
+          onClick={toggleSound} 
+          className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border relative ${
+            soundEnabled 
+              ? 'bg-emerald-600 text-white border-emerald-500' 
+              : theme === 'light' 
+                ? 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50' 
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+          }`}
+          title={soundEnabled ? 'Disable notification sounds' : 'Enable notification sounds'}
+          aria-label={soundEnabled ? 'Sound notifications enabled' : 'Sound notifications disabled'}
+          aria-pressed={soundEnabled}
+        >
+          {soundEnabled ? (
+            <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+            </svg>
+          )}
+        </button>
+        
+        {/* Auto-Pan Toggle */}
+        <button 
+          onClick={toggleAutoPan} 
+          className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${
+            autoPanEnabled 
+              ? 'bg-amber-600 text-white border-amber-500' 
+              : theme === 'light' 
+                ? 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50' 
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+          }`}
+          title={autoPanEnabled ? 'Disable auto-pan to new events' : 'Enable auto-pan to new events'}
+          aria-label={autoPanEnabled ? 'Auto-pan enabled' : 'Auto-pan disabled'}
+          aria-pressed={autoPanEnabled}
+        >
+          <Compass className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />
+        </button>
+        
         <button onClick={() => setIsFollowingUser(!isFollowingUser)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${isFollowingUser ? 'bg-indigo-600 text-white border-indigo-500' : theme === 'light' ? 'bg-white text-slate-400 border-slate-200' : 'bg-slate-900 text-slate-400 border-slate-800'}`} aria-label={isFollowingUser ? "Stop following your location" : "Follow your location on map"} aria-pressed={isFollowingUser}>
           <LocateFixed className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />
         </button>
