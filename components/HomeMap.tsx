@@ -382,6 +382,76 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     };
   }, []);
 
+  // Fallback polling: Check for new events every 30 seconds
+  // This catches AI-created events that might not trigger realtime
+  useEffect(() => {
+    console.log('📡 Starting fallback event polling (30s interval)...');
+    
+    let pollTimeout: NodeJS.Timeout;
+    const pollForNewEvents = async () => {
+      try {
+        const { data: newData, error } = await supabase
+          .from('events')
+          .select('*')
+          .eq('location', null, { negate: true }) // Only events with location
+          .order('created_at', { ascending: false })
+          .limit(200);
+
+        if (error) {
+          console.error('❌ Polling error:', error);
+          return;
+        }
+
+        if (!newData) return;
+
+        // Find events that exist in new data but not in current state
+        const newEventIds = new Set(newData.map((e: any) => e.id));
+        const currentEventIds = new Set(events.map((e: any) => e.id));
+        
+        let addedCount = 0;
+        newData.forEach((newEvent: any) => {
+          if (!currentEventIds.has(newEvent.id)) {
+            console.log('📡 POLL: Found new event:', newEvent.name);
+            setEvents(prev => [...prev, newEvent as EventNexusEvent]);
+            setNewEventIds(prev => new Set(prev).add(newEvent.id));
+            setLiveUpdateCount(c => c + 1);
+            addedCount++;
+            
+            // Play sound for polled events too
+            playNotificationSound();
+            
+            // Remove animation after 5 seconds
+            setTimeout(() => {
+              setNewEventIds(prev => {
+                const next = new Set(prev);
+                next.delete(newEvent.id);
+                return next;
+              });
+            }, 5000);
+          }
+        });
+
+        if (addedCount > 0) {
+          console.log(`📡 Poll found ${addedCount} new event(s)`);
+        }
+      } catch (error) {
+        console.error('Poll error:', error);
+      }
+
+      // Schedule next poll
+      pollTimeout = setTimeout(pollForNewEvents, 30000); // 30 seconds
+    };
+
+    // Start polling
+    pollTimeout = setTimeout(pollForNewEvents, 30000);
+
+    // Cleanup
+    return () => {
+      clearTimeout(pollTimeout);
+      console.log('📡 Stopping fallback polling');
+    };
+  }, [events, playNotificationSound]);
+
   // Auto-hide live update toast after 3 seconds
   useEffect(() => {
     if (liveUpdateCount > 0) {
