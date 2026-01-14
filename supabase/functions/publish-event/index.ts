@@ -340,6 +340,8 @@ async function getCityCenterCoordinates(supabaseClient: any, cityId: string): Pr
 }
 
 // Gemini API image generation (matches geminiService.ts logic)
+// NOTE: Currently PAUSED in AI pipeline to reduce costs (see line ~756)
+// Function remains available for manual frontend usage via geminiService.ts
 async function generateEventImage(
   eventName: string, 
   category: string, 
@@ -752,8 +754,10 @@ serve(async (req) => {
         
         const locationPoint = `POINT(${eventData.location_lng} ${eventData.location_lat})`
 
-        // Generate AI image if no image URL provided
+        // PAUSED: AI image generation disabled to reduce costs in AI pipeline
+        // Manual user posts can still use AI image generation in the frontend
         let eventImage = eventData.image_url || null
+        /* COST OPTIMIZATION: Image generation paused
         if (!eventImage) {
           console.log(`Generating AI image for event: ${eventData.name}`)
           const base64Image = await generateEventImage(
@@ -780,6 +784,7 @@ serve(async (req) => {
             console.log(`✗ Failed to generate AI image for: ${eventData.name}`)
           }
         }
+        */
 
         // Build description with better formatting
         let finalDescription = eventData.description || 'Event details to be announced.';

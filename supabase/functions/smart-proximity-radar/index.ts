@@ -95,9 +95,11 @@ serve(async (req) => {
     }
 
     // Filter by interested categories if specified
+    // If user has selected specific categories, only notify about those
+    // If no categories selected, notify about all nearby events
     const filteredEvents = interestedCategories.length > 0
       ? nearbyEvents.filter((event: EventWithTickets) => 
-          interestedCategories.includes(event.event_data.category)
+          interestedCategories.includes(event.event_data?.category)
         )
       : nearbyEvents
 
