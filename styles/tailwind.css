@@ -4,3 +4,49 @@
 
 /* Custom global styles */
 body { font-family: 'Inter', sans-serif; }
+
+/* Real-time map animation for new events */
+@keyframes pulse-in {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes marker-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+  }
+}
+
+.new-event-marker {
+  animation: pulse-in 0.6s ease-out, marker-pulse 2s ease-in-out 0.6s 3;
+}
+
+/* Toast notification for live updates */
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.live-update-toast {
+  animation: slide-down 0.3s ease-out;
+}

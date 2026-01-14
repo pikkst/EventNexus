@@ -14,6 +14,7 @@ import { getEvents } from '../services/dbService';
 import { translateDescription, translateDescriptionBatch } from '../services/geminiService';
 import { filterActiveEvents } from '../utils/eventUtils';
 import { generateMapSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
+import { supabase } from '../services/supabase';
 
 // Distance calculation helper (Haversine formula)
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -123,6 +124,10 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const [eventCardExpanded, setEventCardExpanded] = useState(true); // Mobile: track if card is expanded
   const translationCache = useRef<Map<string, { name: string; desc: string }>>(new Map());
   
+  // Track newly added events for animation (Set of event IDs)
+  const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
+  const [liveUpdateCount, setLiveUpdateCount] = useState(0); // Track how many live updates received
+  
   // Save map position to localStorage whenever it changes
   const saveMapPosition = useCallback((center: [number, number], zoom: number) => {
     try {
@@ -184,6 +189,90 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     };
     loadEvents();
   }, [propEvents]);
+
+  // Real-time subscription: Listen for new/updated/deleted events
+  useEffect(() => {
+    console.log('🔴 Setting up real-time event subscription...');
+    
+    const channel = supabase
+      .channel('public:events')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'events'
+        },
+        (payload) => {
+          console.log('🆕 New event added:', payload.new);
+          const newEvent = payload.new as EventNexusEvent;
+          
+          // Only add if active and has valid location
+          if (newEvent.location && newEvent.location.coordinates) {
+            setEvents(prev => [...prev, newEvent]);
+            setNewEventIds(prev => new Set(prev).add(newEvent.id));
+            setLiveUpdateCount(c => c + 1);
+            
+            // Remove animation flag after 5 seconds
+            setTimeout(() => {
+              setNewEventIds(prev => {
+                const next = new Set(prev);
+                next.delete(newEvent.id);
+                return next;
+              });
+            }, 5000);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'events'
+        },
+        (payload) => {
+          console.log('🔄 Event updated:', payload.new);
+          const updatedEvent = payload.new as EventNexusEvent;
+          
+          setEvents(prev => prev.map(e => 
+            e.id === updatedEvent.id ? updatedEvent : e
+          ));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'events'
+        },
+        (payload) => {
+          console.log('🗑️ Event deleted:', payload.old);
+          const deletedId = (payload.old as any).id;
+          
+          setEvents(prev => prev.filter(e => e.id !== deletedId));
+          setLiveUpdateCount(c => c + 1);
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log('🔴 Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, []); // Empty deps - subscribe once on mount
+
+  // Auto-hide live update toast after 3 seconds
+  useEffect(() => {
+    if (liveUpdateCount > 0) {
+      const timer = setTimeout(() => {
+        setLiveUpdateCount(0);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [liveUpdateCount]);
 
   useEffect(() => {
     if ("geolocation" in navigator) {
@@ -360,15 +449,17 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     })[0];
   }, [events, activeCategory, searchRadius, userLocation]);
 
-  const eventIcon = (price: number, isFeatured: boolean) => {
+  const eventIcon = (price: number, isFeatured: boolean, isNew: boolean = false) => {
     const priceDisplay = price === 0 ? 'FREE' : `FROM €${price}`;
+    const newMarkerClass = isNew ? 'new-event-marker' : '';
     
     return L.divIcon({
       className: 'custom-marker',
       html: `
-        <div class="flex flex-col items-center gap-1">
+        <div class="flex flex-col items-center gap-1 ${newMarkerClass}">
           <div class="p-2.5 rounded-2xl ${isFeatured ? 'bg-gradient-to-br from-yellow-400 to-orange-500 animate-pulse' : 'bg-indigo-600'} border-2 border-white text-white shadow-2xl relative">
             ${isFeatured ? '<div class="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>' : ''}
+            ${isNew ? '<div class="absolute -top-2 -right-2 bg-green-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-white">NEW</div>' : ''}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           </div>
           <div class="${isFeatured ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white' : 'bg-white text-indigo-600'} text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full shadow-lg border ${isFeatured ? 'border-yellow-200' : 'border-indigo-100'}">
@@ -420,12 +511,13 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           {groupedEvents.map((group, idx) => {
             const primary = group.events[0]; // soonest event at this location
             const moreCount = group.events.length - 1;
+            const isNewEvent = newEventIds.has(primary.id);
 
             return (
               <Marker
                 key={`${group.address}-${idx}`}
                 position={[group.lat, group.lng]}
-                icon={eventIcon(primary.price, primary.isFeatured || false)}
+                icon={eventIcon(primary.price, primary.isFeatured || false, isNewEvent)}
                 eventHandlers={{ click: () => { setSelectedEvent(primary); setIsFollowingUser(false); setEventCardExpanded(true); } }}
               >
                 <Popup minWidth={260} className="rounded-xl">
@@ -507,6 +599,22 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                  }`}>{calculateDistance(userLocation[0], userLocation[1], nearestEvent.location.lat, nearestEvent.location.lng).toFixed(1)} km away</p>
               </div>
            </button>
+        </div>
+      )}
+
+      {/* Live Update Toast Notification */}
+      {liveUpdateCount > 0 && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[500] live-update-toast">
+          <div className={`${
+            theme === 'light'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
+              : 'bg-gradient-to-r from-green-600 to-emerald-700 text-white'
+          } px-4 py-2 rounded-2xl shadow-2xl border-2 border-white flex items-center gap-2`}>
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+            <span className="text-sm font-black uppercase tracking-widest">
+              🎉 Live Update! Map Refreshed
+            </span>
+          </div>
         </div>
       )}
 
