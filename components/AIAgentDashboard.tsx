@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Activity,
   Bot,
@@ -66,6 +66,19 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   // Pipeline pause/stop state
   const [pipelineShouldStop, setPipelineShouldStop] = useState(false);
   const [pipelinePaused, setPipelinePaused] = useState(false);
+  
+  // Refs for pipeline control (used during async operations to track real-time state changes)
+  const pipelineShouldStopRef = useRef(false);
+  const pipelinePausedRef = useRef(false);
+  
+  // Update refs whenever state changes
+  useEffect(() => {
+    pipelineShouldStopRef.current = pipelineShouldStop;
+  }, [pipelineShouldStop]);
+  
+  useEffect(() => {
+    pipelinePausedRef.current = pipelinePaused;
+  }, [pipelinePaused]);
   
   // City filtering and sorting state
   const [citySearchQuery, setCitySearchQuery] = useState('');
@@ -1037,8 +1050,8 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
 
       // Process each city through full pipeline
       for (let i = 0; i < citiesToProcess.length; i++) {
-        // Check if pipeline should stop
-        if (pipelineShouldStop) {
+        // Check if pipeline should stop (use ref for real-time state)
+        if (pipelineShouldStopRef.current) {
           console.log('🛑 Pipeline stop requested by user');
           setPipelineProgress(prev => ({
             ...prev,
@@ -1048,12 +1061,13 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
             fullLogs: [...prev.fullLogs, '🛑 Pipeline stopped by user']
           }));
           setPipelineShouldStop(false);
+          pipelineShouldStopRef.current = false;
           setIsProcessing(false);
-          return;
+          break; // Break out of the loop
         }
 
-        // Handle pause
-        if (pipelinePaused) {
+        // Handle pause (use ref for real-time state)
+        while (pipelinePausedRef.current) {
           setPipelineProgress(prev => ({
             ...prev,
             currentStep: '⏸️ Paused by user - waiting to resume...',
@@ -1061,8 +1075,6 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
           }));
           // Wait and check again
           await new Promise(resolve => setTimeout(resolve, 1000));
-          i--; // Re-process this city when resumed
-          continue;
         }
 
         const city = citiesToProcess[i];
@@ -1277,7 +1289,16 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
     
     if (!confirmed) return;
 
+    console.log('🛑 Stop button clicked - setting stop flag');
     setPipelineShouldStop(true);
+    pipelineShouldStopRef.current = true;
+    
+    // Also unpause if paused
+    if (pipelinePaused) {
+      setPipelinePaused(false);
+      pipelinePausedRef.current = false;
+    }
+    
     setPipelineProgress(prev => ({
       ...prev,
       currentStep: '🛑 Stopping...',
