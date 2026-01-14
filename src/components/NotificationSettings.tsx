@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bell, 
   MapPin, 
@@ -22,20 +22,36 @@ interface NotificationSettingsProps {
 
 const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user, onUpdatePrefs }) => {
   const prefs = user.notification_prefs;
+  const [showSavedIndicator, setShowSavedIndicator] = useState(false);
 
   const toggleCategory = (cat: string) => {
     const newCats = prefs.interestedCategories.includes(cat)
       ? prefs.interestedCategories.filter(c => c !== cat)
       : [...prefs.interestedCategories, cat];
     onUpdatePrefs({ ...prefs, interestedCategories: newCats });
+    showSaved();
   };
 
   const updateSetting = (key: keyof NotificationPreferences, value: any) => {
     onUpdatePrefs({ ...prefs, [key]: value });
+    showSaved();
+  };
+
+  const showSaved = () => {
+    setShowSavedIndicator(true);
+    setTimeout(() => setShowSavedIndicator(false), 2000);
   };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 md:py-12 space-y-8 md:space-y-12 animate-in fade-in duration-700">
+      {/* Saved indicator */}
+      {showSavedIndicator && (
+        <div className="fixed top-20 right-4 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-in slide-in-from-top-5 z-50">
+          <Check className="w-5 h-5" />
+          <span className="font-bold">Saved!</span>
+        </div>
+      )}
+      
       <div className="space-y-2">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-white">Notification <span className="text-indigo-500">Settings</span></h1>
         <p className="text-slate-400 font-medium">Manage your Nexus Radar preferences and app notifications.</p>
@@ -67,19 +83,20 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({ user, onUpd
               <div className="space-y-4">
                 <div className="flex justify-between items-end px-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detection Radius</label>
-                  <span className="text-xl font-black text-white">{prefs.alertRadius} km</span>
+                  <span className="text-xl font-black text-white">{prefs.alertRadius < 1 ? (prefs.alertRadius * 1000).toFixed(0) + 'm' : prefs.alertRadius + ' km'}</span>
                 </div>
                 <input 
                   type="range"
-                  min="1"
-                  max="50"
+                  min="0.1"
+                  max="5"
+                  step="0.1"
                   value={prefs.alertRadius}
-                  onChange={(e) => updateSetting('alertRadius', parseInt(e.target.value))}
+                  onChange={(e) => updateSetting('alertRadius', parseFloat(e.target.value))}
                   className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                 />
                 <div className="flex justify-between text-[9px] font-bold text-slate-600 uppercase">
-                  <span>High Precision (1km)</span>
-                  <span>Wide Reach (50km)</span>
+                  <span>High Precision (100m)</span>
+                  <span>Wide Reach (5km)</span>
                 </div>
               </div>
 

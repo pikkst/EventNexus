@@ -150,13 +150,13 @@ fun RadarScreen() {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("DETECTION RADIUS", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                        Text("${detectionRadius.toInt()} km", style = MaterialTheme.typography.labelSmall, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(if (detectionRadius < 1f) "${(detectionRadius * 1000).toInt()} m" else "${detectionRadius.toInt()} km", style = MaterialTheme.typography.labelSmall, color = Color.White, fontWeight = FontWeight.Bold)
                     }
                     Slider(
                         value = detectionRadius,
                         onValueChange = { detectionRadius = it },
                         onValueChangeFinished = { saveSettings() },
-                        valueRange = 1f..50f,
+                        valueRange = 0.1f..5f,
                         colors = SliderDefaults.colors(
                             thumbColor = Color(0xFF6366F1),
                             activeTrackColor = Color(0xFF6366F1),
@@ -167,8 +167,8 @@ fun RadarScreen() {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("HIGH PRECISION (1KM)", style = MaterialTheme.typography.labelSmall, color = Color.DarkGray, fontSize = 10.sp)
-                        Text("WIDE REACH (50KM)", style = MaterialTheme.typography.labelSmall, color = Color.DarkGray, fontSize = 10.sp)
+                        Text("HIGH PRECISION (100M)", style = MaterialTheme.typography.labelSmall, color = Color.DarkGray, fontSize = 10.sp)
+                        Text("WIDE REACH (5KM)", style = MaterialTheme.typography.labelSmall, color = Color.DarkGray, fontSize = 10.sp)
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))

@@ -559,7 +559,10 @@ const App: React.FC = () => {
       events.forEach(event => {
         if (notifiedEventIds.has(event.id)) return;
         if (!user.notification_prefs || 
-            !Array.isArray(user.notification_prefs.interestedCategories) ||
+            !Array.isArray(user.notification_prefs.interestedCategories)) return;
+        
+        // Only filter by categories if user has selected specific ones
+        if (user.notification_prefs.interestedCategories.length > 0 &&
             !user.notification_prefs.interestedCategories.includes(event.category)) return;
 
         const distance = getDistance(latitude, longitude, event.location.lat, event.location.lng);
@@ -729,9 +732,20 @@ const App: React.FC = () => {
     });
   };
 
-  const handleUpdatePrefs = (newPrefs: any) => {
+  const handleUpdatePrefs = async (newPrefs: any) => {
     if (!user) return;
+    
+    // Update local state immediately for responsive UI
     setUser(prev => prev ? ({ ...prev, notification_prefs: newPrefs }) : null);
+    
+    // Save to database
+    try {
+      await updateUser(user.id, { notification_prefs: newPrefs });
+      console.log('✅ Notification preferences saved to database');
+    } catch (error) {
+      console.error('❌ Failed to save notification preferences:', error);
+      // Optionally: Show error toast to user
+    }
   };
 
   return (
