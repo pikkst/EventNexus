@@ -63,6 +63,10 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   // Guardian test state
   const [isTestingGuardian, setIsTestingGuardian] = useState(false);
   
+  // Pipeline pause/stop state
+  const [pipelineShouldStop, setPipelineShouldStop] = useState(false);
+  const [pipelinePaused, setPipelinePaused] = useState(false);
+  
   // City filtering and sorting state
   const [citySearchQuery, setCitySearchQuery] = useState('');
   const [cityFilterCountry, setCityFilterCountry] = useState<string>('all');
@@ -1033,6 +1037,34 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
 
       // Process each city through full pipeline
       for (let i = 0; i < citiesToProcess.length; i++) {
+        // Check if pipeline should stop
+        if (pipelineShouldStop) {
+          console.log('🛑 Pipeline stop requested by user');
+          setPipelineProgress(prev => ({
+            ...prev,
+            isRunning: false,
+            currentStep: 'Stopped by user',
+            recentLogs: [...prev.recentLogs.slice(-9), '🛑 Pipeline stopped by user'],
+            fullLogs: [...prev.fullLogs, '🛑 Pipeline stopped by user']
+          }));
+          setPipelineShouldStop(false);
+          setIsProcessing(false);
+          return;
+        }
+
+        // Handle pause
+        if (pipelinePaused) {
+          setPipelineProgress(prev => ({
+            ...prev,
+            currentStep: '⏸️ Paused by user - waiting to resume...',
+            recentLogs: [...prev.recentLogs.slice(-9), '⏸️ Pipeline paused']
+          }));
+          // Wait and check again
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          i--; // Re-process this city when resumed
+          continue;
+        }
+
         const city = citiesToProcess[i];
         console.log(`\n🏙️ [${i + 1}/${citiesToProcess.length}] Processing: ${city.city_name}, ${city.country}`);
 
@@ -1221,6 +1253,37 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
     } finally {
       setIsProcessing(false);
     }
+  }
+
+  // Pause/Resume pipeline
+  function handlePausePipeline() {
+    setPipelinePaused(!pipelinePaused);
+    setPipelineProgress(prev => ({
+      ...prev,
+      currentStep: !pipelinePaused ? '⏸️ Paused' : 'Resuming...',
+      recentLogs: [...prev.recentLogs.slice(-9), !pipelinePaused ? '⏸️ Pipeline paused' : '▶️ Pipeline resuming'],
+      fullLogs: [...prev.fullLogs, !pipelinePaused ? '⏸️ Pipeline paused by user' : '▶️ Pipeline resumed by user']
+    }));
+  }
+
+  // Stop pipeline
+  function handleStopPipeline() {
+    const confirmed = confirm(
+      '⚠️ Stop the running pipeline?\n\n' +
+      'Current progress will be saved, but the pipeline will halt immediately.\n\n' +
+      'You can resume later or start fresh.\n\n' +
+      'Continue?'
+    );
+    
+    if (!confirmed) return;
+
+    setPipelineShouldStop(true);
+    setPipelineProgress(prev => ({
+      ...prev,
+      currentStep: '🛑 Stopping...',
+      recentLogs: [...prev.recentLogs.slice(-9), '🛑 Stopping pipeline...'],
+      fullLogs: [...prev.fullLogs, '🛑 Pipeline stop requested by user']
+    }));
   }
 
   // Download pipeline logs as JSON (includes both pipeline execution and Supabase agent logs)
@@ -1834,9 +1897,42 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                     <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
                     <h3 className="text-lg font-semibold text-blue-900">Pipeline Running</h3>
                   </div>
-                  <span className="text-sm font-medium text-blue-700">
-                    {pipelineProgress.currentCityIndex} / {pipelineProgress.totalCities} cities
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-blue-700">
+                      {pipelineProgress.currentCityIndex} / {pipelineProgress.totalCities} cities
+                    </span>
+                    {/* Pause/Resume Button */}
+                    <button
+                      onClick={handlePausePipeline}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                        pipelinePaused
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-orange-600 text-white hover:bg-orange-700'
+                      }`}
+                      title={pipelinePaused ? 'Resume pipeline' : 'Pause pipeline'}
+                    >
+                      {pipelinePaused ? (
+                        <>
+                          <Play className="w-4 h-4" />
+                          Resume
+                        </>
+                      ) : (
+                        <>
+                          <Pause className="w-4 h-4" />
+                          Pause
+                        </>
+                      )}
+                    </button>
+                    {/* Stop Button */}
+                    <button
+                      onClick={handleStopPipeline}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-all"
+                      title="Stop pipeline immediately"
+                    >
+                      <X className="w-4 h-4" />
+                      Stop
+                    </button>
+                  </div>
                 </div>
 
                 {/* Progress Bar */}
@@ -1854,8 +1950,15 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                 </div>
 
                 {/* Current Step */}
-                <div className="mb-3 text-sm text-gray-700">
-                  <span className="font-medium">Current Step:</span> {pipelineProgress.currentStep}
+                <div className="mb-3 text-sm text-gray-700 flex items-center justify-between">
+                  <div>
+                    <span className="font-medium">Current Step:</span> {pipelineProgress.currentStep}
+                  </div>
+                  {pipelinePaused && (
+                    <div className="px-3 py-1 bg-orange-600 text-white text-xs font-semibold rounded-full animate-pulse">
+                      ⏸️ PAUSED
+                    </div>
+                  )}
                 </div>
 
                 {/* Stats Grid */}
