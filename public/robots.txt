@@ -1,31 +1,25 @@
 # EventNexus - robots.txt for Google crawling
 User-agent: *
 Allow: /
+# Block admin and user-specific private pages only
 Disallow: /admin
 Disallow: /admin/*
-Disallow: /profile
-Disallow: /dashboard
-Disallow: /notifications
 
 # Crawl optimization
 Crawl-delay: 1
 
-# Sitemap
-Sitemap: https://www.eventnexus.eu/sitemap.xml
+# Sitemaps
+Sitemap: https://www.eventnexus.eu/sitemap-index.xml
 
 # Allow specific crawlers
 User-agent: Googlebot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
-Disallow: /profile
-Disallow: /dashboard
 Crawl-delay: 0
 
 User-agent: Bingbot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
-Disallow: /profile
-Disallow: /dashboard
 Crawl-delay: 1
