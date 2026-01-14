@@ -1856,23 +1856,87 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
   }
 
   async function handleDeleteCity(cityId: string) {
-    if (!confirm('Are you sure you want to delete this city? This will also remove all associated event sources.')) {
-      return;
-    }
-
     try {
-      const { error } = await supabase
+      // First, check how many events this city has
+      const { count: eventCount, error: countError } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .eq('city_id', cityId);
+
+      if (countError) {
+        console.error('Error checking events:', countError);
+      }
+
+      // Find city info for the confirmation dialog
+      const city = cities.find(c => c.city_id === cityId);
+      const cityName = city ? `${city.city_name}, ${city.country}` : 'this city';
+
+      let confirmMessage = `⚠️ Delete ${cityName}?\n\n`;
+      
+      if (eventCount && eventCount > 0) {
+        confirmMessage += `This city has ${eventCount} published event(s).\n\n`;
+        confirmMessage += `Deleting will:\n`;
+        confirmMessage += `✗ Remove ${eventCount} published event(s)\n`;
+        confirmMessage += `✗ Remove all event sources\n`;
+        confirmMessage += `✗ Remove all AI agent data\n`;
+        confirmMessage += `✗ Remove all parsed events\n\n`;
+        confirmMessage += `⚠️ This action CANNOT be undone!\n\n`;
+        confirmMessage += `Continue?`;
+      } else {
+        confirmMessage += `This will remove:\n`;
+        confirmMessage += `✗ All event sources\n`;
+        confirmMessage += `✗ All AI agent data\n`;
+        confirmMessage += `✗ All parsed events (if any)\n\n`;
+        confirmMessage += `Continue?`;
+      }
+
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+
+      // If city has events, we need to delete them first (CASCADE)
+      if (eventCount && eventCount > 0) {
+        console.log(`Deleting ${eventCount} events for city ${cityId}...`);
+        
+        const { error: eventsDeleteError } = await supabase
+          .from('events')
+          .delete()
+          .eq('city_id', cityId);
+
+        if (eventsDeleteError) {
+          throw new Error(`Failed to delete events: ${eventsDeleteError.message}`);
+        }
+        
+        console.log(`✓ Deleted ${eventCount} events`);
+      }
+
+      // Delete event sources (should cascade to raw_events, parsed_events, etc.)
+      const { error: sourcesError } = await supabase
+        .from('event_sources')
+        .delete()
+        .eq('city_id', cityId);
+
+      if (sourcesError) {
+        console.warn('Failed to delete event sources:', sourcesError);
+        // Continue anyway, city_configs delete should cascade
+      }
+
+      // Finally, delete the city config
+      const { error: cityError } = await supabase
         .from('city_configs')
         .delete()
         .eq('city_id', cityId);
 
-      if (error) throw error;
+      if (cityError) throw cityError;
       
       await loadCities();
-      alert('City deleted successfully!');
+      await loadCityMetrics(); // Refresh metrics too
+      
+      alert(`✅ City deleted successfully!\n\n${eventCount ? `Removed ${eventCount} events and all associated data.` : 'Removed all associated data.'}`);
+      
     } catch (error: any) {
       console.error('Failed to delete city:', error);
-      alert(`Failed to delete city: ${error.message}`);
+      alert(`❌ Failed to delete city: ${error.message}\n\nPlease check the browser console for details or contact support.`);
     }
   }
 
