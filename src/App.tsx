@@ -656,6 +656,14 @@ const App: React.FC = () => {
   };
 
   const handleDeleteNotification = async (id: string) => {
+    // Radar notifications are client-side only (prefixed with "radar-")
+    // They don't exist in the database, so just remove from state
+    if (id.startsWith('radar-')) {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      return;
+    }
+    
+    // For database notifications, delete from Supabase
     const success = await deleteNotification(id);
     if (success) {
       setNotifications(prev => prev.filter(n => n.id !== id));
