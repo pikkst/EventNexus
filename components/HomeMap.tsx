@@ -374,13 +374,21 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         };
       } catch (error) {
         console.error('Error setting up realtime:', error);
+        return undefined;
       }
     };
 
+    // Call setupRealtime and store cleanup function
+    let cleanup: (() => void) | undefined;
+    setupRealtime().then(cleanupFn => {
+      cleanup = cleanupFn;
+    });
+
     return () => {
       isSubscribed = false;
+      cleanup?.();
     };
-  }, []);
+  }, [playNotificationSound, calculateDistance, userLocation, searchRadius, autoPanEnabled]);
 
   // Fallback polling: Check for new events every 30 seconds
   // This catches AI-created events that might not trigger realtime
