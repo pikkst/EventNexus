@@ -27,6 +27,69 @@ function getAddressCacheKey(address: string, country: string): string {
   return `${address.toLowerCase().trim()}|${country.toLowerCase().trim()}`
 }
 
+// Levenshtein distance for fuzzy matching (detect minor title variations)
+function levenshteinDistance(a: string, b: string): number {
+  const aLen = a.length
+  const bLen = b.length
+  const matrix: number[][] = []
+  
+  for (let i = 0; i <= bLen; i++) {
+    matrix[i] = [i]
+  }
+  for (let j = 0; j <= aLen; j++) {
+    matrix[0][j] = j
+  }
+  
+  for (let i = 1; i <= bLen; i++) {
+    for (let j = 1; j <= aLen; j++) {
+      if (b.charCodeAt(i - 1) === a.charCodeAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1]
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        )
+      }
+    }
+  }
+  
+  return matrix[bLen][aLen]
+}
+
+// Normalize title for comparison (remove extra spaces, punctuation, etc.)
+function normalizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\sáéíóúäöõ]/g, '') // Keep Estonian characters
+    .replace(/\s+/g, ' ') // Collapse multiple spaces
+    .trim()
+}
+
+// Normalize address for comparison
+function normalizeAddress(address: string): string {
+  return address
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// Calculate similarity score (0 to 1, where 1 is identical)
+function calculateSimilarity(str1: string, str2: string): number {
+  const normalized1 = normalizeTitle(str1)
+  const normalized2 = normalizeTitle(str2)
+  
+  if (normalized1 === normalized2) return 1.0
+  
+  const maxLen = Math.max(normalized1.length, normalized2.length)
+  if (maxLen === 0) return 1.0
+  
+  const distance = levenshteinDistance(normalized1, normalized2)
+  return 1.0 - (distance / maxLen)
+}
+
 // Upload base64 image to Supabase Storage and return public URL
 async function uploadImageToStorage(
   supabaseClient: any,
@@ -574,24 +637,50 @@ serve(async (req) => {
           .from('events')
           .select('id, name, date, location_point, status, location')
           .eq('city_id', cityId)
-          .eq('name', eventData.name)
           .eq('date', eventDateStr)
           .eq('status', 'active') // Only check active events
 
         if (existingEvents && existingEvents.length > 0) {
-          // Check if location also matches (same venue)
-          const existing = existingEvents[0]
-          const existingAddr = existing.location?.address || ''
-          const newAddr = eventData.location_address || ''
+          // CRITICAL: Check for duplicates with fuzzy matching on title + location
+          // This catches events with minor title variations (e.g., "Event" vs "Event " or AI-generated variations)
           
-          // Simple address similarity check (first 50 chars)
-          const isSameLocation = existingAddr.substring(0, 50).toLowerCase() === 
-                                 newAddr.substring(0, 50).toLowerCase()
+          let isDuplicate = false
+          let duplicateId = null
           
-          if (isSameLocation) {
-            // 🔧 Reduce log spam - only log once
+          for (const existing of existingEvents) {
+            // 1. Title similarity check (handle AI-generated minor variations)
+            const titleSimilarity = calculateSimilarity(eventData.name, existing.name)
+            const titleThreshold = 0.85 // 85% similarity = duplicate
+            
+            // 2. Address match (normalize before comparing)
+            const existingAddr = normalizeAddress(existing.location?.address || '')
+            const newAddr = normalizeAddress(eventData.location_address || '')
+            
+            // Use the first 100 chars after normalization for more robust matching
+            const addressMatch = (
+              existingAddr.substring(0, 100) === newAddr.substring(0, 100) ||
+              (existingAddr.length > 0 && existingAddr === newAddr)
+            )
+            
+            // 3. Time match (same date is enough for duplicate detection)
+            // Events on same date + similar title + same location = duplicate
+            if (titleSimilarity >= titleThreshold && addressMatch) {
+              isDuplicate = true
+              duplicateId = existing.id
+              console.log(`⊘ Duplicate detected: "${eventData.name}" matches "${existing.name}" (similarity: ${(titleSimilarity * 100).toFixed(1)}%)`)
+              break
+            }
+          }
+          
+          if (isDuplicate) {
+            // Mark as duplicate and skip
             console.log(`⊘ Duplicate: "${eventData.name}" on ${eventDateStr}`)
-            await log(supabaseClient, 'publish-event', 'info', 'Duplicate event skipped', { event: eventData.name, date: eventDateStr, location: newAddr }, { city_id: eventCityId, event_id: existing.id });
+            await log(supabaseClient, 'publish-event', 'info', 'Duplicate event skipped', { 
+              event: eventData.name, 
+              date: eventDateStr, 
+              location: eventData.location_address,
+              duplicateId: duplicateId
+            }, { city_id: eventCityId, event_id: duplicateId });
             results.skipped++
             
             // 🔧 Mark raw_event as skipped_duplicate to avoid reprocessing
@@ -603,16 +692,11 @@ serve(async (req) => {
             // Mark parsed_event as already published
             await supabaseClient
               .from('event_confidence')
-              .update({ event_id: existing.id })
+              .update({ event_id: duplicateId })
               .eq('parsed_event_id', parsedEvent.id)
             
             continue // Skip this event completely
           }
-        }
-
-        // If we reach here, it's either: no duplicate, or different location (allowed)
-        if (existingEvents && existingEvents.length > 0) {
-          console.log(`✓ Same name/date but different location - creating separate event`)
         }
 
         // Create new event
