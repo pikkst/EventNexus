@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
 
 const supabase = createClient(
-  'https://anlivujgkjmajkcgbaxw.supabase.co',
-  'sb_secret_3JjKV9b2UYMtIf6QNXJyNw_ZLQg9Sdr'
+  process.env.VITE_SUPABASE_URL || 'https://anlivujgkjmajkcgbaxw.supabase.co',
+  process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY
 );
 
 console.log('\n🔍 Checking all CRON jobs...\n');

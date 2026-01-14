@@ -1,8 +1,10 @@
 const { createClient } = require('@supabase/supabase-js');
 
+require('dotenv').config({ path: '.env.local' });
+
 const supabase = createClient(
-  'https://anlivujgkjmajkcgbaxw.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFubGl2dWpna2ptYWprY2diYXh3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTk5NjQ5NCwiZXhwIjoyMDgxNTcyNDk0fQ.UlcIKiUQKi0uqL7AvDV5VJ6FSDMpNiQzDt13xUxOCuc'
+  process.env.VITE_SUPABASE_URL || 'https://anlivujgkjmajkcgbaxw.supabase.co',
+  process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY
 );
 
 async function checkGuardianLogs() {
