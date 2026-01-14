@@ -25,6 +25,8 @@ import {
   FileText,
   Download,
   Info,
+  Globe,
+  Search,
 } from 'lucide-react';
 import {
   AIAgentStats,
@@ -193,6 +195,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   // City management state
   const [cities, setCities] = useState<any[]>([]);
   const [showAddCity, setShowAddCity] = useState(false);
+  const [showAddCountry, setShowAddCountry] = useState(false);
   const [editingCity, setEditingCity] = useState<any>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodingResults, setGeocodingResults] = useState<any[]>([]);
@@ -204,6 +207,14 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     timezone: 'Europe/Tallinn',
     is_active: true 
   });
+  
+  // Country bulk import state
+  const [selectedCountryForBulk, setSelectedCountryForBulk] = useState('');
+  const [isFetchingCities, setIsFetchingCities] = useState(false);
+  const [suggestedCities, setSuggestedCities] = useState<any[]>([]);
+  const [selectedCitiesForImport, setSelectedCitiesForImport] = useState<Set<string>>(new Set());
+  const [isBulkImporting, setIsBulkImporting] = useState(false);
+  const [bulkImportProgress, setBulkImportProgress] = useState({ current: 0, total: 0, currentCity: '' });
   
   // Scheduler state
   const [schedulerConfigs, setSchedulerConfigs] = useState<any[]>([]);
@@ -431,6 +442,225 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   }
 
   // Manual job functions
+  
+  // Bulk country import - fetch major cities using Gemini AI
+  async function fetchMajorCitiesForCountry() {
+    if (!selectedCountryForBulk.trim()) {
+      alert('Please select or enter a country name');
+      return;
+    }
+    
+    setIsFetchingCities(true);
+    setSuggestedCities([]);
+    setSelectedCitiesForImport(new Set());
+    
+    try {
+      console.log(`🌍 Fetching major cities for ${selectedCountryForBulk}...`);
+      
+      // Use Gemini to get major cities with coordinates
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `List the top 20 major cities in ${selectedCountryForBulk} with their approximate coordinates and timezones.\n\nReturn ONLY a JSON array with this exact structure (no markdown, no explanations):\n[{"city_name":"City","country":"${selectedCountryForBulk}","latitude":12.34,"longitude":56.78,"timezone":"Region/City"}]\n\nEnsure:\n- Use English city names\n- Include capital and largest cities\n- Provide accurate coordinates (latitude/longitude as numbers)\n- Use IANA timezone format (e.g., Europe/Berlin, America/New_York)\n- Return valid JSON only`
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.3,
+              topK: 1,
+              topP: 0.8,
+              maxOutputTokens: 4096,
+            }
+          })
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!textContent) {
+        throw new Error('No response from Gemini AI');
+      }
+      
+      // Parse JSON from response (handle markdown code blocks)
+      let citiesData;
+      try {
+        // Remove markdown code blocks if present
+        const cleanedText = textContent.replace(/```json\n?|```\n?/g, '').trim();
+        citiesData = JSON.parse(cleanedText);
+      } catch (parseError) {
+        console.error('Failed to parse Gemini response:', textContent);
+        throw new Error('Invalid JSON response from AI. Please try again.');
+      }
+      
+      if (!Array.isArray(citiesData) || citiesData.length === 0) {
+        throw new Error('No cities found in AI response');
+      }
+      
+      // Validate and filter existing cities
+      const validCities = citiesData.filter(city => 
+        city.city_name && 
+        city.latitude && 
+        city.longitude && 
+        !isNaN(parseFloat(city.latitude)) && 
+        !isNaN(parseFloat(city.longitude))
+      );
+      
+      if (validCities.length === 0) {
+        throw new Error('No valid cities in response');
+      }
+      
+      // Check which cities already exist
+      const { data: existingCities, error: checkError } = await supabase
+        .from('city_configs')
+        .select('city_name, country')
+        .eq('country', selectedCountryForBulk);
+      
+      if (checkError) {
+        console.error('Error checking existing cities:', checkError);
+      }
+      
+      const existingCityNames = new Set(
+        (existingCities || []).map(c => c.city_name.toLowerCase())
+      );
+      
+      // Mark cities as already existing
+      const citiesWithStatus = validCities.map(city => ({
+        ...city,
+        exists: existingCityNames.has(city.city_name.toLowerCase()),
+        timezone: city.timezone || 'UTC'
+      }));
+      
+      setSuggestedCities(citiesWithStatus);
+      
+      // Auto-select cities that don't exist yet
+      const newCities = citiesWithStatus
+        .filter(c => !c.exists)
+        .map(c => c.city_name);
+      setSelectedCitiesForImport(new Set(newCities));
+      
+      alert(
+        `✅ Found ${citiesWithStatus.length} cities for ${selectedCountryForBulk}\n\n` +
+        `New cities: ${citiesWithStatus.filter(c => !c.exists).length}\n` +
+        `Already in database: ${citiesWithStatus.filter(c => c.exists).length}\n\n` +
+        `Review and select cities to import below.`
+      );
+      
+    } catch (error: any) {
+      console.error('Failed to fetch cities:', error);
+      alert(`Failed to fetch cities: ${error.message}`);
+      setSuggestedCities([]);
+    } finally {
+      setIsFetchingCities(false);
+    }
+  }
+  
+  async function bulkImportSelectedCities() {
+    if (selectedCitiesForImport.size === 0) {
+      alert('Please select at least one city to import');
+      return;
+    }
+    
+    const citiesToImport = suggestedCities.filter(city => 
+      selectedCitiesForImport.has(city.city_name) && !city.exists
+    );
+    
+    const confirmed = confirm(
+      `🌍 Bulk Import Cities?\n\n` +
+      `Country: ${selectedCountryForBulk}\n` +
+      `Cities to import: ${citiesToImport.length}\n\n` +
+      citiesToImport.map(c => `• ${c.city_name}`).join('\n') +
+      `\n\nEach city will be:\n` +
+      `1. Added to the database\n` +
+      `2. Auto-bootstrapped for event sources\n` +
+      `3. Added to the discovery pipeline\n\n` +
+      `This may take a few minutes. Continue?`
+    );
+    
+    if (!confirmed) return;
+    
+    setIsBulkImporting(true);
+    setBulkImportProgress({ current: 0, total: citiesToImport.length, currentCity: '' });
+    
+    const results = {
+      success: [] as string[],
+      failed: [] as { city: string, error: string }[]
+    };
+    
+    for (let i = 0; i < citiesToImport.length; i++) {
+      const city = citiesToImport[i];
+      const cityName = `${city.city_name}, ${city.country}`;
+      
+      setBulkImportProgress({ 
+        current: i + 1, 
+        total: citiesToImport.length, 
+        currentCity: cityName 
+      });
+      
+      console.log(`\n🔄 [${i + 1}/${citiesToImport.length}] Importing: ${cityName}`);
+      
+      try {
+        // Add city to database (use same logic as single city add)
+        await addCityToDatabase({
+          city_name: city.city_name,
+          country: city.country,
+          latitude: city.latitude.toString(),
+          longitude: city.longitude.toString(),
+          timezone: city.timezone || 'UTC',
+          is_active: true
+        });
+        
+        results.success.push(cityName);
+        console.log(`✅ Successfully imported: ${cityName}`);
+        
+        // Small delay to avoid overwhelming the system
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+      } catch (error: any) {
+        console.error(`❌ Failed to import ${cityName}:`, error);
+        results.failed.push({ city: cityName, error: error.message });
+      }
+    }
+    
+    setIsBulkImporting(false);
+    setBulkImportProgress({ current: 0, total: 0, currentCity: '' });
+    
+    // Show results
+    const summary = `
+🌍 Bulk Import Complete!
+
+✅ Successfully imported: ${results.success.length}
+${results.failed.length > 0 ? `❌ Failed: ${results.failed.length}` : ''}
+
+${results.success.length > 0 ? 'Successful cities:\n' + results.success.map(c => `✓ ${c}`).join('\n') : ''}
+
+${results.failed.length > 0 ? '\nFailed cities:\n' + results.failed.map(f => `✗ ${f.city}: ${f.error}`).join('\n') : ''}
+
+🤖 Auto-bootstrap will start within 5 minutes.
+Check Agent Logs to monitor progress.
+    `.trim();
+    
+    alert(summary);
+    
+    // Reset form and reload
+    setShowAddCountry(false);
+    setSuggestedCities([]);
+    setSelectedCitiesForImport(new Set());
+    setSelectedCountryForBulk('');
+    
+    await loadCities();
+    const metrics = await loadCityMetrics();
+    setCityMetrics(metrics);
+  }
+  
   async function geocodeAndAddCity() {
     if (!newCity.city_name.trim()) {
       alert('Please enter a city name');
@@ -2863,15 +3093,199 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">Manage Cities & Event Sources</h3>
-                  <button
-                    onClick={() => setShowAddCity(!showAddCity)}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                  >
-                    {showAddCity ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                    {showAddCity ? 'Cancel' : 'Add City'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setShowAddCountry(!showAddCountry);
+                        if (!showAddCountry) {
+                          setShowAddCity(false);
+                          setSuggestedCities([]);
+                          setSelectedCitiesForImport(new Set());
+                        }
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    >
+                      {showAddCountry ? <X className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
+                      {showAddCountry ? 'Cancel' : 'Add Country'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddCity(!showAddCity);
+                        if (!showAddCity) {
+                          setShowAddCountry(false);
+                        }
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    >
+                      {showAddCity ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      {showAddCity ? 'Cancel' : 'Add City'}
+                    </button>
+                  </div>
                 </div>
 
+                {/* Bulk Country Import */}
+                {showAddCountry && (
+                  <div className="border border-green-200 rounded-lg p-6 bg-green-50">
+                    <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-green-600" />
+                      Bulk Import Cities by Country
+                    </h4>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Select a country and the system will use AI to find all major cities with coordinates and timezones. You can review and select which cities to import.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      {/* Country Selection */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Country Name *</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={selectedCountryForBulk}
+                            onChange={(e) => setSelectedCountryForBulk(e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                            placeholder="Germany, France, United States, Japan..."
+                            onKeyPress={(e) => e.key === 'Enter' && fetchMajorCitiesForCountry()}
+                            disabled={isFetchingCities}
+                          />
+                          <button
+                            onClick={fetchMajorCitiesForCountry}
+                            disabled={isFetchingCities || !selectedCountryForBulk.trim()}
+                            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                          >
+                            {isFetchingCities ? (
+                              <>
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                Fetching...
+                              </>
+                            ) : (
+                              <>
+                                <Search className="w-4 h-4" />
+                                Find Cities
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          💡 Tip: AI will find ~20 major cities. For Germany, this would include Berlin, Munich, Hamburg, etc.
+                        </p>
+                      </div>
+                      
+                      {/* Bulk Import Progress */}
+                      {isBulkImporting && (
+                        <div className="border border-green-300 bg-green-100 rounded-lg p-4">
+                          <div className="flex items-center gap-3 mb-2">
+                            <RefreshCw className="w-5 h-5 text-green-600 animate-spin" />
+                            <div>
+                              <p className="font-medium text-green-900">
+                                Importing Cities... {bulkImportProgress.current}/{bulkImportProgress.total}
+                              </p>
+                              <p className="text-sm text-green-700">
+                                Current: {bulkImportProgress.currentCity}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="w-full bg-green-200 rounded-full h-2 mt-2">
+                            <div
+                              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${(bulkImportProgress.current / bulkImportProgress.total) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Suggested Cities List */}
+                      {suggestedCities.length > 0 && (
+                        <div className="border border-green-200 bg-white rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="font-medium text-gray-900">
+                              Found {suggestedCities.length} cities in {selectedCountryForBulk}
+                            </h5>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  const newCities = suggestedCities.filter(c => !c.exists).map(c => c.city_name);
+                                  setSelectedCitiesForImport(new Set(newCities));
+                                }}
+                                className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
+                              >
+                                Select All New
+                              </button>
+                              <button
+                                onClick={() => setSelectedCitiesForImport(new Set())}
+                                className="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                              >
+                                Deselect All
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+                            {suggestedCities.map((city, idx) => (
+                              <label
+                                key={idx}
+                                className={`flex items-start gap-2 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                                  city.exists 
+                                    ? 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'
+                                    : selectedCitiesForImport.has(city.city_name)
+                                    ? 'bg-green-50 border-green-500'
+                                    : 'bg-white border-gray-200 hover:border-green-300'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedCitiesForImport.has(city.city_name)}
+                                  disabled={city.exists}
+                                  onChange={(e) => {
+                                    const newSet = new Set(selectedCitiesForImport);
+                                    if (e.target.checked) {
+                                      newSet.add(city.city_name);
+                                    } else {
+                                      newSet.delete(city.city_name);
+                                    }
+                                    setSelectedCitiesForImport(newSet);
+                                  }}
+                                  className="mt-1"
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-medium text-gray-900">{city.city_name}</p>
+                                    {city.exists && (
+                                      <span className="text-xs px-2 py-0.5 bg-gray-200 text-gray-600 rounded">
+                                        Already exists
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-gray-500">
+                                    {city.latitude.toFixed(4)}, {city.longitude.toFixed(4)}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {city.timezone}
+                                  </p>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                          
+                          <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+                            <p className="text-sm text-gray-600">
+                              <strong>{selectedCitiesForImport.size}</strong> cities selected for import
+                            </p>
+                            <button
+                              onClick={bulkImportSelectedCities}
+                              disabled={selectedCitiesForImport.size === 0 || isBulkImporting}
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                              <Download className="w-4 h-4" />
+                              Import {selectedCitiesForImport.size} Cities
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
                 {/* Add City Form */}
                 {showAddCity && (
                   <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
