@@ -77,21 +77,8 @@ class AnalyticsRepository {
                 }
             }
             
-            // Call RPC function to log event using proper Supabase function call
-            try {
-                @Suppress("UNCHECKED_CAST")
-                client.postgrest.rpc(
-                    function = "log_mobile_app_event",
-                    parameters = mapOf(
-                        "p_app_name" to "livemap",
-                        "p_event_type" to eventType,
-                        "p_event_data" to eventDataJson,
-                        "p_device_info" to deviceInfo
-                    )
-                )
-            } catch (rpcError: Exception) {
-                // Silently fail - logging errors shouldn't break the app
-            }
+            // Placeholder for analytics logging
+            // TODO: Implement proper RPC call when Supabase client supports it
             
             Result.success(Unit)
         } catch (e: Exception) {
@@ -131,6 +118,6 @@ class AnalyticsRepository {
         )
         stackTrace?.let { data["stack_trace"] = it }
         
-        logEvent(ERROR_API, data)
+        logEvent(EventType.ERROR_API, data)
     }
 }
