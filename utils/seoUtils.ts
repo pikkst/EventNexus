@@ -108,9 +108,10 @@ export function generateEventSEO(event: EventNexusEvent, organizerName?: string)
   });
 
   const title = `${event.name} - ${eventDate} | EventNexus`;
-  const description = `Join ${event.name} on ${eventDate} in ${event.location}. ${event.description.substring(0, 120)}... Book tickets now on EventNexus!`;
+  const locationCity = event.location?.city || event.location?.address || 'Estonia';
+  const description = `Join ${event.name} on ${eventDate} in ${locationCity}. ${event.description.substring(0, 120)}... Book tickets now on EventNexus!`;
   
-  const keywords = `${event.name}, ${event.category} event, ${event.location} events, ${eventDate} events, buy tickets, event booking`;
+  const keywords = `${event.name}, ${event.category} event, ${locationCity} events, ${eventDate} events, buy tickets, event booking`;
 
   // Event image URL
   const ogImage = event.imageUrl || 'https://eventnexus.eu/og-image.png';
