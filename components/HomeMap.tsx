@@ -28,14 +28,40 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 };
 
-const MapEffects = ({ center, isFollowing }: { center: [number, number], isFollowing: boolean }) => {
+interface MapEffectsProps {
+  center: [number, number];
+  isFollowing: boolean;
+  onMapMove?: (center: [number, number], zoom: number) => void;
+}
+
+const MapEffects = ({ center, isFollowing, onMapMove }: MapEffectsProps) => {
   const map = useMap();
+  
   useEffect(() => {
     setTimeout(() => { map.invalidateSize(); }, 100);
   }, [map]);
+  
   useEffect(() => {
     if (isFollowing) { map.setView(center, map.getZoom(), { animate: true }); }
   }, [center, isFollowing, map]);
+  
+  // Save map position whenever it changes
+  useEffect(() => {
+    const handleMapMove = () => {
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      onMapMove?.([center.lat, center.lng], zoom);
+    };
+
+    map.on('moveend', handleMapMove);
+    map.on('zoomend', handleMapMove);
+
+    return () => {
+      map.off('moveend', handleMapMove);
+      map.off('zoomend', handleMapMove);
+    };
+  }, [map, onMapMove]);
+  
   return null;
 };
 
@@ -62,14 +88,50 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       cleanupSEO();
     };
   }, []);
-  const [userLocation, setUserLocation] = useState<[number, number]>([59.4370, 24.7536]); // Default: Tallinn, Estonia
+  
+  // Load saved map position from localStorage, or use geolocation if not available
+  const [userLocation, setUserLocation] = useState<[number, number]>(() => {
+    // Try to restore from localStorage first
+    try {
+      const saved = localStorage.getItem('homemap_last_center');
+      if (saved) {
+        const [lat, lng] = JSON.parse(saved);
+        console.log(`📍 Restored map position from localStorage: [${lat}, ${lng}]`);
+        return [lat, lng];
+      }
+    } catch (error) {
+      console.error('Failed to load saved map position:', error);
+    }
+    // Default to Tallinn, Estonia if no saved position
+    return [59.4370, 24.7536];
+  });
+  
+  const [mapZoom, setMapZoom] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('homemap_last_zoom');
+      return saved ? parseInt(saved, 10) : 13;
+    } catch {
+      return 13;
+    }
+  });
+
   const [selectedEvent, setSelectedEvent] = useState<EventNexusEvent | null>(null);
-  const [isFollowingUser, setIsFollowingUser] = useState(true);
+  const [isFollowingUser, setIsFollowingUser] = useState(false); // Default to false - don't auto-follow
   const [routeToEvent, setRouteToEvent] = useState<EventNexusEvent | null>(null);
   const [translatedTitle, setTranslatedTitle] = useState<string | null>(null);
   const [translatedDesc, setTranslatedDesc] = useState<string | null>(null);
   const [eventCardExpanded, setEventCardExpanded] = useState(true); // Mobile: track if card is expanded
   const translationCache = useRef<Map<string, { name: string; desc: string }>>(new Map());
+  
+  // Save map position to localStorage whenever it changes
+  const saveMapPosition = (center: [number, number], zoom: number) => {
+    try {
+      localStorage.setItem('homemap_last_center', JSON.stringify(center));
+      localStorage.setItem('homemap_last_zoom', JSON.stringify(zoom));
+    } catch (error) {
+      console.error('Failed to save map position:', error);
+    }
+  };
 
 
   // Load events from database with throttling to prevent map crashes
@@ -343,12 +405,16 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   return (
     <div className={`relative flex flex-col h-[calc(100vh-64px)] w-full ${bgClass} overflow-hidden`}>
       <div className="absolute inset-0 z-0">
-        <MapContainer center={userLocation} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false} attributionControl={false}>
+        <MapContainer center={userLocation} zoom={mapZoom} style={{ height: '100%', width: '100%' }} zoomControl={false} attributionControl={false}>
           <TileLayer 
             url={tileLayerUrl}
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
-          <MapEffects center={userLocation} isFollowing={isFollowingUser} />
+          <MapEffects 
+            center={userLocation} 
+            isFollowing={isFollowingUser}
+            onMapMove={saveMapPosition}
+          />
           <Circle center={userLocation} radius={searchRadius * 1000} pathOptions={{ fillColor: '#6366f1', fillOpacity: 0.03, color: '#6366f1', weight: 1, dashArray: '8, 12' }} />
           <Marker position={userLocation} icon={userIcon} />
           {groupedEvents.map((group, idx) => {
