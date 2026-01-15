@@ -64,6 +64,7 @@ const BetaInvitation = lazy(() => import('./components/BetaInvitation'));
 const OnboardingTutorial = lazy(() => import('./components/OnboardingTutorial'));
 const AdminCreditManager = lazy(() => import('./components/AdminCreditManager'));
 const CodeRedemption = lazy(() => import('./components/CodeRedemption'));
+const PublicEventsBrowse = lazy(() => import('./components/PublicEventsBrowse'));
 
 import { User, Notification, EventNexusEvent } from './types';
 import { CATEGORIES } from './constants';
@@ -810,6 +811,8 @@ const App: React.FC = () => {
           <Suspense fallback={<DashboardSkeleton />}>
             <Routes>
               <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/browse" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/events" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/map" element={<HomeMap theme={mapTheme} onToggleTheme={handleToggleMapTheme} events={events} />} />
               <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />

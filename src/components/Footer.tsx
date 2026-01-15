@@ -52,6 +52,7 @@ const Footer: React.FC = () => {
           <div className="space-y-6">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Platform</h4>
             <ul className="space-y-4">
+              <FooterLink to="/browse">Browse Events</FooterLink>
               <FooterLink to="/map">Event Map</FooterLink>
               <FooterLink to="/create">Host an Event</FooterLink>
               <FooterLink to="/pricing">Pricing & Plans</FooterLink>
