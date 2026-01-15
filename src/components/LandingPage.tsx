@@ -327,28 +327,27 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
               {/* Primary CTA - DOMINANT */}
               <div className="space-y-3">
                 <Link 
-                  to="/map" 
-                  onClick={() => trackCTAClick('explore_map')}
+                  to="/browse" 
+                  onClick={() => trackCTAClick('browse_events')}
                   className="w-full block bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 px-8 py-5 rounded-3xl font-black text-lg text-white transition-all shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-3 group text-center"
-                  aria-label="Explore events on interactive map now"
+                  aria-label="Browse all events catalog now"
                 >
-                  <MapIcon className="w-6 h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
-                  Explore Events Now
+                  <Calendar className="w-6 h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
+                  Browse All Events
                 </Link>
-                <p className="text-xs text-slate-500 text-center">👉 See what's happening in your area in real-time</p>
+                <p className="text-xs text-slate-500 text-center">👉 Discover events happening around the world</p>
               </div>
 
-              {/* Secondary CTA */}
-              <button 
-                onClick={() => {
-                  trackCTAClick('host_event');
-                  handleCreateEvent();
-                }}
-                className="w-full bg-slate-100 text-slate-950 hover:bg-white px-8 py-4 rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2"
-                aria-label="Create and host your own event"
+              {/* Secondary CTA - Map */}
+              <Link 
+                to="/map" 
+                onClick={() => trackCTAClick('explore_map')}
+                className="w-full block bg-slate-800 border border-slate-700 hover:border-indigo-500 text-white px-8 py-4 rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2"
+                aria-label="Explore events on interactive map"
               >
-                <Plus className="w-5 h-5" aria-hidden="true" /> Host an Event
-              </button>
+                <MapIcon className="w-5 h-5" aria-hidden="true" /> 
+                View on Map
+              </Link>
 
               {/* Trust Badges - Enhanced with Context */}
               <div className="grid grid-cols-3 gap-3 pt-4 border-t border-slate-800">

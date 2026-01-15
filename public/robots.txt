@@ -119,4 +119,4 @@ Disallow: /admin
 # Sitemaps for comprehensive indexing (including AI-accessible events)
 Sitemap: https://www.eventnexus.eu/sitemap.xml
 Sitemap: https://www.eventnexus.eu/sitemap-index.xml
-Sitemap: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/public-sitemap
+Sitemap: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/public-events-sitemap?format=xml
