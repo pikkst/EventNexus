@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logger from '../utils/logger';
+import { usePageSEO } from '../hooks/useSEO';
 import { Compass, Zap, Shield, Globe, Map as MapIcon, ChevronRight, Star, Plus, ArrowRight, Gift, Award, TrendingUp, Quote, Newspaper, ExternalLink, Users, Calendar, Ticket, Play, Check, Mail, Send, ChevronDown, DollarSign, Sparkles } from 'lucide-react';
 import { User, PlatformCampaign, SuccessStory, PressMention, PlatformMedia } from '../types';
 import { getCampaigns, getTopOrganizers, OrganizerRatingStats, getSuccessStories, getPressMentions, getPlatformStats, getPlatformMedia } from '../services/dbService';
@@ -30,6 +31,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [demoVideo, setDemoVideo] = useState<PlatformMedia | null>(null);
+
+  // SEO optimization for AI crawlers
+  usePageSEO({
+    path: '/',
+    title: 'Discover Your Next Experience',
+    description: 'Find amazing events near you. From concerts to conferences, discover and book tickets for unforgettable experiences.',
+    image: 'https://www.eventnexus.eu/og-image.png',
+    type: 'website'
+  });
 
   // Reset to homepage SEO on mount
   useEffect(() => {
