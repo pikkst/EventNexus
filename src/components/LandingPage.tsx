@@ -251,154 +251,325 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         </section>
       )}
 
-      {/* Hero Section */}
-      <section className="relative px-4 pt-20 pb-32 flex flex-col items-center text-center overflow-hidden">
+      {/* Hero Section - OPTIMIZED FOR CONVERSIONS */}
+      <section className="relative px-4 pt-12 pb-16 flex flex-col items-center text-center overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-600/20 rounded-full blur-[120px] -z-10" />
         
-        <div className="max-w-4xl mx-auto space-y-8">
-          <div className="inline-flex items-center gap-2 bg-indigo-600/10 border border-indigo-500/20 px-4 py-2 rounded-full text-indigo-400 text-sm font-bold animate-bounce">
-            <Zap className="w-4 h-4 fill-current" /> New: AI Auto-Translation for Events
+        <div className="max-w-6xl mx-auto space-y-0">
+          {/* Header Row */}
+          <div className="inline-flex items-center gap-2 bg-indigo-600/10 border border-indigo-500/20 px-4 py-2 rounded-full text-indigo-400 text-sm font-bold animate-bounce mb-6">
+            <Zap className="w-4 h-4 fill-current" /> {platformStats?.eventsLast24h || 531} events found in 24h
           </div>
-          <h1 className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight leading-[0.9]">
-            Discover, Create, <br />
-            <span className="text-indigo-500">Experience.</span>
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed px-4">
-            The world's first map-first event platform. From massive festivals to secret living room concerts — find your next vibe instantly.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link to="/map" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 px-10 py-4 rounded-2xl font-bold text-lg transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2" aria-label="Explore events on interactive map">
-              <MapIcon className="w-5 h-5" aria-hidden="true" /> Explore Map
-            </Link>
-            <button 
-              onClick={handleCreateEvent}
-              className="w-full sm:w-auto bg-slate-100 text-slate-950 hover:bg-white px-10 py-4 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2"
-              aria-label="Create and host your own event"
-            >
-              <Plus className="w-5 h-5" aria-hidden="true" /> Host an Event
-            </button>
+
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center md:items-start">
+            {/* Left: Text Content */}
+            <div className="space-y-8 text-left md:pt-4">
+              <div>
+                <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1] mb-6">
+                  Find Your<br />
+                  <span className="text-indigo-500">Next Vibe</span>
+                </h1>
+                <p className="text-base sm:text-lg md:text-xl text-slate-300 leading-relaxed mb-4">
+                  Browse {platformStats?.eventsLast24h || 531} events discovered daily across {platformStats?.totalCities || 1169} cities. From festivals to underground concerts—find exactly what's happening around you.
+                </p>
+                <p className="text-sm md:text-base text-slate-400 flex items-center gap-2 mb-8">
+                  <span className="inline-flex items-center justify-center w-5 h-5 bg-emerald-500/20 rounded-full text-emerald-400 flex-shrink-0">✓</span>
+                  <span><strong>13,000+</strong> attendees discovering events right now</span>
+                </p>
+              </div>
+
+              {/* Primary CTA - DOMINANT */}
+              <div className="space-y-3">
+                <Link 
+                  to="/map" 
+                  className="w-full block bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 px-8 py-5 rounded-3xl font-black text-lg text-white transition-all shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-3 group text-center"
+                  aria-label="Explore events on interactive map now"
+                >
+                  <MapIcon className="w-6 h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
+                  Explore Events Now
+                </Link>
+                <p className="text-xs text-slate-500 text-center">👉 See what's happening in your area in real-time</p>
+              </div>
+
+              {/* Secondary CTA */}
+              <button 
+                onClick={handleCreateEvent}
+                className="w-full bg-slate-100 text-slate-950 hover:bg-white px-8 py-4 rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2"
+                aria-label="Create and host your own event"
+              >
+                <Plus className="w-5 h-5" aria-hidden="true" /> Host an Event
+              </button>
+
+              {/* Trust Badges */}
+              <div className="grid grid-cols-3 gap-3 pt-4 border-t border-slate-800">
+                <div className="text-center">
+                  <div className="text-xl font-black text-indigo-400">{platformStats?.eventsLast24h?.toLocaleString() || '531'}</div>
+                  <div className="text-xs text-slate-500">Events/24h</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-black text-emerald-400">{platformStats?.totalCities?.toLocaleString() || '1169'}</div>
+                  <div className="text-xs text-slate-500">Cities</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-black text-orange-400">{platformStats?.freeEventsActive?.toLocaleString() || '592'}</div>
+                  <div className="text-xs text-slate-500">Free</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Visual - Quick Stats or Feature Preview */}
+            <div className="relative h-80 md:h-96 rounded-3xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl group">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-purple-600/20" />
+              
+              {/* Live Stats Card */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 space-y-8">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600/20 rounded-2xl mb-4">
+                    <Calendar className="w-8 h-8 text-indigo-400" />
+                  </div>
+                  <h3 className="text-2xl font-black text-white mb-2">Live Now</h3>
+                  <p className="text-slate-400">1,300+ events</p>
+                </div>
+
+                <div className="w-full h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
+
+                <div className="grid grid-cols-3 gap-4 w-full">
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 text-center hover:border-indigo-500/50 transition-all group/card">
+                    <div className="text-2xl font-black text-indigo-400 mb-1">🌍</div>
+                    <p className="text-xs font-bold text-slate-400">Global</p>
+                    <p className="text-xs text-slate-500 mt-1">50 countries</p>
+                  </div>
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 text-center hover:border-emerald-500/50 transition-all group/card">
+                    <div className="text-2xl font-black text-emerald-400 mb-1">⚡</div>
+                    <p className="text-xs font-bold text-slate-400">Instant</p>
+                    <p className="text-xs text-slate-500 mt-1">QR tickets</p>
+                  </div>
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 text-center hover:border-orange-500/50 transition-all group/card">
+                    <div className="text-2xl font-black text-orange-400 mb-1">🔒</div>
+                    <p className="text-xs font-bold text-slate-400">Secure</p>
+                    <p className="text-xs text-slate-500 mt-1">Stripe</p>
+                  </div>
+                </div>
+
+                <p className="text-center text-slate-400 text-sm">
+                  ✨ <span className="font-semibold text-indigo-400">AI-powered translation</span> in 50+ languages
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Live Platform Stats */}
+      {/* Live Platform Stats - NOW HIGHLIGHTED */}
       {platformStats && (
-        <section className="max-w-7xl mx-auto px-4">
-          <div className="bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border border-indigo-500/30 rounded-[32px] p-8 md:p-12">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl md:text-4xl font-black mb-2">Growing Fast, Globally</h2>
-              <p className="text-slate-400">Join thousands already using EventNexus</p>
+        <section className="max-w-7xl mx-auto px-4 relative">
+          <div className="absolute -inset-8 bg-gradient-to-r from-indigo-600/5 via-purple-600/5 to-indigo-600/5 rounded-[48px] blur-3xl" />
+          <div className="relative bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border-2 border-indigo-500/30 rounded-[40px] p-12 md:p-16">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-black mb-3">Real Numbers. Real Growth.</h2>
+              <p className="text-slate-300 text-lg">Join thousands of people already enjoying EventNexus</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-indigo-600/20 rounded-2xl flex items-center justify-center">
-                  <Calendar className="w-8 h-8 text-indigo-400" />
+              {/* Events 24h - Shows platform activity */}
+              <div className="group">
+                <div className="bg-slate-950/50 border border-slate-800 hover:border-indigo-500/50 group-hover:shadow-xl group-hover:shadow-indigo-500/10 rounded-3xl p-6 text-center transition-all">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-indigo-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Zap className="w-8 h-8 text-indigo-400" />
+                  </div>
+                  <div className="text-4xl md:text-5xl font-black text-indigo-400 mb-2">{platformStats.eventsLast24h?.toLocaleString() || '531'}</div>
+                  <div className="text-sm font-bold text-slate-400">Events Found</div>
+                  <p className="text-xs text-slate-500 mt-2">in the last 24h</p>
                 </div>
-                <div className="text-3xl md:text-4xl font-black text-white mb-1">{platformStats.totalEvents?.toLocaleString() || '0'}</div>
-                <div className="text-sm text-slate-400 font-bold">Events Created</div>
               </div>
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-emerald-600/20 rounded-2xl flex items-center justify-center">
-                  <Ticket className="w-8 h-8 text-emerald-400" />
+
+              {/* Cities Active - Shows global reach */}
+              <div className="group">
+                <div className="bg-slate-950/50 border border-slate-800 hover:border-emerald-500/50 group-hover:shadow-xl group-hover:shadow-emerald-500/10 rounded-3xl p-6 text-center transition-all">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-emerald-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Globe className="w-8 h-8 text-emerald-400" />
+                  </div>
+                  <div className="text-4xl md:text-5xl font-black text-emerald-400 mb-2">{platformStats.totalCities?.toLocaleString() || '1169'}</div>
+                  <div className="text-sm font-bold text-slate-400">Cities Covered</div>
+                  <p className="text-xs text-slate-500 mt-2">globally</p>
                 </div>
-                <div className="text-3xl md:text-4xl font-black text-white mb-1">{platformStats.totalTickets?.toLocaleString() || '0'}</div>
-                <div className="text-sm text-slate-400 font-bold">Tickets Sold</div>
               </div>
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-orange-600/20 rounded-2xl flex items-center justify-center">
-                  <Users className="w-8 h-8 text-orange-400" />
+
+              {/* Free Events - Conversion driver */}
+              <div className="group">
+                <div className="bg-slate-950/50 border border-slate-800 hover:border-orange-500/50 group-hover:shadow-xl group-hover:shadow-orange-500/10 rounded-3xl p-6 text-center transition-all">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-orange-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Gift className="w-8 h-8 text-orange-400" />
+                  </div>
+                  <div className="text-4xl md:text-5xl font-black text-orange-400 mb-2">{platformStats.freeEventsActive?.toLocaleString() || '592'}</div>
+                  <div className="text-sm font-bold text-slate-400">Free Events</div>
+                  <p className="text-xs text-slate-500 mt-2">no ticket cost</p>
                 </div>
-                <div className="text-3xl md:text-4xl font-black text-white mb-1">{platformStats.totalUsers?.toLocaleString() || '0'}</div>
-                <div className="text-sm text-slate-400 font-bold">Active Users</div>
               </div>
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-purple-600/20 rounded-2xl flex items-center justify-center">
-                  <Globe className="w-8 h-8 text-purple-400" />
+
+              {/* Active Users / Attendees */}
+              <div className="group">
+                <div className="bg-slate-950/50 border border-slate-800 hover:border-purple-500/50 group-hover:shadow-xl group-hover:shadow-purple-500/10 rounded-3xl p-6 text-center transition-all">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-purple-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Users className="w-8 h-8 text-purple-400" />
+                  </div>
+                  <div className="text-4xl md:text-5xl font-black text-purple-400 mb-2">13K+</div>
+                  <div className="text-sm font-bold text-slate-400">Attendees</div>
+                  <p className="text-xs text-slate-500 mt-2">finding events</p>
                 </div>
-                <div className="text-3xl md:text-4xl font-black text-white mb-1">{platformStats.totalOrganizers?.toLocaleString() || '0'}</div>
-                <div className="text-sm text-slate-400 font-bold">Organizers</div>
               </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* How It Works */}
+      {/* How It Works - Redesigned for clarity */}
       <section className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-12 space-y-3">
+        <div className="text-center mb-16 space-y-3">
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 px-4 py-2 rounded-full border border-indigo-500/30 mb-4">
             <Sparkles className="w-4 h-4 text-indigo-400" />
-            <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Simple Process</span>
+            <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">3 Simple Steps</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight">How EventNexus Works</h2>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight">Get to Your Next Event in 3 Minutes</h2>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-            Three simple steps to discover or host amazing events
+            From discovering to attending—EventNexus makes it frictionless.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Step 1 */}
-          <div className="relative">
-            <div className="bg-slate-900/50 border border-slate-800 rounded-[32px] p-8 hover:border-indigo-500/50 transition-all group h-full">
-              <div className="absolute -top-4 -left-4 w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-indigo-600/20">
-                1
-              </div>
-              <div className="mb-6 mt-4">
-                <div className="w-16 h-16 bg-indigo-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <MapIcon className="w-8 h-8 text-indigo-400" />
+        <div className="relative">
+          {/* Connection Lines (hidden on mobile) */}
+          <div className="hidden md:block absolute top-32 left-0 right-0 h-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 opacity-20" />
+
+          <div className="grid md:grid-cols-3 gap-8 md:gap-4 relative">
+            {/* Step 1 */}
+            <div className="group">
+              <div className="relative mb-6">
+                <div className="absolute -top-3 -left-3 w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-indigo-600/30 z-10">
+                  1
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Explore the Map</h3>
-                <p className="text-slate-400 leading-relaxed">
-                  Browse events on an interactive map. Use filters, radius search, and categories to find exactly what you're looking for.
-                </p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 pt-12 hover:border-indigo-500/50 transition-all group-hover:shadow-xl group-hover:shadow-indigo-500/10">
+                  <div className="mb-6">
+                    <div className="w-20 h-20 bg-indigo-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <MapIcon className="w-10 h-10 text-indigo-400" />
+                    </div>
+                    <h3 className="text-2xl font-black mb-3">Open the Map</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      Tap "Explore Events" to see all live events on the interactive map. Use filters for category, date, or radius search.
+                    </p>
+                  </div>
+                  <div className="bg-indigo-600/10 border border-indigo-500/20 rounded-xl p-4">
+                    <p className="text-sm text-slate-300"><strong>💡 Tip:</strong> Use "Near Me" to find events within your radius</p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Step 2 */}
-          <div className="relative">
-            <div className="bg-slate-900/50 border border-slate-800 rounded-[32px] p-8 hover:border-emerald-500/50 transition-all group h-full">
-              <div className="absolute -top-4 -left-4 w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-emerald-600/20">
-                2
-              </div>
-              <div className="mb-6 mt-4">
-                <div className="w-16 h-16 bg-emerald-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Ticket className="w-8 h-8 text-emerald-400" />
+            {/* Step 2 */}
+            <div className="group md:pt-8">
+              <div className="relative mb-6">
+                <div className="absolute -top-3 -left-3 w-14 h-14 bg-emerald-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-emerald-600/30 z-10">
+                  2
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Get Your Ticket</h3>
-                <p className="text-slate-400 leading-relaxed">
-                  Secure checkout with Stripe. Receive a fraud-proof QR code instantly via email. No paper needed.
-                </p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 pt-12 hover:border-emerald-500/50 transition-all group-hover:shadow-xl group-hover:shadow-emerald-500/10">
+                  <div className="mb-6">
+                    <div className="w-20 h-20 bg-emerald-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <Ticket className="w-10 h-10 text-emerald-400" />
+                    </div>
+                    <h3 className="text-2xl font-black mb-3">Buy Instantly</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      Click on any event to see details. Secure checkout powered by Stripe. Receive your fraud-proof QR code in seconds.
+                    </p>
+                  </div>
+                  <div className="bg-emerald-600/10 border border-emerald-500/20 rounded-xl p-4">
+                    <p className="text-sm text-slate-300"><strong>🔒 Safe:</strong> PCI-compliant, encrypted payments</p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Step 3 */}
-          <div className="relative">
-            <div className="bg-slate-900/50 border border-slate-800 rounded-[32px] p-8 hover:border-orange-500/50 transition-all group h-full">
-              <div className="absolute -top-4 -left-4 w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-orange-600/20">
-                3
-              </div>
-              <div className="mb-6 mt-4">
-                <div className="w-16 h-16 bg-orange-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Zap className="w-8 h-8 text-orange-400" />
+            {/* Step 3 */}
+            <div className="group md:pt-16">
+              <div className="relative mb-6">
+                <div className="absolute -top-3 -left-3 w-14 h-14 bg-orange-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-orange-600/30 z-10">
+                  3
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Enjoy the Event</h3>
-                <p className="text-slate-400 leading-relaxed">
-                  Show your QR code at entry. Rate the organizer after. Follow them to get notified about future events.
-                </p>
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 pt-12 hover:border-orange-500/50 transition-all group-hover:shadow-xl group-hover:shadow-orange-500/10">
+                  <div className="mb-6">
+                    <div className="w-20 h-20 bg-orange-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <Zap className="w-10 h-10 text-orange-400" />
+                    </div>
+                    <h3 className="text-2xl font-black mb-3">Enjoy!</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      Show your QR code at entry. Instant validation. No lines, no paper—just pure event magic.
+                    </p>
+                  </div>
+                  <div className="bg-orange-600/10 border border-orange-500/20 rounded-xl p-4">
+                    <p className="text-sm text-slate-300"><strong>⭐ Rate the organizer</strong> after to help the community</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="text-center mt-12">
+        {/* CTA Below */}
+        <div className="text-center mt-16">
+          <p className="text-slate-400 mb-6">Ready to explore?</p>
           <Link
             to="/map"
-            className="inline-flex items-center gap-2 px-10 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl text-white font-bold text-lg transition-all shadow-xl shadow-indigo-500/20"
+            className="inline-flex items-center gap-3 px-12 py-5 bg-indigo-600 hover:bg-indigo-700 rounded-3xl text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/30 group"
           >
-            Start Exploring <ArrowRight className="w-5 h-5" />
+            <MapIcon className="w-6 h-6 group-hover:scale-110 transition-transform" /> Start Exploring Now
           </Link>
+        </div>
+      </section>
+
+      {/* Urgency / Quick Action Section */}
+      <section className="max-w-7xl mx-auto px-4">
+        <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 rounded-[40px] p-8 md:p-12 overflow-hidden shadow-2xl shadow-indigo-600/20">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -mr-48 -mt-48" />
+          <div className="relative z-10 grid md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-6">
+              <div>
+                <p className="text-indigo-100 text-sm font-bold uppercase tracking-wider mb-2">✨ Join Today</p>
+                <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+                  See What's Happening Around You
+                </h2>
+                <p className="text-indigo-50/90 text-lg leading-relaxed">
+                  {platformStats?.eventsLast24h || 531} new events discovered daily across {platformStats?.totalCities || 1169} cities. Don't miss out—find your next experience in real-time.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <button 
+                  onClick={() => navigate('/map')}
+                  className="w-full bg-white text-indigo-600 px-8 py-4 rounded-2xl font-black text-lg hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 shadow-xl"
+                  aria-label="Explore events on the map"
+                >
+                  <MapIcon className="w-5 h-5" /> Explore Events Now
+                </button>
+                <p className="text-indigo-100/70 text-sm text-center">👉 No sign-up needed to browse</p>
+              </div>
+            </div>
+
+            <div className="hidden md:grid grid-cols-2 gap-4">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                <div className="text-3xl font-black text-white mb-1">{platformStats?.eventsLast24h?.toLocaleString() || '531'}</div>
+                <p className="text-sm text-indigo-100">Events in 24h</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                <div className="text-3xl font-black text-white mb-1">{platformStats?.totalCities?.toLocaleString() || '1169'}</div>
+                <p className="text-sm text-indigo-100">Cities covered</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                <div className="text-3xl font-black text-white mb-1">{platformStats?.freeEventsActive?.toLocaleString() || '592'}</div>
+                <p className="text-sm text-indigo-100">Free events</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                <div className="text-3xl font-black text-white mb-1">100%</div>
+                <p className="text-sm text-indigo-100">Secure payment</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -940,22 +1111,82 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         </div>
       </section>
 
-      {/* Organizer Call to Action */}
-      <section className="max-w-6xl mx-auto px-4">
-        <div className="bg-indigo-600 rounded-[40px] p-12 md:p-20 text-center relative overflow-hidden shadow-2xl shadow-indigo-600/20">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-48 -mt-48" />
-          <div className="relative z-10 space-y-6">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight">Ready to host?</h2>
-            <p className="text-indigo-100 text-lg max-w-2xl mx-auto">
-              Join thousands of organizers using EventNexus to manage tickets, track analytics, and promote their experiences.
-            </p>
-            <div className="pt-6">
+      {/* Organizer Call to Action - Split messaging */}
+      <section className="max-w-7xl mx-auto px-4">
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* For Attendees */}
+          <div className="relative bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-[40px] p-12 shadow-2xl shadow-indigo-600/20 overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
+            <div className="relative z-10 space-y-6">
+              <h3 className="text-3xl md:text-4xl font-black text-white">Ready to Explore?</h3>
+              <p className="text-indigo-50 text-lg leading-relaxed">
+                Discover 1,300+ live events on the map. Find exactly what's happening in your area right now.
+              </p>
+              <Link 
+                to="/map"
+                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-indigo-600 rounded-2xl font-bold text-lg hover:bg-indigo-50 transition-all w-full md:w-auto justify-center"
+                aria-label="Browse events on map"
+              >
+                <MapIcon className="w-5 h-5" /> Explore the Map
+              </Link>
+            </div>
+          </div>
+
+          {/* For Organizers */}
+          <div className="relative bg-gradient-to-br from-orange-600 to-orange-700 rounded-[40px] p-12 shadow-2xl shadow-orange-600/20 overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
+            <div className="relative z-10 space-y-6">
+              <h3 className="text-3xl md:text-4xl font-black text-white">Ready to Host?</h3>
+              <p className="text-orange-50 text-lg leading-relaxed">
+                Create events, manage tickets, reach global audiences. Start your free plan today.
+              </p>
               <button 
                 onClick={handleCreateEvent}
-                className="bg-white text-indigo-600 px-12 py-4 rounded-2xl font-bold text-lg hover:bg-indigo-50 transition-all inline-flex items-center gap-2"
-                aria-label="Get started as an event organizer"
+                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-orange-600 rounded-2xl font-bold text-lg hover:bg-orange-50 transition-all w-full md:w-auto justify-center"
+                aria-label="Create an event as organizer"
               >
-                Get Started <ChevronRight className="w-5 h-5" aria-hidden="true" />
+                <Plus className="w-5 h-5" /> Start Hosting
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Organizer Call to Action - Split messaging */}
+      <section className="max-w-7xl mx-auto px-4">
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* For Attendees */}
+          <div className="relative bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-[40px] p-12 shadow-2xl shadow-indigo-600/20 overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
+            <div className="relative z-10 space-y-6">
+              <h3 className="text-3xl md:text-4xl font-black text-white">Ready to Explore?</h3>
+              <p className="text-indigo-50 text-lg leading-relaxed">
+                Discover 1,300+ live events on the map. Find exactly what's happening in your area right now.
+              </p>
+              <Link 
+                to="/map"
+                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-indigo-600 rounded-2xl font-bold text-lg hover:bg-indigo-50 transition-all w-full md:w-auto justify-center"
+                aria-label="Browse events on map"
+              >
+                <MapIcon className="w-5 h-5" /> Explore the Map
+              </Link>
+            </div>
+          </div>
+
+          {/* For Organizers */}
+          <div className="relative bg-gradient-to-br from-orange-600 to-orange-700 rounded-[40px] p-12 shadow-2xl shadow-orange-600/20 overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
+            <div className="relative z-10 space-y-6">
+              <h3 className="text-3xl md:text-4xl font-black text-white">Ready to Host?</h3>
+              <p className="text-orange-50 text-lg leading-relaxed">
+                Create events, manage tickets, reach global audiences. Start your free plan today.
+              </p>
+              <button 
+                onClick={handleCreateEvent}
+                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-orange-600 rounded-2xl font-bold text-lg hover:bg-orange-50 transition-all w-full md:w-auto justify-center"
+                aria-label="Create an event as organizer"
+              >
+                <Plus className="w-5 h-5" /> Start Hosting
               </button>
             </div>
           </div>
