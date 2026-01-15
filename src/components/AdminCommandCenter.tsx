@@ -60,6 +60,8 @@ import {
   FinancialTransaction
 } from '../services/dbService';
 import MasterAuthModal from './MasterAuthModal';
+import Button from './Button';
+import Table from './Table';
 
 // Get version from package.json
 const APP_VERSION = '1.0.0'; // Synced with package.json
@@ -924,64 +926,99 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                       </div>
                    </div>
 
-                   <div className="flex-1 overflow-x-auto">
-                      <table className="w-full text-left min-w-[600px]">
-                         <thead>
-                            <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800">
-                               <th className="px-4 md:px-8 py-3 md:py-4">Identity</th>
-                               <th className="px-2 md:px-4 py-3 md:py-4">Clearance</th>
-                               <th className="px-2 md:px-4 py-3 md:py-4">Ledger</th>
-                               <th className="px-4 md:px-8 py-3 md:py-4 text-right">Actions</th>
-                            </tr>
-                         </thead>
-                         <tbody className="divide-y divide-slate-800/50">
-                            {filteredUsers.map(u => (
-                               <tr key={u.id} className="group hover:bg-slate-800/30 transition-all">
-                                  <td className="px-4 md:px-8 py-4 md:py-5">
-                                     <div className="flex items-center gap-2 md:gap-3">
-                                        <img src={u.avatar} className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl border border-slate-800" alt="" />
-                                        <div className="min-w-0">
-                                           <p className="font-bold text-white text-xs md:text-sm truncate">{u.name}</p>
-                                           <p className="text-[10px] text-slate-500 font-medium truncate">{u.email}</p>
-                                        </div>
-                                     </div>
-                                  </td>
-                                  <td className="px-2 md:px-4 py-4 md:py-5">
-                                     <span className={`text-[9px] md:text-[10px] font-black px-2 md:px-3 py-1 rounded-full uppercase border whitespace-nowrap ${
-                                       (u.subscription_tier || u.subscription) === 'enterprise' ? 'bg-orange-600/10 border-orange-500/20 text-orange-500' :
-                                       (u.subscription_tier || u.subscription) === 'premium' ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' :
-                                       'bg-slate-800 border-slate-700 text-slate-500'
-                                     }`}>
-                                        {u.subscription_tier || u.subscription}
-                                     </span>
-                                  </td>
-                                  <td className="px-2 md:px-4 py-4 md:py-5">
-                                     <div className="flex items-center gap-1 md:gap-2">
-                                        <Gift size={12} className="text-slate-500 flex-shrink-0" />
-                                        <span className="font-mono text-xs md:text-sm text-slate-300">{u.credits}</span>
-                                     </div>
-                                  </td>
-                                  <td className="px-4 md:px-8 py-4 md:py-5 text-right">
-                                     <div className="flex justify-end gap-1 md:gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => setSelectedUser(u)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-indigo-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Message User" aria-label={`Send message to ${u.name}`}><MessageSquare size={14} aria-hidden="true" /></button>
-                                        <button onClick={() => handleSuspendUser(u.id)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-yellow-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Suspend User" aria-label={`Suspend user ${u.name}`}><AlertTriangle size={14} aria-hidden="true" /></button>
-                                        <button onClick={() => handleBanUser(u.id)} className="p-1.5 md:p-2 bg-slate-800 hover:bg-red-600 text-slate-500 hover:text-white rounded-lg transition-all" title="Ban User" aria-label={`Ban user ${u.name}`}><Ban size={14} aria-hidden="true" /></button>
-                                     </div>
-                                  </td>
-                               </tr>
-                            ))}
-                         </tbody>
-                      </table>
-                   </div>
+                   <Table 
+                     data={filteredUsers}
+                     columns={[
+                       {
+                         key: 'name' as const,
+                         label: 'Identity',
+                         render: (_, user) => (
+                           <div className="flex items-center gap-2 md:gap-3">
+                             <img src={user.avatar} className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl border border-slate-800" alt={user.name} />
+                             <div className="min-w-0">
+                               <p className="font-bold text-white text-xs md:text-sm truncate">{user.name}</p>
+                               <p className="text-[10px] text-slate-500 font-medium truncate">{user.email}</p>
+                             </div>
+                           </div>
+                         ),
+                       },
+                       {
+                         key: 'subscription_tier' as const,
+                         label: 'Clearance',
+                         mobileHidden: true,
+                         render: (val) => (
+                           <span className={`text-[9px] md:text-[10px] font-black px-2 md:px-3 py-1 rounded-full uppercase border whitespace-nowrap ${
+                             val === 'enterprise' ? 'bg-orange-600/10 border-orange-500/20 text-orange-500' :
+                             val === 'premium' ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' :
+                             'bg-slate-800 border-slate-700 text-slate-500'
+                           }`}>
+                             {val || 'free'}
+                           </span>
+                         ),
+                       },
+                       {
+                         key: 'credits' as const,
+                         label: 'Ledger',
+                         mobileHidden: true,
+                         render: (credits) => (
+                           <div className="flex items-center gap-1 md:gap-2">
+                             <Gift size={12} className="text-slate-500 flex-shrink-0" />
+                             <span className="font-mono text-xs md:text-sm text-slate-300">{credits}</span>
+                           </div>
+                         ),
+                       },
+                       {
+                         key: 'id' as const,
+                         label: 'Actions',
+                         render: (_, user) => (
+                           <div className="flex justify-end gap-1 md:gap-2">
+                             <button 
+                               onClick={() => setSelectedUser(user)} 
+                               className="p-1.5 md:p-2 bg-slate-800 hover:bg-indigo-600 text-slate-500 hover:text-white rounded-lg transition-all min-h-[32px] min-w-[32px] flex items-center justify-center"
+                               title="Message User" 
+                               aria-label={`Send message to ${user.name}`}
+                             >
+                               <MessageSquare size={14} aria-hidden="true" />
+                             </button>
+                             <button 
+                               onClick={() => handleSuspendUser(user.id)} 
+                               className="p-1.5 md:p-2 bg-slate-800 hover:bg-yellow-600 text-slate-500 hover:text-white rounded-lg transition-all min-h-[32px] min-w-[32px] flex items-center justify-center"
+                               title="Suspend User" 
+                               aria-label={`Suspend user ${user.name}`}
+                             >
+                               <AlertTriangle size={14} aria-hidden="true" />
+                             </button>
+                             <button 
+                               onClick={() => handleBanUser(user.id)} 
+                               className="p-1.5 md:p-2 bg-slate-800 hover:bg-red-600 text-slate-500 hover:text-white rounded-lg transition-all min-h-[32px] min-w-[32px] flex items-center justify-center"
+                               title="Ban User" 
+                               aria-label={`Ban user ${user.name}`}
+                             >
+                               <Ban size={14} aria-hidden="true" />
+                             </button>
+                           </div>
+                         ),
+                       },
+                     ]}
+                     dark
+                   />
                 </div>
 
                 {/* Broadcast Hub */}
                 <div className="bg-slate-900 border border-slate-800 rounded-3xl md:rounded-[48px] p-6 md:p-8 shadow-2xl flex flex-col gap-4 md:gap-6">
                    <h3 className="text-lg md:text-xl font-black tracking-tight flex items-center gap-3"><BellRing className="text-indigo-500" size={20} /> Broadcast</h3>
                    <div className="space-y-3 md:space-y-4">
-                      <div className="flex bg-slate-950 rounded-xl p-1">
+                      <div className="flex gap-2 bg-slate-950 rounded-xl p-2">
                          {(['all', 'organizers', 'attendees'] as const).map(t => (
-                            <button key={t} onClick={() => setBroadcastTarget(t)} className={`flex-1 py-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${broadcastTarget === t ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`} aria-label={`Broadcast to ${t}`} aria-pressed={broadcastTarget === t}>{t}</button>
+                            <button 
+                              key={t} 
+                              onClick={() => setBroadcastTarget(t)} 
+                              className={`flex-1 py-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${broadcastTarget === t ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`} 
+                              aria-label={`Broadcast to ${t}`} 
+                              aria-pressed={broadcastTarget === t}
+                            >
+                              {t}
+                            </button>
                          ))}
                       </div>
                       <textarea 
@@ -992,14 +1029,16 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                         aria-label="Broadcast message content"
                         aria-required="true"
                       />
-                      <button 
+                      <Button 
                         onClick={handleBroadcastNotification}
                         disabled={!broadcastMsg.trim()}
-                        className="w-full py-3 md:py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl md:rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 md:gap-3 transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
-                        aria-label={!broadcastMsg.trim() ? "Enter message to send broadcast" : `Send broadcast to ${broadcastTarget}`}
+                        variant="primary"
+                        size="md"
+                        fullWidth
+                        icon={<Send size={16} />}
                       >
-                         <Send size={14} aria-hidden="true" /> Send Global Push
-                      </button>
+                        Send Global Push
+                      </Button>
                    </div>
                 </div>
              </div>
@@ -1013,12 +1052,15 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                     <h3 className="text-2xl font-black tracking-tighter">Campaign Engine</h3>
                     <p className="text-slate-500 text-sm font-medium">Manage platform growth campaigns with AI-powered generation.</p>
                  </div>
-                 <div className="flex gap-3">
-                   <button 
+                 <div className="flex flex-col md:flex-row gap-3">
+                   <Button 
                      onClick={() => { setEditingCampaign(null); setIsCampaignModalOpen(true); }}
-                     className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center gap-2 transition-all active:scale-95 shadow-xl shadow-indigo-600/20"
-                     aria-label="Create new marketing campaign"
+                     variant="primary"
+                     size="md"
+                     icon={<Plus size={16} />}
                    >
+                     New Campaign
+                   </Button>
                       <Plus size={14} aria-hidden="true" /> New Campaign
                    </button>
                  </div>
@@ -1234,14 +1276,16 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 <p className="text-sm text-indigo-300 mb-3">
                   <strong>Full Dashboard Access:</strong> Navigate to <code className="px-2 py-1 bg-indigo-900/50 rounded text-indigo-200">/admin/ai-agents</code> for complete AI Agent System management.
                 </p>
-                <a
+                <Button
                   href="/admin/ai-agents"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold"
+                  as="a"
+                  variant="primary"
+                  size="md"
+                  icon={<Bot size={20} />}
+                  iconRight={<ArrowUpRight size={16} />}
                 >
-                  <Bot size={20} />
                   Open AI Agent Dashboard
-                  <ArrowUpRight size={16} />
-                </a>
+                </Button>
               </div>
             </div>
           </div>
@@ -1316,13 +1360,15 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                       </div>
                     </div>
                     {isMasterLocked && (
-                      <button
+                      <Button
                         onClick={() => requestMasterAuth('Unlock Master Controls')}
-                        className="mt-4 flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg transition-all"
+                        variant="danger"
+                        size="sm"
+                        icon={<KeyRound size={16} />}
+                        className="mt-4"
                       >
-                        <KeyRound className="w-4 h-4" />
                         Unlock Master Controls
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -1435,14 +1481,16 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                   <h3 className="text-2xl font-black tracking-tighter">System Health</h3>
                   <p className="text-slate-500 text-sm font-medium">Real-time infrastructure monitoring & diagnostics</p>
                 </div>
-                <button
+                <Button
                   onClick={handleRefreshInfra}
                   disabled={isRefreshing}
-                  className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all"
+                  loading={isRefreshing}
+                  variant="secondary"
+                  size="md"
+                  icon={<RefreshCw size={16} />}
                 >
-                  <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
                   {isRefreshing ? 'Refreshing...' : 'Refresh'}
-                </button>
+                </Button>
               </div>
 
               {isLoadingInfra ? (
@@ -1658,29 +1706,56 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                            <p className="text-slate-500">No financial transactions yet</p>
                          </div>
                        ) : (
-                         <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                               <thead>
-                                  <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800">
-                                     <th className="pb-4">Transaction Source</th>
-                                     <th className="pb-4 text-center">Type</th>
-                                     <th className="pb-4 text-center">Volume</th>
-                                     <th className="pb-4 text-right">Status</th>
-                                  </tr>
-                               </thead>
-                               <tbody className="divide-y divide-slate-800/50">
-                                  {financialLedger.map((transaction, idx) => (
-                                    <FinancialRow 
-                                      key={idx}
-                                      name={transaction.transaction_source} 
-                                      cat={transaction.transaction_type} 
-                                      amt={transaction.volume} 
-                                      status={transaction.status} 
-                                    />
-                                  ))}
-                               </tbody>
-                            </table>
-                         </div>
+                       <Table 
+                         data={financialLedger}
+                         columns={[
+                           {
+                             key: 'transaction_source' as const,
+                             label: 'Transaction Source',
+                             render: (source) => (
+                               <div className="flex items-center gap-3">
+                                 <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-slate-500">
+                                   <Database className="w-5 h-5" />
+                                 </div>
+                                 <span className="font-bold text-white text-sm">{source}</span>
+                               </div>
+                             ),
+                           },
+                           {
+                             key: 'transaction_type' as const,
+                             label: 'Type',
+                             render: (type) => (
+                               <span className="text-[10px] font-black text-slate-500 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 uppercase tracking-widest">
+                                 {type}
+                               </span>
+                             ),
+                           },
+                           {
+                             key: 'volume' as const,
+                             label: 'Volume',
+                             render: (volume) => (
+                               <span className={`font-black ${typeof volume === 'number' && volume > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                 {typeof volume === 'number' ? (volume > 0 ? `+€${volume.toFixed(2)}` : `€${Math.abs(volume).toFixed(2)}`) : '€0.00'}
+                               </span>
+                             ),
+                           },
+                           {
+                             key: 'status' as const,
+                             label: 'Status',
+                             render: (status) => (
+                               <span className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase tracking-tighter ${
+                                 status === 'Settled' ? 'bg-emerald-500/10 text-emerald-500' : 
+                                 status === 'Processing' ? 'bg-orange-500/10 text-orange-500' : 
+                                 'bg-slate-500/10 text-slate-500'
+                               }`}>
+                                 {status}
+                               </span>
+                             ),
+                           },
+                         ]}
+                         dark
+                         emptyMessage="No financial transactions yet"
+                       />
                        )}
                     </div>
 
@@ -2228,20 +2303,25 @@ const DiagnosticModal: React.FC<{
   onClose: () => void;
 }> = ({ results, onClose }) => (
   <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={onClose}>
-    <div className="bg-slate-900 border border-slate-800 rounded-[40px] max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
-      <div className="p-8 border-b border-slate-800 flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-black tracking-tight">System Diagnostic Report</h3>
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl md:rounded-[40px] max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="p-4 md:p-8 border-b border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex-1">
+          <h3 className="text-xl md:text-2xl font-black tracking-tight">System Diagnostic Report</h3>
           <p className="text-xs text-slate-500 font-medium mt-1">Completed in {results.scanDuration}</p>
         </div>
-        <button onClick={onClose} className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-center transition-all">
+        <Button 
+          onClick={onClose} 
+          variant="ghost" 
+          size="sm"
+          className="w-10 h-10 min-h-[40px] min-w-[40px]"
+        >
           <X size={18} />
-        </button>
+        </Button>
       </div>
       
-      <div className="p-8 overflow-y-auto max-h-[calc(90vh-200px)] scrollbar-hide">
+      <div className="p-4 md:p-8 overflow-y-auto max-h-[calc(90vh-200px)] scrollbar-hide">
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4">
             <div className={`text-3xl font-black mb-1 ${results.overallStatus === 'healthy' ? 'text-emerald-500' : results.overallStatus === 'warning' ? 'text-yellow-500' : 'text-red-500'}`}>
               {results.overallStatus === 'healthy' ? '✓' : results.overallStatus === 'warning' ? '⚠' : '✕'}
@@ -2407,29 +2487,31 @@ const DiagnosticModal: React.FC<{
           </div>
 
           {/* Actions */}
-          <div className="p-8 border-t border-red-500/20 bg-red-500/5 flex gap-4">
-            <button
+          <div className="p-6 md:p-8 border-t border-red-500/20 bg-red-500/5 flex flex-col sm:flex-row gap-3">
+            <Button
               onClick={() => {
                 onClose();
                 setTransitionConfirmation('');
               }}
-              className="flex-1 px-6 py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all"
+              variant="secondary"
+              size="md"
+              fullWidth
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={onConfirm}
               disabled={
                 isProcessing ||
                 transitionConfirmation !== 'TRANSITION_TO_PRODUCTION'
               }
-              className="flex-1 px-6 py-4 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2 shadow-xl shadow-red-600/20"
+              loading={isProcessing}
+              variant="danger"
+              size="md"
+              fullWidth
+              icon={<Rocket size={16} />}
             >
-              {isProcessing ? (
-                <><Loader2 size={16} className="animate-spin" /> Processing...</>
-              ) : (
-                <><Rocket size={16} /> Go Live Now</>
-              )}
+              {isProcessing ? 'Processing...' : 'Go Live Now'}
             </button>
           </div>
         </div>
