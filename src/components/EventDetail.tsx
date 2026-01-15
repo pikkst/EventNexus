@@ -31,6 +31,7 @@ import { User, EventNexusEvent, TicketTemplate } from '../types';
 import { isEventExpired } from '../utils/eventUtils';
 import { generateEventSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 import ReportEventModal from './ReportEventModal';
+import Button from './Button';
 
 // Helper component to render formatted description with clickable links
 const FormattedDescription: React.FC<{ text: string }> = ({ text }) => {

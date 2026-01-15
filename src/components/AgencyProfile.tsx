@@ -18,6 +18,7 @@ import { supabase } from '../services/supabase';
 import logger from '../utils/logger';
 import Footer from './Footer';
 import { generateAgencySEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
+import Button from './Button';
 
 interface AgencyProfileProps {
   user: User | null;

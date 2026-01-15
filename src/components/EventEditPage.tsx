@@ -5,6 +5,7 @@ import { getEventById, updateEvent } from '../services/dbService';
 import { EventNexusEvent, User } from '../types';
 import { CATEGORIES } from '../constants';
 import ScannerCodeManager from './ScannerCodeManager';
+import Button from './Button';
 
 interface EventEditPageProps {
   user: User | null;
