@@ -63,20 +63,26 @@ const AnalyticsDashboard: React.FC = () => {
 
   // Load metrics on mount and when dateRange changes
   useEffect(() => {
-    loadMetrics();
+    loadMetrics(true); // Initial load with loading state
   }, [dateRange]);
 
   // Auto-refresh every 10 seconds for live updates
   useEffect(() => {
     const interval = setInterval(() => {
-      loadMetrics();
+      loadMetrics(false); // Background refresh without loading state
     }, 10000); // 10 seconds
 
     return () => clearInterval(interval);
   }, [dateRange]);
 
-  const loadMetrics = async () => {
-    setLoading(true);
+  const loadMetrics = async (showLoading: boolean = false) => {
+    // Only show loading spinner on initial load, not on background refresh
+    if (showLoading && metrics.ga.length === 0) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
+    
     try {
       const [ga, traffic, funnel, meta, seo] = await Promise.all([
         fetchGAMetrics('traffic', dateRange),
@@ -86,17 +92,18 @@ const AnalyticsDashboard: React.FC = () => {
         fetchSEOMetrics('', 50)
       ]);
 
+      // Update metrics smoothly without clearing old data first
       setMetrics({ ga, traffic, funnel, meta, seo });
     } catch (error) {
       console.error('Failed to load metrics:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    setLoading(false);
   };
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadMetrics();
-    setRefreshing(false);
+    await loadMetrics(false); // Refresh without full loading state
   };
 
   const TrendBadge = ({ change, trend }: { change: number; trend: string }) => (
@@ -126,7 +133,15 @@ const AnalyticsDashboard: React.FC = () => {
   );
 
   return (
-    <div className="w-full bg-gray-50 rounded-lg p-6 space-y-6">
+    <div className="w-full bg-gray-50 rounded-lg p-6 space-y-6 relative">
+      {/* Refreshing indicator overlay - subtle, non-intrusive */}
+      {refreshing && !loading && (
+        <div className="absolute top-4 right-4 z-10 bg-blue-500 text-white px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
+          <RefreshCw className="w-4 h-4 animate-spin" />
+          Updating...
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
@@ -144,9 +159,10 @@ const AnalyticsDashboard: React.FC = () => {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="p-2 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+            className="p-2 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 relative"
+            title="Refresh data"
           >
-            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin text-blue-600' : 'text-gray-700'}`} />
           </button>
         </div>
       </div>
@@ -177,19 +193,21 @@ const AnalyticsDashboard: React.FC = () => {
           </div>
         </div>
       ) : (
-        <>
+        <div className={`transition-opacity duration-300 ${refreshing ? 'opacity-90' : 'opacity-100'}`}>
           {/* OVERVIEW TAB */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Key Metrics Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {metrics.ga.map((metric, idx) => (
-                  <MetricCard key={idx} metric={metric} />
+                  <div key={idx} className="transition-all duration-300 hover:scale-105">
+                    <MetricCard metric={metric} />
+                  </div>
                 ))}
               </div>
 
               {/* Traffic Chart */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6 transition-all duration-300">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Traffic Trends</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={metrics.traffic}>
@@ -475,7 +493,7 @@ const AnalyticsDashboard: React.FC = () => {
               <SEOImprovementTools />
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
