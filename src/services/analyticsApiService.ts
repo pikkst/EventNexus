@@ -505,8 +505,8 @@ export async function fetchAICrawlerActivity(days: number = 30): Promise<AICrawl
     const crawlerMap = new Map<string, { count: number; lastVisit: string; pages: Set<string> }>();
     
     data?.forEach(event => {
-      const crawler = event.category || 'Unknown';
-      const page = event.metadata?.page || '/';
+      const crawler = event.metadata?.ai_crawler || 'Unknown';
+      const page = event.metadata?.path || '/';
       const timestamp = event.timestamp;
       
       if (!crawlerMap.has(crawler)) {
