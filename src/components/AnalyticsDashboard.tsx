@@ -22,6 +22,7 @@ import {
   CountryTraffic, DeviceTraffic, BrowserTraffic, SearchEngineTraffic, ReferrerTraffic, AICrawlerVisit
 } from '../services/analyticsApiService';
 import SEOImprovementTools from './SEOImprovementTools';
+import Button from './Button';
 
 const COLORS = ['#0ea5e9', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 

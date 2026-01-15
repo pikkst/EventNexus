@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Inbox, Send, Archive, Trash2, Star, RefreshCw, AlertCircle, Clock, Search, Filter, ChevronLeft, ExternalLink } from 'lucide-react';
 import { getInboxMessages, markInboxAsRead, replyToInboxMessage, deleteInboxMessage, getInboxStats } from '../services/dbService';
 import { sanitizeHtml } from '../utils/security';
+import Button from './Button';
 
 interface InboxMessage {
   id: string;
@@ -172,14 +173,16 @@ const AdminInbox: React.FC = () => {
           <h2 className="text-3xl font-black text-white tracking-tight">📬 Admin Inbox</h2>
           <p className="text-slate-400 text-sm mt-1">Manage support emails and customer inquiries</p>
         </div>
-        <button
+        <Button
           onClick={loadMessages}
           disabled={isLoading}
-          className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-indigo-700 disabled:opacity-50"
+          loading={isLoading}
+          variant="primary"
+          size="md"
+          icon={<RefreshCw size={16} />}
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
-        </button>
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -360,13 +363,15 @@ const AdminInbox: React.FC = () => {
 
               {/* Reply Section */}
               {!isReplying && selectedMessage.status !== 'replied' ? (
-                <button
+                <Button
                   onClick={() => setIsReplying(true)}
-                  className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2"
+                  variant="primary"
+                  size="md"
+                  fullWidth
+                  icon={<Send size={16} />}
                 >
-                  <Send className="w-5 h-5" />
                   Reply
-                </button>
+                </Button>
               ) : selectedMessage.status === 'replied' ? (
                 <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 text-center">
                   <p className="text-green-400 font-semibold">✅ Replied on {new Date(selectedMessage.replied_at!).toLocaleString()}</p>
@@ -380,18 +385,18 @@ const AdminInbox: React.FC = () => {
                     rows={6}
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-indigo-500"
                   />
-                  <div className="flex gap-2">
-                    <button
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
                       onClick={handleSendReply}
                       disabled={isSendingReply || !replyBody.trim()}
-                      className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                      loading={isSendingReply}
+                      variant="primary"
+                      size="md"
+                      fullWidth
+                      icon={<Send size={16} />}
                     >
-                      {isSendingReply ? (
-                        <>
-                          <RefreshCw className="w-5 h-5 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
+                      {isSendingReply ? 'Sending...' : 'Send Reply'}
+                    </Button>
                         <>
                           <Send className="w-5 h-5" />
                           Send Reply
