@@ -224,40 +224,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
   return (
     <div className="space-y-24 pb-24">
-      {/* Testing Phase Notice Banner */}
-      <section className="px-4 pt-6">
-        <div className="max-w-7xl mx-auto bg-gradient-to-r from-amber-900/40 via-yellow-900/40 to-amber-900/40 border-2 border-amber-500/60 rounded-2xl p-5 md:p-6 shadow-2xl">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                <Shield className="w-6 h-6 text-amber-400" />
-              </div>
-            </div>
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl md:text-2xl font-bold text-emerald-50">Live & Active</h2>
-                <span className="bg-emerald-500 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-950">Live</span>
-              </div>
-              <p className="text-emerald-100/90 text-sm md:text-base leading-relaxed">
-                EventNexus is now <strong>live in production</strong>. All payments are processed securely through <strong>Stripe</strong> with real transactions. 
-                <span className="hidden md:inline"> Join thousands of organizers creating unforgettable events.</span>
-              </p>
-              <div className="bg-emerald-950/30 border border-emerald-600/40 rounded-xl p-4 mt-3">
-                <div className="flex items-start gap-3">
-                  <Star className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-emerald-50 font-semibold text-sm md:text-base">Secure & Trusted</p>
-                    <p className="text-emerald-100/80 text-xs md:text-sm mt-1">
-                      EventNexus is <strong>fully secured</strong> with enterprise-grade payment processing. Your data is protected with industry standards and PCI compliance.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Active Growth Campaign Banner */}
       {activeBanner && !user && (
         <section className="px-4">
