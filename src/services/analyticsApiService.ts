@@ -371,6 +371,13 @@ export interface ReferrerTraffic {
   unique_users: number;
 }
 
+export interface AICrawlerVisit {
+  ai_crawler: string;
+  visit_count: number;
+  last_visit: string;
+  pages_visited: string[];
+}
+
 /**
  * Fetch traffic by country (flags/geographic data)
  */
@@ -470,6 +477,62 @@ export async function fetchTopReferrers(days: number = 30, limit: number = 20): 
     return data || [];
   } catch (error) {
     console.error('Failed to fetch referrers:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch AI crawler activity (ChatGPT, Claude, Perplexity, etc.)
+ */
+export async function fetchAICrawlerActivity(days: number = 30): Promise<AICrawlerVisit[]> {
+  try {
+    const { supabase } = await import('./supabase');
+    
+    // Query analytics_events for AI crawler visits
+    const { data, error } = await supabase
+      .from('analytics_events')
+      .select('category, metadata, timestamp')
+      .eq('event_type', 'ai_crawler_visit')
+      .gte('timestamp', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
+      .order('timestamp', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching AI crawler activity:', error);
+      return [];
+    }
+    
+    // Group by AI crawler
+    const crawlerMap = new Map<string, { count: number; lastVisit: string; pages: Set<string> }>();
+    
+    data?.forEach(event => {
+      const crawler = event.category || 'Unknown';
+      const page = event.metadata?.page || '/';
+      const timestamp = event.timestamp;
+      
+      if (!crawlerMap.has(crawler)) {
+        crawlerMap.set(crawler, { count: 0, lastVisit: timestamp, pages: new Set() });
+      }
+      
+      const crawlerData = crawlerMap.get(crawler)!;
+      crawlerData.count++;
+      crawlerData.pages.add(page);
+      
+      // Update last visit if this is more recent
+      if (new Date(timestamp) > new Date(crawlerData.lastVisit)) {
+        crawlerData.lastVisit = timestamp;
+      }
+    });
+    
+    // Convert to array
+    return Array.from(crawlerMap.entries()).map(([ai_crawler, data]) => ({
+      ai_crawler,
+      visit_count: data.count,
+      last_visit: data.lastVisit,
+      pages_visited: Array.from(data.pages)
+    })).sort((a, b) => b.visit_count - a.visit_count);
+    
+  } catch (error) {
+    console.error('Failed to fetch AI crawler activity:', error);
     return [];
   }
 }

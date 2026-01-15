@@ -24,6 +24,37 @@ export interface AnalyticsEvent {
 }
 
 /**
+ * Detect AI crawler/bot from User-Agent
+ */
+const detectAICrawler = (userAgent: string): string | null => {
+  const ua = userAgent.toLowerCase();
+  
+  // OpenAI/ChatGPT
+  if (ua.includes('gptbot') || ua.includes('chatgpt')) return 'ChatGPT';
+  
+  // Anthropic/Claude
+  if (ua.includes('claude-web') || ua.includes('anthropic-ai') || ua.includes('claudebot')) return 'Claude';
+  
+  // Perplexity
+  if (ua.includes('perplexitybot') || ua.includes('perplexity')) return 'Perplexity';
+  
+  // Common Crawl (used by various AI)
+  if (ua.includes('ccbot')) return 'CommonCrawl';
+  
+  // Google AI
+  if (ua.includes('google-extended')) return 'Google AI';
+  
+  // Bing AI
+  if (ua.includes('bingpreview')) return 'Bing AI';
+  
+  // Other AI crawlers
+  if (ua.includes('ai2bot')) return 'AI2Bot';
+  if (ua.includes('bytespider')) return 'ByteSpider';
+  
+  return null;
+};
+
+/**
  * Check if user is admin (skip tracking)
  */
 const isAdminUser = (user: User | null): boolean => {
@@ -86,6 +117,30 @@ export const trackPageView = async (
   page: string,
   referrer?: string
 ) => {
+  // Detect AI crawler
+  const aiCrawler = detectAICrawler(navigator.userAgent);
+  
+  // If it's an AI crawler, track it separately
+  if (aiCrawler) {
+    console.log(`🤖 AI Crawler detected: ${aiCrawler} visiting ${page}`);
+    try {
+      await supabase.from('analytics_events').insert({
+        event_type: 'ai_crawler_visit',
+        category: aiCrawler,
+        metadata: {
+          page,
+          referrer: referrer || document.referrer,
+          user_agent: navigator.userAgent,
+          timestamp: new Date().toISOString()
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Failed to track AI crawler:', error);
+    }
+    return; // Don't track AI crawlers as regular users
+  }
+  
   // Skip tracking for admin users
   if (isAdminUser(user)) {
     console.log('⛔ Analytics: Skipping page view tracking for admin user');
