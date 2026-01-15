@@ -155,14 +155,6 @@ const AnalyticsDashboard: React.FC = () => {
 
   return (
     <div className="w-full bg-gray-50 rounded-lg p-6 space-y-6 relative">
-      {/* Refreshing indicator overlay - subtle, non-intrusive */}
-      {refreshing && !loading && (
-        <div className="absolute top-4 right-4 z-10 bg-blue-500 text-white px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
-          <RefreshCw className="w-4 h-4 animate-spin" />
-          Updating...
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
@@ -206,15 +198,8 @@ const AnalyticsDashboard: React.FC = () => {
         ))}
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-96">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading analytics...</p>
-          </div>
-        </div>
-      ) : (
-        <div className={`transition-opacity duration-300 ${refreshing ? 'opacity-90' : 'opacity-100'}`}>
+      {/* Content with stable layout - no opacity changes */}
+      <div>
           {/* OVERVIEW TAB */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
