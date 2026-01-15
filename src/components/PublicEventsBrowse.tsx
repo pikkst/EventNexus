@@ -21,7 +21,7 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
 
   // Track page view for analytics (including AI crawlers)
   useEffect(() => {
-    trackPageView('/browse');
+    trackPageView(null, '/browse', document.referrer);
   }, []);
 
   useEffect(() => {

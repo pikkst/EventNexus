@@ -113,22 +113,34 @@ const detectSearchEngine = (referrer: string): string | undefined => {
  * Track page views with geographic and referrer data
  */
 export const trackPageView = async (
-  user: User | null,
-  page: string,
+  userOrPage: User | null | string,
+  page?: string,
   referrer?: string
 ) => {
+  // Handle backward compatibility: if first param is string, it's the page
+  let user: User | null = null;
+  let actualPage: string;
+  
+  if (typeof userOrPage === 'string') {
+    actualPage = userOrPage;
+    referrer = page; // second param becomes referrer
+  } else {
+    user = userOrPage;
+    actualPage = page || '/';
+  }
+  
   // Detect AI crawler
   const aiCrawler = detectAICrawler(navigator.userAgent);
   
   // If it's an AI crawler, track it separately
   if (aiCrawler) {
-    console.log(`🤖 AI Crawler detected: ${aiCrawler} visiting ${page}`);
+    console.log(`🤖 AI Crawler detected: ${aiCrawler} visiting ${actualPage}`);
     try {
       await supabase.from('analytics_events').insert({
         event_type: 'ai_crawler_visit',
         category: aiCrawler,
         metadata: {
-          page,
+          page: actualPage,
           referrer: referrer || document.referrer,
           user_agent: navigator.userAgent,
           timestamp: new Date().toISOString()
@@ -163,11 +175,11 @@ export const trackPageView = async (
         os,
         referrer: referrer || document.referrer || null,
         search_engine,
-        metadata: { page },
+        metadata: { page: actualPage },
         timestamp: new Date().toISOString()
       });
     
-    console.log(`✅ Page view tracked: ${page}`, { search_engine, device_type, browser });
+    console.log(`✅ Page view tracked: ${actualPage}`, { search_engine, device_type, browser });
   } catch (error) {
     console.error('Error tracking page view:', error);
   }
