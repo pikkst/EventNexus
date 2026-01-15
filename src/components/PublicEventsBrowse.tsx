@@ -36,12 +36,20 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
       setError(null);
 
       // Load ALL events at once (AI crawlers need to see all)
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       const response = await fetch(
-        'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/public-events-sitemap?format=json&limit=10000'
+        'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/public-events-sitemap?format=json&limit=10000',
+        {
+          headers: {
+            'Authorization': `Bearer ${anonKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
       );
 
       if (!response.ok) {
-        throw new Error('Failed to load events');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Failed to load events: ${response.status} ${JSON.stringify(errorData)}`);
       }
 
       const data = await response.json();
