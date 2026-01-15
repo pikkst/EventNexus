@@ -45,6 +45,7 @@ import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkCo
 import { supabase } from '../services/supabase';
 import logger from '../utils/logger';
 import TicketCard from './TicketCard';
+import Button from './Button';
 // TicketViewModal removed; using dedicated TicketViewPage route
 import { SimplifiedSocialMediaManager } from './SimplifiedSocialMediaManager';
 import BetaTesterReport from './BetaTesterReport';
@@ -845,12 +846,15 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         </div>
         
         <div className="absolute top-4 right-8 flex items-center gap-3">
-          <button 
+          <Button
             onClick={() => setIsEditModalOpen(true)}
-            className="bg-white/10 hover:bg-white/20 backdrop-blur-xl px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest border border-white/20 transition-all flex items-center gap-2 text-white"
+            variant="ghost"
+            size="md"
+            icon={<Edit className="w-4 h-4" />}
+            className="text-white"
           >
-            <Edit className="w-4 h-4" /> Edit Profile
-          </button>
+            Edit Profile
+          </Button>
         </div>
       </div>
 
@@ -1316,27 +1320,25 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                 </div>
 
                 <div className="space-y-2">
-                  <button
+                  <Button
                     onClick={() => navigate('/pricing')}
-                    className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition-all group"
+                    variant="secondary"
+                    size="md"
+                    fullWidth
+                    icon={<RefreshCw size={20} />}
                   >
-                    <div className="flex items-center gap-3">
-                      <RefreshCw className="w-5 h-5 text-indigo-400" />
-                      <span className="font-bold text-sm text-white">Change Plan</span>
-                    </div>
-                    <ChevronRight size={16} className="text-slate-600 group-hover:translate-x-1 transition-transform" />
-                  </button>
+                    Change Plan
+                  </Button>
 
-                  <button
+                  <Button
                     onClick={() => setIsSubscriptionModalOpen(true)}
-                    className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-800/50 border border-slate-700 hover:bg-slate-800 hover:border-red-500/30 transition-all group"
+                    variant="danger"
+                    size="md"
+                    fullWidth
+                    icon={<XOctagon size={20} />}
                   >
-                    <div className="flex items-center gap-3">
-                      <XOctagon className="w-5 h-5 text-red-400" />
-                      <span className="font-bold text-sm text-white group-hover:text-red-400 transition-colors">Manage Subscription</span>
-                    </div>
-                    <ChevronRight size={16} className="text-slate-600 group-hover:translate-x-1 group-hover:text-red-400 transition-all" />
-                  </button>
+                    Manage Subscription
+                  </Button>
 
                   {/* Stripe Connect Payout Dashboard */}
                   <div className="space-y-2">
