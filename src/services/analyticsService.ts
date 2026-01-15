@@ -24,6 +24,42 @@ export interface AnalyticsEvent {
 }
 
 /**
+ * Get user's geographic location from IP using free GeoIP service
+ */
+let cachedLocation: { country: string; city: string } | null = null;
+
+const getGeoLocation = async (): Promise<{ country: string; city: string }> => {
+  // Return cached value if available (per session)
+  if (cachedLocation) {
+    return cachedLocation;
+  }
+
+  try {
+    // Using ipapi.co - free tier: 1000 requests/day (no API key needed)
+    const response = await fetch('https://ipapi.co/json/', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      cachedLocation = {
+        country: data.country_name || 'Unknown',
+        city: data.city || 'Unknown'
+      };
+      console.log('📍 GeoIP detected:', cachedLocation);
+      return cachedLocation;
+    }
+  } catch (error) {
+    console.warn('GeoIP detection failed, using Unknown:', error);
+  }
+
+  // Fallback
+  cachedLocation = { country: 'Unknown', city: 'Unknown' };
+  return cachedLocation;
+};
+
+/**
  * Detect AI crawler/bot from User-Agent
  */
 const detectAICrawler = (userAgent: string): string | null => {
@@ -136,9 +172,12 @@ export const trackPageView = async (
   if (aiCrawler) {
     console.log(`🤖 AI Crawler detected: ${aiCrawler} visiting ${actualPage}`);
     try {
+      const location = await getGeoLocation();
       await supabase.from('analytics_events').insert({
         event_type: 'ai_crawler_visit',
         category: aiCrawler,
+        user_country: location.country,
+        user_city: location.city,
         metadata: {
           page: actualPage,
           referrer: referrer || document.referrer,
@@ -162,14 +201,15 @@ export const trackPageView = async (
   try {
     const { device_type, browser, os } = getDeviceInfo();
     const search_engine = detectSearchEngine(referrer || document.referrer);
+    const location = await getGeoLocation();
 
     await supabase
       .from('analytics_events')
       .insert({
         event_type: 'page_view',
         user_id: user?.id || null,
-        user_country: user?.country || null,
-        user_city: user?.city || null,
+        user_country: location.country,
+        user_city: location.city,
         device_type,
         browser,
         os,
@@ -179,7 +219,12 @@ export const trackPageView = async (
         timestamp: new Date().toISOString()
       });
     
-    console.log(`✅ Page view tracked: ${actualPage}`, { search_engine, device_type, browser });
+    console.log(`✅ Page view tracked: ${actualPage}`, { 
+      location: `${location.city}, ${location.country}`,
+      search_engine, 
+      device_type, 
+      browser 
+    });
   } catch (error) {
     console.error('Error tracking page view:', error);
   }
@@ -201,14 +246,15 @@ export const trackAction = async (
 
   try {
     const { device_type, browser, os } = getDeviceInfo();
+    const location = await getGeoLocation();
 
     await supabase
       .from('analytics_events')
       .insert({
         event_type: action,
         user_id: user?.id || null,
-        user_country: user?.country || null,
-        user_city: user?.city || null,
+        user_country: location.country,
+        user_city: location.city,
         device_type,
         browser,
         os,

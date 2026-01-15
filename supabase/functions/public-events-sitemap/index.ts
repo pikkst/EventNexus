@@ -31,6 +31,56 @@ interface PublicEvent {
   organizer_name: string;
 }
 
+// AI Crawler Detection
+function detectAICrawler(userAgent: string): string | null {
+  const ua = userAgent.toLowerCase();
+  
+  const crawlers: Record<string, string[]> = {
+    'ChatGPT': ['gptbot', 'chatgpt'],
+    'Claude': ['claude-web', 'claudebot', 'anthropic'],
+    'Perplexity': ['perplexitybot'],
+    'CommonCrawl': ['ccbot'],
+    'Google AI': ['google-extended', 'googleother'],
+    'Bing AI': ['bingpreview'],
+    'AI2Bot': ['ai2bot'],
+    'ByteSpider': ['bytespider']
+  };
+
+  for (const [name, patterns] of Object.entries(crawlers)) {
+    if (patterns.some(p => ua.includes(p))) {
+      return name;
+    }
+  }
+  
+  return null;
+}
+
+// Log AI Crawler Visit
+async function logAICrawlerVisit(
+  supabase: any,
+  crawlerName: string,
+  path: string,
+  userAgent: string
+) {
+  try {
+    await supabase
+      .from('analytics_events')
+      .insert({
+        event_type: 'ai_crawler_visit',
+        category: 'sitemap',
+        metadata: {
+          ai_crawler: crawlerName,
+          path,
+          user_agent: userAgent,
+          timestamp: new Date().toISOString()
+        }
+      });
+    console.log(`✅ Logged ${crawlerName} visit to ${path}`);
+  } catch (error) {
+    console.error(`❌ Failed to log AI crawler visit:`, error);
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -46,6 +96,16 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Detect and log AI crawlers
+    const userAgent = req.headers.get('user-agent') || '';
+    const crawlerName = detectAICrawler(userAgent);
+    
+    if (crawlerName) {
+      // Log in background (don't wait)
+      logAICrawlerVisit(supabase, crawlerName, url.pathname, userAgent);
+      console.log(`🤖 ${crawlerName} accessing sitemap (format: ${format})`);
+    }
 
     // Fetch public events directly from view (bypasses type issues)
     const { data: events, error } = await supabase
