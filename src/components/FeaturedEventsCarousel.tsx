@@ -116,11 +116,15 @@ export const FeaturedEventsCarousel: React.FC<FeaturedEventsCarouselProps> = ({ 
                 >
                   {/* Image Container */}
                   <div className="relative h-48 bg-gradient-to-br from-slate-800 to-slate-900 overflow-hidden">
-                    {event.image_url ? (
+                    {event.image_url && typeof event.image_url === 'string' ? (
                       <img
                         src={event.image_url}
                         alt={event.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        onError={(e) => {
+                          // Fallback if image fails to load
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-600">
@@ -138,7 +142,7 @@ export const FeaturedEventsCarousel: React.FC<FeaturedEventsCarouselProps> = ({ 
                     {/* Category */}
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-600/20 border border-indigo-500/50 rounded-full">
                       <span className="text-indigo-400 text-xs font-bold uppercase tracking-wider">
-                        {event.category || 'Event'}
+                        {typeof event.category === 'string' ? event.category : 'Event'}
                       </span>
                     </div>
 
@@ -176,7 +180,11 @@ export const FeaturedEventsCarousel: React.FC<FeaturedEventsCarouselProps> = ({ 
                         <div className="flex items-start gap-3">
                           <MapPin className="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0" />
                           <span className="text-xs text-slate-300 line-clamp-1">
-                            {event.location}
+                            {typeof event.location === 'string'
+                              ? event.location
+                              : typeof event.location === 'object' && event.location.address
+                              ? event.location.address
+                              : 'Location TBA'}
                           </span>
                         </div>
                       )}
