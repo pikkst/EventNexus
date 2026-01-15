@@ -62,6 +62,9 @@ UPDATE public.city_configs SET country_code = 'am' WHERE country = 'Armenia';
 -- United States
 UPDATE public.city_configs SET country_code = 'us' WHERE country = 'United States';
 
+-- Canada
+UPDATE public.city_configs SET country_code = 'ca' WHERE country = 'Canada';
+
 -- Add comment
 COMMENT ON COLUMN public.city_configs.country_code IS 'ISO 3166-1 alpha-2 country code (lowercase) for Nominatim geocoding API';
 

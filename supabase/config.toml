@@ -9,3 +9,4 @@ verify_jwt = true
 
 # Note: Cron jobs configured via Supabase Dashboard > Edge Functions > Cron
 # bootstrap-city should run every 5 minutes: */5 * * * *
+# process-event-reports runs every hour: 0 * * * *

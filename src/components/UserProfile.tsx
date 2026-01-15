@@ -37,10 +37,11 @@ import {
   Copy,
   Sparkles,
   Archive,
-  ArchiveRestore
+  ArchiveRestore,
+  AlertTriangle
 } from 'lucide-react';
-import { User, EventNexusEvent } from '../types';
-import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, verifyConnectOnboarding, deleteEvent, archiveTicket, restoreTicket, getArchivedTickets, archiveEvent, restoreEvent, getArchivedEvents } from '../services/dbService';
+import { User, EventNexusEvent, EventReport } from '../types';
+import { getUserTickets, uploadAvatar, uploadBanner, getOrganizerEvents, checkConnectStatus, getConnectDashboardLink, createConnectAccount, verifyConnectOnboarding, deleteEvent, archiveTicket, restoreTicket, getArchivedTickets, archiveEvent, restoreEvent, getArchivedEvents, getEventReports } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import logger from '../utils/logger';
 import TicketCard from './TicketCard';
@@ -73,6 +74,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [showBetaReport, setShowBetaReport] = useState(false);
   const [isDeletingEvent, setIsDeletingEvent] = useState<string | null>(null);
+  const [eventReports, setEventReports] = useState<Map<string, EventReport[]>>(new Map());
+  const [selectedReportsEvent, setSelectedReportsEvent] = useState<string | null>(null);
   const [connectStatus, setConnectStatus] = useState<{
     hasAccount: boolean;
     onboardingComplete: boolean;
@@ -112,6 +115,17 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
       if (status) {
         setConnectStatus(status);
       }
+    };
+    const loadEventReports = async () => {
+      // Load reports for all organized events
+      const reports = new Map<string, EventReport[]>();
+      for (const event of organizedEvents) {
+        const eventReports = await getEventReports(event.id);
+        if (eventReports && eventReports.length > 0) {
+          reports.set(event.id, eventReports);
+        }
+      }
+      setEventReports(reports);
     };
     loadTickets();
     loadArchivedTickets();
@@ -949,12 +963,61 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                       // Check if event is completed (ended at least 1 day ago)
                       const eventEndDate = event.end_date || event.date;
                       const isEventCompleted = eventEndDate && new Date(eventEndDate) < new Date(Date.now() - 24 * 60 * 60 * 1000);
+                      const eventReportsList = eventReports.get(event.id) || [];
+                      const openReports = eventReportsList.filter(r => r.status === 'open');
                       
                       return (
                         <div
                           key={event.id}
                           className="p-6 hover:bg-slate-800/30 transition-all group"
                         >
+                          {/* Warning Banner for Open Reports */}
+                          {openReports.length > 0 && (
+                            <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3 flex items-start gap-3">
+                              <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-red-400">
+                                  {openReports.length} Report{openReports.length !== 1 ? 's' : ''} Pending
+                                </p>
+                                <p className="text-xs text-red-300/80 mt-1">
+                                  Users have reported issues with this event. Please review and respond.
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedReportsEvent(selectedReportsEvent === event.id ? null : event.id);
+                                }}
+                                className="text-xs font-semibold text-red-400 hover:text-red-300 px-3 py-1 bg-red-500/20 rounded hover:bg-red-500/30 transition-all whitespace-nowrap"
+                              >
+                                {selectedReportsEvent === event.id ? 'Hide' : 'View'} Reports
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Reports Details (if expanded) */}
+                          {selectedReportsEvent === event.id && openReports.length > 0 && (
+                            <div className="mb-4 bg-slate-800/50 border border-slate-700 rounded-lg p-4 space-y-3 max-h-96 overflow-y-auto">
+                              <h5 className="font-semibold text-sm text-white">Recent Reports:</h5>
+                              {openReports.map((report) => (
+                                <div key={report.id} className="bg-slate-900/50 rounded p-3 border-l-2 border-red-500">
+                                  <div className="flex items-start justify-between gap-2 mb-2">
+                                    <span className="text-xs font-bold text-red-400 uppercase">
+                                      {report.report_type.replace(/_/g, ' ')}
+                                    </span>
+                                    <span className="text-xs text-slate-500">
+                                      {new Date(report.created_at).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-slate-300 mb-2">{report.reason}</p>
+                                  {report.description && (
+                                    <p className="text-xs text-slate-400 italic">{report.description}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           <div className="flex items-start justify-between">
                             <div 
                               className="flex-1 cursor-pointer"
@@ -969,7 +1032,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                                   {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </span>
                               </div>
-                              <h4 className="font-bold text-lg mb-1 group-hover:text-indigo-400 transition-colors">{event.name}</h4>
+                              <h4 className="font-bold text-lg mb-1 group-hover:text-indigo-400 transition-colors flex items-center gap-2">
+                                {event.name}
+                                {openReports.length > 0 && (
+                                  <span className="inline-flex items-center justify-center w-6 h-6 bg-red-500/20 border border-red-500/50 rounded-full text-xs font-bold text-red-400">
+                                    {openReports.length}
+                                  </span>
+                                )}
+                              </h4>
                               <div className="flex items-center gap-4 text-sm text-slate-500">
                                 <span className="flex items-center gap-1">
                                   <MapPin className="w-4 h-4" />

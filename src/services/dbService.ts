@@ -4473,3 +4473,276 @@ function calculateDaysAgo(dateString: string): string {
   if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
   return `${Math.floor(diffDays / 30)} months ago`;
 }
+
+// ============================================
+// EVENT REPORTING SYSTEM
+// ============================================
+
+import { EventReport } from '../types';
+
+/**
+ * Create a new event report
+ */
+export const createEventReport = async (
+  eventId: string,
+  reportType: string,
+  reason: string,
+  description?: string,
+  reporterEmail?: string
+): Promise<EventReport | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_reports')
+      .insert({
+        event_id: eventId,
+        report_type: reportType,
+        reason,
+        description,
+        reporter_email: reporterEmail,
+        reporter_id: (await supabase.auth.getUser()).data.user?.id || null,
+        status: 'open'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Get event details for notification
+    const event = await supabase
+      .from('events')
+      .select('organizer_id, name')
+      .eq('id', eventId)
+      .single();
+
+    if (event.data?.organizer_id) {
+      // Send notification to event organizer
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: event.data.organizer_id,
+          type: 'event_report',
+          title: '⚠️ Event Report',
+          message: `"${event.data.name}" has been reported: ${reason}`,
+          event_id: eventId,
+          sender_name: 'EventNexus Moderation',
+          isRead: false,
+          metadata: {
+            reportType,
+            reportId: data.id,
+            reporterEmail
+          }
+        });
+    }
+
+    // Send notification to all admins
+    const admins = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'admin');
+
+    if (admins.data) {
+      for (const admin of admins.data) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: admin.id,
+            type: 'event_report',
+            title: '🚨 New Event Report',
+            message: `Report received for "${event.data?.name || 'Event'}": ${reason}`,
+            event_id: eventId,
+            sender_name: 'EventNexus Moderation',
+            isRead: false,
+            metadata: {
+              reportType,
+              reportId: data.id,
+              reporterEmail,
+              eventName: event.data?.name
+            }
+          });
+      }
+    }
+
+    // Trigger email notification via Edge Function
+    try {
+      await supabase.functions.invoke('send-report-notifications', {
+        body: {
+          reportId: data.id,
+          action: 'created'
+        }
+      });
+    } catch (error) {
+      console.warn('Edge Function notification error (non-critical):', error);
+    }
+
+    return data as EventReport;
+  } catch (error) {
+    console.error('Error creating event report:', error);
+    return null;
+  }
+};
+
+/**
+ * Get all reports for an event (for organizers and admins only)
+ */
+export const getEventReports = async (eventId: string): Promise<EventReport[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_reports')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []) as EventReport[];
+  } catch (error) {
+    console.error('Error fetching event reports:', error);
+    return [];
+  }
+};
+
+/**
+ * Get count of open reports for an event
+ */
+export const getEventOpenReportsCount = async (eventId: string): Promise<number> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_reports')
+      .select('id', { count: 'exact' })
+      .eq('event_id', eventId)
+      .eq('status', 'open');
+
+    if (error) throw error;
+
+    return data?.length || 0;
+  } catch (error) {
+    console.error('Error counting event reports:', error);
+    return 0;
+  }
+};
+
+/**
+ * Update report status (organizer or admin can resolve/dismiss reports)
+ */
+export const updateReportStatus = async (
+  reportId: string,
+  status: 'acknowledged' | 'resolved' | 'dismissed',
+  resolutionNotes?: string
+): Promise<boolean> => {
+  try {
+    // Get report details first
+    const reportData = await supabase
+      .from('event_reports')
+      .select('event_id, reporter_id, reporter_email')
+      .eq('id', reportId)
+      .single();
+
+    const { error } = await supabase
+      .from('event_reports')
+      .update({
+        status,
+        resolution_notes: resolutionNotes,
+        resolved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', reportId);
+
+    if (error) throw error;
+
+    // Send notification to reporter (if there's a reporter_id)
+    if (reportData.data?.reporter_id) {
+      const statusMessages = {
+        acknowledged: 'Your report has been acknowledged and is being reviewed.',
+        resolved: 'Your report has been resolved. Thank you for helping us improve EventNexus!',
+        dismissed: 'Your report has been reviewed and dismissed.'
+      };
+
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: reportData.data.reporter_id,
+          type: 'report_response',
+          title: `📧 Report ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+          message: statusMessages[status],
+          sender_name: 'EventNexus Moderation',
+          isRead: false,
+          metadata: {
+            reportId,
+            status,
+            resolutionNotes
+          }
+        });
+    }
+
+    // Trigger status update email via Edge Function
+    try {
+      await supabase.functions.invoke('send-report-notifications', {
+        body: {
+          reportId,
+          action: 'status_updated'
+        }
+      });
+    } catch (error) {
+      console.warn('Edge Function notification error (non-critical):', error);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error updating report status:', error);
+    return false;
+  }
+};
+
+/**
+ * Get all reports for admin dashboard (admin only)
+ */
+export const getAllEventReports = async (
+  status?: string,
+  limit: number = 50
+): Promise<EventReport[]> => {
+  try {
+    let query = supabase
+      .from('event_reports')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return (data || []) as EventReport[];
+  } catch (error) {
+    console.error('Error fetching all event reports:', error);
+    return [];
+  }
+};
+
+/**
+ * Get organizer's events with reports count
+ */
+export const getOrganizerEventsWithReportCounts = async (organizerId: string): Promise<Array<EventNexusEvent & { report_count: number }>> => {
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*, report_count')
+      .eq('organizer_id', organizerId)
+      .eq('status', 'active')
+      .is('archived_at', null)
+      .order('date', { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map((event: any) => ({
+      ...transformEventFromDB(event),
+      report_count: event.report_count || 0
+    }));
+  } catch (error) {
+    console.error('Error fetching organizer events with reports:', error);
+    return [];
+  }
+}

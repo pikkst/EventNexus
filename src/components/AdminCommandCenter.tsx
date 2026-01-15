@@ -12,7 +12,7 @@ import {
   UserX, Ban, AlertTriangle, MessageSquare, Send, Bug, EyeOff,
   Lock, Unlock, KeyRound, AlertOctagon, Github, Cloud, Key, Link as LinkIcon,
   Wifi, Server, Code, Globe2 as MapIcon, HardDrive, Mail as MailIcon,
-  MonitorOff, Power, ShieldX, Shield, Bot, Play
+  MonitorOff, Power, ShieldX, Shield, Bot, Play, Flag
 } from 'lucide-react';
 import { 
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, 
@@ -34,6 +34,7 @@ import BetaInvitationManager from './BetaInvitationManager';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import AdminContentManager from './AdminContentManager';
 import AdminMediaManager from './AdminMediaManager';
+import AdminEventReports from './AdminEventReports';
 import { 
   getEvents, 
   getAllUsers, 
@@ -645,6 +646,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     { id: 'analytics', label: 'Global Insights', icon: <PieChart /> },
     { id: 'analytics-dashboard', label: 'GA & Meta Analytics', icon: <TrendingUp /> },
     { id: 'users', label: 'User Governance', icon: <Users /> },
+    { id: 'event-reports', label: 'Event Reports', icon: <Flag /> },
     { id: 'inbox', label: 'Email Inbox', icon: <Mail /> },
     { id: 'ai-agents', label: 'AI Agent System', icon: <Bot /> },
     { id: 'marketing', label: 'Campaign Engine', icon: <Rocket /> },
@@ -1248,6 +1250,12 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         {activeTab === 'beta-invitations' && (
           <div className="animate-in fade-in duration-500">
             <BetaInvitationManager />
+          </div>
+        )}
+
+        {activeTab === 'event-reports' && (
+          <div className="animate-in fade-in duration-500">
+            <AdminEventReports isAdmin={user.role === 'admin'} />
           </div>
         )}
 
