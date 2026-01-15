@@ -1,6 +1,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useOrganizationSEO } from '../hooks/useSEO';
 import { 
   Globe, Twitter, Instagram, Share2, MapPin, Calendar, 
   ShieldCheck, Zap, ExternalLink, UserPlus, UserMinus,
@@ -48,6 +49,15 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
   const [ratings, setRatings] = useState<any[]>([]);
   const [loadingRatings, setLoadingRatings] = useState(false);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+
+  // SEO optimization for AI crawlers
+  useOrganizationSEO(organizer ? {
+    name: organizer.name || 'Event Organizer',
+    description: organizer.aboutText || organizer.bio || undefined,
+    logo: organizer.avatar_url || undefined,
+    website: organizer.website || undefined,
+    slug: organizer.slug || undefined
+  } : null);
   
   // Load events and organizer from database
   useEffect(() => {

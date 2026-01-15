@@ -1,25 +1,121 @@
-# EventNexus - robots.txt for Google crawling
+# EventNexus - Comprehensive robots.txt for all search engines and AI crawlers
+# Updated: 2026-01-15
+
+# Default rules for all crawlers
 User-agent: *
 Allow: /
-# Block admin and user-specific private pages only
+Allow: /map
+Allow: /pricing
+Allow: /mobile
+Allow: /beta
+Allow: /org/
+Allow: /agency/
+Allow: /event/
+Allow: /events/
+Allow: /help
+Allow: /terms
+Allow: /privacy
+Allow: /cookies
+
+# Block admin and user-specific private pages
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /create
+Disallow: /create-event
+Disallow: /scanner
+Disallow: /ticket
+Disallow: /ticket/*
 
 # Crawl optimization
 Crawl-delay: 1
+Request-rate: 30/1m
 
-# Sitemaps
-Sitemap: https://www.eventnexus.eu/sitemap-index.xml
-
-# Allow specific crawlers
+# Google-specific optimizations
 User-agent: Googlebot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /create
+Disallow: /create-event
+Disallow: /scanner
+Disallow: /ticket
+Disallow: /ticket/*
 Crawl-delay: 0
+Request-rate: 100/1m
 
+# Bingbot optimizations
 User-agent: Bingbot
 Allow: /
 Disallow: /admin
 Disallow: /admin/*
-Crawl-delay: 1
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /create
+Disallow: /create-event
+Disallow: /scanner
+Disallow: /ticket
+Disallow: /ticket/*
+Crawl-delay: 0.5
+Request-rate: 60/1m
+
+# ChatGPT / OpenAI crawler
+User-agent: GPTBot
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+
+# Claude / Anthropic crawler
+User-agent: Claude-Web
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+
+# Perplexity AI crawler
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+
+# Common AI/ML crawlers
+User-agent: CCBot
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+
+User-agent: facebookexternalhit
+Allow: /
+Disallow: /admin
+
+User-agent: Twitterbot
+Allow: /
+Disallow: /admin
+
+User-agent: LinkedInBot
+Allow: /
+Disallow: /admin
+
+User-agent: Slurp
+Allow: /
+Disallow: /admin
+
+User-agent: DuckDuckBot
+Allow: /
+Disallow: /admin
+
+# Sitemaps for comprehensive indexing
+Sitemap: https://www.eventnexus.eu/sitemap.xml
+Sitemap: https://www.eventnexus.eu/sitemap-index.xml

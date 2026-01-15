@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageSEO } from '../hooks/useSEO';
 import { 
   Search, SlidersHorizontal, MapPin, Calendar, 
   Star, Navigation2, LocateFixed, Compass, Route, X,
@@ -24,6 +25,14 @@ interface MapEffectsProps {
 }
 
 const MapEffects = ({ center, isFollowing, onMapMove, mapRef }: MapEffectsProps) => {
+  // SEO optimization for AI crawlers
+  usePageSEO({
+    path: '/map',
+    title: 'Event Map - Discover Events Nearby',
+    description: 'Explore events on an interactive map. Find concerts, conferences, workshops, and more near you.',
+    image: 'https://www.eventnexus.eu/og-image.png',
+    type: 'website'
+  });
   const map = useMap();
   
   // Expose map instance to parent via ref

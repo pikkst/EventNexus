@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import logger from '../utils/logger';
 import { translateDescription, translateDescriptionBatch } from '../services/geminiService';
+import { useEventSEO } from '../hooks/useSEO';
 import { 
   MapPin, 
   Calendar, 
@@ -207,6 +208,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
 
     return event.description;
   }, [event, selectedLanguage, translatedDescription]);
+
+  // SEO optimization for AI crawlers
+  useEventSEO(event);
 
   // Sync selected language with user preference when user loads or preference changes
   useEffect(() => {
