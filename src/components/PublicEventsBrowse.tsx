@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Users, ExternalLink, Search, Filter, Loader, Globe, X, Sparkles, Compass, ChevronDown } from 'lucide-react';
 import { EventNexusEvent } from '../types';
+import { trackPageView } from '../services/analyticsService';
 
 interface PublicEventsBrowseProps {
   onOpenAuth?: () => void;
@@ -17,6 +18,11 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
   const [selectedCity, setSelectedCity] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Track page view for analytics (including AI crawlers)
+  useEffect(() => {
+    trackPageView('/browse');
+  }, []);
 
   useEffect(() => {
     loadPublicEvents();
