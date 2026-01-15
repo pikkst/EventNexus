@@ -89,10 +89,16 @@ const GA_MEASUREMENT_ID = 'G-JD7P5ZKF4L';
 
 // Redirect legacy hash URLs to clean URLs
 // Track page views for BrowserRouter routes in Google Analytics
-const AnalyticsTracker: React.FC = () => {
+const AnalyticsTracker: React.FC<{ user: User | null }> = ({ user }) => {
   const location = useLocation();
 
   useEffect(() => {
+    // Skip tracking for admin users
+    if (user?.role === 'admin') {
+      console.log('⛔ Analytics tracking skipped: Admin user');
+      return;
+    }
+
     const gtag = (window as any).gtag;
     const fbq = (window as any).fbq;
 
@@ -100,17 +106,31 @@ const AnalyticsTracker: React.FC = () => {
     const page_location = window.location.href;
 
     if (gtag) {
-      gtag('config', GA_MEASUREMENT_ID, { page_path, page_location });
-      gtag('event', 'page_view', { page_path, page_location });
-      console.log('GA page_view sent', { page_path, page_location });
+      // Enhanced tracking with user dimensions
+      gtag('config', GA_MEASUREMENT_ID, { 
+        page_path, 
+        page_location,
+        user_role: user?.role || 'guest',
+        user_country: user?.country || 'unknown',
+        custom_map: {
+          'dimension1': 'user_role',
+          'dimension2': 'user_country'
+        }
+      });
+      gtag('event', 'page_view', { 
+        page_path, 
+        page_location,
+        user_type: user ? 'logged_in' : 'guest'
+      });
+      console.log('✅ GA page_view sent', { page_path, user_type: user ? 'logged_in' : 'guest' });
     } else {
-      console.warn('GA not ready (AnalyticsTracker)');
+      console.warn('⚠️ GA not ready (AnalyticsTracker)');
     }
 
-    // Track Meta Pixel SPA PageView on route changes
+    // Track Meta Pixel SPA PageView on route changes (exclude admin)
     if (typeof fbq === 'function') {
       fbq('track', 'PageView');
-      console.log('Meta Pixel PageView tracked');
+      console.log('✅ Meta Pixel PageView tracked');
     } else {
       // If base code hasn't defined fbq yet, queue a call defensively
       (window as any).fbq = function(){
@@ -118,7 +138,7 @@ const AnalyticsTracker: React.FC = () => {
       };
       (window as any).fbq('track', 'PageView');
     }
-  }, [location]);
+  }, [location, user]);
 
   return null;
 };
@@ -762,7 +782,7 @@ const App: React.FC = () => {
 
   return (
     <BrowserRouter>
-      <AnalyticsTracker />
+      <AnalyticsTracker user={user} />
       <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
         {/* Loading overlay for initial authentication */}
         {isLoading && (

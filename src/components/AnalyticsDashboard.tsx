@@ -16,7 +16,10 @@ import {
 import {
   fetchGAMetrics, fetchTrafficData, fetchConversionFunnel,
   fetchMetaInsights, fetchSEOMetrics, getSEORecommendations,
-  monitorKeywordRankings, GAMetric, TrafficData, SEOMetric, MetaInsight
+  monitorKeywordRankings, GAMetric, TrafficData, SEOMetric, MetaInsight,
+  fetchTrafficByCountry, fetchTrafficByDevice, fetchTrafficByBrowser,
+  fetchTrafficBySearchEngine, fetchTopReferrers,
+  CountryTraffic, DeviceTraffic, BrowserTraffic, SearchEngineTraffic, ReferrerTraffic
 } from '../services/analyticsApiService';
 import SEOImprovementTools from './SEOImprovementTools';
 
@@ -28,6 +31,11 @@ interface DashboardMetrics {
   funnel: any[];
   meta: MetaInsight[];
   seo: SEOMetric[];
+  countryTraffic: CountryTraffic[];
+  deviceTraffic: DeviceTraffic[];
+  browserTraffic: BrowserTraffic[];
+  searchEngineTraffic: SearchEngineTraffic[];
+  referrerTraffic: ReferrerTraffic[];
 }
 
 interface Tab {
@@ -43,7 +51,12 @@ const AnalyticsDashboard: React.FC = () => {
     traffic: [],
     funnel: [],
     meta: [],
-    seo: []
+    seo: [],
+    countryTraffic: [],
+    deviceTraffic: [],
+    browserTraffic: [],
+    searchEngineTraffic: [],
+    referrerTraffic: []
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -84,16 +97,21 @@ const AnalyticsDashboard: React.FC = () => {
     }
     
     try {
-      const [ga, traffic, funnel, meta, seo] = await Promise.all([
+      const [ga, traffic, funnel, meta, seo, countryTraffic, deviceTraffic, browserTraffic, searchEngineTraffic, referrerTraffic] = await Promise.all([
         fetchGAMetrics('traffic', dateRange),
         fetchTrafficData(dateRange),
         fetchConversionFunnel(dateRange),
         fetchMetaInsights('facebook'),
-        fetchSEOMetrics('', 50)
+        fetchSEOMetrics('', 50),
+        fetchTrafficByCountry(dateRange),
+        fetchTrafficByDevice(dateRange),
+        fetchTrafficByBrowser(dateRange),
+        fetchTrafficBySearchEngine(dateRange),
+        fetchTopReferrers(dateRange, 10)
       ]);
 
       // Update metrics smoothly without clearing old data first
-      setMetrics({ ga, traffic, funnel, meta, seo });
+      setMetrics({ ga, traffic, funnel, meta, seo, countryTraffic, deviceTraffic, browserTraffic, searchEngineTraffic, referrerTraffic });
     } catch (error) {
       console.error('Failed to load metrics:', error);
     } finally {
@@ -244,6 +262,135 @@ const AnalyticsDashboard: React.FC = () => {
                     <Bar dataKey="users" fill="#0ea5e9" />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+
+              {/* Geographic & Device Analytics */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Traffic by Country */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Flag className="w-5 h-5 text-blue-600" />
+                    <h2 className="text-lg font-bold text-gray-900">Traffic by Country</h2>
+                  </div>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                    {metrics.countryTraffic.length > 0 ? (
+                      metrics.countryTraffic.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                          <div className="flex items-center gap-3">
+                            <Globe className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium text-gray-700">{item.country || 'Unknown'}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-gray-900">{item.visit_count.toLocaleString()}</div>
+                            <div className="text-xs text-gray-500">{item.unique_users} unique</div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">No data available</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Traffic by Device */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Smartphone className="w-5 h-5 text-blue-600" />
+                    <h2 className="text-lg font-bold text-gray-900">Device Types</h2>
+                  </div>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={metrics.deviceTraffic}
+                        dataKey="visit_count"
+                        nameKey="device"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={(entry) => `${entry.device}: ${entry.percentage}%`}
+                      >
+                        {metrics.deviceTraffic.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Traffic by Browser */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Chrome className="w-5 h-5 text-blue-600" />
+                    <h2 className="text-lg font-bold text-gray-900">Browsers</h2>
+                  </div>
+                  <div className="space-y-2">
+                    {metrics.browserTraffic.length > 0 ? (
+                      metrics.browserTraffic.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded transition-colors">
+                          <span className="font-medium text-gray-700">{item.browser}</span>
+                          <div className="text-right">
+                            <span className="font-bold text-gray-900">{item.percentage}%</span>
+                            <span className="text-xs text-gray-500 ml-2">({item.visit_count})</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">No data available</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Traffic by Search Engine */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Search className="w-5 h-5 text-blue-600" />
+                    <h2 className="text-lg font-bold text-gray-900">Search Engines</h2>
+                  </div>
+                  <div className="space-y-2">
+                    {metrics.searchEngineTraffic.length > 0 ? (
+                      metrics.searchEngineTraffic.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded transition-colors">
+                          <span className="font-medium text-gray-700">{item.search_engine}</span>
+                          <div className="text-right">
+                            <span className="font-bold text-gray-900">{item.visit_count}</span>
+                            <span className="text-xs text-gray-500 ml-2">({item.conversion_rate}% CVR)</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">No data available</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Referrers */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <ExternalLink className="w-5 h-5 text-blue-600" />
+                  <h2 className="text-lg font-bold text-gray-900">Top Referrers</h2>
+                </div>
+                <div className="space-y-2">
+                  {metrics.referrerTraffic.length > 0 ? (
+                    metrics.referrerTraffic.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-xs font-bold text-blue-600">{idx + 1}</span>
+                          </div>
+                          <span className="font-medium text-gray-700">{item.referrer_domain}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-gray-900">{item.visit_count}</div>
+                          <div className="text-xs text-gray-500">{item.unique_users} unique</div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No data available</p>
+                  )}
+                </div>
               </div>
             </div>
           )}
