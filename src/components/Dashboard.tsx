@@ -117,6 +117,77 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [eventTranslations, setEventTranslations] = useState<{ [eventId: string]: { name: string } }>({});
   const translationCache = useRef<Map<string, { name: string }>>(new Map());
 
+  // Event filtering state
+  const [eventSearchTerm, setEventSearchTerm] = useState('');
+  const [eventStatusFilter, setEventStatusFilter] = useState<'all' | 'upcoming' | 'past' | 'free' | 'paid'>('all');
+  const [eventCategoryFilter, setEventCategoryFilter] = useState<string>('all');
+  const [eventSortBy, setEventSortBy] = useState<'date-asc' | 'date-desc' | 'name' | 'revenue'>('date-asc');
+
+  // Filter and sort events
+  const filteredAndSortedEvents = useMemo(() => {
+    let result = [...events];
+    const now = new Date();
+
+    // Search filter
+    if (eventSearchTerm.trim()) {
+      const term = eventSearchTerm.toLowerCase();
+      result = result.filter(e => 
+        e.name.toLowerCase().includes(term) ||
+        e.description?.toLowerCase().includes(term) ||
+        (typeof e.location === 'string' ? e.location.toLowerCase().includes(term) : 
+         (e.location?.city?.toLowerCase().includes(term) || e.location?.address?.toLowerCase().includes(term)))
+      );
+    }
+
+    // Status filter
+    if (eventStatusFilter !== 'all') {
+      result = result.filter(e => {
+        const eventDate = new Date(e.date);
+        if (eventStatusFilter === 'upcoming') return eventDate > now;
+        if (eventStatusFilter === 'past') return eventDate <= now;
+        if (eventStatusFilter === 'free') return !e.price || e.price === 0;
+        if (eventStatusFilter === 'paid') return e.price && e.price > 0;
+        return true;
+      });
+    }
+
+    // Category filter
+    if (eventCategoryFilter !== 'all') {
+      result = result.filter(e => e.category === eventCategoryFilter);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      switch (eventSortBy) {
+        case 'date-asc':
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        case 'date-desc':
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'revenue':
+          // Would need revenue data here, fallback to date for now
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [events, eventSearchTerm, eventStatusFilter, eventCategoryFilter, eventSortBy]);
+
+  // Get unique categories from events
+  const eventCategories = useMemo(() => {
+    const cats = new Set(events.map(e => e.category).filter(Boolean));
+    return Array.from(cats).sort();
+  }, [events]);
+
+  // Filter revenue data to match filtered events
+  const filteredRevenueByEvent = useMemo(() => {
+    const filteredIds = new Set(filteredAndSortedEvents.map(e => e.id));
+    return revenueByEvent.filter(r => filteredIds.has(r.event_id));
+  }, [revenueByEvent, filteredAndSortedEvents]);
+
   // Auto-translate event names based on user's preferred language
   useEffect(() => {
     const doTranslate = async () => {
@@ -1006,8 +1077,91 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                 </div>
               </div>
 
+              {/* Event Filtering Controls */}
+              {events.length > 0 && (
+                <div className="mt-8 bg-slate-900/30 border border-slate-800 rounded-2xl p-6 space-y-4">
+                  <h4 className="font-black text-white text-lg flex items-center gap-2">
+                    <Filter className="w-5 h-5 text-indigo-400" />
+                    Filter Your Events
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <input
+                        type="text"
+                        placeholder="Search events..."
+                        value={eventSearchTerm}
+                        onChange={(e) => setEventSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                      />
+                    </div>
+
+                    {/* Status Filter */}
+                    <select
+                      value={eventStatusFilter}
+                      onChange={(e) => setEventStatusFilter(e.target.value as any)}
+                      className="px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="upcoming">Upcoming</option>
+                      <option value="past">Past</option>
+                      <option value="free">Free</option>
+                      <option value="paid">Paid</option>
+                    </select>
+
+                    {/* Category Filter */}
+                    {eventCategories.length > 0 && (
+                      <select
+                        value={eventCategoryFilter}
+                        onChange={(e) => setEventCategoryFilter(e.target.value)}
+                        className="px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                      >
+                        <option value="all">All Categories</option>
+                        {eventCategories.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    )}
+
+                    {/* Sort */}
+                    <select
+                      value={eventSortBy}
+                      onChange={(e) => setEventSortBy(e.target.value as any)}
+                      className="px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm"
+                    >
+                      <option value="date-asc">Date: Upcoming First</option>
+                      <option value="date-desc">Date: Recent First</option>
+                      <option value="name">Name: A-Z</option>
+                    </select>
+                  </div>
+
+                  {/* Filter Stats */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-700">
+                    <p className="text-sm text-slate-400 font-medium">
+                      Showing <span className="text-indigo-400 font-bold">{filteredAndSortedEvents.length}</span> of <span className="text-slate-300 font-bold">{events.length}</span> events
+                      {eventSearchTerm || eventStatusFilter !== 'all' || eventCategoryFilter !== 'all' ? ' (filtered)' : ''}
+                    </p>
+                    {(eventSearchTerm || eventStatusFilter !== 'all' || eventCategoryFilter !== 'all') && (
+                      <button
+                        onClick={() => {
+                          setEventSearchTerm('');
+                          setEventStatusFilter('all');
+                          setEventCategoryFilter('all');
+                        }}
+                        className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors flex items-center gap-1.5"
+                      >
+                        <X className="w-3 h-3" />
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Per-Event Revenue Table */}
-              {revenueByEvent.length > 0 && (
+              {filteredAndSortedEvents.length > 0 && (
                 <div className="mt-8 space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-black text-white text-lg">Revenue by Event</h4>
@@ -1049,7 +1203,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800">
-                          {revenueByEvent.map((event) => (
+                          {filteredRevenueByEvent.map((event) => (
                             <tr key={event.event_id} className="hover:bg-slate-800/30 transition-colors">
                               <td className="px-3 sm:px-6 py-3 sm:py-4">
                                 <div className="flex items-center gap-1 sm:gap-2">

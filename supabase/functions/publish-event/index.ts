@@ -548,7 +548,41 @@ serve(async (req) => {
         
         // Get city_id: either from request parameter or from event data
         // EventScout AI doesn't store city_id in raw_events, we use the request parameter
-        const eventCityId = cityId || eventData.city_id || null
+        let eventCityId = cityId || eventData.city_id || null
+        
+        // If city_id not provided, extract from event location and lookup in city_configs
+        if (!eventCityId && eventData.location_address) {
+          console.log(`🔍 Determining city_id from location: ${eventData.location_address}`)
+          
+          // Extract city name from address (last part before country)
+          // Format typically: "Address, City, Country" or "Venue, City, State, Country"
+          const addressParts = eventData.location_address.split(',').map(p => p.trim())
+          const countryPart = addressParts[addressParts.length - 1] // Last part is usually country
+          let cityNameToSearch = addressParts.length > 1 ? addressParts[addressParts.length - 2] : addressParts[0]
+          
+          // Try to find matching city in city_configs (case-insensitive)
+          const { data: matchedCities, error: lookupError } = await supabaseClient
+            .from('city_configs')
+            .select('city_id, city_name, country')
+            .ilike('city_name', `%${cityNameToSearch}%`)
+            .limit(5)
+          
+          if (!lookupError && matchedCities && matchedCities.length > 0) {
+            // If multiple matches, try to match country too
+            let selectedCity = matchedCities[0]
+            if (matchedCities.length > 1 && eventData.country) {
+              const countryMatch = matchedCities.find(c => 
+                c.country.toLowerCase().includes(eventData.country.toLowerCase()) ||
+                eventData.country.toLowerCase().includes(c.country.toLowerCase())
+              )
+              if (countryMatch) selectedCity = countryMatch
+            }
+            eventCityId = selectedCity.city_id
+            console.log(`✓ Matched event to city: ${selectedCity.city_name} (${selectedCity.country})`)
+          } else {
+            console.warn(`⚠️ Could not determine city from location: ${eventData.location_address}`)
+          }
+        }
         
         if (!eventCityId) {
           console.error(`❌ No city_id available for event: ${eventData.name}`)
@@ -636,7 +670,7 @@ serve(async (req) => {
         const { data: existingEvents } = await supabaseClient
           .from('events')
           .select('id, name, date, location_point, status, location')
-          .eq('city_id', cityId)
+          .eq('city_id', eventCityId)
           .eq('date', eventDateStr)
           .eq('status', 'active') // Only check active events
 
@@ -750,7 +784,7 @@ serve(async (req) => {
           const { data: cityData, error: cityDataError } = await supabaseClient
             .from('supported_cities')
             .select('name, country, location_point')
-            .eq('city_id', cityId)
+            .eq('city_id', eventCityId)
             .single()
           
           if (!cityDataError && cityData?.location_point) {
