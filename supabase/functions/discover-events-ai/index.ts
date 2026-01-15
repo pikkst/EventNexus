@@ -129,11 +129,13 @@ interface FreeEvent {
 async function geocodeAddress(
   address: string,
   cityName: string,
-  country: string
+  country: string,
+  countryCode: string
 ): Promise<{ lat: number; lng: number }> {
   // Try Nominatim first (fast, reliable fallback)
   try {
-    const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&country=${encodeURIComponent(country)}&limit=1`
+    // CRITICAL: Use countrycodes parameter to strictly filter by country code
+    const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=${countryCode}&limit=1`
     const nominatimRes = await fetch(nominatimUrl)
     if (nominatimRes.ok) {
       const results = await nominatimRes.json()
@@ -155,7 +157,7 @@ async function geocodeAddress(
   
   // Fallback: use Gemini directly
   console.log(`🔍 Using Gemini for direct geocoding: ${address}`)
-  return await geocodeWithGemini(address, cityName, country)
+  return await geocodeWithGemini(address, cityName, country, countryCode)
 }
 
 /**
@@ -237,20 +239,22 @@ MUST be valid coordinates: latitude -90 to 90, longitude -180 to 180.`
 async function geocodeWithGemini(
   address: string,
   cityName: string,
-  country: string
+  country: string,
+  countryCode: string
 ): Promise<{ lat: number; lng: number }> {
   try {
     const prompt = `You are a precise geocoding expert. Find the EXACT latitude and longitude for this specific venue:
 
 Address: ${address}
 City: ${cityName}
-Country: ${country}
+Country: ${country} (ISO Code: ${countryCode.toUpperCase()})
 
-CRITICAL: 
-1. Use exact venue coordinates, NOT city center or street center. 
-2. Ensure the venue is actually in ${cityName}. 
-3. Do NOT confuse the city with the county capital if they share a county name (e.g., Jõgevamaa is the county, but the city is Põltsamaa).
-4. Be extremely precise with street-level accuracy.
+CRITICAL LOCATION RULES:
+1. The venue MUST be in ${cityName}, ${country} (${countryCode.toUpperCase()}) - NOT any other country!
+2. Use exact venue coordinates, NOT city center or street center
+3. Verify the country matches ${country} - reject coordinates from USA, Canada, or other countries
+4. Do NOT confuse the city with the county capital if they share a county name
+5. Be extremely precise with street-level accuracy
 
 Respond with ONLY a JSON object on ONE line:
 {"lat": 58.1234, "lng": 25.5678}
@@ -421,6 +425,7 @@ MUST be valid coordinates: latitude -90 to 90, longitude -180 to 180.`
 async function discoverEventsWithAI(
   cityName: string,
   country: string,
+  countryCode: string,
   timezone: string,
   targetCount: number = 15,
   cityLat?: number,
@@ -440,16 +445,18 @@ async function discoverEventsWithAI(
   console.log(`🔍 Step 1: Searching for events in ${cityName}, ${country}...`)
 
   // Step 1: Broad search using Flash + Google Search Grounding
-  const searchPrompt = `Search for REAL upcoming FREE events in ${cityName}, ${country} (Region: ${country}).
+  const searchPrompt = `Search for REAL upcoming FREE events in ${cityName}, ${country} (ISO: ${countryCode.toUpperCase()}).
 
 TODAY'S DATE AND TIME: ${dateStr} ${new Date().toLocaleTimeString()}
 CRITICAL: Find ONLY FUTURE events (starting AFTER ${new Date().toLocaleTimeString()} today, or on later dates!)
 
-CRITICAL LOCATION FILTER:
-- ONLY events in ${cityName}, ${country}
-- EXCLUDE any events in USA cities with similar names
-- Verify each event is in the CORRECT country: ${country}
-- Check addresses contain ${country} or proper country indicators
+CRITICAL LOCATION FILTER (MOST IMPORTANT!):
+- ONLY events physically located in ${cityName}, ${country} (ISO code: ${countryCode.toUpperCase()})
+- REJECT any events from USA, Canada, or any country other than ${country}
+- Verify each event address is in ${country} - check for ${country} in address or ${countryCode.toUpperCase()} domain
+- If city name exists in multiple countries, use ONLY the one in ${country} (${countryCode.toUpperCase()})
+- Example: If searching for "Paris", use Paris, France (NOT Paris, Texas, USA)
+- Example: If searching for "London", use London, Ontario, Canada ONLY if country is Canada
 
 CRITICAL TIME FILTER:
 - Event start date/time MUST be in the future (relative to ${dateStr} ${new Date().toLocaleTimeString()})
@@ -507,10 +514,16 @@ RAW SEARCH DATA:
 ${rawText}
 
 TODAY'S DATE AND TIME: ${dateStr}T00:00:00${timezone}
-City: ${cityName}, ${country}. ${centerInfo}
+City: ${cityName}, ${country} (ISO: ${countryCode.toUpperCase()}). ${centerInfo}
+
+CRITICAL COUNTRY VALIDATION (REJECT EVENTS FROM WRONG COUNTRIES!):
+- ONLY include events that are physically in ${country} (${countryCode.toUpperCase()})
+- REJECT events from USA, Canada, or any other country
+- Verify addresses contain ${country} or proper country indicators
+- If unsure about country, REJECT the event
 
 CRITICAL GEOCODING TASK (THIS IS THE MOST IMPORTANT PART):
-For EACH address found in the search data, you MUST use your SEARCH TOOL to find its PRECISE latitude and longitude.
+For EACH address found in the search data, you MUST use your SEARCH TOOL to find its PRECISE latitude and longitude IN ${country}.
 
 DO NOT ESTIMATE coordinates. Use Google Search to find:
 1. The exact street address coordinates
@@ -629,10 +642,15 @@ JSON array structure:
             body: JSON.stringify({
               contents: [{ parts: [{ text: `Convert this event search data to a JSON array. 
 
-CRITICAL: For each event, ensure:
+CRITICAL COUNTRY VALIDATION (REJECT WRONG COUNTRIES!):
+- ONLY events in ${cityName}, ${country} (ISO: ${countryCode.toUpperCase()})
+- REJECT events from USA, Canada, or other countries
+- Verify addresses are in ${country}
+
+CRITICAL GEOCODING:
 1. coordinates are EXACT street-level (not city center)
 2. all coordinates are within 20km of ${cityName} ${centerInfo ? `[${cityLat}, ${cityLng}]` : ''}
-3. Each event is actually IN ${cityName}, not a nearby city
+3. Each event is actually IN ${cityName}, ${country} - NOT other countries
 4. Põltsamaa events have lng ~25.96 (NOT 26.38+ which is Jõgeva)
 
 Return ONLY valid JSON array:\n\n${rawText}` }] }],
@@ -727,7 +745,7 @@ serve(async (req) => {
     if (city_id) {
       const { data, error } = await supabase
         .from('city_configs')
-        .select('city_id, city_name, country, timezone, latitude, longitude')
+        .select('city_id, city_name, country, country_code, timezone, latitude, longitude')
         .eq('city_id', city_id)
         .single()
 
@@ -740,6 +758,7 @@ serve(async (req) => {
       cityData = {
         city_name,
         country,
+        country_code: country.toLowerCase() === 'estonia' ? 'ee' : (country.toLowerCase() === 'canada' ? 'ca' : 'ee'),
         timezone: 'Europe/Tallinn' // Default, will be refined
       }
     } else {
@@ -764,6 +783,7 @@ serve(async (req) => {
     const events = await discoverEventsWithAI(
       cityData.city_name,
       cityData.country,
+      cityData.country_code || 'ee',
       cityData.timezone || 'Europe/Tallinn',
       target_events,
       cityData.latitude,
@@ -911,6 +931,22 @@ serve(async (req) => {
           console.log(`  ⊘ Skip (past event): ${event.name} (${event.start_time})`)
           insertResults.skipped = (insertResults.skipped || 0) + 1
           continue
+        }
+
+        // ✅ VALIDATE: Coordinates must be within reasonable distance of city
+        // This prevents events from wrong countries with similar city names
+        if (cityLat && cityLng) {
+          const distance = Math.sqrt(
+            Math.pow(event.location_lat - cityLat, 2) + 
+            Math.pow(event.location_lng - cityLng, 2)
+          ) * 111 // Rough km conversion
+          
+          // Reject if more than 50km from city center
+          if (distance > 50) {
+            console.log(`  ⊘ Skip (too far): ${event.name} is ${distance.toFixed(0)}km from ${cityName} center`)
+            insertResults.skipped = (insertResults.skipped || 0) + 1
+            continue
+          }
         }
 
         // ✅ Use coordinates from Gemini structuring

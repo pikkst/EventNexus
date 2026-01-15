@@ -22,13 +22,15 @@ import {
   RotateCw,
   Star,
   Edit3,
-  ArrowLeft
+  ArrowLeft,
+  Flag
 } from 'lucide-react';
 import { getEvents, getEventById, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates } from '../services/dbService';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
 import { isEventExpired } from '../utils/eventUtils';
 import { generateEventSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
+import ReportEventModal from './ReportEventModal';
 
 // Helper component to render formatted description with clickable links
 const FormattedDescription: React.FC<{ text: string }> = ({ text }) => {
@@ -125,6 +127,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [translatedName, setTranslatedName] = useState<string | null>(null);
   const [translatedAboutText, setTranslatedAboutText] = useState<string | null>(null);
   const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const translationCache = useRef<Map<string, { name: string; aboutText: string; description: string }>>(new Map());
 
   const LANGUAGE_LABELS: Record<string, string> = {
@@ -1015,10 +1018,31 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               >
                 {isFollowing ? <><UserMinus className="w-4 h-4" aria-hidden="true" /> Following</> : <><UserPlus className="w-4 h-4" aria-hidden="true" /> Follow</>}
               </button>
+              <button
+                onClick={() => setIsReportModalOpen(true)}
+                className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400"
+                title="Report this event for issues"
+              >
+                <Flag className="w-4 h-4" aria-hidden="true" />
+                Report
+              </button>
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Report Event Modal */}
+      {event && (
+        <ReportEventModal 
+          eventId={event.id}
+          eventName={event.name}
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          onReportSubmitted={() => {
+            // Optionally show a confirmation toast
+          }}
+        />
+      )}
     </div>
   </div>
   );

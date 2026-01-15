@@ -326,7 +326,7 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'announcement' | 'update' | 'follow_alert' | 'proximity_radar' | 'active_event' | 'contact_inquiry';
+  type: 'announcement' | 'update' | 'follow_alert' | 'proximity_radar' | 'active_event' | 'contact_inquiry' | 'event_report' | 'report_response';
   eventId?: string;
   senderName: string;
   timestamp: string;
@@ -806,4 +806,20 @@ export interface AIAgentStats {
   avg_confidence: number;
   total_tokens_used_7d: number;
   estimated_cost_7d: number;
+}
+
+export interface EventReport {
+  id: string;
+  event_id: string;
+  reporter_id?: string;
+  reporter_email?: string;
+  report_type: 'wrong_location' | 'wrong_info' | 'duplicate' | 'spam' | 'inappropriate' | 'other';
+  reason: string;
+  description?: string;
+  status: 'open' | 'acknowledged' | 'resolved' | 'dismissed';
+  resolution_notes?: string;
+  resolved_by?: string;
+  resolved_at?: string;
+  created_at: string;
+  updated_at?: string;
 }
