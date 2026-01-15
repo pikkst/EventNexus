@@ -56,32 +56,55 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
   
   const countries = ['all', ...Array.from(new Set(events.map(e => {
     if (!e.location) return null;
-    const parts = e.location.split(',');
-    return parts[parts.length - 1]?.trim();
+    // Handle both string and object format
+    if (typeof e.location === 'string') {
+      const parts = e.location.split(',');
+      return parts[parts.length - 1]?.trim();
+    }
+    return e.location.country;
   }).filter(Boolean)))];
   
   const cities = selectedCountry === 'all'
     ? ['all', ...Array.from(new Set(events.map(e => {
         if (!e.location) return null;
-        return e.location.split(',')[0]?.trim();
+        if (typeof e.location === 'string') {
+          return e.location.split(',')[0]?.trim();
+        }
+        return e.location.city;
       }).filter(Boolean)))]
     : ['all', ...Array.from(new Set(events.filter(e => {
-        const country = e.location?.split(',').pop()?.trim();
+        const country = typeof e.location === 'string' 
+          ? e.location.split(',').pop()?.trim()
+          : e.location?.country;
         return country === selectedCountry;
-      }).map(e => e.location?.split(',')[0]?.trim()).filter(Boolean)))];
+      }).map(e => {
+        if (typeof e.location === 'string') {
+          return e.location.split(',')[0]?.trim();
+        }
+        return e.location?.city;
+      }).filter(Boolean)))];
 
   const filteredEvents = events.filter(event => {
+    // Get location string for search
+    const locationStr = typeof event.location === 'string' 
+      ? event.location 
+      : event.location?.address || `${event.location?.city || ''}, ${event.location?.country || ''}`;
+    
     const matchesSearch = !searchTerm || 
       event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.location?.toLowerCase().includes(searchTerm.toLowerCase());
+      locationStr.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
 
-    const eventCountry = event.location?.split(',').pop()?.trim();
+    const eventCountry = typeof event.location === 'string'
+      ? event.location.split(',').pop()?.trim()
+      : event.location?.country;
     const matchesCountry = selectedCountry === 'all' || eventCountry === selectedCountry;
 
-    const eventCity = event.location?.split(',')[0]?.trim();
+    const eventCity = typeof event.location === 'string'
+      ? event.location.split(',')[0]?.trim()
+      : event.location?.city;
     const matchesCity = selectedCity === 'all' || eventCity === selectedCity;
 
     let matchesDate = true;
@@ -408,7 +431,11 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
                     {event.location && (
                       <div className="flex items-center gap-2 text-sm text-slate-400">
                         <MapPin className="w-4 h-4 text-red-500" />
-                        <span className="line-clamp-1 font-medium">{event.location}</span>
+                        <span className="line-clamp-1 font-medium">
+                          {typeof event.location === 'string' 
+                            ? event.location 
+                            : event.location.address || `${event.location.city || ''}, ${event.location.country || ''}`}
+                        </span>
                       </div>
                     )}
                     {event.organizer_name && (
@@ -450,8 +477,12 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
               "startDate": event.date,
               "location": {
                 "@type": "Place",
-                "name": event.location,
-                "address": event.location
+                "name": typeof event.location === 'string' 
+                  ? event.location 
+                  : event.location?.address || `${event.location?.city || ''}, ${event.location?.country || ''}`,
+                "address": typeof event.location === 'string'
+                  ? event.location
+                  : event.location?.address
               },
               "organizer": {
                 "@type": "Organization",
