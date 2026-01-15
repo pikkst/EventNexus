@@ -145,9 +145,77 @@ Deno.serve(async (req) => {
 
     const organizerMap = new Map(organizers?.map(o => [o.id, o.name]) || []);
 
+    // Helper function to extract city and country from address
+    const parseLocation = (location: any) => {
+      if (!location) return location;
+      
+      // If already has city/country, return as-is
+      if (location.city && location.country) return location;
+      
+      // Parse from address if available
+      if (location.address) {
+        const parts = location.address.split(',').map((p: string) => p.trim());
+        
+        // Common country name patterns to identify country
+        const countryPatterns = [
+          'United States', 'United Kingdom', 'Deutschland', 'France', 'España',
+          'Italia', 'Nederland', 'Sverige', 'Norge', 'Danmark', 'Suomi',
+          'Latvija', 'Latvia', 'Lietuva', 'Lithuania', 'Eesti', 'Estonia',
+          'Polska', 'Poland', 'Česko', 'Czech', 'Slovensko', 'Slovakia',
+          'Monaco', 'Luxembourg', 'Belgium', 'Austria', 'Switzerland', 'Ukraine'
+        ];
+        
+        let city = '';
+        let country = '';
+        
+        // Find country by matching against known patterns
+        for (let i = parts.length - 1; i >= 0; i--) {
+          const part = parts[i];
+          if (countryPatterns.some(p => part.includes(p))) {
+            country = part;
+            break;
+          }
+        }
+        
+        // If no country found, use last non-postal-code part
+        if (!country && parts.length >= 1) {
+          const lastPart = parts[parts.length - 1];
+          country = /^[A-Z]{2}[- ]?\d{3,5}$/.test(lastPart) || /^\d{5}/.test(lastPart)
+            ? (parts[parts.length - 2] || lastPart)
+            : lastPart;
+        }
+        
+        // Find city: first substantial part that's not postal code, before country
+        const countryPartIndex = country ? parts.findIndex(p => p === country) : parts.length;
+        for (let i = 0; i < countryPartIndex; i++) {
+          const part = parts[i];
+          // Skip if looks like postal code or too generic
+          if (!/^\d/.test(part) && !/^[A-Z]{2}[- ]?\d/.test(part) && part.length > 2 &&
+              !part.toLowerCase().includes('iela') && !part.toLowerCase().includes('street')) {
+            city = part;
+            break;
+          }
+        }
+        
+        // Fallback
+        if (!city && parts.length > 0) {
+          city = parts[Math.max(0, parts.length - (country ? 2 : 1))];
+        }
+        
+        return {
+          ...location,
+          city: city || parts[0] || '',
+          country: country || parts[parts.length - 1] || ''
+        };
+      }
+      
+      return location;
+    };
+
     const publicEvents = (events || []).map(e => ({
       ...e,
-      organizer_name: organizerMap.get(e.organizer_id) || 'Unknown'
+      organizer_name: organizerMap.get(e.organizer_id) || 'Unknown',
+      location: parseLocation(e.location)
     })) as PublicEvent[];
 
     // Format response based on requested format
