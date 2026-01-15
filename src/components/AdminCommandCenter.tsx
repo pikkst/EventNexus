@@ -1061,8 +1061,6 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                    >
                      New Campaign
                    </Button>
-                      <Plus size={14} aria-hidden="true" /> New Campaign
-                   </button>
                  </div>
               </div>
 
@@ -2512,7 +2510,7 @@ const DiagnosticModal: React.FC<{
               icon={<Rocket size={16} />}
             >
               {isProcessing ? 'Processing...' : 'Go Live Now'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

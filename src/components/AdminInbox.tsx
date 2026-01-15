@@ -397,12 +397,6 @@ const AdminInbox: React.FC = () => {
                     >
                       {isSendingReply ? 'Sending...' : 'Send Reply'}
                     </Button>
-                        <>
-                          <Send className="w-5 h-5" />
-                          Send Reply
-                        </>
-                      )}
-                    </button>
                     <button
                       onClick={() => {
                         setIsReplying(false);

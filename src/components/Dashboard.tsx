@@ -941,7 +941,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                   Track all earnings
                 </div>
               </div>
-              <button
+              <Button
                 onClick={async () => {
                   try {
                     const { data, error } = await supabase.functions.invoke('create-connect-account', {
@@ -1388,33 +1388,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                     dark
                     emptyMessage="No events with revenue"
                   />
-                                          title="Delete event permanently"
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" />
-                                          Delete
-                                        </button>
-                                      </div>
-                                    );
-                                  }
-                                  
-                                  // Tickets sold but payout not completed - locked
-                                  return (
-                                    <span 
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 text-slate-600 text-xs font-bold cursor-not-allowed"
-                                      title={`Locked: Payout pending for ${event.tickets_sold} ticket${event.tickets_sold > 1 ? 's' : ''}`}
-                                    >
-                                      <Lock className="w-3.5 h-3.5" />
-                                      Locked
-                                    </span>
-                                  );
-                                })()}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>
