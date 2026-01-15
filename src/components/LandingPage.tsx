@@ -10,6 +10,7 @@ import { SUBSCRIPTION_TIERS } from '../constants';
 import { sanitizeUrl, sanitizeVideoUrl } from '../utils/security';
 import { resetToHomepageSEO } from '../utils/seoUtils';
 import { trackLandingPageView, trackCTAClick, trackScrollDepth, trackTimeOnPage, trackOrganizerClick, trackNewsletterSignup } from '../utils/conversionTracking';
+import { FeaturedEventsCarousel } from './FeaturedEventsCarousel';
 
 interface LandingPageProps {
   user: User | null;
@@ -562,6 +563,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           </Link>
         </div>
       </section>
+
+      {/* Featured Events Carousel */}
+      <FeaturedEventsCarousel className="bg-slate-950/50 py-6" />
 
       {/* Urgency / Quick Action Section */}
       <section className="max-w-7xl mx-auto px-4">

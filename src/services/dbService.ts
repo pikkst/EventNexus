@@ -73,6 +73,45 @@ export const getAllEvents = async (): Promise<EventNexusEvent[]> => {
   return (data || []).map(transformEventFromDB);
 };
 
+// Get trending/featured events - popular events with good engagement
+export const getTrendingEvents = async (limit: number = 6): Promise<EventNexusEvent[]> => {
+  try {
+    // Query events with high engagement (likes, tickets sold) from the past week
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('status', 'active')
+      .in('visibility', ['public', 'semi-private'])
+      .is('archived_at', null)
+      .gte('date', sevenDaysAgo.toISOString())
+      .order('engagement_score', { ascending: false })
+      .order('date', { ascending: true })
+      .limit(limit);
+    
+    if (error) {
+      logger.error('Error fetching trending events:', error);
+      // Fallback: return recent events if engagement score not available
+      const { data: fallbackData } = await supabase
+        .from('events')
+        .select('*')
+        .eq('status', 'active')
+        .in('visibility', ['public', 'semi-private'])
+        .is('archived_at', null)
+        .order('date', { ascending: false })
+        .limit(limit);
+      return (fallbackData || []).map(transformEventFromDB);
+    }
+    
+    return (data || []).map(transformEventFromDB);
+  } catch (err) {
+    logger.error('Error in getTrendingEvents:', err);
+    return [];
+  }
+};
+
 // Get single event by ID (for direct links, ignores visibility)
 export const getEventById = async (eventId: string): Promise<EventNexusEvent | null> => {
   const { data, error } = await supabase
