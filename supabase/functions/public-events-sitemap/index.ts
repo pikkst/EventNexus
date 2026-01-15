@@ -90,7 +90,8 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const format = url.searchParams.get('format') || 'json'; // json, xml, html
-    const limit = parseInt(url.searchParams.get('limit') || '100');
+    const limit = parseInt(url.searchParams.get('limit') || '1000'); // Default 1000 for full sitemap
+    const offset = parseInt(url.searchParams.get('offset') || '0'); // For pagination
 
     // Create Supabase client (no auth needed for public view)
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -125,7 +126,7 @@ Deno.serve(async (req) => {
         organizer_id
       `)
       .order('date', { ascending: true })
-      .limit(limit);
+      .range(offset, offset + limit - 1); // Use range instead of limit for pagination
 
     if (error) {
       console.error('Error fetching events:', error);

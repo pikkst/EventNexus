@@ -200,8 +200,8 @@ const AnalyticsDashboard: React.FC = () => {
 
       {/* Content with stable layout - no opacity changes */}
       <div>
-          {/* OVERVIEW TAB */}
-          {activeTab === 'overview' && (
+        {/* OVERVIEW TAB */}
+        {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Key Metrics Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -708,8 +708,7 @@ const AnalyticsDashboard: React.FC = () => {
               <SEOImprovementTools />
             </div>
           )}
-        </div>
-      )}
+      </div>
     </div>
   );
 };

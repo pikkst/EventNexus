@@ -10,6 +10,7 @@ interface PublicEventsBrowseProps {
 
 const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) => {
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
+  const [displayCount, setDisplayCount] = useState(50); // How many to show
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,6 +19,7 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
   const [selectedCity, setSelectedCity] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const EVENTS_PER_PAGE = 50;
 
   // Track page view for analytics (including AI crawlers)
   useEffect(() => {
@@ -33,8 +35,9 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
       setLoading(true);
       setError(null);
 
+      // Load ALL events at once (AI crawlers need to see all)
       const response = await fetch(
-        'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/public-events-sitemap?format=json'
+        'https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/public-events-sitemap?format=json&limit=10000'
       );
 
       if (!response.ok) {
@@ -43,12 +46,17 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
 
       const data = await response.json();
       setEvents(data.events || []);
+      console.log(`✅ Loaded ${data.events?.length || 0} events from database`);
     } catch (err) {
       console.error('Error loading public events:', err);
       setError('Failed to load events. Please try again later.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMoreEvents = () => {
+    setDisplayCount(prev => prev + EVENTS_PER_PAGE);
   };
 
   // Extract unique values for filters
@@ -128,6 +136,10 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
 
     return matchesSearch && matchesCategory && matchesCountry && matchesCity && matchesDate;
   });
+
+  // Display only first displayCount events (for performance)
+  const displayedEvents = filteredEvents.slice(0, displayCount);
+  const hasMoreToShow = filteredEvents.length > displayCount;
 
   const activeFiltersCount = [
     searchTerm,
@@ -378,7 +390,7 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map(event => (
+            {displayedEvents.map(event => (
               <Link
                 key={event.id}
                 to={`/events/${event.id}`}
@@ -460,9 +472,30 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
             ))}
           </div>
         )}
+
+        {/* Load More Button */}
+        {!loading && displayedEvents.length > 0 && hasMoreToShow && (
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={loadMoreEvents}
+              className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
+            >
+              Load More Events ({filteredEvents.length - displayCount} remaining)
+              <ChevronDown className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Show total count */}
+        {!loading && filteredEvents.length > 0 && (
+          <div className="mt-4 text-center text-slate-400 text-sm">
+            Showing {displayedEvents.length} of {filteredEvents.length} events
+            {events.length > filteredEvents.length && ` (${events.length} total in database)`}
+          </div>
+        )}
       </div>
 
-      {/* SEO Structured Data */}
+      {/* SEO Structured Data - Include ALL events for AI crawlers */}
       <script type="application/ld+json">
         {JSON.stringify({
           "@context": "https://schema.org",
