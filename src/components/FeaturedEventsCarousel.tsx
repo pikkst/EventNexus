@@ -70,32 +70,33 @@ export const FeaturedEventsCarousel: React.FC<FeaturedEventsCarouselProps> = ({ 
     return null; // Don't render if no events
   }
 
-  const visibleEvents = events.slice(currentIndex, currentIndex + 3);
+  const visibleCount = typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 3;
+  const visibleEvents = events.slice(currentIndex, currentIndex + visibleCount);
   // If we're at the end, wrap around
-  if (visibleEvents.length < 3 && events.length >= 3) {
-    visibleEvents.push(...events.slice(0, 3 - visibleEvents.length));
+  if (visibleEvents.length < visibleCount && events.length >= visibleCount) {
+    visibleEvents.push(...events.slice(0, visibleCount - visibleEvents.length));
   }
 
   return (
     <section className={`py-16 ${className}`}>
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-orange-500 to-red-500 p-3 rounded-2xl">
-              <Sparkles className="w-6 h-6 text-white" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 md:mb-12">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="bg-gradient-to-br from-orange-500 to-red-500 p-2 md:p-3 rounded-lg md:rounded-2xl">
+              <Sparkles className="w-5 md:w-6 h-5 md:h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-4xl font-black text-white">Trending Now</h2>
-              <p className="text-slate-400 text-sm mt-1">Events gaining momentum right now</p>
+              <h2 className="text-2xl md:text-4xl font-black text-white">Trending Now</h2>
+              <p className="text-slate-400 text-xs md:text-sm mt-0.5 md:mt-1">Events gaining momentum</p>
             </div>
           </div>
           <Link
             to="/map"
             onClick={() => trackCTAClick('featured_carousel_explore_all')}
-            className="text-indigo-400 hover:text-indigo-300 font-bold text-sm inline-flex items-center gap-2 transition-colors"
+            className="text-indigo-400 hover:text-indigo-300 font-bold text-xs md:text-sm inline-flex items-center gap-1 md:gap-2 transition-colors whitespace-nowrap"
           >
-            Explore All <ChevronRight className="w-4 h-4" />
+            Explore All <ChevronRight className="w-3 md:w-4 h-3 md:h-4" />
           </Link>
         </div>
 
@@ -104,7 +105,7 @@ export const FeaturedEventsCarousel: React.FC<FeaturedEventsCarouselProps> = ({ 
           {/* Main Carousel */}
           <div
             ref={carouselRef}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 overflow-hidden"
           >
             {visibleEvents.map((event) => (
               <div key={event.id} className="relative group">
@@ -216,10 +217,10 @@ export const FeaturedEventsCarousel: React.FC<FeaturedEventsCarouselProps> = ({ 
             ))}
           </div>
 
-          {/* Navigation Buttons */}
+          {/* Navigation Buttons - Hidden on mobile, shown on desktop */}
           <button
             onClick={handlePrev}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-16 md:-translate-x-20 z-10 bg-slate-900 border border-slate-800 hover:border-indigo-500/50 text-slate-400 hover:text-indigo-400 rounded-full p-3 transition-all hover:bg-slate-800 group"
+            className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-16 md:-translate-x-20 z-10 bg-slate-900 border border-slate-800 hover:border-indigo-500/50 text-slate-400 hover:text-indigo-400 rounded-full p-3 transition-all hover:bg-slate-800 group"
             aria-label="Previous events"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -227,11 +228,29 @@ export const FeaturedEventsCarousel: React.FC<FeaturedEventsCarouselProps> = ({ 
 
           <button
             onClick={handleNext}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-16 md:translate-x-20 z-10 bg-slate-900 border border-slate-800 hover:border-indigo-500/50 text-slate-400 hover:text-indigo-400 rounded-full p-3 transition-all hover:bg-slate-800 group"
+            className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-16 md:translate-x-20 z-10 bg-slate-900 border border-slate-800 hover:border-indigo-500/50 text-slate-400 hover:text-indigo-400 rounded-full p-3 transition-all hover:bg-slate-800 group"
             aria-label="Next events"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
+
+          {/* Mobile Navigation - Swipe-friendly buttons */}
+          <div className="flex md:hidden justify-between gap-3 mt-4">
+            <button
+              onClick={handlePrev}
+              className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-slate-400 hover:text-indigo-400 rounded-lg p-2 transition-all"
+              aria-label="Previous events"
+            >
+              <ChevronLeft className="w-5 h-5 mx-auto" />
+            </button>
+            <button
+              onClick={handleNext}
+              className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-slate-400 hover:text-indigo-400 rounded-lg p-2 transition-all"
+              aria-label="Next events"
+            >
+              <ChevronRight className="w-5 h-5 mx-auto" />
+            </button>
+          </div>
 
           {/* Indicators */}
           <div className="flex justify-center gap-2 mt-8">

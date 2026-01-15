@@ -291,27 +291,27 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
               </div>
 
               {/* Primary CTA - DOMINANT */}
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 <Link 
                   to="/browse" 
                   onClick={() => trackCTAClick('browse_events')}
-                  className="w-full block bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 px-8 py-5 rounded-3xl font-black text-lg text-white transition-all shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-3 group text-center"
+                  className="w-full block bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 px-6 md:px-8 py-4 md:py-5 rounded-2xl md:rounded-3xl font-black text-base md:text-lg text-white transition-all shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-2 md:gap-3 group text-center"
                   aria-label="Browse all events catalog now"
                 >
-                  <Calendar className="w-6 h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
+                  <Calendar className="w-5 md:w-6 h-5 md:h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
                   Browse All Events
                 </Link>
-                <p className="text-xs text-slate-500 text-center">👉 Discover events happening around the world</p>
+                <p className="text-[10px] md:text-xs text-slate-500 text-center">👉 Discover events happening around the world</p>
               </div>
 
               {/* Secondary CTA - Map */}
               <Link 
                 to="/map" 
                 onClick={() => trackCTAClick('explore_map')}
-                className="w-full block bg-slate-800 border border-slate-700 hover:border-indigo-500 text-white px-8 py-4 rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2"
+                className="w-full block bg-slate-800 border border-slate-700 hover:border-indigo-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-bold text-sm md:text-base transition-all flex items-center justify-center gap-2"
                 aria-label="Explore events on interactive map"
               >
-                <MapIcon className="w-5 h-5" aria-hidden="true" /> 
+                <MapIcon className="w-4 md:w-5 h-4 md:h-5" aria-hidden="true" /> 
                 View on Map
               </Link>
 
