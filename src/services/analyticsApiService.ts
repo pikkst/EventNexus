@@ -337,3 +337,139 @@ export async function fetchSEOStrategy(seoMetrics?: SEOMetric[]) {
     return null;
   }
 }
+
+/**
+ * Geographic & Device Analytics Interfaces
+ */
+export interface CountryTraffic {
+  country: string;
+  visit_count: number;
+  unique_users: number;
+}
+
+export interface DeviceTraffic {
+  device: string;
+  visit_count: number;
+  percentage: number;
+}
+
+export interface BrowserTraffic {
+  browser: string;
+  visit_count: number;
+  percentage: number;
+}
+
+export interface SearchEngineTraffic {
+  search_engine: string;
+  visit_count: number;
+  conversion_rate: number;
+}
+
+export interface ReferrerTraffic {
+  referrer_domain: string;
+  visit_count: number;
+  unique_users: number;
+}
+
+/**
+ * Fetch traffic by country (flags/geographic data)
+ */
+export async function fetchTrafficByCountry(days: number = 30): Promise<CountryTraffic[]> {
+  try {
+    const { supabase } = await import('./supabase');
+    const { data, error } = await supabase.rpc('get_traffic_by_country', { days_back: days });
+    
+    if (error) {
+      console.error('Error fetching country traffic:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Failed to fetch country traffic:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch traffic by device type
+ */
+export async function fetchTrafficByDevice(days: number = 30): Promise<DeviceTraffic[]> {
+  try {
+    const { supabase } = await import('./supabase');
+    const { data, error } = await supabase.rpc('get_traffic_by_device', { days_back: days });
+    
+    if (error) {
+      console.error('Error fetching device traffic:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Failed to fetch device traffic:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch traffic by browser
+ */
+export async function fetchTrafficByBrowser(days: number = 30): Promise<BrowserTraffic[]> {
+  try {
+    const { supabase } = await import('./supabase');
+    const { data, error } = await supabase.rpc('get_traffic_by_browser', { days_back: days });
+    
+    if (error) {
+      console.error('Error fetching browser traffic:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Failed to fetch browser traffic:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch traffic by search engine
+ */
+export async function fetchTrafficBySearchEngine(days: number = 30): Promise<SearchEngineTraffic[]> {
+  try {
+    const { supabase } = await import('./supabase');
+    const { data, error } = await supabase.rpc('get_traffic_by_search_engine', { days_back: days });
+    
+    if (error) {
+      console.error('Error fetching search engine traffic:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Failed to fetch search engine traffic:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch top referrer domains
+ */
+export async function fetchTopReferrers(days: number = 30, limit: number = 20): Promise<ReferrerTraffic[]> {
+  try {
+    const { supabase } = await import('./supabase');
+    const { data, error } = await supabase.rpc('get_top_referrers', { 
+      days_back: days,
+      limit_count: limit 
+    });
+    
+    if (error) {
+      console.error('Error fetching referrers:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Failed to fetch referrers:', error);
+    return [];
+  }
+}
