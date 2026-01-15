@@ -9,6 +9,7 @@ import { supabase } from '../services/supabase';
 import { SUBSCRIPTION_TIERS } from '../constants';
 import { sanitizeUrl, sanitizeVideoUrl } from '../utils/security';
 import { resetToHomepageSEO } from '../utils/seoUtils';
+import { trackLandingPageView, trackCTAClick, trackScrollDepth, trackTimeOnPage, trackOrganizerClick, trackNewsletterSignup } from '../utils/conversionTracking';
 
 interface LandingPageProps {
   user: User | null;
@@ -32,6 +33,37 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   // Reset to homepage SEO on mount
   useEffect(() => {
     resetToHomepageSEO();
+    // Track landing page view
+    trackLandingPageView();
+  }, []);
+
+  // Track scroll depth
+  useEffect(() => {
+    const handleScroll = () => {
+      if (typeof window === 'undefined') return;
+      
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.scrollY;
+      
+      const scrollPercentage = ((scrollTop + windowHeight) / documentHeight) * 100;
+      trackScrollDepth(Math.round(scrollPercentage));
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Track time on page
+  useEffect(() => {
+    let startTime = Date.now();
+    
+    const trackTimeInterval = setInterval(() => {
+      const timeOnPage = Math.floor((Date.now() - startTime) / 1000);
+      trackTimeOnPage(timeOnPage);
+    }, 5000); // Track every 5 seconds
+
+    return () => clearInterval(trackTimeInterval);
   }, []);
 
   useEffect(() => {
@@ -153,6 +185,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const handleNewsletterSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newsletterEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newsletterEmail)) {
+      trackNewsletterSignup(false);
       setNewsletterStatus('error');
       return;
     }
@@ -166,11 +199,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
       if (error && error.code !== '23505') { // Ignore duplicate email error
         throw error;
       }
+      trackNewsletterSignup(true);
       setNewsletterStatus('success');
       setNewsletterEmail('');
       setTimeout(() => setNewsletterStatus('idle'), 3000);
     } catch (error) {
       logger.error('Newsletter signup error:', error);
+      trackNewsletterSignup(false);
       setNewsletterStatus('error');
       setTimeout(() => setNewsletterStatus('idle'), 3000);
     }
@@ -282,6 +317,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
               <div className="space-y-3">
                 <Link 
                   to="/map" 
+                  onClick={() => trackCTAClick('explore_map')}
                   className="w-full block bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 px-8 py-5 rounded-3xl font-black text-lg text-white transition-all shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-3 group text-center"
                   aria-label="Explore events on interactive map now"
                 >
@@ -293,7 +329,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
               {/* Secondary CTA */}
               <button 
-                onClick={handleCreateEvent}
+                onClick={() => {
+                  trackCTAClick('host_event');
+                  handleCreateEvent();
+                }}
                 className="w-full bg-slate-100 text-slate-950 hover:bg-white px-8 py-4 rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2"
                 aria-label="Create and host your own event"
               >
@@ -516,6 +555,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           <p className="text-slate-400 mb-6">Ready to explore?</p>
           <Link
             to="/map"
+            onClick={() => trackCTAClick('start_exploring')}
             className="inline-flex items-center gap-3 px-12 py-5 bg-indigo-600 hover:bg-indigo-700 rounded-3xl text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/30 group"
           >
             <MapIcon className="w-6 h-6 group-hover:scale-110 transition-transform" /> Start Exploring Now
@@ -541,7 +581,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
               <div className="space-y-3">
                 <button 
-                  onClick={() => navigate('/map')}
+                  onClick={() => {
+                    trackCTAClick('explore_map');
+                    navigate('/map');
+                  }}
                   className="w-full bg-white text-indigo-600 px-8 py-4 rounded-2xl font-black text-lg hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 shadow-xl"
                   aria-label="Explore events on the map"
                 >
@@ -612,7 +655,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                   </li>
                 </ul>
                 <button
-                  onClick={onOpenAuth}
+                  onClick={() => {
+                    trackCTAClick('get_started_free');
+                    onOpenAuth();
+                  }}
                   className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl text-white font-bold transition-all w-fit"
                   aria-label="Sign up for free EventNexus account"
                 >
@@ -679,6 +725,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
               <Link
                 key={org.organizer_id}
                 to={`/agency/${org.agency_slug}`}
+                onClick={() => trackOrganizerClick(org.organizer_id, org.organizer_name)}
                 className="group bg-slate-900/50 border border-slate-800 rounded-[32px] p-6 hover:border-indigo-500/50 transition-all hover:shadow-xl hover:shadow-indigo-500/10"
               >
                 {/* Header */}
@@ -741,6 +788,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           <div className="text-center mt-12">
             <Link
               to="/explore"
+              onClick={() => trackCTAClick('explore_all_organizers')}
               className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/50 rounded-2xl text-white font-bold transition-all group"
             >
               <TrendingUp className="w-5 h-5 group-hover:text-indigo-400 transition-colors" />
@@ -927,7 +975,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 )}
               </ul>
               <button
-                onClick={onOpenAuth}
+                onClick={() => {
+                  trackCTAClick(`signup_${tier}_tier`);
+                  onOpenAuth();
+                }}
                 className={`w-full py-3 rounded-2xl font-bold transition-all ${
                   tier === 'pro'
                     ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
@@ -942,7 +993,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         </div>
 
         <div className="text-center mt-8">
-          <Link to="/pricing" className="text-indigo-400 hover:text-indigo-300 font-bold inline-flex items-center gap-2">
+          <Link to="/pricing" onClick={() => trackCTAClick('view_pricing')} className="text-indigo-400 hover:text-indigo-300 font-bold inline-flex items-center gap-2">
             View Full Pricing Details <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -1124,47 +1175,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
               </p>
               <Link 
                 to="/map"
-                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-indigo-600 rounded-2xl font-bold text-lg hover:bg-indigo-50 transition-all w-full md:w-auto justify-center"
-                aria-label="Browse events on map"
-              >
-                <MapIcon className="w-5 h-5" /> Explore the Map
-              </Link>
-            </div>
-          </div>
-
-          {/* For Organizers */}
-          <div className="relative bg-gradient-to-br from-orange-600 to-orange-700 rounded-[40px] p-12 shadow-2xl shadow-orange-600/20 overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
-            <div className="relative z-10 space-y-6">
-              <h3 className="text-3xl md:text-4xl font-black text-white">Ready to Host?</h3>
-              <p className="text-orange-50 text-lg leading-relaxed">
-                Create events, manage tickets, reach global audiences. Start your free plan today.
-              </p>
-              <button 
-                onClick={handleCreateEvent}
-                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-orange-600 rounded-2xl font-bold text-lg hover:bg-orange-50 transition-all w-full md:w-auto justify-center"
-                aria-label="Create an event as organizer"
-              >
-                <Plus className="w-5 h-5" /> Start Hosting
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Organizer Call to Action - Split messaging */}
-      <section className="max-w-7xl mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* For Attendees */}
-          <div className="relative bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-[40px] p-12 shadow-2xl shadow-indigo-600/20 overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
-            <div className="relative z-10 space-y-6">
-              <h3 className="text-3xl md:text-4xl font-black text-white">Ready to Explore?</h3>
-              <p className="text-indigo-50 text-lg leading-relaxed">
-                Discover 1,300+ live events on the map. Find exactly what's happening in your area right now.
-              </p>
-              <Link 
-                to="/map"
+                onClick={() => trackCTAClick('cta_explore_ready')}
                 className="inline-flex items-center gap-3 px-8 py-4 bg-white text-indigo-600 rounded-2xl font-bold text-lg hover:bg-indigo-50 transition-all w-full md:w-auto justify-center"
                 aria-label="Browse events on map"
               >
