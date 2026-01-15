@@ -18,8 +18,8 @@ import {
   fetchMetaInsights, fetchSEOMetrics, getSEORecommendations,
   monitorKeywordRankings, GAMetric, TrafficData, SEOMetric, MetaInsight,
   fetchTrafficByCountry, fetchTrafficByDevice, fetchTrafficByBrowser,
-  fetchTrafficBySearchEngine, fetchTopReferrers,
-  CountryTraffic, DeviceTraffic, BrowserTraffic, SearchEngineTraffic, ReferrerTraffic
+  fetchTrafficBySearchEngine, fetchTopReferrers, fetchAICrawlerActivity,
+  CountryTraffic, DeviceTraffic, BrowserTraffic, SearchEngineTraffic, ReferrerTraffic, AICrawlerVisit
 } from '../services/analyticsApiService';
 import SEOImprovementTools from './SEOImprovementTools';
 
@@ -36,6 +36,7 @@ interface DashboardMetrics {
   browserTraffic: BrowserTraffic[];
   searchEngineTraffic: SearchEngineTraffic[];
   referrerTraffic: ReferrerTraffic[];
+  aiCrawlers: AICrawlerVisit[];
 }
 
 interface Tab {
@@ -56,7 +57,8 @@ const AnalyticsDashboard: React.FC = () => {
     deviceTraffic: [],
     browserTraffic: [],
     searchEngineTraffic: [],
-    referrerTraffic: []
+    referrerTraffic: [],
+    aiCrawlers: []
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -97,7 +99,7 @@ const AnalyticsDashboard: React.FC = () => {
     }
     
     try {
-      const [ga, traffic, funnel, meta, seo, countryTraffic, deviceTraffic, browserTraffic, searchEngineTraffic, referrerTraffic] = await Promise.all([
+      const [ga, traffic, funnel, meta, seo, countryTraffic, deviceTraffic, browserTraffic, searchEngineTraffic, referrerTraffic, aiCrawlers] = await Promise.all([
         fetchGAMetrics('traffic', dateRange),
         fetchTrafficData(dateRange),
         fetchConversionFunnel(dateRange),
@@ -107,11 +109,12 @@ const AnalyticsDashboard: React.FC = () => {
         fetchTrafficByDevice(dateRange),
         fetchTrafficByBrowser(dateRange),
         fetchTrafficBySearchEngine(dateRange),
-        fetchTopReferrers(dateRange, 10)
+        fetchTopReferrers(dateRange, 10),
+        fetchAICrawlerActivity(dateRange)
       ]);
 
       // Update metrics smoothly without clearing old data first
-      setMetrics({ ga, traffic, funnel, meta, seo, countryTraffic, deviceTraffic, browserTraffic, searchEngineTraffic, referrerTraffic });
+      setMetrics({ ga, traffic, funnel, meta, seo, countryTraffic, deviceTraffic, browserTraffic, searchEngineTraffic, referrerTraffic, aiCrawlers });
     } catch (error) {
       console.error('Failed to load metrics:', error);
     } finally {
@@ -389,6 +392,86 @@ const AnalyticsDashboard: React.FC = () => {
                     ))
                   ) : (
                     <p className="text-gray-500 text-center py-4">No data available</p>
+                  )}
+                </div>
+              </div>
+
+              {/* AI Crawler Activity */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="relative">
+                    <span className="text-2xl">🤖</span>
+                    {metrics.aiCrawlers.length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></span>
+                    )}
+                  </div>
+                  <h2 className="text-lg font-bold text-gray-900">AI Crawler Activity</h2>
+                  <span className="ml-auto text-xs text-gray-500">ChatGPT, Claude, Perplexity</span>
+                </div>
+                <div className="space-y-3">
+                  {metrics.aiCrawlers.length > 0 ? (
+                    metrics.aiCrawlers.map((crawler, idx) => {
+                      // Assign emoji based on crawler type
+                      const crawlerIcon = 
+                        crawler.ai_crawler === 'ChatGPT' ? '🟢' :
+                        crawler.ai_crawler === 'Claude' ? '🟠' :
+                        crawler.ai_crawler === 'Perplexity' ? '🔵' :
+                        crawler.ai_crawler === 'Google AI' ? '🔴' :
+                        crawler.ai_crawler === 'CommonCrawl' ? '🟤' : '⚪';
+                      
+                      const lastVisitDate = new Date(crawler.last_visit);
+                      const isRecent = Date.now() - lastVisitDate.getTime() < 24 * 60 * 60 * 1000;
+                      
+                      return (
+                        <div key={idx} className={`p-4 rounded-lg border-2 transition-all ${
+                          isRecent 
+                            ? 'border-green-300 bg-green-50' 
+                            : 'border-gray-200 bg-gray-50'
+                        }`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">{crawlerIcon}</span>
+                              <h3 className="font-bold text-gray-900">{crawler.ai_crawler}</h3>
+                              {isRecent && (
+                                <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full font-semibold">
+                                  ACTIVE
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-gray-900">{crawler.visit_count}</div>
+                              <div className="text-xs text-gray-500">visits</div>
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-600 mb-2">
+                            <span className="font-semibold">Last visit:</span> {lastVisitDate.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            <span className="font-semibold">Pages explored:</span> {crawler.pages_visited.length}
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {crawler.pages_visited.slice(0, 3).map((page, pidx) => (
+                                <span key={pidx} className="px-2 py-0.5 bg-white rounded text-gray-700 border border-gray-200">
+                                  {page}
+                                </span>
+                              ))}
+                              {crawler.pages_visited.length > 3 && (
+                                <span className="px-2 py-0.5 text-gray-500">
+                                  +{crawler.pages_visited.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="text-4xl mb-2">🔍</div>
+                      <p className="text-gray-600 mb-1">No AI crawler activity detected yet</p>
+                      <p className="text-sm text-gray-500">
+                        ChatGPT, Claude, and Perplexity will appear here when they visit your platform
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
