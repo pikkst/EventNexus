@@ -1342,24 +1342,17 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
 
                   {/* Stripe Connect Payout Dashboard */}
                   <div className="space-y-2">
-                    <button
+                    <Button
                       onClick={handleOpenStripeDashboard}
                       disabled={isConnectLoading}
-                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-emerald-600/10 border border-emerald-500/30 hover:bg-emerald-600/20 transition-all group disabled:opacity-50"
+                      variant="success"
+                      size="md"
+                      fullWidth
+                      icon={<DollarSign size={20} />}
+                      loading={isConnectLoading}
                     >
-                      <div className="flex items-center gap-3">
-                        <DollarSign className="w-5 h-5 text-emerald-400" />
-                        <div className="text-left">
-                          <span className="font-bold text-sm text-white block">
-                            {connectStatus?.onboardingComplete ? 'Manage Payouts' : 'Set Up Payouts'}
-                          </span>
-                          {connectStatus?.onboardingComplete && (
-                            <span className="text-[10px] text-emerald-400 font-medium">Bank account & payout settings</span>
-                          )}
-                        </div>
-                      </div>
-                      <ExternalLink size={16} className="text-emerald-600 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                      {connectStatus?.onboardingComplete ? 'Manage Payouts' : 'Set Up Payouts'}
+                    </Button>
                     
                     {/* Disconnect button - only show if connected */}
                     {connectStatus?.hasAccount && (
