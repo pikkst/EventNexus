@@ -12,6 +12,7 @@ import { sanitizeUrl, sanitizeVideoUrl } from '../utils/security';
 import { resetToHomepageSEO } from '../utils/seoUtils';
 import { trackLandingPageView, trackCTAClick, trackScrollDepth, trackTimeOnPage, trackOrganizerClick, trackNewsletterSignup } from '../utils/conversionTracking';
 import { FeaturedEventsCarousel } from './FeaturedEventsCarousel';
+import { ExitIntentPopup } from './ExitIntentPopup';
 
 interface LandingPageProps {
   user: User | null;
@@ -31,6 +32,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [demoVideo, setDemoVideo] = useState<PlatformMedia | null>(null);
+  const [showExitIntentPopup, setShowExitIntentPopup] = useState(false);
+  const [exitIntentShown, setExitIntentShown] = useState(false);
 
   // SEO optimization for AI crawlers
   usePageSEO({
@@ -76,6 +79,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
     return () => clearInterval(trackTimeInterval);
   }, []);
+
+  // Exit-intent popup detection
+  useEffect(() => {
+    if (exitIntentShown) return; // Only show once per session
+    
+    const handleMouseLeave = (e: MouseEvent) => {
+      // Only trigger if mouse is leaving from top of the page
+      if (e.clientY <= 0) {
+        trackCTAClick('exit_intent_shown');
+        setShowExitIntentPopup(true);
+        setExitIntentShown(true);
+      }
+    };
+
+    document.addEventListener('mouseleave', handleMouseLeave);
+    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+  }, [exitIntentShown]);
 
   useEffect(() => {
     const loadActiveCampaign = async () => {
@@ -1189,6 +1209,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           </div>
         </div>
       </section>
+      {/* Exit-Intent Popup */}
+      <ExitIntentPopup 
+        isOpen={showExitIntentPopup} 
+        onClose={() => setShowExitIntentPopup(false)}
+      />
+
     </div>
   );
 };
@@ -1197,6 +1223,12 @@ const FeatureCard = ({ icon, title, description }: any) => (
   <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-[32px] hover:border-indigo-500/50 transition-all group">
     <div className="bg-indigo-600/10 text-indigo-500 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
       {icon}
+      {/* Exit-Intent Popup */}
+      <ExitIntentPopup 
+        isOpen={showExitIntentPopup} 
+        onClose={() => setShowExitIntentPopup(false)}
+      />
+
     </div>
     <h3 className="text-xl font-bold mb-3">{title}</h3>
     <p className="text-slate-400 leading-relaxed text-sm">{description}</p>
