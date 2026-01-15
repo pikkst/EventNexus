@@ -17,9 +17,12 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  Sparkles
+  Sparkles,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import Button from './Button';
 
 interface CampaignMetrics {
   totalCampaigns: number;
@@ -182,12 +185,13 @@ export default function CampaignAnalyticsDashboard() {
           </h2>
           <p className="text-slate-400 mt-1">Real-time performance tracking and insights</p>
         </div>
-        <button
+        <Button
           onClick={loadDashboardData}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-bold transition-all"
+          variant="primary"
+          size="sm"
         >
           Refresh Data
-        </button>
+        </Button>
       </div>
 
       {/* KPI Cards */}

@@ -39,6 +39,8 @@ import { supabase } from '../services/supabase';
 import OrganizerScannerHub from './OrganizerScannerHub';
 import PayoutsHistory from './PayoutsHistory';
 import EnterpriseSuccessManager from './EnterpriseSuccessManager';
+import Button from './Button';
+import Table from './Table';
 import { generateDashboardSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 // Lazy-load heavy social media SDK helpers when needed to reduce main bundle size
 const loadSocialMediaService = () => import('../services/socialMediaService');
@@ -891,20 +893,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
         <div className="flex flex-wrap items-center gap-2 md:gap-4">
           {/* Enterprise Success Manager Button */}
           {isEnterprise && (
-            <button 
-              onClick={() => setIsSuccessManagerOpen(true)} 
-              className="flex items-center justify-center gap-2 px-4 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 active:scale-95 relative overflow-hidden group"
-              aria-label="Open 24/7 success manager"
+            <Button
+              onClick={() => setIsSuccessManagerOpen(true)}
+              variant="primary"
+              size="md"
+              icon={<Sparkles size={16} />}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 relative overflow-hidden group"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-              <Sparkles className="w-4 h-4 relative z-10" aria-hidden="true" /> 
-              <span className="relative z-10">Success Manager</span>
-              <span className="text-[8px] bg-emerald-500 px-2 py-0.5 rounded-full relative z-10">24/7</span>
-            </button>
+              Success Manager
+              <span className="text-[8px] bg-emerald-500 px-2 py-0.5 rounded-full ml-2">24/7</span>
+            </Button>
           )}
-          <button onClick={() => navigate('/scanner')} className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95" aria-label="Open ticket scanner for entry control">
-            <Scan className="w-4 h-4" aria-hidden="true" /> Entry Control
-          </button>
+          <Button
+            onClick={() => navigate('/scanner')}
+            variant="primary"
+            size="md"
+            icon={<Scan size={16} />}
+          >
+            Entry Control
+          </Button>
         </div>
       </div>
 
@@ -949,10 +956,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                     alert('Failed to start setup. Please try again.');
                   }
                 }}
-                className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold rounded-xl transition-all active:scale-95 shadow-lg"
+                variant="warning"
+                size="md"
+                fullWidth
               >
                 Connect Bank Account (5 min)
-              </button>
+              </Button>
             </div>
             <button className="text-gray-400 hover:text-white">
               <X className="w-5 h-5" />
@@ -1187,165 +1196,198 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                       </button>
                     )}
                   </div>
-                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-slate-950 border-b border-slate-800">
-                          <tr>
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Event</th>
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Tickets</th>
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Gross</th>
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Fee</th>
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Stripe</th>
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Net</th>
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Status</th>
-                            <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest text-slate-500 whitespace-nowrap">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800">
-                          {filteredRevenueByEvent.map((event) => (
-                            <tr key={event.event_id} className="hover:bg-slate-800/30 transition-colors">
-                              <td className="px-3 sm:px-6 py-3 sm:py-4">
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                  <div className="flex-1 min-w-[140px] sm:min-w-0">
-                                    <div className="font-bold text-white text-xs sm:text-sm truncate">{eventTranslations[event.event_id]?.name || event.event_name}</div>
-                                    <div className="text-[10px] sm:text-xs text-slate-500">{new Date(event.event_date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}</div>
-                                  </div>
-                                  <Link 
-                                    to={`/event/${event.event_id}`}
-                                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 transition-all text-xs font-bold whitespace-nowrap"
-                                    target="_blank"
-                                    title="View event page"
-                                  >
-                                    <ExternalLink className="w-3.5 h-3.5" />
-                                    View
-                                  </Link>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-right text-white font-bold">{event.tickets_sold}</td>
-                              <td className="px-6 py-4 text-right text-white font-bold">€{event.gross_revenue.toFixed(2)}</td>
-                              <td className="px-6 py-4 text-right text-orange-400 font-bold">-€{event.platform_fee_amount.toFixed(2)}</td>
-                              <td className="px-6 py-4 text-right text-blue-400 font-bold">-€{event.stripe_fee_amount.toFixed(2)}</td>
-                              <td className="px-6 py-4 text-right text-emerald-400 font-black">€{event.net_revenue.toFixed(2)}</td>
-                              <td className="px-6 py-4 text-center">
-                                {(() => {
-                                  const eventDate = new Date(event.event_date);
-                                  const now = new Date();
-                                  const daysSinceEvent = Math.floor((now.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
-                                  const isEligible = daysSinceEvent >= 2;
-                                  const eligibleDate = new Date(eventDate);
-                                  eligibleDate.setDate(eligibleDate.getDate() + 2);
+                  <Table
+                    data={filteredRevenueByEvent}
+                    columns={[
+                      {
+                        key: 'event_name' as const,
+                        label: 'Event',
+                        render: (_, event) => (
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-white text-xs md:text-sm truncate">{eventTranslations[event.event_id]?.name || event.event_name}</div>
+                              <div className="text-[10px] md:text-xs text-slate-500">{new Date(event.event_date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}</div>
+                            </div>
+                            <Link 
+                              to={`/event/${event.event_id}`}
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 transition-all text-xs font-bold whitespace-nowrap"
+                              target="_blank"
+                              title="View event page"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              View
+                            </Link>
+                          </div>
+                        ),
+                      },
+                      {
+                        key: 'tickets_sold' as const,
+                        label: 'Tickets',
+                        mobileHidden: true,
+                        render: (val) => <span className="text-white font-bold">{val}</span>,
+                      },
+                      {
+                        key: 'gross_revenue' as const,
+                        label: 'Gross',
+                        mobileHidden: true,
+                        render: (val) => <span className="text-white font-bold">€{val.toFixed(2)}</span>,
+                      },
+                      {
+                        key: 'platform_fee_amount' as const,
+                        label: 'Fee',
+                        mobileHidden: true,
+                        render: (val) => <span className="text-orange-400 font-bold">-€{val.toFixed(2)}</span>,
+                      },
+                      {
+                        key: 'stripe_fee_amount' as const,
+                        label: 'Stripe',
+                        mobileHidden: true,
+                        render: (val) => <span className="text-blue-400 font-bold">-€{val.toFixed(2)}</span>,
+                      },
+                      {
+                        key: 'net_revenue' as const,
+                        label: 'Net',
+                        mobileHidden: true,
+                        render: (val) => <span className="text-emerald-400 font-black">€{val.toFixed(2)}</span>,
+                      },
+                      {
+                        key: 'payout_status' as const,
+                        label: 'Status',
+                        mobileHidden: true,
+                        render: (status, event) => {
+                          const eventDate = new Date(event.event_date);
+                          const now = new Date();
+                          const daysSinceEvent = Math.floor((now.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
+                          const isEligible = daysSinceEvent >= 2;
+                          const eligibleDate = new Date(eventDate);
+                          eligibleDate.setDate(eligibleDate.getDate() + 2);
+
+                          if (event.payout_status === 'paid') {
+                            return (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase">
+                                <CheckCircle className="w-3 h-3" /> Paid
+                              </span>
+                            );
+                          }
+
+                          if (event.payout_status === 'processing') {
+                            return (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase">
+                                <RefreshCcw className="w-3 h-3" /> Processing
+                              </span>
+                            );
+                          }
+
+                          if (isEligible && event.tickets_sold > 0) {
+                            return (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase">
+                                  <CheckCircle className="w-3 h-3" /> Ready
+                                </span>
+                                <span className="text-[9px] text-emerald-500 font-medium">Can process</span>
+                              </div>
+                            );
+                          } else if (event.tickets_sold > 0) {
+                            return (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-[10px] font-black uppercase">
+                                  <Clock className="w-3 h-3" /> Waiting
+                                </span>
+                                <span className="text-[9px] text-yellow-500 font-medium">
+                                  {eligibleDate.toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                                </span>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-500/10 text-slate-400 text-[10px] font-black uppercase">
+                                <AlertCircle className="w-3 h-3" /> No Sales
+                              </span>
+                            );
+                          }
+                        },
+                      },
+                      {
+                        key: 'event_id' as const,
+                        label: 'Actions',
+                        mobileHidden: false,
+                        render: (eventId, event) => {
+                          if (event.tickets_sold === 0) {
+                            return (
+                              <Button
+                                onClick={async () => {
+                                  if (!confirm(`Delete "${event.event_name}"?\n\nThis action cannot be undone.`)) return;
                                   
-                                  if (event.payout_status === 'paid') {
-                                    return (
-                                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase">
-                                        <CheckCircle className="w-3 h-3" /> Paid
-                                      </span>
-                                    );
-                                  }
-                                  
-                                  if (event.payout_status === 'processing') {
-                                    return (
-                                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase">
-                                        <RefreshCcw className="w-3 h-3" /> Processing
-                                      </span>
-                                    );
-                                  }
-                                  
-                                  // Pending status - show if eligible or waiting
-                                  if (isEligible && event.tickets_sold > 0) {
-                                    return (
-                                      <div className="flex flex-col items-center gap-1">
-                                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase">
-                                          <CheckCircle className="w-3 h-3" /> Ready
-                                        </span>
-                                        <span className="text-[9px] text-emerald-500 font-medium">Can process</span>
-                                      </div>
-                                    );
-                                  } else if (event.tickets_sold > 0) {
-                                    return (
-                                      <div className="flex flex-col items-center gap-1">
-                                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-[10px] font-black uppercase">
-                                          <Clock className="w-3 h-3" /> Waiting
-                                        </span>
-                                        <span className="text-[9px] text-yellow-500 font-medium">
-                                          {eligibleDate.toLocaleDateString('en', { month: 'short', day: 'numeric' })}
-                                        </span>
-                                      </div>
-                                    );
+                                  const result = await safeDeleteEvent(event.event_id);
+                                  if (result.success) {
+                                    alert('✅ Event deleted successfully');
+                                    const newRevenue = await getOrganizerRevenue(user.id);
+                                    setRevenueByEvent(newRevenue);
                                   } else {
-                                    return (
-                                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-500/10 text-slate-400 text-[10px] font-black uppercase">
-                                        <AlertCircle className="w-3 h-3" /> No Sales
-                                      </span>
-                                    );
+                                    alert(`❌ ${result.message}`);
                                   }
-                                })()}
-                              </td>
-                              <td className="px-6 py-4 text-center">
-                                {(() => {
-                                  // No tickets sold - allow delete
-                                  if (event.tickets_sold === 0) {
-                                    return (
-                                      <button
-                                        onClick={async () => {
-                                          if (!confirm(`Delete "${event.event_name}"?\n\nThis action cannot be undone.`)) return;
-                                          
-                                          const result = await safeDeleteEvent(event.event_id);
-                                          if (result.success) {
-                                            alert('✅ Event deleted successfully');
-                                            const newRevenue = await getOrganizerRevenue(user.id);
-                                            setRevenueByEvent(newRevenue);
-                                          } else {
-                                            alert(`❌ ${result.message}`);
-                                          }
-                                        }}
-                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-400 hover:text-red-300 transition-all text-xs font-bold"
-                                        title="Delete event (no tickets sold)"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                        Delete
-                                      </button>
-                                    );
-                                  }
-                                  
-                                  // Payout completed - allow archive or delete
-                                  if (event.payout_status === 'paid') {
-                                    return (
-                                      <div className="flex items-center gap-2 justify-center">
-                                        <button
-                                          onClick={async () => {
-                                            if (!confirm(`Archive "${event.event_name}"?\n\nYou can restore it later from archived events.`)) return;
-                                            
-                                            const result = await archiveEvent(event.event_id, user.id);
-                                            if (result.success) {
-                                              alert('✅ Event archived successfully');
-                                              const newRevenue = await getOrganizerRevenue(user.id);
-                                              setRevenueByEvent(newRevenue);
-                                            } else {
-                                              alert(`❌ ${result.message}`);
-                                            }
-                                          }}
-                                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 hover:text-blue-300 transition-all text-xs font-bold"
-                                          title="Archive event (can be restored)"
-                                        >
-                                          <Archive className="w-3.5 h-3.5" />
-                                          Archive
-                                        </button>
-                                        <button
-                                          onClick={async () => {
-                                            if (!confirm(`Delete "${event.event_name}"?\n\n⚠️ This action cannot be undone.\nPayout has been completed, but all event data and tickets will be permanently removed.`)) return;
-                                            
-                                            const result = await safeDeleteEvent(event.event_id);
-                                            if (result.success) {
-                                              alert('✅ Event deleted successfully');
-                                              const newRevenue = await getOrganizerRevenue(user.id);
-                                              setRevenueByEvent(newRevenue);
-                                            } else {
-                                              alert(`❌ ${result.message}`);
-                                            }
-                                          }}
-                                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/10 hover:bg-red-600/20 text-red-400 hover:text-red-300 transition-all text-xs font-bold"
+                                }}
+                                variant="danger"
+                                size="sm"
+                                icon={<Trash2 size={14} />}
+                              >
+                                Delete
+                              </Button>
+                            );
+                          }
+
+                          if (event.payout_status === 'paid') {
+                            return (
+                              <div className="flex items-center gap-2 justify-center">
+                                <Button
+                                  onClick={async () => {
+                                    if (!confirm(`Archive "${event.event_name}"?\n\nYou can restore it later from archived events.`)) return;
+                                    
+                                    const result = await archiveEvent(event.event_id, user.id);
+                                    if (result.success) {
+                                      alert('✅ Event archived successfully');
+                                      const newRevenue = await getOrganizerRevenue(user.id);
+                                      setRevenueByEvent(newRevenue);
+                                    } else {
+                                      alert(`❌ ${result.message}`);
+                                    }
+                                  }}
+                                  variant="secondary"
+                                  size="sm"
+                                  icon={<Archive size={14} />}
+                                >
+                                  Archive
+                                </Button>
+                                <Button
+                                  onClick={async () => {
+                                    if (!confirm(`Delete "${event.event_name}"?\n\n⚠️ This action cannot be undone.\nPayout has been completed, but all event data and tickets will be permanently removed.`)) return;
+                                    
+                                    const result = await safeDeleteEvent(event.event_id);
+                                    if (result.success) {
+                                      alert('✅ Event deleted successfully');
+                                      const newRevenue = await getOrganizerRevenue(user.id);
+                                      setRevenueByEvent(newRevenue);
+                                    } else {
+                                      alert(`❌ ${result.message}`);
+                                    }
+                                  }}
+                                  variant="danger"
+                                  size="sm"
+                                  icon={<Trash2 size={14} />}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            );
+                          }
+
+                          return <span className="text-slate-500 text-xs">No actions</span>;
+                        },
+                      },
+                    ]}
+                    dark
+                    emptyMessage="No events with revenue"
+                  />
                                           title="Delete event permanently"
                                         >
                                           <Trash2 className="w-3.5 h-3.5" />
