@@ -47,12 +47,25 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch public events using the secure function
+    // Fetch public events directly from view (bypasses type issues)
     const { data: events, error } = await supabase
-      .rpc('get_all_public_events', {
-        limit_count: limit,
-        offset_count: 0
-      });
+      .from('public_events')
+      .select(`
+        id,
+        name,
+        description,
+        category,
+        date,
+        location,
+        price,
+        image,
+        attendees_count,
+        max_capacity,
+        tags,
+        organizer_id
+      `)
+      .order('date', { ascending: true })
+      .limit(limit);
 
     if (error) {
       console.error('Error fetching events:', error);
@@ -62,7 +75,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    const publicEvents = events as PublicEvent[];
+    // Fetch organizer names separately
+    const organizerIds = [...new Set(events?.map(e => e.organizer_id).filter(Boolean))];
+    const { data: organizers } = await supabase
+      .from('users')
+      .select('id, name')
+      .in('id', organizerIds);
+
+    const organizerMap = new Map(organizers?.map(o => [o.id, o.name]) || []);
+
+    const publicEvents = (events || []).map(e => ({
+      ...e,
+      organizer_name: organizerMap.get(e.organizer_id) || 'Unknown'
+    })) as PublicEvent[];
 
     // Format response based on requested format
     if (format === 'xml') {
