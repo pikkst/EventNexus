@@ -969,11 +969,12 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         <button onClick={() => setIsFollowingUser(!isFollowingUser)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${isFollowingUser ? 'bg-indigo-600 text-white border-indigo-500' : theme === 'light' ? 'bg-white text-slate-400 border-slate-200' : 'bg-slate-900 text-slate-400 border-slate-800'}`} aria-label={isFollowingUser ? "Stop following your location" : "Follow your location on map"} aria-pressed={isFollowingUser}>
           <LocateFixed className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />
         </button>
-        <div className={`${
+        {/* Distance Radius Slider - Hidden on mobile to prevent overlap with event card */}
+        <div className={`hidden md:flex ${
           theme === 'light'
             ? 'bg-white/95 border-slate-200'
             : 'bg-slate-900/90 border-slate-800'
-        } border backdrop-blur-md p-4 rounded-3xl flex flex-col items-center gap-3`}>
+        } border backdrop-blur-md p-4 rounded-3xl flex-col items-center gap-3`}>
           <input 
             type="range" 
             min="5" 

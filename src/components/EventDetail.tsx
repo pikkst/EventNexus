@@ -618,6 +618,17 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
 
   return (
     <div className="min-h-screen bg-slate-950 text-white pb-32">
+      {/* Back Button - Always visible */}
+      <button
+        onClick={() => navigate('/map')}
+        className="fixed top-4 left-4 z-20 p-3 bg-slate-900/80 hover:bg-slate-800 border border-slate-700 rounded-xl transition-all shadow-xl flex items-center gap-2 text-white backdrop-blur-sm md:absolute md:top-4 md:left-4"
+        title="Back to event map"
+        aria-label="Back to event map"
+      >
+        <ArrowLeft className="w-5 h-5" aria-hidden="true" />
+        <span className="hidden sm:inline text-sm font-semibold">Back</span>
+      </button>
+
       {/* Hero Image Section */}
       {event.imageUrl && (
         <div className="relative h-[300px] sm:h-[400px] md:h-[500px] w-full overflow-hidden">
@@ -628,17 +639,6 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-transparent to-transparent" />
-          
-          {/* Back Button */}
-          <button
-            onClick={() => navigate('/map')}
-            className="absolute top-4 left-4 z-10 p-3 bg-slate-900/80 hover:bg-slate-800 border border-slate-700 rounded-xl transition-all shadow-xl flex items-center gap-2 text-white backdrop-blur-sm"
-            title="Back to event map"
-            aria-label="Back to event map"
-          >
-            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
-            <span className="hidden sm:inline text-sm font-semibold">Back</span>
-          </button>
           
           {/* Event Title Overlay */}
           <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8 pb-6 sm:pb-8 md:pb-12">
