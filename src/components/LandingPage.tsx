@@ -1223,12 +1223,6 @@ const FeatureCard = ({ icon, title, description }: any) => (
   <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-[32px] hover:border-indigo-500/50 transition-all group">
     <div className="bg-indigo-600/10 text-indigo-500 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
       {icon}
-      {/* Exit-Intent Popup */}
-      <ExitIntentPopup 
-        isOpen={showExitIntentPopup} 
-        onClose={() => setShowExitIntentPopup(false)}
-      />
-
     </div>
     <h3 className="text-xl font-bold mb-3">{title}</h3>
     <p className="text-slate-400 leading-relaxed text-sm">{description}</p>
