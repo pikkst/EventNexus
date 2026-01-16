@@ -711,6 +711,25 @@ Return ONLY valid JSON array.`
     // 3. Fix common escape sequence issues
     cleanedText = cleanedText.replace(/\\'/g, "'") // Unnecessary escaping of single quotes
     
+    // 4. Fix incomplete JSON objects (missing closing braces/brackets)
+    const openBraces = (cleanedText.match(/{/g) || []).length
+    const closeBraces = (cleanedText.match(/}/g) || []).length
+    const openBrackets = (cleanedText.match(/\[/g) || []).length
+    const closeBrackets = (cleanedText.match(/\]/g) || []).length
+    
+    if (openBraces > closeBraces) {
+      cleanedText += '}'.repeat(openBraces - closeBraces)
+    }
+    if (openBrackets > closeBrackets) {
+      cleanedText += ']'.repeat(openBrackets - closeBrackets)
+    }
+    
+    // 5. Remove trailing text after final closing bracket
+    const finalBracket = cleanedText.lastIndexOf(']')
+    if (finalBracket > 0 && finalBracket < cleanedText.length - 1) {
+      cleanedText = cleanedText.substring(0, finalBracket + 1)
+    }
+    
     // Try to parse
     events = JSON.parse(cleanedText)
     
@@ -874,6 +893,20 @@ serve(async (req) => {
       city_name: cityData.city_name,
       country: cityData.country,
       city_id: cityData.city_id
+    }
+
+    // CRITICAL: Only allow Estonia
+    const ALLOWED_COUNTRIES = ['Estonia', 'Eesti']
+    if (!ALLOWED_COUNTRIES.includes(cityData.country)) {
+      console.error(`[BLOCKED] Non-Estonian city detected: ${cityData.city_name}, ${cityData.country}`)
+      return new Response(
+        JSON.stringify({ 
+          error: 'Only Estonian cities are supported',
+          city: cityData.city_name,
+          country: cityData.country
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     await log(supabase, 'discover-events-ai', 'info',
