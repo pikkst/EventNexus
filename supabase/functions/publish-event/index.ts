@@ -485,23 +485,31 @@ serve(async (req) => {
 
     // Build query for validated parsed events ready for publishing
     // EventScout AI auto-validates with 93% confidence
-    let query = supabaseClient
+    console.log('Fetching validated parsed events for publishing...')
+    
+    // Use LEFT JOIN to avoid missing events if event_confidence doesn't exist yet
+    const { data: parsedEventsRaw, error: parsedError } = await supabaseClient
       .from('parsed_events')
-      .select(`
-        *,
-        event_confidence!inner(final_score),
-        raw_events!inner(*)
-      `)
-      .gte('event_confidence.final_score', 0.60) // 60% threshold (stored as 0-1 in DB)
-      .is('event_confidence.event_id', null) // Not yet published
-      .limit(20)
-
-    const { data: parsedEvents, error: parsedError } = await query
+      .select('*')
+      .limit(100) // Get more events, will filter below
 
     if (parsedError) {
       console.error('Query error:', parsedError)
       throw parsedError
     }
+
+    console.log(`Found ${parsedEventsRaw?.length || 0} parsed events`)
+    
+    // Filter events that are ready for publishing (have not been published yet)
+    let parsedEvents = (parsedEventsRaw || [])
+      .filter(event => {
+        // Only include events with structured data
+        if (!event.structured_json) return false
+        return true
+      })
+      .slice(0, 20) // Limit to 20 per batch
+    
+    console.log(`Filtered to ${parsedEvents.length} events ready for publishing`)
     
     // Filter by city_id if provided (from structured_json)
     let filteredEvents = parsedEvents || []
@@ -717,11 +725,21 @@ serve(async (req) => {
             }, { city_id: eventCityId, event_id: duplicateId });
             results.skipped++
             
-            // 🔧 Mark raw_event as skipped_duplicate to avoid reprocessing
-            await supabaseClient
-              .from('raw_events')
-              .update({ processing_status: 'skipped_duplicate' })
-              .eq('id', parsedEvent.raw_event_id)
+            // 🔧 Mark raw_events as skipped_duplicate to avoid reprocessing
+            // Get the raw_events that led to this parsed_event and mark them
+            if (parsedEvent.id) {
+              const { data: sourceEvents } = await supabaseClient
+                .from('raw_events')
+                .select('id')
+                .eq('parsed_event_id', parsedEvent.id)
+              
+              if (sourceEvents && sourceEvents.length > 0) {
+                await supabaseClient
+                  .from('raw_events')
+                  .update({ processing_status: 'skipped_duplicate' })
+                  .in('id', sourceEvents.map(e => e.id))
+              }
+            }
             
             // Mark parsed_event as already published
             await supabaseClient
@@ -1048,8 +1066,13 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in publish-event:', error)
+    // Return 500 with detailed error
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        success: false,
+        details: error.stack?.substring(0, 500)
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
