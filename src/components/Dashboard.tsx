@@ -45,6 +45,39 @@ import { generateDashboardSEO, updatePageMeta, cleanupSEO } from '../utils/seoUt
 // Lazy-load heavy social media SDK helpers when needed to reduce main bundle size
 const loadSocialMediaService = () => import('../services/socialMediaService');
 
+// ============================================
+// LOGGING & DIAGNOSTICS
+// ============================================
+const DEBUG_MODE = true;
+const LOG_PREFIX = '[Dashboard]';
+
+const debugLog = (message: string, data?: any) => {
+  if (DEBUG_MODE) {
+    const timestamp = new Date().toISOString();
+    console.log(`${LOG_PREFIX} [${timestamp}] ${message}`, data || '');
+  }
+};
+
+const debugError = (message: string, error: any) => {
+  const timestamp = new Date().toISOString();
+  console.error(`${LOG_PREFIX} [${timestamp}] ERROR: ${message}`, error);
+  // Send to error tracking if available
+  if (window.__errorLog) {
+    window.__errorLog.push({
+      component: 'Dashboard',
+      timestamp,
+      message,
+      error: error?.message || String(error),
+      stack: error?.stack
+    });
+  }
+};
+
+// Initialize error log array on window object
+if (!window.__errorLog) {
+  window.__errorLog = [];
+}
+
 // Generate sales data from real revenue data (last 7 days)
 const generateSalesData = (revenueByEvent: RevenueByEvent[]) => {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -95,6 +128,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [salesData, setSalesData] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'payouts' | 'marketing' | 'infra' | 'branding' | 'integrations' | 'affiliate' | 'scanner-codes'>('overview');
   const [isGeneratingAd, setIsGeneratingAd] = useState(false);
+  const [componentError, setComponentError] = useState<Error | null>(null);
+
+  // Log component mount and initialization
+  useEffect(() => {
+    debugLog(`Dashboard component mounted for user: ${user.id}`, {
+      userName: user.name,
+      email: user.email,
+      role: user.role
+    });
+    return () => {
+      debugLog(`Dashboard component unmounted`);
+    };
+  }, [user.id, user.name, user.email, user.role]);
   const [genStage, setGenStage] = useState('');
   const [adCampaign, setAdCampaign] = useState<any[]>([]);
   const [isSuccessManagerOpen, setIsSuccessManagerOpen] = useState(false);
@@ -308,16 +354,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   // Load user's events from database
   useEffect(() => {
     const loadEvents = async () => {
+      debugLog(`Starting to load events for user: ${user.id}`);
+      setIsLoadingEvents(true);
       try {
+        debugLog('Calling getOrganizerEvents...');
         const userEvents = await getOrganizerEvents(user.id);
+        debugLog(`Successfully loaded ${userEvents.length} events`, userEvents);
         setEvents(userEvents);
         if (userEvents.length > 0 && !selectedEventId) {
           setSelectedEventId(userEvents[0].id);
         }
       } catch (error) {
+        debugError('Error loading events', error);
         logger.error('Error loading events:', error);
       } finally {
         setIsLoadingEvents(false);
+        debugLog('Event loading complete');
       }
     };
     loadEvents();
@@ -843,6 +895,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-12 relative min-h-screen pb-32">
+      {/* DEBUG ERROR LOG - VISIBLE ONLY IN DEBUG MODE */}
+      {DEBUG_MODE && window.__errorLog && window.__errorLog.length > 0 && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-sm bg-red-900/80 border border-red-500 rounded-lg p-4 text-white text-xs font-mono max-h-40 overflow-y-auto">
+          <div className="font-bold mb-2">🔴 ERROR LOG ({window.__errorLog.length})</div>
+          {window.__errorLog.slice(-5).map((log, i) => (
+            <div key={i} className="text-red-200 mb-1 pb-1 border-b border-red-700">
+              <div className="font-bold">{log.component}:</div>
+              <div>{log.message}</div>
+              <div className="text-red-300">{log.error}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Stripe Connect Success Banner */}
       {showConnectSuccess && (
         <div className="fixed top-4 right-4 z-50 max-w-md animate-in slide-in-from-right duration-300">
