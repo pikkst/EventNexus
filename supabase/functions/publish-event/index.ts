@@ -500,16 +500,28 @@ serve(async (req) => {
 
     console.log(`Found ${parsedEventsRaw?.length || 0} parsed events`)
     
+    // Get list of already-published parsed_events to avoid re-publishing
+    const { data: publishedConfidence } = await supabaseClient
+      .from('event_confidence')
+      .select('parsed_event_id')
+      .not('event_id', 'is', null)
+      .limit(5000) // Get all published references
+    
+    const publishedIds = new Set(publishedConfidence?.map(c => c.parsed_event_id) || [])
+    console.log(`Already published: ${publishedIds.size} events`)
+    
     // Filter events that are ready for publishing (have not been published yet)
     let parsedEvents = (parsedEventsRaw || [])
       .filter(event => {
         // Only include events with structured data
         if (!event.structured_json) return false
+        // Skip if already published
+        if (publishedIds.has(event.id)) return false
         return true
       })
       .slice(0, 20) // Limit to 20 per batch
     
-    console.log(`Filtered to ${parsedEvents.length} events ready for publishing`)
+    console.log(`Filtered to ${parsedEvents.length} events ready for publishing (${parsedEventsRaw?.length || 0} total, ${publishedIds.size} already published)`)
     
     // Filter by city_id if provided (from structured_json)
     let filteredEvents = parsedEvents || []
