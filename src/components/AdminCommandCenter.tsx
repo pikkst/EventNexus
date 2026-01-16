@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   ShieldAlert, DollarSign, Globe, Settings, Users, 
   Search, ShieldCheck, CreditCard, Activity, TrendingUp, Filter, MoreHorizontal, 
@@ -1274,16 +1275,16 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 <p className="text-sm text-indigo-300 mb-3">
                   <strong>Full Dashboard Access:</strong> Navigate to <code className="px-2 py-1 bg-indigo-900/50 rounded text-indigo-200">/admin/ai-agents</code> for complete AI Agent System management.
                 </p>
-                <Button
-                  href="/admin/ai-agents"
-                  as="a"
-                  variant="primary"
-                  size="md"
-                  icon={<Bot size={20} />}
-                  iconRight={<ArrowUpRight size={16} />}
-                >
-                  Open AI Agent Dashboard
-                </Button>
+                <Link to="/admin/ai-agents">
+                  <Button
+                    variant="primary"
+                    size="md"
+                    icon={<Bot size={20} />}
+                    iconRight={<ArrowUpRight size={16} />}
+                  >
+                    Open AI Agent Dashboard
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
