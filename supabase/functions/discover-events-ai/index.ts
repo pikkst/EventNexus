@@ -895,20 +895,6 @@ serve(async (req) => {
       city_id: cityData.city_id
     }
 
-    // CRITICAL: Only allow Estonia
-    const ALLOWED_COUNTRIES = ['Estonia', 'Eesti']
-    if (!ALLOWED_COUNTRIES.includes(cityData.country)) {
-      console.error(`[BLOCKED] Non-Estonian city detected: ${cityData.city_name}, ${cityData.country}`)
-      return new Response(
-        JSON.stringify({ 
-          error: 'Only Estonian cities are supported',
-          city: cityData.city_name,
-          country: cityData.country
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
     await log(supabase, 'discover-events-ai', 'info',
       `Starting EventScout AI discovery for ${cityData.city_name}, ${cityData.country}`,
       logContext

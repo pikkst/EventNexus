@@ -39,6 +39,7 @@ const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
 };
 
 // Events - returns public and semi-private events (excludes only private)
+// Shows ALL events worldwide
 export const getEvents = async (): Promise<EventNexusEvent[]> => {
   const { data, error } = await supabase
     .from('events')
