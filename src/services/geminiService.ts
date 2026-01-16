@@ -1,23 +1,63 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
 import { supabase } from './supabase';
 import { deductUserCredits, checkUserCredits } from './dbService';
 import { SUPPORTED_LANGUAGES } from './languageService';
 
-// Lazily initialize GoogleGenAI to avoid TDZ issues with env vars
-let aiInstance: GoogleGenAI | null = null;
+// Dynamically import Google GenAI to avoid TDZ issues
+// This prevents minification bugs where 'Ge' (minified class) is accessed before initialization
+let aiInstance: any = null;
+let GoogleGenAIModule: any = null;
+let TypeEnum: any = null;
 
-const getAI = (): GoogleGenAI => {
+const loadGoogleGenAI = async () => {
+  if (!GoogleGenAIModule) {
+    try {
+      const module = await import("@google/genai");
+      GoogleGenAIModule = module.GoogleGenAI;
+      TypeEnum = module.Type;
+    } catch (e: any) {
+      console.error('Failed to load @google/genai module:', e?.message || e);
+      throw new Error(`Cannot load @google/genai: ${e?.message || String(e)}`);
+    }
+  }
+  return { GoogleGenAI: GoogleGenAIModule, Type: TypeEnum };
+};
+
+const getAI = (): any => {
   if (!aiInstance) {
     const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
       console.error('GEMINI_API_KEY is not set in environment variables');
       throw new Error('GEMINI_API_KEY is required but not configured');
     }
-    aiInstance = new GoogleGenAI({ apiKey });
+    
+    if (!GoogleGenAIModule) {
+      throw new Error('GoogleGenAI module not yet loaded. This should not happen - please call initializeGemini() first');
+    }
+    
+    try {
+      aiInstance = new GoogleGenAIModule({ apiKey });
+    } catch (e: any) {
+      console.error('Failed to instantiate GoogleGenAI:', e?.message || e);
+      throw new Error(`GoogleGenAI initialization failed: ${e?.message || String(e)}`);
+    }
   }
   return aiInstance;
 };
+
+// Pre-initialize the module at startup (call this early in App component)
+export const initializeGemini = async () => {
+  await loadGoogleGenAI();
+};
+
+// Lazy Type proxy that works with dynamically loaded module
+const Type = new Proxy({} as any, {
+  get: (target, prop: string) => {
+    if (!TypeEnum) {
+      throw new Error('Type enum not yet loaded. Make sure initializeGemini() is called early in your app.');
+    }
+    return TypeEnum[prop as any];
+  }
+});
 
 // ADMIN TOOLS - NO CREDIT COST (Platform marketing tools)
 // Admin promotion tools are FREE for admins to market the platform

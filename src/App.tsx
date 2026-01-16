@@ -38,6 +38,7 @@ import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import { DashboardSkeleton, PageSkeleton } from './components/LoadingSkeleton';
 import { initializePerformanceOptimizations } from './utils/performanceOptimization';
+import { initializeGemini } from './services/geminiService';
 
 // Heavy components - lazy load on demand
 const HomeMap = lazy(() => import('./components/HomeMap'));
@@ -251,6 +252,12 @@ const App: React.FC = () => {
     
     // Initialize performance optimizations after GA is set up
     initializePerformanceOptimizations();
+    
+    // Initialize Gemini AI module early to avoid TDZ errors
+    initializeGemini().catch(e => {
+      console.warn('Failed to pre-initialize Gemini:', e?.message || e);
+      // Don't throw - this is non-critical and can be retried on first use
+    });
   }, []);
 
   // Helper to cache user data
