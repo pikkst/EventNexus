@@ -4,8 +4,10 @@
  */
 
 import { supabase } from './supabase';
-import { generateAdImage } from './geminiService';
 import logger from '../utils/logger';
+
+// Lazy-load geminiService to avoid TDZ
+const loadGeminiService = () => import('./geminiService');
 
 // Publicly hosted fallback image to avoid Graph API 324 errors when an asset is missing
 const FALLBACK_AD_IMAGE_URL = 'https://www.eventnexus.eu/EventNexus/logo%20for%20eventnexus.png';
@@ -167,6 +169,7 @@ export const generateSocialMediaContentWithImages = async (
   
   // Generate images for each platform in optimal size
   logger.log('🎨 Generating platform-specific images...');
+  const { generateAdImage } = await loadGeminiService();
   const [facebookImage, instagramImage, twitterImage, linkedinImage] = await Promise.all([
     generateAdImage(visualPrompt, '16:9', true), // Facebook - landscape
     generateAdImage(visualPrompt, '1:1', true),  // Instagram - square
