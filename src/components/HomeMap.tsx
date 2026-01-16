@@ -5,7 +5,7 @@ import { usePageSEO } from '../hooks/useSEO';
 import { 
   Search, SlidersHorizontal, MapPin, Calendar, 
   Star, Navigation2, LocateFixed, Compass, Route, X,
-  Clock, ArrowRight, Radar, Sun, Moon
+  Clock, ArrowRight, Radar, Sun, Moon, Minimize2, Maximize2
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline } from 'react-leaflet';
 import L from 'leaflet';
@@ -181,6 +181,22 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const [nearbyNewEventsCount, setNearbyNewEventsCount] = useState(0);
   const [nearbyNewEvents, setNearbyNewEvents] = useState<EventNexusEvent[]>([]);
   const mapRef = useRef<any>(null);
+  
+  // Compact UI mode: hide overlays to free viewport (mobile-friendly)
+  const [compactMode, setCompactMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('homemap_compact_mode');
+      return saved !== null ? JSON.parse(saved) : false; // Default: expanded
+    } catch {
+      return false;
+    }
+  });
+  
+  const toggleCompactMode = useCallback(() => {
+    const next = !compactMode;
+    setCompactMode(next);
+    try { localStorage.setItem('homemap_compact_mode', JSON.stringify(next)); } catch {}
+  }, [compactMode]);
   
   // Play notification sound
   const playNotificationSound = useCallback(() => {
@@ -899,7 +915,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       </div>
 
       {/* Vibe Radar - Mobile Floating Navigator */}
-      {nearestEvent && !selectedEvent && (
+      {!compactMode && nearestEvent && !selectedEvent && (
         <div className="absolute left-4 md:left-6 bottom-6 md:bottom-10 z-[500] animate-in slide-in-from-left duration-700">
            <button 
              onClick={() => { setSelectedEvent(nearestEvent); }}
@@ -929,7 +945,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       )}
 
       {/* Live Update Toast Notification */}
-      {liveUpdateCount > 0 && (
+      {!compactMode && liveUpdateCount > 0 && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[500] live-update-toast">
           <div className={`${
             theme === 'light'
@@ -945,7 +961,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       )}
       
       {/* Nearby New Events Counter Badge */}
-      {nearbyNewEventsCount > 0 && (
+      {!compactMode && nearbyNewEventsCount > 0 && (
         <div className="absolute top-32 left-1/2 -translate-x-1/2 z-[500]">
           <button
             onClick={() => {
@@ -974,6 +990,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       )}
 
       {/* Overlays */}
+      {!compactMode && (
       <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-2 sm:px-4 z-[400] space-y-3">
         <div className={`$
           theme === 'light'
@@ -1083,8 +1100,23 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           ))}
         </div>
       </div>
+      )}
 
+      {!compactMode && (
       <div className="absolute right-4 md:right-6 bottom-6 md:bottom-10 flex flex-col gap-2 md:gap-3 z-[600]">
+        {/* Compact mode toggle */}
+        <button
+          onClick={toggleCompactMode}
+          className={`${
+            theme === 'light' 
+              ? 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50' 
+              : 'bg-slate-900 text-slate-100 border-slate-800 hover:bg-slate-800'
+          } p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border inline-flex items-center gap-2`}
+          title="Hide UI overlays"
+          aria-label="Hide UI overlays"
+        >
+          <Minimize2 className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />
+        </button>
         <button 
           onClick={onToggleTheme || (() => {})} 
           className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${
@@ -1164,6 +1196,24 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           />
         </div>
       </div>
+      )}
+
+      {compactMode && (
+        <div className="absolute right-4 md:right-6 bottom-6 md:bottom-10 z-[600]">
+          <button
+            onClick={toggleCompactMode}
+            className={`${
+              theme === 'light' 
+                ? 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50' 
+                : 'bg-slate-900 text-slate-100 border-slate-800 hover:bg-slate-800'
+            } p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border inline-flex items-center gap-2`}
+            title="Show UI overlays"
+            aria-label="Show UI overlays"
+          >
+            <Maximize2 className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       <style dangerouslySetInnerHTML={{ __html: `
         .vertical-range { -webkit-appearance: slider-vertical; width: 8px; height: 120px; }
