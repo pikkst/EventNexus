@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, Bot, User, Loader2, Minus, Maximize2 } from 'lucide-react';
-import { createNexusChat } from '../services/geminiService';
-import { GenerateContentResponse } from '@google/genai';
+import type { GenerateContentResponse } from '@google/genai';
 
 interface Message {
   role: 'user' | 'model';
@@ -26,7 +25,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen && !chatRef.current) {
-      chatRef.current = createNexusChat();
+      import('../services/geminiService').then(({ createNexusChat }) => {
+        chatRef.current = createNexusChat();
+      });
     }
   }, [isOpen]);
 
@@ -45,7 +46,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
     setIsLoading(true);
 
     try {
-      if (!chatRef.current) chatRef.current = createNexusChat();
+      if (!chatRef.current) {
+        const { createNexusChat } = await import('../services/geminiService');
+        chatRef.current = createNexusChat();
+      }
       
       const result = await chatRef.current.sendMessageStream({ message: userMsg });
       

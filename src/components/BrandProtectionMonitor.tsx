@@ -3,7 +3,6 @@ import { Shield, Search, Globe, AlertTriangle, CheckCircle, XCircle, Eye, Trendi
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { BrandMonitoringAlert, MonitoringStats } from '@/types';
 import * as brandMonitoringService from '@/services/brandMonitoringService';
-import { generateBrandProtectionReport } from '@/services/geminiService';
 import logger from '@/utils/logger';
 
 interface BrandProtectionMonitorProps {
@@ -293,6 +292,7 @@ export default function BrandProtectionMonitor({ user }: BrandProtectionMonitorP
   const generateReport = async () => {
     setGeneratingReport(true);
     try {
+      const { generateBrandProtectionReport } = await import('@/services/geminiService');
       const report = await generateBrandProtectionReport(alerts, stats);
       setAiReport(report);
       setShowReport(true);

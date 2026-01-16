@@ -12,7 +12,6 @@ import L from 'leaflet';
 import { CATEGORIES } from '../constants';
 import { EventNexusEvent } from '../types';
 import { getEvents } from '../services/dbService';
-import { translateDescription, translateDescriptionBatch } from '../services/geminiService';
 import { filterActiveEvents } from '../utils/eventUtils';
 import { generateMapSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 import { supabase } from '../services/supabase';
@@ -623,6 +622,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           ...(descSource && { description: descSource })
         };
         
+        const { translateDescriptionBatch } = await import('../services/geminiService');
         const translations = await translateDescriptionBatch(textsToTranslate, targetLang);
         
         setTranslatedTitle(translations.name || selectedEvent.name);

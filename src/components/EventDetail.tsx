@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import logger from '../utils/logger';
-import { translateDescription, translateDescriptionBatch } from '../services/geminiService';
 import { useEventSEO } from '../hooks/useSEO';
 import { 
   MapPin, 
@@ -276,6 +275,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           ...(descSource && { description: descSource })
         };
         
+        const { translateDescriptionBatch } = await import('../services/geminiService');
         const translations = await translateDescriptionBatch(textsToTranslate, targetLabel);
 
         setTranslatedName(translations.name || event.name);
