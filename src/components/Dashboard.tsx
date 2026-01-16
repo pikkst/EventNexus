@@ -122,9 +122,15 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }) => {
   const navigate = useNavigate();
+  
+  // ====== ALL STATE DECLARATIONS FIRST - BEFORE ANY EFFECTS OR MEMOS ======
+  
+  // Main events and loading state
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [salesData, setSalesData] = useState<any[]>([]);
+  
+  // Tab and UI state
   const [activeTab, setActiveTab] = useState<'overview' | 'payouts' | 'marketing' | 'infra' | 'branding' | 'integrations' | 'affiliate' | 'scanner-codes'>('overview');
   const [isGeneratingAd, setIsGeneratingAd] = useState(false);
   const [componentError, setComponentError] = useState<Error | null>(null);
@@ -134,29 +140,90 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [showConnectSuccess, setShowConnectSuccess] = useState(false);
   const [isVerifyingConnect, setIsVerifyingConnect] = useState(false);
   
+  // Event selection and broadcasting
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [broadcastingTo, setBroadcastingTo] = useState<string | null>(null);
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  
+  // Campaign generation
   const [campaignTheme, setCampaignTheme] = useState('');
   const [campaignAudience, setCampaignAudience] = useState('general');
   const [deployModalOpen, setDeployModalOpen] = useState(false);
   const [selectedAdForDeploy, setSelectedAdForDeploy] = useState<any>(null);
+  
+  // Social media accounts
   const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   
-  // Poster generation state
+  // Poster generation
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
   const [posterDesign, setPosterDesign] = useState<PosterDesign | null>(null);
   const [selectedAdForPoster, setSelectedAdForPoster] = useState<any>(null);
+  
+  // Translations
   const [eventTranslations, setEventTranslations] = useState<{ [eventId: string]: { name: string } }>({});
-  const translationCache = useRef<Map<string, { name: string }>>(new Map());
-
-  // Event filtering state
+  
+  // Event filtering
   const [eventSearchTerm, setEventSearchTerm] = useState('');
   const [eventStatusFilter, setEventStatusFilter] = useState<'all' | 'upcoming' | 'past' | 'free' | 'paid'>('all');
   const [eventCategoryFilter, setEventCategoryFilter] = useState<string>('all');
   const [eventSortBy, setEventSortBy] = useState<'date-asc' | 'date-desc' | 'name' | 'revenue'>('date-asc');
+  
+  // Branding/edit state
+  const [tempBranding, setTempBranding] = useState(user.branding || {
+    primaryColor: '#6366f1',
+    accentColor: '#818cf8',
+    tagline: '',
+    customDomain: '',
+    bannerUrl: '',
+    services: [],
+    pageConfig: {
+      heroType: 'image',
+      heroMedia: '',
+      showStats: true,
+      showTestimonials: true,
+      showTeam: true,
+      showPartners: true,
+      showMediaCoverage: true,
+      showEventHighlights: true,
+      enableContactForm: true,
+      enableNewsletter: true,
+      enableSocialSharing: true,
+      enableVIPAccess: false,
+      customSections: [],
+      layout: 'modern',
+      theme: 'dark'
+    }
+  });
+  const [tempBio, setTempBio] = useState(user.bio || '');
+  const [tempSlug, setTempSlug] = useState(user.agency_slug || user.agencySlug || '');
+  
+  // Enterprise integrations
+  const [integrations, setIntegrations] = useState({
+    meta: { connected: true, apiKey: 'pk_meta_live_9201...' },
+    google: { connected: true, apiKey: 'google_ads_v14_...' },
+    tiktok: { connected: false, apiKey: null },
+    x: { connected: true, apiKey: 'x_auth_token_...' }
+  });
+  
+  // Revenue state
+  const [revenueSummary, setRevenueSummary] = useState<RevenueSummary | null>(null);
+  const [revenueByEvent, setRevenueByEvent] = useState<RevenueByEvent[]>([]);
+  const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
+  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummaryItem[]>([]);
+  const [isProcessingPayouts, setIsProcessingPayouts] = useState(false);
+  const [payoutProcessingResult, setPayoutProcessingResult] = useState<any>(null);
+  
+  // Affiliate state
+  const [affiliateStats, setAffiliateStats] = useState<AffiliateStats | null>(null);
+  const [affiliateReferrals, setAffiliateReferrals] = useState<AffiliateReferralActivity[]>([]);
+  const [isLoadingAffiliate, setIsLoadingAffiliate] = useState(false);
+  const [affiliateCodeCopied, setAffiliateCodeCopied] = useState(false);
+  
+  // Refs (hooks that must come before effects)
+  const translationCache = useRef<Map<string, { name: string }>>(new Map());
+  
   const DISABLE_ORGANIZER_FILTERS = true;
 
   // Log component mount and initialization
@@ -492,56 +559,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     loadAffiliateData();
   }, [user.id, activeTab, user.subscription_tier]);
 
-  // Edit State
-  const [tempBranding, setTempBranding] = useState(user.branding || {
-    primaryColor: '#6366f1',
-    accentColor: '#818cf8',
-    tagline: '',
-    customDomain: '',
-    bannerUrl: '',
-    services: [],
-    pageConfig: {
-      heroType: 'image',
-      heroMedia: '',
-      showStats: true,
-      showTestimonials: true,
-      showTeam: true,
-      showPartners: true,
-      showMediaCoverage: true,
-      showEventHighlights: true,
-      enableContactForm: true,
-      enableNewsletter: true,
-      enableSocialSharing: true,
-      enableVIPAccess: false,
-      customSections: [],
-      layout: 'modern',
-      theme: 'dark'
-    }
-  });
-  const [tempBio, setTempBio] = useState(user.bio || '');
-  const [tempSlug, setTempSlug] = useState(user.agency_slug || user.agencySlug || '');
 
-  // Enterprise Integration State
-  const [integrations, setIntegrations] = useState({
-    meta: { connected: true, apiKey: 'pk_meta_live_9201...' },
-    google: { connected: true, apiKey: 'google_ads_v14_...' },
-    tiktok: { connected: false, apiKey: null },
-    x: { connected: true, apiKey: 'x_auth_token_...' }
-  });
-
-  // Revenue State
-  const [revenueSummary, setRevenueSummary] = useState<RevenueSummary | null>(null);
-  const [revenueByEvent, setRevenueByEvent] = useState<RevenueByEvent[]>([]);
-  const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
-  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummaryItem[]>([]);
-  const [isProcessingPayouts, setIsProcessingPayouts] = useState(false);
-  const [payoutProcessingResult, setPayoutProcessingResult] = useState<any>(null);
-
-  // Affiliate State
-  const [affiliateStats, setAffiliateStats] = useState<AffiliateStats | null>(null);
-  const [affiliateReferrals, setAffiliateReferrals] = useState<AffiliateReferralActivity[]>([]);
-  const [isLoadingAffiliate, setIsLoadingAffiliate] = useState(false);
-  const [affiliateCodeCopied, setAffiliateCodeCopied] = useState(false);
 
   // Only gate free users when they have no events yet; free users with events unlocked via credits should have full access
   const isGated = user.subscription_tier === 'free' && !isLoadingEvents && events.length === 0;
