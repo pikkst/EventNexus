@@ -10,7 +10,9 @@
  */
 
 import { supabase } from './supabase';
-import { generatePlatformGrowthCampaign, generateAdImage, generateSocialMediaPosts } from './geminiService';
+
+// Lazy-load geminiService to avoid TDZ
+const loadGeminiService = () => import('./geminiService');
 
 // ============================================================
 // Platform Knowledge Base - Real EventNexus Features
@@ -674,6 +676,9 @@ export async function createAutonomousCampaign(adminUserId: string): Promise<Aut
       totalUsers: intelligence.totalUsers,
       keyFeatures: strategy.keyMessages // Use strategy's key messages as features to highlight
     };
+    
+    // Load Gemini functions dynamically
+    const { generatePlatformGrowthCampaign, generateAdImage, generateSocialMediaPosts } = await loadGeminiService();
     
     const campaignData = await generatePlatformGrowthCampaign(
       strategy.campaignTheme,
