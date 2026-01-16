@@ -899,7 +899,6 @@ serve(async (req) => {
 
     // Extract city data for use in insertion loop
     const countryCode = cityData.country_code || 'ee'
-    const country = cityData.country
     const cityName = cityData.city_name
     const cityLat = cityData.latitude || 0
     const cityLng = cityData.longitude || 0
