@@ -33,12 +33,13 @@ CREATE TABLE IF NOT EXISTS event_quality_scores (
 );
 
 -- Index for training queries
-CREATE INDEX idx_quality_scores_validated ON event_quality_scores(manually_validated, created_at);
-CREATE INDEX idx_quality_scores_score ON event_quality_scores(quality_score);
+CREATE INDEX IF NOT EXISTS idx_quality_scores_validated ON event_quality_scores(manually_validated, created_at);
+CREATE INDEX IF NOT EXISTS idx_quality_scores_score ON event_quality_scores(quality_score);
 
 -- RLS: Service role can do everything, authenticated users can read
 ALTER TABLE event_quality_scores ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Service role full access on quality_scores" ON event_quality_scores;
 CREATE POLICY "Service role full access on quality_scores"
   ON event_quality_scores
   FOR ALL
@@ -46,6 +47,7 @@ CREATE POLICY "Service role full access on quality_scores"
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Authenticated read quality_scores" ON event_quality_scores;
 CREATE POLICY "Authenticated read quality_scores"
   ON event_quality_scores
   FOR SELECT
@@ -76,17 +78,18 @@ CREATE TABLE IF NOT EXISTS event_embeddings (
 );
 
 -- Index for similarity search using cosine distance
-CREATE INDEX idx_event_embeddings_vector ON event_embeddings 
+CREATE INDEX IF NOT EXISTS idx_event_embeddings_vector ON event_embeddings 
   USING ivfflat (embedding vector_cosine_ops)
   WITH (lists = 100);
 
 -- Regular indexes
-CREATE INDEX idx_event_embeddings_event ON event_embeddings(event_id);
-CREATE INDEX idx_event_embeddings_parsed ON event_embeddings(parsed_event_id);
+CREATE INDEX IF NOT EXISTS idx_event_embeddings_event ON event_embeddings(event_id);
+CREATE INDEX IF NOT EXISTS idx_event_embeddings_parsed ON event_embeddings(parsed_event_id);
 
 -- RLS for embeddings
 ALTER TABLE event_embeddings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Service role full access on embeddings" ON event_embeddings;
 CREATE POLICY "Service role full access on embeddings"
   ON event_embeddings
   FOR ALL
@@ -94,6 +97,7 @@ CREATE POLICY "Service role full access on embeddings"
   USING (true)
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Authenticated read embeddings" ON event_embeddings;
 CREATE POLICY "Authenticated read embeddings"
   ON event_embeddings
   FOR SELECT
