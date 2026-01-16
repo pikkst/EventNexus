@@ -34,6 +34,7 @@ import {
   getAffiliateReferrals
 } from '../services/dbService';
 import { generateAdCampaign, generateAdImage, generatePosterDesign, translateDescription } from '../services/geminiService';
+import { generateAdCampaign, generateAdImage, generatePosterDesign, translateDescription } from '../services/geminiService';
 import { generatePrintablePoster, PosterDesign } from '../services/posterService';
 import { supabase } from '../services/supabase';
 import OrganizerScannerHub from './OrganizerScannerHub';
@@ -170,6 +171,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [eventStatusFilter, setEventStatusFilter] = useState<'all' | 'upcoming' | 'past' | 'free' | 'paid'>('all');
   const [eventCategoryFilter, setEventCategoryFilter] = useState<string>('all');
   const [eventSortBy, setEventSortBy] = useState<'date-asc' | 'date-desc' | 'name' | 'revenue'>('date-asc');
+  const DISABLE_ORGANIZER_FILTERS = true;
 
   // Filter and sort events
   const filteredAndSortedEvents = useMemo(() => {
@@ -360,7 +362,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
         debugLog('Calling getOrganizerEvents...');
         const userEvents = await getOrganizerEvents(user.id);
         debugLog(`Successfully loaded ${userEvents.length} events`, userEvents);
-        setEvents(userEvents);
+        if (DISABLE_ORGANIZER_FILTERS) return events;
+        let result = [...events];
         if (userEvents.length > 0 && !selectedEventId) {
           setSelectedEventId(userEvents[0].id);
         }
@@ -1213,7 +1216,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                   </div>
 
                   {/* Filter Stats */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-700">
+                {!DISABLE_ORGANIZER_FILTERS && (
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6">
                     <p className="text-sm text-slate-400 font-medium">
                       Showing <span className="text-indigo-400 font-bold">{filteredAndSortedEvents.length}</span> of <span className="text-slate-300 font-bold">{events.length}</span> events
                       {eventSearchTerm || eventStatusFilter !== 'all' || eventCategoryFilter !== 'all' ? ' (filtered)' : ''}
@@ -1232,6 +1236,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                       </button>
                     )}
                   </div>
+                    )}
                 </div>
               )}
 
