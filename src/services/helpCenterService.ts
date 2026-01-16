@@ -336,7 +336,7 @@ export const createHelpCenterChat = (user: User) => {
  */
 export const getQuickHelpAnswer = async (user: User, question: string): Promise<string> => {
   try {
-    const model = genAI.getGenerativeModel({
+    const model = getAI().getGenerativeModel({
       model: 'gemini-2.0-flash-exp',
       systemInstruction: getSystemPrompt(user.subscription_tier)
     });
