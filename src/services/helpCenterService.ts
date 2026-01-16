@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { User, EventNexusEvent } from '../types';
 import { getEvents, getUser, getOrganizerEvents } from './dbService';
 import { SUBSCRIPTION_TIERS } from '../constants';
