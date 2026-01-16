@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, Sparkles, User, Loader2, Minus, Maximize2, Database, Image, TrendingUp, Calendar, Zap, FileText } from 'lucide-react';
-import { createNexusChat } from '../services/geminiService';
-import { GenerateContentResponse } from '@google/genai';
+import type { GenerateContentResponse } from '@google/genai';
 import { User as UserType, EventNexusEvent } from '../types';
 import { getEvents, getOrganizerEvents } from '../services/dbService';
-import { generateAdImage, generateAdCampaign } from '../services/geminiService';
+
+// Lazy-load Gemini functions to avoid TDZ
+const loadGeminiService = () => import('../services/geminiService');
 
 interface Message {
   role: 'user' | 'model';
@@ -40,7 +41,9 @@ const EnterpriseSuccessManager: React.FC<EnterpriseSuccessManagerProps> = ({ use
 
   useEffect(() => {
     if (isOpen && !chatRef.current) {
-      chatRef.current = createNexusChat();
+      loadGeminiService().then(({ createNexusChat }) => {
+        chatRef.current = createNexusChat();
+      });
     }
   }, [isOpen]);
 
@@ -70,6 +73,7 @@ const EnterpriseSuccessManager: React.FC<EnterpriseSuccessManagerProps> = ({ use
           };
 
         case 'generate_flyer':
+          const { generateAdImage } = await loadGeminiService();
           const flyerImage = await generateAdImage(params.prompt, '3:4');
           return {
             success: !!flyerImage,
@@ -78,6 +82,7 @@ const EnterpriseSuccessManager: React.FC<EnterpriseSuccessManagerProps> = ({ use
           };
 
         case 'generate_ad_campaign':
+          const { generateAdCampaign } = await loadGeminiService();
           const campaign = await generateAdCampaign(
             params.eventName,
             params.description,
@@ -131,7 +136,10 @@ const EnterpriseSuccessManager: React.FC<EnterpriseSuccessManagerProps> = ({ use
     setIsLoading(true);
 
     try {
-      if (!chatRef.current) chatRef.current = createNexusChat();
+      if (!chatRef.current) {
+        const { createNexusChat } = await loadGeminiService();
+        chatRef.current = createNexusChat();
+      }
       
       // Enhanced context for Enterprise Success Manager
       const contextualMessage = `User Info: ${user.name} (${user.email}), Tier: ${user.subscription_tier}, Role: ${user.role}.\n\nUser Request: ${userMsg}`;
