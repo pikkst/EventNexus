@@ -696,10 +696,20 @@ Return ONLY valid JSON array.`
   let events: FreeEvent[] = []
   try {
     // Remove any markdown code blocks that Gemini might add
-    const cleanedText = structuredText
+    let cleanedText = structuredText
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim()
+    
+    // Clean up common JSON issues from AI responses:
+    // 1. Remove trailing commas before closing brackets/braces
+    cleanedText = cleanedText.replace(/,(\s*[}\]])/g, '$1')
+    
+    // 2. Remove control characters that break JSON parsing
+    cleanedText = cleanedText.replace(/[\x00-\x1F\x7F]/g, '')
+    
+    // 3. Fix common escape sequence issues
+    cleanedText = cleanedText.replace(/\\'/g, "'") // Unnecessary escaping of single quotes
     
     // Try to parse
     events = JSON.parse(cleanedText)
@@ -717,9 +727,16 @@ Return ONLY valid JSON array.`
     
     // Try to salvage partial JSON by finding last complete closing bracket
     try {
-      const lastBracket = structuredText.lastIndexOf(']')
+      let cleanedText = structuredText
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .replace(/,(\s*[}\]])/g, '$1')
+        .replace(/[\x00-\x1F\x7F]/g, '')
+        .trim()
+      
+      const lastBracket = cleanedText.lastIndexOf(']')
       if (lastBracket > 0) {
-        const truncated = structuredText.substring(0, lastBracket + 1)
+        const truncated = cleanedText.substring(0, lastBracket + 1)
         events = JSON.parse(truncated)
         console.log(`[WARN] Recovered ${events.length} events from truncated JSON`)
       }
