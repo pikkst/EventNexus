@@ -1041,7 +1041,13 @@ serve(async (req) => {
 
         // ✅ Use coordinates from Gemini structuring
         // publish-event will refine/validate them later with full geocoding logic
-        console.log(`✅ ${event.name}`)
+        
+        // FALLBACK: If no coordinates from Gemini, use city center
+        // publish-event will geocode properly later
+        const finalLat = event.location_lat || cityLat || 0
+        const finalLng = event.location_lng || cityLng || 0
+        
+        console.log(`✅ ${event.name} (${finalLat.toFixed(4)}, ${finalLng.toFixed(4)})`)
 
         // Create structured_json
         const structured = {
@@ -1050,8 +1056,8 @@ serve(async (req) => {
           start_time: event.start_time,
           end_time: event.end_time,
           location_address: event.location_address,
-          location_lat: event.location_lat,
-          location_lng: event.location_lng,
+          location_lat: finalLat,   // Never NULL
+          location_lng: finalLng,   // Never NULL
           category: event.category,
           is_free: true,
           price: 0,
