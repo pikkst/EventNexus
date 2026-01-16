@@ -3,13 +3,26 @@
  * Uses Google Gemini to provide intelligent SEO recommendations
  */
 
-import { GoogleGenAI } from "@google/genai";
-
 // Lazy initialization to avoid TDZ issues
-let genAI: GoogleGenAI | null = null;
+let genAI: any = null;
+let GoogleGenAIClass: any = null;
 
-const getAI = (): GoogleGenAI => {
+const loadGoogleGenAI = async () => {
+  if (!GoogleGenAIClass) {
+    try {
+      const module = await import("@google/genai");
+      GoogleGenAIClass = module.GoogleGenAI;
+    } catch (e: any) {
+      console.error('Failed to load @google/genai:', e?.message || e);
+      throw new Error(`Cannot load @google/genai: ${e?.message || String(e)}`);
+    }
+  }
+  return GoogleGenAIClass;
+};
+
+const getAI = async (): Promise<any> => {
   if (!genAI) {
+    const GoogleGenAI = await loadGoogleGenAI();
     const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY is not configured');
@@ -71,7 +84,7 @@ export async function generateSEORecommendations(
   seoMetrics: SEOMetric[]
 ): Promise<SEORecommendation[]> {
   try {
-    const ai = getAI();
+    const ai = await getAI();
     
     // Analyze current metrics
     const avgPosition = seoMetrics.reduce((sum, m) => sum + m.position, 0) / seoMetrics.length;
@@ -134,7 +147,7 @@ export async function generateKeywordOptimization(
   seoMetrics: SEOMetric[]
 ): Promise<SEOOptimizationSuggestion[]> {
   try {
-    const ai = getAI();
+    const ai = await getAI();
 
     // Identify keywords that could move from position 4-10 to 1-3
     const opportunityKeywords = seoMetrics.filter(m => m.position > 3 && m.position <= 10);
@@ -179,7 +192,7 @@ export async function generateMetaTagSuggestions(
   pageTitles?: Record<string, string>
 ): Promise<MetaTagSuggestion[]> {
   try {
-    const ai = getAI();
+    const ai = await getAI();
 
     // Group keywords by URL
     const pageKeywords: Record<string, SEOMetric[]> = {};
@@ -247,7 +260,7 @@ export async function analyzeContentOptimization(
   semanticRelated: string[];
 }> {
   try {
-    const ai = getAI();
+    const ai = await getAI();
 
     // Find related keywords for semantic SEO
     const relatedKeywords = seoMetrics
@@ -303,7 +316,7 @@ export async function generateSEOStrategy(
   monthlyGoals: string[];
 } | null> {
   try {
-    const ai = getAI();
+    const ai = await getAI();
 
     const avgPosition = seoMetrics.reduce((sum, m) => sum + m.position, 0) / seoMetrics.length;
     const topKeywords = seoMetrics.slice(0, 5).map(m => m.keyword);
