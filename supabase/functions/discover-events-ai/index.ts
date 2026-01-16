@@ -1069,6 +1069,13 @@ serve(async (req) => {
 
         // Insert into parsed_events
         // First create raw_event with proper source_id
+        const contentHash = `eventscout-${event.name}-${event.start_time}`.substring(0, 100)
+        
+        console.log(`  🔹 Inserting raw_event: ${event.name}`)
+        console.log(`     source_id: ${sourceId}`)
+        console.log(`     city_id: ${cityData.city_id}`)
+        console.log(`     content_hash: ${contentHash}`)
+        
         const { data: rawEvent, error: rawError } = await supabase
           .from('raw_events')
           .insert({
@@ -1077,7 +1084,7 @@ serve(async (req) => {
             raw_content: null,
             raw_content_json: event,
             content_type: 'json',
-            content_hash: `eventscout-${event.name}-${event.start_time}`.substring(0, 100),
+            content_hash: contentHash,
             processing_status: 'parsed'
           })
           .select('id')
@@ -1085,11 +1092,15 @@ serve(async (req) => {
 
         if (rawError || !rawEvent) {
           console.error(`❌ Failed to create raw_event for ${event.name}:`, rawError)
+          console.error(`   Error code: ${rawError?.code}`)
+          console.error(`   Error message: ${rawError?.message}`)
           console.error(`   Error details:`, JSON.stringify(rawError, null, 2))
           insertResults.failed++
           insertResults.errors.push(`${event.name}: ${rawError?.message || 'Unknown error'}`)
           continue
         }
+        
+        console.log(`  ✅ Created raw_event: ${rawEvent.id}`)
 
         // Now insert into parsed_events with all required fields
         const { data: parsedEvent, error: insertError } = await supabase
