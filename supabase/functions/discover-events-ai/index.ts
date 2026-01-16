@@ -640,13 +640,10 @@ JSON array structure:
   if (!structureSuccess) {
     try {
       await callWithRetry(async () => {
-        const flashResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: `Convert this event search data to a JSON array. 
+        const flashFallbackPrompt = `Convert this event search data to a JSON array. 
+
+RAW SEARCH DATA:
+${rawText}
 
 CRITICAL COUNTRY VALIDATION (REJECT WRONG COUNTRIES!):
 - ONLY events in ${cityName}, ${country} (ISO: ${countryCode.toUpperCase()})
@@ -655,23 +652,44 @@ CRITICAL COUNTRY VALIDATION (REJECT WRONG COUNTRIES!):
 
 CRITICAL GEOCODING:
 1. coordinates are EXACT street-level (not city center)
-2. all coordinates are within 20km of ${cityName} ${centerInfo ? `[${cityLat}, ${cityLng}]` : ''}
+2. all coordinates are within 20km of ${cityName}
 3. Each event is actually IN ${cityName}, ${country} - NOT other countries
+
+Return ONLY valid JSON array.`
+
+        const flashResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: flashFallbackPrompt }] }],
+              generationConfig: {
+                temperature: 0.1,
+                maxOutputTokens: 8000
+              }
+            })
+          }
+        )
+
+        if (!flashResponse.ok) {
+          throw new Error(`Flash fallback failed: ${flashResponse.status}`)
+        }
+
+        const data = await flashResponse.json()
+        structuredText = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        
+        if (!structuredText || structuredText.length < 50) {
+          throw new Error('Flash returned empty response')
+        }
+        
+        structureSuccess = true
+        console.log(`[OK] Flash structured ${structuredText.length} chars`)
+      }, 3, 2000) // Retry up to 3 times
+    } catch (structureError: any) {
+      console.error(`[FAIL] Flash structuring failed after retries: ${structureError.message}`)
+      return [] // Return empty array if structuring fails
     }
-    
-    structuredText = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-    
-    if (!structuredText || structuredText.length < 50) {
-      throw new Error('Flash returned empty response')
-    }
-    
-    structureSuccess = true
-    console.log(`[OK] Flash structured ${structuredText.length} chars`)
-  }, 3, 2000) // Retry up to 3 times
-  
-  } catch (structureError: any) {
-    console.error(`[FAIL] Flash structuring failed after retries: ${structureError.message}`)
-    return [] // Return empty array if structuring fails
   }
   
   // Parse and validate structured JSON
