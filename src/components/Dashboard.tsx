@@ -33,8 +33,6 @@ import {
   getAffiliateStats,
   getAffiliateReferrals
 } from '../services/dbService';
- // Lazy-load Gemini service to avoid TDZ on module evaluation
- const loadGeminiService = () => import('../services/geminiService');
 import { generatePrintablePoster, PosterDesign } from '../services/posterService';
 import { supabase } from '../services/supabase';
 import Button from './Button';
@@ -280,7 +278,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
 
         // Remote translate
         try {
-           const { translateDescription } = await loadGeminiService();
+           const { translateDescription } = await import('../services/geminiService');
            const translated = await translateDescription(event.name, targetLang);
           newTranslations[event.id] = { name: translated || event.name };
           translationCache.current.set(cacheKey, { name: translated || event.name });
@@ -677,7 +675,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       // Build event URL for ticket purchases
       const eventUrl = `${window.location.origin}/event/${selectedEvent.id}`;
       
-      const { generateAdCampaign } = await loadGeminiService();
+      const { generateAdCampaign } = await import('../services/geminiService');
       const campaign = await generateAdCampaign(
         selectedEvent.name, 
         selectedEvent.description, 
@@ -692,7 +690,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       const campaignWithImages = await Promise.all(campaign.map(async (ad: any) => {
         const platform = ad.platform || '';
         const ratio = platform.includes('Story') ? '9:16' : (platform.includes('Header') ? '16:9' : '1:1');
-         const { generateAdImage } = await loadGeminiService();
+         const { generateAdImage } = await import('../services/geminiService');
          const imageUrl = await generateAdImage(ad.visualPrompt, ratio as any, true, user.id, user.subscription_tier);
         return { ...ad, imageUrl, deploying: false, deployed: false, eventUrl };
       }));
@@ -720,7 +718,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     
     try {
       // Generate poster design using AI with location context for localization
-      const { generatePosterDesign } = await loadGeminiService();
+      const { generatePosterDesign } = await import('../services/geminiService');
       const design = await generatePosterDesign(
         selectedEvent.name,
         selectedEvent.description,
@@ -733,7 +731,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
 
       if (design && design.colorScheme) {
         // Generate poster image based on design
-         const { generateAdImage: generatePosterImage } = await loadGeminiService();
+         const { generateAdImage: generatePosterImage } = await import('../services/geminiService');
          const posterImageUrl = await generatePosterImage(
           design.imageUrl,
           '16:9',
