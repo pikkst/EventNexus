@@ -870,7 +870,7 @@ serve(async (req) => {
             cityConfig.city_name, // Pass city name for better geocoding
             cityConfig.latitude,
             cityConfig.longitude,
-            supabase  // Pass supabase client for persistent cache
+            supabaseClient  // Pass supabase client for persistent cache
           )
           
           if (geocoded) {
