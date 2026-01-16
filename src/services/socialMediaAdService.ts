@@ -16,8 +16,19 @@ import {
   type PexelsVideoFile 
 } from './pexelsService';
 
-const GEMINI_API_KEY = import.meta.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+// Lazy initialization to avoid TDZ issues
+let genAI: GoogleGenerativeAI | null = null;
+
+const getAI = (): GoogleGenerativeAI => {
+  if (!genAI) {
+    const GEMINI_API_KEY = import.meta.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured');
+    }
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+  }
+  return genAI;
+};
 
 // ============================================================================
 // TYPES
@@ -168,7 +179,7 @@ export async function generateEventAdCampaign(
     console.log('🎯 Starting ad campaign generation...');
 
     // Step 1: Generate ad copy with Gemini AI
-    const model = genAI.getGenerativeModel({ 
+    const model = getAI().getGenerativeModel({ 
       model: 'gemini-2.0-flash-exp',
       generationConfig: {
         temperature: 0.9, // Higher creativity for marketing copy

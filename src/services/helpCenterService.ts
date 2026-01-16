@@ -3,8 +3,19 @@ import { User, EventNexusEvent } from '../types';
 import { getEvents, getUser, getOrganizerEvents } from './dbService';
 import { SUBSCRIPTION_TIERS } from '../constants';
 
-const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
-const genAI = new GoogleGenerativeAI(API_KEY);
+// Lazy initialization to avoid TDZ issues
+let genAI: GoogleGenerativeAI | null = null;
+
+const getAI = (): GoogleGenerativeAI => {
+  if (!genAI) {
+    const API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+    if (!API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured');
+    }
+    genAI = new GoogleGenerativeAI(API_KEY);
+  }
+  return genAI;
+};
 
 /**
  * Help Center AI Assistant
@@ -258,7 +269,7 @@ const executeHelpCenterTool = async (toolName: string, args: any, user: User): P
  * Create a tier-aware help center chat session
  */
 export const createHelpCenterChat = (user: User) => {
-  const model = genAI.getGenerativeModel({
+  const model = getAI().getGenerativeModel({
     model: 'gemini-2.0-flash-exp',
     systemInstruction: getSystemPrompt(user.subscription_tier),
     tools: [{ functionDeclarations: HELP_CENTER_TOOLS as any }]

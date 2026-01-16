@@ -5,6 +5,20 @@
 
 import { GoogleGenAI } from "@google/genai";
 
+// Lazy initialization to avoid TDZ issues
+let genAI: GoogleGenAI | null = null;
+
+const getAI = (): GoogleGenAI => {
+  if (!genAI) {
+    const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is not configured');
+    }
+    genAI = new GoogleGenAI({ apiKey });
+  }
+  return genAI;
+};
+
 interface SEOMetric {
   keyword: string;
   position: number;
@@ -49,8 +63,6 @@ interface CompetitorInsight {
   action: string;
   expectedTimeframe: string;
 }
-
-const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 /**
  * Generate AI-powered SEO recommendations based on current metrics
