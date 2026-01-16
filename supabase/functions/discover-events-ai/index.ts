@@ -1109,12 +1109,28 @@ serve(async (req) => {
           .single()
 
         if (rawError || !rawEvent) {
-          console.error(`❌ Failed to create raw_event for ${event.name}:`, rawError)
-          console.error(`   Error code: ${rawError?.code}`)
-          console.error(`   Error message: ${rawError?.message}`)
-          console.error(`   Error details:`, JSON.stringify(rawError, null, 2))
+          const errorCode = rawError?.code || 'UNKNOWN'
+          const errorMsg = rawError?.message || 'No error message'
+          const errorDetails = rawError?.details || 'No details'
+          const hint = rawError?.hint || 'No hint'
+          
+          console.error(`\n[FAIL] raw_events INSERT ERROR:`)
+          console.error(`  Event: ${event.name}`)
+          console.error(`  Code: ${errorCode}`)
+          console.error(`  Message: ${errorMsg}`)
+          console.error(`  Details: ${errorDetails}`)
+          console.error(`  Hint: ${hint}`)
+          console.error(`  Full error: ${JSON.stringify(rawError, null, 2)}`)
+          
+          // Log field values for debugging
+          console.error(`  INSERT values:`)
+          console.error(`    source_id: ${sourceId}`)
+          console.error(`    city_id: ${cityData.city_id}`)
+          console.error(`    content_hash: ${contentHash}`)
+          console.error(`    processing_status: parsed`)
+          
           insertResults.failed++
-          insertResults.errors.push(`${event.name}: ${rawError?.message || 'Unknown error'}`)
+          insertResults.errors.push(`${event.name}: [${errorCode}] ${errorMsg}`)
           continue
         }
         
@@ -1135,10 +1151,27 @@ serve(async (req) => {
           .single()
 
         if (insertError || !parsedEvent) {
-          console.error(`[FAIL] Insert failed: ${event.name}`, insertError)
-          console.error(`   Error details:`, JSON.stringify(insertError, null, 2))
+          const errorCode = insertError?.code || 'UNKNOWN'
+          const errorMsg = insertError?.message || 'No error message'
+          const errorDetails = insertError?.details || 'No details'
+          const hint = insertError?.hint || 'No hint'
+          
+          console.error(`\n[FAIL] parsed_events INSERT ERROR:`)
+          console.error(`  Event: ${event.name}`)
+          console.error(`  Code: ${errorCode}`)
+          console.error(`  Message: ${errorMsg}`)
+          console.error(`  Details: ${errorDetails}`)
+          console.error(`  Hint: ${hint}`)
+          console.error(`  Full error: ${JSON.stringify(insertError, null, 2)}`)
+          
+          // Log field values for debugging
+          console.error(`  INSERT values:`)
+          console.error(`    raw_event_id: ${rawEvent?.id}`)
+          console.error(`    city_id: ${cityData.city_id}`)
+          console.error(`    validation_status: validated`)
+          
           insertResults.failed++
-          insertResults.errors.push(`${event.name}: ${insertError?.message || 'Unknown error'}`)
+          insertResults.errors.push(`${event.name}: [${errorCode}] ${errorMsg}`)
         } else {
           // Insert event_confidence for publish-event to find it
           const { error: confidenceError } = await supabase
@@ -1191,6 +1224,12 @@ serve(async (req) => {
     console.log(`  ⊘ Skipped: ${insertResults.skipped}`)
     console.log(`  [FAIL] Failed: ${insertResults.failed}`)
     console.log(`  [FAIL] Errors: ${insertResults.errors.length}`)
+    if (insertResults.errors.length > 0) {
+      console.log(`\n[FAIL] Error Summary:`)
+      insertResults.errors.forEach((err, idx) => {
+        console.error(`  ${idx + 1}. ${err}`)
+      })
+    }
     console.log(`  [TIME]Duration: ${duration}ms`)
 
     // AUTOMATICALLY PUBLISH: Trigger publish-event to move parsed_events to live map
