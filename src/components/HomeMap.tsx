@@ -82,6 +82,21 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchRadius, setSearchRadius] = useState(1); // 1km radius for urban proximity notifications
 
+  // Guest language preference - for unregistered visitors
+  const [guestLanguage, setGuestLanguage] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('eventnexus_guest_language');
+      return saved || 'en';
+    } catch {
+      return 'en';
+    }
+  });
+
+  const handleGuestLanguageChange = (lang: string) => {
+    setGuestLanguage(lang);
+    localStorage.setItem('eventnexus_guest_language', lang);
+  };
+
   // Update SEO meta tags on mount
   useEffect(() => {
     const seoTags = generateMapSEO();
@@ -159,6 +174,21 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       return false;
     }
   });
+
+  // Guest language preference
+  const [guestLanguage, setGuestLanguage] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('guest_language');
+      return saved || 'en'; // Default: English
+    } catch {
+      return 'en';
+    }
+  });
+
+  const handleGuestLanguageChange = (lang: string) => {
+    setGuestLanguage(lang);
+    localStorage.setItem('guest_language', lang);
+  };
   
   const [nearbyNewEventsCount, setNearbyNewEventsCount] = useState(0);
   const [nearbyNewEvents, setNearbyNewEvents] = useState<EventNexusEvent[]>([]);
@@ -953,6 +983,35 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               aria-pressed={activeCategory === cat || (cat === 'All' && !activeCategory)}
             >
               {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Guest Language Selector - Mobile Friendly */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide justify-start md:justify-center">
+          {[
+            { code: 'en', label: '🇬🇧 English' },
+            { code: 'et', label: '🇪🇪 Eesti' },
+            { code: 'ru', label: '🇷🇺 Русский' },
+            { code: 'es', label: '🇪🇸 Español' },
+            { code: 'pt', label: '🇵🇹 Português' }
+          ].map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => handleGuestLanguageChange(lang.code)}
+              className={`px-3 md:px-4 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border shrink-0 ${
+                guestLanguage === lang.code
+                  ? theme === 'light'
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
+                    : 'bg-white border-white text-slate-950 shadow-lg'
+                  : theme === 'light'
+                    ? 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300'
+                    : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-600'
+              }`}
+              aria-label={`Select ${lang.label} language`}
+              aria-pressed={guestLanguage === lang.code}
+            >
+              {lang.label}
             </button>
           ))}
         </div>

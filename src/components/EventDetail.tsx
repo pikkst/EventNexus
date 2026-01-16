@@ -108,15 +108,20 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   
-  // Initialize selected language: use user preference if logged in, otherwise English
+  // Initialize selected language: use user preference if logged in, otherwise guest language preference from localStorage
   const [selectedLanguage, setSelectedLanguage] = useState(() => {
     // Registered users: use their preference
     if (user?.preferred_language) {
       return user.preferred_language;
     }
     
-    // Guests: always English (not browser language)
-    return 'en';
+    // Guests: use their stored preference (saved from map language selector) or English
+    try {
+      const saved = localStorage.getItem('guest_language');
+      return saved || 'en';
+    } catch {
+      return 'en';
+    }
   });
   
   const [organizerName, setOrganizerName] = useState<string>('EventNexus User');
@@ -224,9 +229,14 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       return;
     }
     
-    // Guests: use English
+    // Guests: use localStorage guest_language (saved from map)
     if (!user) {
-      setSelectedLanguage('en');
+      try {
+        const saved = localStorage.getItem('guest_language');
+        setSelectedLanguage(saved || 'en');
+      } catch {
+        setSelectedLanguage('en');
+      }
       return;
     }
   }, [user?.preferred_language, user]);
