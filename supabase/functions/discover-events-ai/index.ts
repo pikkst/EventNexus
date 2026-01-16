@@ -728,13 +728,28 @@ Return ONLY valid JSON array:\n\n${rawText}` }] }],
   // FINAL VALIDATION: Filter out events that are definitely from wrong countries
   // This is a safety check after AI processing
   const countryLower = country.toLowerCase()
+  const isUSA = countryLower === 'usa' || countryCode.toLowerCase() === 'us'
   const validCountryCodes = getCountryCodes(countryLower)
   
   const filtered = events.filter(event => {
     const address = (event.location_address || '').toLowerCase()
     const name = (event.name || '').toLowerCase()
     
-    // HARD REJECT: If address explicitly contains USA indicators, reject it
+    // If searching for USA events, accept USA addresses
+    if (isUSA) {
+      // For USA searches, just validate coordinates
+      if (event.location_lat && event.location_lng) {
+        // USA coordinates roughly: lat 25-50, lng -125 to -65
+        if (event.location_lat < 24 || event.location_lat > 50 || 
+            event.location_lng < -130 || event.location_lng > -60) {
+          console.log(`  ⊘ Coordinates outside USA: ${event.name}`)
+          return false
+        }
+      }
+      return true
+    }
+    
+    // For NON-USA searches, HARD REJECT USA events
     if (address.includes('united states') || 
         address.includes(', usa') || 
         address.match(/\b(KY|TX|CA|FL|NY|IL|PA|OH|GA|NC|MI|NJ|VA|WA|AZ|MA|TN|IN|MD|MO|WI|CO|MN|SC|AL|LA|KS|OR|OK|CT|UT|NV|AR|MS|NM|NE|WV|ID|HI|NH|ME|RI|MT|DE|ND|SD|AK)\s+\d{5}/)) {
@@ -818,13 +833,18 @@ serve(async (req) => {
       }
       cityData = data
     } else if (city_name && country) {
-      // Use provided city info
-      cityData = {
-        city_name,
-        country,
-        country_code: country.toLowerCase() === 'estonia' ? 'ee' : (country.toLowerCase() === 'canada' ? 'ca' : 'ee'),
-        timezone: 'Europe/Tallinn' // Default, will be refined
+      // Query city_configs to get city_id
+      const { data: foundCity, error: cityError } = await supabase
+        .from('city_configs')
+        .select('city_id, city_name, country, country_code, timezone, latitude, longitude')
+        .eq('city_name', city_name)
+        .eq('country', country)
+        .single()
+
+      if (cityError || !foundCity) {
+        throw new Error(`City not found in database: ${city_name}, ${country}`)
       }
+      cityData = foundCity
     } else {
       throw new Error('Either city_id or (city_name + country) required')
     }
@@ -1073,6 +1093,7 @@ serve(async (req) => {
 
         if (rawError || !rawEvent) {
           console.error(`❌ Failed to create raw_event for ${event.name}:`, rawError)
+          console.error(`   Error details:`, JSON.stringify(rawError, null, 2))
           insertResults.failed++
           insertResults.errors.push(`${event.name}: ${rawError?.message || 'Unknown error'}`)
           continue
@@ -1094,6 +1115,7 @@ serve(async (req) => {
 
         if (insertError || !parsedEvent) {
           console.error(`❌ Insert failed: ${event.name}`, insertError)
+          console.error(`   Error details:`, JSON.stringify(insertError, null, 2))
           insertResults.failed++
           insertResults.errors.push(`${event.name}: ${insertError?.message || 'Unknown error'}`)
         } else {

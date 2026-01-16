@@ -1,7 +1,19 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from './supabase';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.API_KEY || '');
+// Lazy initialization to avoid TDZ issues
+let genAI: GoogleGenerativeAI | null = null;
+
+const getAI = (): GoogleGenerativeAI => {
+  if (!genAI) {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is not configured');
+    }
+    genAI = new GoogleGenerativeAI(apiKey);
+  }
+  return genAI;
+};
 
 // ============================================
 // Types
@@ -165,7 +177,7 @@ export async function generateCampaignInsights(
   }
 ): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = getAI().getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const prompt = `You are an expert marketing analyst for EventNexus, an event discovery platform.
 
@@ -223,7 +235,7 @@ export async function generateABTestVariants(
   originalContent: string
 ): Promise<{ variant_a: string; variant_b: string; rationale: string }> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = getAI().getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const prompt = `You are a marketing optimization expert. Generate an A/B test variant for EventNexus campaigns.
 
