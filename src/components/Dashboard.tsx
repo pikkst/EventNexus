@@ -35,7 +35,6 @@ import {
 } from '../services/dbService';
  // Lazy-load Gemini service to avoid TDZ on module evaluation
  const loadGeminiService = () => import('../services/geminiService');
-import { generateAdCampaign, generateAdImage, generatePosterDesign, translateDescription } from '../services/geminiService';
 import { generatePrintablePoster, PosterDesign } from '../services/posterService';
 import { supabase } from '../services/supabase';
 import OrganizerScannerHub from './OrganizerScannerHub';
