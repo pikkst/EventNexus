@@ -37,14 +37,14 @@ import {
  const loadGeminiService = () => import('../services/geminiService');
 import { generatePrintablePoster, PosterDesign } from '../services/posterService';
 import { supabase } from '../services/supabase';
-import PayoutsHistory from './PayoutsHistory';
-import EnterpriseSuccessManager from './EnterpriseSuccessManager';
 import Button from './Button';
 import Table from './Table';
 import { generateDashboardSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 // Lazy-load heavy components to reduce main bundle size and avoid TDZ
 const loadSocialMediaService = () => import('../services/socialMediaService');
 const OrganizerScannerHub = React.lazy(() => import('./OrganizerScannerHub'));
+const PayoutsHistory = React.lazy(() => import('./PayoutsHistory'));
+const EnterpriseSuccessManager = React.lazy(() => import('./EnterpriseSuccessManager'));
 
 // ============================================
 // LOGGING & DIAGNOSTICS
@@ -1736,7 +1736,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
 
       {activeTab === 'payouts' && (
         <div className="animate-in fade-in duration-500">
-          <PayoutsHistory userId={user.id} user={user} />
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+            </div>
+          }>
+            <PayoutsHistory userId={user.id} user={user} />
+          </React.Suspense>
         </div>
       )}
 
@@ -2575,11 +2581,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
 
       {/* Enterprise Success Manager Chat */}
       {isEnterprise && (
-        <EnterpriseSuccessManager 
-          user={user}
-          isOpen={isSuccessManagerOpen}
-          onClose={() => setIsSuccessManagerOpen(false)}
-        />
+        <React.Suspense fallback={null}>
+          <EnterpriseSuccessManager 
+            user={user}
+            isOpen={isSuccessManagerOpen}
+            onClose={() => setIsSuccessManagerOpen(false)}
+          />
+        </React.Suspense>
       )}
 
       {/* Deploy Ad Modal */}
