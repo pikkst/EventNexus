@@ -729,7 +729,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                 key={`${group.address}-${idx}`}
                 position={[group.lat, group.lng]}
                 icon={eventIcon(primary.price, primary.isFeatured || false, isNewEvent)}
-                eventHandlers={{ click: () => { setSelectedEvent(primary); setIsFollowingUser(false); setEventCardExpanded(true); } }}
+                eventHandlers={{ click: () => { setSelectedEvent(primary); setIsFollowingUser(false); } }}
               >
                 <Popup minWidth={260} className="rounded-xl">
                   <div className="space-y-3 text-sm">
@@ -752,7 +752,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                           {group.events.slice(0, 6).map((ev, i) => (
                             <button
                               key={ev.id}
-                              onClick={() => { setSelectedEvent(ev); setIsFollowingUser(false); setEventCardExpanded(true); }}
+                              onClick={() => { setSelectedEvent(ev); setIsFollowingUser(false); }}
                               className="text-left text-[11px] bg-slate-100 dark:bg-slate-800/70 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-lg px-2 py-1 transition"
                             >
                               <span className="font-semibold text-slate-800 dark:text-slate-100">{ev.name}</span>
@@ -787,7 +787,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       {nearestEvent && !selectedEvent && (
         <div className="absolute left-4 md:left-6 bottom-6 md:bottom-10 z-[500] animate-in slide-in-from-left duration-700">
            <button 
-             onClick={() => { setSelectedEvent(nearestEvent); setEventCardExpanded(true); }}
+             onClick={() => { setSelectedEvent(nearestEvent); }}
              className={`${
                theme === 'light'
                  ? 'bg-white border-slate-200 hover:border-indigo-400'
@@ -840,7 +840,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                   duration: 1.5
                 });
                 setSelectedEvent(latest);
-                setEventCardExpanded(true);
+
               }
             }}
             className={`${
@@ -990,88 +990,6 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         </div>
       </div>
 
-      {selectedEvent && (
-        <div className="absolute bottom-4 md:bottom-10 left-1/2 -translate-x-1/2 w-full max-w-lg px-2 sm:px-4 z-[400] animate-in slide-in-from-bottom-10 duration-500">
-          {/* Collapsed/Minimized View - Mobile Only */}
-          {!eventCardExpanded && (
-            <button 
-              onClick={() => setEventCardExpanded(true)}
-              className={`w-full ${
-                theme === 'light'
-                  ? 'bg-white border-slate-200 hover:bg-slate-50'
-                  : 'bg-slate-900 border-slate-800 hover:bg-slate-800'
-              } border rounded-3xl shadow-2xl p-3 md:p-4 flex items-center justify-between transition-all`}
-              aria-label={`Expand event details for ${selectedEvent.name}`}
-            >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <img src={selectedEvent.imageUrl} className="w-10 h-10 rounded-2xl object-cover flex-shrink-0" alt={selectedEvent.name} />
-                <div className="text-left min-w-0">
-                  <p className={`text-sm font-bold truncate ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>
-                    {selectedEvent.name}
-                  </p>
-                  <p className={`text-xs ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {selectedEvent.location.city}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <MapPin className="w-4 h-4 text-indigo-600" />
-              </div>
-            </button>
-          )}
-
-          {/* Expanded View */}
-          {eventCardExpanded && (
-            <div className={`${
-              theme === 'light'
-                ? 'bg-white border-slate-200'
-                : 'bg-slate-900 border-slate-800'
-            } border rounded-3xl md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col sm:flex-row p-2 gap-2`}>
-              <div className="w-full sm:w-1/3 h-32 sm:h-auto relative shrink-0">
-                <img src={selectedEvent.imageUrl} className="w-full h-full object-cover rounded-[32px]" alt={selectedEvent.name} />
-              </div>
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 className={`font-black text-lg leading-tight tracking-tighter ${
-                    theme === 'light' ? 'text-slate-900' : 'text-white'
-                  }`}>{translatedTitle || selectedEvent.name}</h3>
-                  <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">{selectedEvent.location.city} • {selectedEvent.date}</p>
-                  {translatedDesc && (
-                    <p className={`${theme === 'light' ? 'text-slate-600' : 'text-slate-300'} text-xs mt-2 line-clamp-2`}>{translatedDesc}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 pt-4">
-                  <button onClick={() => navigate(`/event/${selectedEvent.id}`)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95" aria-label={`View and book ${selectedEvent.name}`}>Book Access</button>
-                  {/* Minimize button for mobile, close for desktop */}
-                  <button 
-                    onClick={() => {
-                      if (window.innerWidth < 768) {
-                        setEventCardExpanded(false);
-                      } else {
-                        setSelectedEvent(null);
-                      }
-                    }}
-                    className={`p-3 rounded-2xl ${
-                      theme === 'light'
-                        ? 'bg-slate-100 hover:bg-slate-200 text-slate-500'
-                        : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
-                    }`} 
-                    aria-label={window.innerWidth < 768 ? "Minimize event details" : "Close event details"}
-                  >
-                    {window.innerWidth < 768 ? (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                      </svg>
-                    ) : (
-                      <X size={20} aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
       <style dangerouslySetInnerHTML={{ __html: `
         .vertical-range { -webkit-appearance: slider-vertical; width: 8px; height: 120px; }
         .custom-marker { background: transparent; border: none; }
