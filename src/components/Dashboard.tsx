@@ -128,18 +128,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [activeTab, setActiveTab] = useState<'overview' | 'payouts' | 'marketing' | 'infra' | 'branding' | 'integrations' | 'affiliate' | 'scanner-codes'>('overview');
   const [isGeneratingAd, setIsGeneratingAd] = useState(false);
   const [componentError, setComponentError] = useState<Error | null>(null);
-
-  // Log component mount and initialization
-  useEffect(() => {
-    debugLog(`Dashboard component mounted for user: ${user.id}`, {
-      userName: user.name,
-      email: user.email,
-      role: user.role
-    });
-    return () => {
-      debugLog(`Dashboard component unmounted`);
-    };
-  }, [user.id, user.name, user.email, user.role]);
   const [genStage, setGenStage] = useState('');
   const [adCampaign, setAdCampaign] = useState<any[]>([]);
   const [isSuccessManagerOpen, setIsSuccessManagerOpen] = useState(false);
@@ -170,6 +158,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
   const [eventCategoryFilter, setEventCategoryFilter] = useState<string>('all');
   const [eventSortBy, setEventSortBy] = useState<'date-asc' | 'date-desc' | 'name' | 'revenue'>('date-asc');
   const DISABLE_ORGANIZER_FILTERS = true;
+
+  // Log component mount and initialization
+  useEffect(() => {
+    debugLog(`Dashboard component mounted for user: ${user.id}`, {
+      userName: user.name,
+      email: user.email,
+      role: user.role
+    });
+    return () => {
+      debugLog(`Dashboard component unmounted`);
+    };
+  }, [user.id, user.name, user.email, user.role]);
 
   // Filter and sort events
   const filteredAndSortedEvents = useMemo(() => {
