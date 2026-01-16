@@ -541,17 +541,17 @@ VALIDATION RULES:
 
 Return ONLY valid JSON array with FUTURE events and ACCURATE coordinates.`
 
-  // Step 2: Try Pro with retry logic, then fallback to Flash
+  // Step 2: Use Flash for structuring (5x cheaper than Pro, same accuracy for this task)
   let structuredText = ''
   let structureSuccess = false
 
-  // Try Pro first with retries
+  // Use Flash with Google Search grounding (optimized for cost + speed)
   try {
     await callWithRetry(async () => {
-      // CRITICAL FIX: Cannot use tools + responseMimeType together in REST API
-      // Use tools WITHOUT schema, then parse afterwards
+      console.log(`🧠 Structuring with Gemini Flash + Google Search...`)
+      
       const structureResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -560,8 +560,7 @@ Return ONLY valid JSON array with FUTURE events and ACCURATE coordinates.`
             tools: [{ googleSearch: {} }], // Enable search for geocoding - no schema allowed with tools!
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 16000
-              // NOTE: NO responseMimeType or responseSchema when using tools!
+              maxOutputTokens: 8000  // Flash max is 8k
             },
             systemInstruction: {
               parts: [{
@@ -658,34 +657,21 @@ CRITICAL GEOCODING:
 1. coordinates are EXACT street-level (not city center)
 2. all coordinates are within 20km of ${cityName} ${centerInfo ? `[${cityLat}, ${cityLng}]` : ''}
 3. Each event is actually IN ${cityName}, ${country} - NOT other countries
-4. Põltsamaa events have lng ~25.96 (NOT 26.38+ which is Jõgeva)
-
-Return ONLY valid JSON array:\n\n${rawText}` }] }],
-              generationConfig: {
-                temperature: 0.1,
-                maxOutputTokens: 16000,
-                responseMimeType: 'application/json'
-              }
-            })
-          }
-        )
-
-        if (!flashResponse.ok) {
-          const errorText = await flashResponse.text()
-          throw new Error(`Flash structuring failed (${flashResponse.status}): ${errorText.substring(0, 200)}`)
-        }
-
-        const flashData = await flashResponse.json()
-        structuredText = flashData.candidates?.[0]?.content?.parts?.[0]?.text || ''
-
-        if (!structuredText || structuredText.length < 50) {
-          throw new Error('Flash returned empty response')
-        }
-      }, 3, 2000) // Retry Flash up to 3 times
-    } catch (flashError: any) {
-      console.error(`❌ Flash fallback also failed: ${flashError.message}`)
-      return [] // Return empty array if both fail
     }
+    
+    structuredText = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    
+    if (!structuredText || structuredText.length < 50) {
+      throw new Error('Flash returned empty response')
+    }
+    
+    structureSuccess = true
+    console.log(`✅ Flash structured ${structuredText.length} chars`)
+  }, 3, 2000) // Retry up to 3 times
+  
+  } catch (structureError: any) {
+    console.error(`❌ Flash structuring failed after retries: ${structureError.message}`)
+    return [] // Return empty array if structuring fails
   }
   
   // Parse and validate structured JSON

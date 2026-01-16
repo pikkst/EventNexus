@@ -22,6 +22,65 @@ let currentModelIndex = 0
 // Ensures same venue always gets same coordinates within a single batch publish
 const addressCache = new Map<string, {lat: number, lng: number}>()
 
+// 💾 Persistent geocode cache using Supabase
+// Checks database first before calling geocoding APIs
+async function getGeocodeFromPersistentCache(
+  supabaseClient: any,
+  address: string,
+  country: string
+): Promise<{lat: number, lng: number} | null> {
+  try {
+    const cacheKey = getAddressCacheKey(address, country)
+    
+    // Check database cache (valid for 30 days)
+    const { data, error } = await supabaseClient
+      .from('geocode_cache')
+      .select('latitude, longitude, cached_at')
+      .eq('address_hash', cacheKey)
+      .gte('cached_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .single()
+    
+    if (!error && data) {
+      console.log(`💾 DB cache hit: "${address}" → ${data.latitude}, ${data.longitude}`)
+      return { lat: data.latitude, lng: data.longitude }
+    }
+  } catch (e) {
+    // Cache miss or error - not critical
+  }
+  return null
+}
+
+// 💾 Save geocode result to persistent cache
+async function saveGeocodeToPersistentCache(
+  supabaseClient: any,
+  address: string,
+  country: string,
+  lat: number,
+  lng: number
+): Promise<void> {
+  try {
+    const cacheKey = getAddressCacheKey(address, country)
+    
+    await supabaseClient
+      .from('geocode_cache')
+      .upsert({
+        address_hash: cacheKey,
+        address: address.substring(0, 500), // Store original for reference
+        country,
+        latitude: lat,
+        longitude: lng,
+        cached_at: new Date().toISOString()
+      }, {
+        onConflict: 'address_hash'
+      })
+    
+    console.log(`💾 Cached: "${address}" → ${lat}, ${lng}`)
+  } catch (e) {
+    // Cache save failure is not critical
+    console.warn(`⚠️ Failed to save geocode cache:`, e)
+  }
+}
+
 // Generate cache key from address (normalize for consistency)
 function getAddressCacheKey(address: string, country: string): string {
   return `${address.toLowerCase().trim()}|${country.toLowerCase().trim()}`
@@ -218,15 +277,26 @@ async function geocodeAddress(
   countryCode: string, 
   cityName?: string,
   cityLat?: number,
-  cityLng?: number
+  cityLng?: number,
+  supabaseClient?: any
 ): Promise<{lat: number, lng: number} | null> {
   try {
-    // 📍 CHECK CACHE FIRST
+    // 📍 CHECK CACHE FIRST (in-memory)
     const cacheKey = getAddressCacheKey(address, country)
     if (addressCache.has(cacheKey)) {
       const cached = addressCache.get(cacheKey)!
-      console.log(`💾 Cache hit for "${address}" → ${cached.lat.toFixed(6)}, ${cached.lng.toFixed(6)}`)
+      console.log(`💾 Memory cache hit: "${address}" → ${cached.lat.toFixed(6)}, ${cached.lng.toFixed(6)}`)
       return cached
+    }
+    
+    // 💾 CHECK PERSISTENT CACHE (database)
+    if (supabaseClient) {
+      const dbCached = await getGeocodeFromPersistentCache(supabaseClient, address, country)
+      if (dbCached) {
+        // Store in memory cache too for this execution
+        addressCache.set(cacheKey, dbCached)
+        return dbCached
+      }
     }
     
     // 🔧 ENHANCED: Prepare MANY search variations (8+ strategies)
@@ -345,8 +415,11 @@ async function geocodeAddress(
 
           console.log(`✓ Geocoded via Nominatim: "${address}" → ${result.lat.toFixed(6)}, ${result.lng.toFixed(6)} (variation: "${searchAddress}")`)
           
-          // 📍 CACHE THE RESULT
+          // 📍 CACHE THE RESULT (memory + database)
           addressCache.set(cacheKey, result)
+          if (supabaseClient) {
+            await saveGeocodeToPersistentCache(supabaseClient, address, country, result.lat, result.lng)
+          }
           
           return result
         }
@@ -368,8 +441,11 @@ async function geocodeAddress(
     const geminiCoords = await geocodeWithGemini(address, country, cityName, cityLat, cityLng)
     if (geminiCoords) {
       console.log(`✓ Geocoded via Gemini fallback: "${address}" → ${geminiCoords.lat.toFixed(6)}, ${geminiCoords.lng.toFixed(6)}`)
-      // 📍 CACHE THE RESULT
+      // 📍 CACHE THE RESULT (memory + database)
       addressCache.set(cacheKey, geminiCoords)
+      if (supabaseClient) {
+        await saveGeocodeToPersistentCache(supabaseClient, address, country, geminiCoords.lat, geminiCoords.lng)
+      }
       return geminiCoords
     }
     
@@ -793,7 +869,8 @@ serve(async (req) => {
             cityConfig.country_code || 'ee',
             cityConfig.city_name, // Pass city name for better geocoding
             cityConfig.latitude,
-            cityConfig.longitude
+            cityConfig.longitude,
+            supabase  // Pass supabase client for persistent cache
           )
           
           if (geocoded) {
