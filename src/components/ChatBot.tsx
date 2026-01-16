@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, Bot, User, Loader2, Minus, Maximize2 } from 'lucide-react';
-import type { GenerateContentResponse } from '@google/genai';
 
 interface Message {
   role: 'user' | 'model';
@@ -57,7 +56,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
       
       let fullText = '';
       for await (const chunk of result) {
-        const c = chunk as GenerateContentResponse;
+        const c = chunk as any;
         const newPart = c.text || '';
         fullText += newPart;
         

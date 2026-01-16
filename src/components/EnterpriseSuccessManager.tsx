@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, Sparkles, User, Loader2, Minus, Maximize2, Database, Image, TrendingUp, Calendar, Zap, FileText } from 'lucide-react';
-import type { GenerateContentResponse } from '@google/genai';
 import { User as UserType, EventNexusEvent } from '../types';
 import { getEvents, getOrganizerEvents } from '../services/dbService';
 
@@ -150,7 +149,7 @@ const EnterpriseSuccessManager: React.FC<EnterpriseSuccessManagerProps> = ({ use
       
       let fullText = '';
       for await (const chunk of result) {
-        const c = chunk as GenerateContentResponse;
+        const c = chunk as any;
         const newPart = c.text || '';
         fullText += newPart;
         
