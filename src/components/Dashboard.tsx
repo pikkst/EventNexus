@@ -37,14 +37,14 @@ import {
  const loadGeminiService = () => import('../services/geminiService');
 import { generatePrintablePoster, PosterDesign } from '../services/posterService';
 import { supabase } from '../services/supabase';
-import OrganizerScannerHub from './OrganizerScannerHub';
 import PayoutsHistory from './PayoutsHistory';
 import EnterpriseSuccessManager from './EnterpriseSuccessManager';
 import Button from './Button';
 import Table from './Table';
 import { generateDashboardSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
-// Lazy-load heavy social media SDK helpers when needed to reduce main bundle size
+// Lazy-load heavy components to reduce main bundle size and avoid TDZ
 const loadSocialMediaService = () => import('../services/socialMediaService');
+const OrganizerScannerHub = React.lazy(() => import('./OrganizerScannerHub'));
 
 // ============================================
 // LOGGING & DIAGNOSTICS
@@ -2546,7 +2546,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
 
       {activeTab === 'scanner-codes' && (
         <div className="animate-in fade-in duration-500">
-          <OrganizerScannerHub organizerId={user.id} />
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+            </div>
+          }>
+            <OrganizerScannerHub organizerId={user.id} />
+          </React.Suspense>
         </div>
       )}
 
