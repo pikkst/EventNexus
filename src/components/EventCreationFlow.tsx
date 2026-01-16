@@ -25,7 +25,6 @@ import {
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { generateMarketingTagline, translateDescription, generateAdImage } from '../services/geminiService';
 import { createEvent, getEvents, getUser, deductUserCredits, uploadEventImage } from '../services/dbService';
 import { createScannerCode } from '../services/scannerCodeService';
 import { trackEventCreation } from '../services/analyticsService';
@@ -258,6 +257,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       logger.log('Calling generateAdImage with prompt:', prompt.substring(0, 100) + '...');
       
       // Don't save to storage (avoid Upload error) - use base64 directly
+      const { generateAdImage } = await import('../services/geminiService');
       const imageData = await generateAdImage(prompt, '16:9', false);
       
       logger.log('Image data received:', imageData ? `${imageData.substring(0, 50)}... (${imageData.length} chars)` : 'null');
@@ -544,6 +544,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     }
     
     setIsGenerating(true);
+    const { generateMarketingTagline } = await import('../services/geminiService');
     const result = await generateMarketingTagline(formData.name, formData.category);
     setFormData(prev => ({ ...prev, tagline: result }));
     setIsGenerating(false);
@@ -647,6 +648,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 logger.log(`Translating to ${name}...`);
                 
                 // Translate name, description, and aboutText
+                const { translateDescription } = await import('../services/geminiService');
                 const [translatedName, translatedDesc, translatedAbout] = await Promise.all([
                   translateDescription(formData.name, name, user.id, user.subscription_tier),
                   translateDescription(description, name, user.id, user.subscription_tier),

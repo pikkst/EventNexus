@@ -19,7 +19,6 @@ import {
   CartesianGrid, Tooltip, BarChart, Bar, LineChart, Line, Cell, Pie, PieChart as RePieChart
 } from 'recharts';
 import { User, Notification } from '../types';
-import { generatePlatformGrowthCampaign, generateAdImage } from '../services/geminiService';
 import { supabase } from '../services/supabase';
 import logger from '../utils/logger';
 import type { LogEntry } from '../utils/logger';
@@ -439,6 +438,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     if (!newCampaignTheme.trim()) return;
     setIsAiGenerating(true);
     try {
+      const { generatePlatformGrowthCampaign, generateAdImage } = await import('../services/geminiService');
       const data = await generatePlatformGrowthCampaign(newCampaignTheme, targetAudience);
       if (data) {
         const imageUrl = await generateAdImage(data.visualPrompt, "16:9", true);
