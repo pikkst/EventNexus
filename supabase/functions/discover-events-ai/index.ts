@@ -897,6 +897,13 @@ serve(async (req) => {
 
     console.log(`\n[PKG] Inserting ${events.length} events into database...`)
 
+    // Extract city data for use in insertion loop
+    const countryCode = cityData.country_code || 'ee'
+    const country = cityData.country
+    const cityName = cityData.city_name
+    const cityLat = cityData.latitude || 0
+    const cityLng = cityData.longitude || 0
+
     // First, ensure EventScout AI source exists for this city
     const { data: existingSource } = await supabase
       .from('event_sources')
