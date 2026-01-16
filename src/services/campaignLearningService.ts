@@ -285,7 +285,7 @@ export async function extractCampaignLearnings(
   }>
 ): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = getAI().getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const campaignsText = topCampaigns.map((c, i) => 
       `${i + 1}. "${c.title}" - CTR: ${c.ctr.toFixed(2)}%, ROI: ${c.roi.toFixed(0)}%, Platforms: ${c.platforms.join(', ')}`
