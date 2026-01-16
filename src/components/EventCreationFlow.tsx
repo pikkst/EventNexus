@@ -33,6 +33,7 @@ import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
 import { FEATURE_UNLOCK_COSTS } from '../services/featureUnlockService';
 import { User, EventNexusEvent } from '../types';
 import { generateCreateEventSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
+import CreditsPricingModal from './CreditsPricingModal';
 
 // Simple logger for debugging
 const logger = {
@@ -137,7 +138,16 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     };
   });
 
-  const [ticketTemplates, setTicketTemplates] = useState<Array<{
+  // Credits pricing modal state
+  const [showCreditsPricingModal, setShowCreditsPricingModal] = useState(() => {
+    // Show modal on first mount if user is free tier with low credits
+    try {
+      const shown = localStorage.getItem('eventnexus_credits_modal_shown');
+      return !shown && (user.subscription_tier === 'free' && userCredits < 50);
+    } catch {
+      return false;
+    }
+  });  const [ticketTemplates, setTicketTemplates] = useState<Array<{
     name: string;
     type: 'general' | 'vip' | 'early_bird' | 'day_pass' | 'multi_day' | 'backstage' | 'student' | 'group';
     price: number;
@@ -626,6 +636,16 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     }
   };
 
+  const handleCloseCreditsPricingModal = () => {
+    setShowCreditsPricingModal(false);
+    // Mark modal as shown to avoid showing it again
+    try {
+      localStorage.setItem('eventnexus_credits_modal_shown', 'true');
+    } catch (error) {
+      console.warn('[EventCreation] Failed to save modal state:', error);
+    }
+  };
+
   const handleGeminiTagline = async () => {
     if (!formData.name || !formData.category) return;
     
@@ -973,15 +993,18 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               <div>
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="block text-sm font-medium text-slate-400">Catchy Tagline</label>
-                  <button 
-                    onClick={handleGeminiTagline}
-                    disabled={isGenerating || !formData.name || !formData.category}
-                    aria-label="Generate AI tagline"
-                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 disabled:opacity-50"
-                    title="AI will generate a catchy tagline based on your event name and category"
-                  >
-                    <Sparkles className="w-3 h-3" aria-hidden="true" /> AI Generate
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">2 credits</span>
+                    <button 
+                      onClick={handleGeminiTagline}
+                      disabled={isGenerating || !formData.name || !formData.category}
+                      aria-label="Generate AI tagline"
+                      className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 disabled:opacity-50"
+                      title="AI will generate a catchy tagline based on your event name and category"
+                    >
+                      <Sparkles className="w-3 h-3" aria-hidden="true" /> AI Generate
+                    </button>
+                  </div>
                 </div>
                 <input 
                   type="text" 
@@ -1187,8 +1210,13 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   type="button"
                   onClick={handleGenerateAIImage}
                   disabled={isGeneratingImage || !formData.name || !formData.category}
-                  className="h-48 border-2 border-dashed border-slate-700 hover:border-orange-500 rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-48 border-2 border-dashed border-slate-700 hover:border-orange-500 rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/50 disabled:opacity-50 disabled:cursor-not-allowed relative"
                 >
+                  {/* Credit Cost Badge */}
+                  <div className="absolute top-3 right-3 bg-orange-600/20 border border-orange-600/50 px-2 py-1 rounded text-xs font-semibold text-orange-400">
+                    5 credits
+                  </div>
+
                   <div className="w-16 h-16 bg-orange-600/10 rounded-2xl flex items-center justify-center">
                     {isGeneratingImage ? (
                       <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
@@ -1425,7 +1453,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   className="mt-1 w-5 h-5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-950"
                 />
                 <div className="flex-1">
-                  <h4 className="font-bold mb-1">Enable Multilingual Event 🌍</h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold">Enable Multilingual Event 🌍</h4>
+                    <span className="text-xs bg-purple-600/20 border border-purple-600/50 px-2 py-0.5 rounded text-purple-400 font-semibold">3 credits</span>
+                  </div>
                   <p className="text-xs text-slate-400 mb-2">
                     AI automatically translates your event for international visitors based on their language preferences.
                   </p>
@@ -1586,6 +1617,14 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12 min-h-screen">
+      {/* Credits Pricing Modal */}
+      <CreditsPricingModal
+        isOpen={showCreditsPricingModal}
+        onClose={handleCloseCreditsPricingModal}
+        userCredits={userCredits}
+        userTier={user.subscription_tier || 'free'}
+      />
+
       {/* Breadcrumbs */}
       <Breadcrumbs 
         items={[
