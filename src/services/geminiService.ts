@@ -44,20 +44,18 @@ const getAI = (): any => {
   return aiInstance;
 };
 
+// Get Type enum lazily - NEVER called at module scope
+const getType = () => {
+  if (!TypeEnum) {
+    throw new Error('Type enum not loaded - module not initialized');
+  }
+  return TypeEnum;
+};
+
 // Pre-initialize the module at startup (call this early in App component)
 export const initializeGemini = async () => {
   await loadGoogleGenAI();
 };
-
-// Lazy Type proxy that works with dynamically loaded module
-const Type = new Proxy({} as any, {
-  get: (target, prop: string) => {
-    if (!TypeEnum) {
-      throw new Error('Type enum not yet loaded. Make sure initializeGemini() is called early in your app.');
-    }
-    return TypeEnum[prop as any];
-  }
-});
 
 // ADMIN TOOLS - NO CREDIT COST (Platform marketing tools)
 // Admin promotion tools are FREE for admins to market the platform
@@ -100,33 +98,33 @@ export const generateSocialMediaPosts = async (
       config: {
         responseMimeType: "application/json",
         responseSchema: {
-          type: Type.OBJECT,
+          type: getType().OBJECT,
           properties: {
             facebook: {
-              type: Type.OBJECT,
+              type: getType().OBJECT,
               properties: {
-                content: { type: Type.STRING },
-                hashtags: { type: Type.ARRAY, items: { type: Type.STRING } }
+                content: { type: getType().STRING },
+                hashtags: { type: getType().ARRAY, items: { type: getType().STRING } }
               }
             },
             instagram: {
-              type: Type.OBJECT,
+              type: getType().OBJECT,
               properties: {
-                caption: { type: Type.STRING },
-                hashtags: { type: Type.ARRAY, items: { type: Type.STRING } }
+                caption: { type: getType().STRING },
+                hashtags: { type: getType().ARRAY, items: { type: getType().STRING } }
               }
             },
             twitter: {
-              type: Type.OBJECT,
+              type: getType().OBJECT,
               properties: {
-                tweet: { type: Type.STRING },
-                hashtags: { type: Type.ARRAY, items: { type: Type.STRING } }
+                tweet: { type: getType().STRING },
+                hashtags: { type: getType().ARRAY, items: { type: getType().STRING } }
               }
             },
             linkedin: {
-              type: Type.OBJECT,
+              type: getType().OBJECT,
               properties: {
-                content: { type: Type.STRING }
+                content: { type: getType().STRING }
               }
             }
           },
@@ -331,16 +329,16 @@ export const generatePlatformGrowthCampaign = async (
       config: {
         responseMimeType: "application/json",
         responseSchema: {
-          type: Type.OBJECT,
+          type: getType().OBJECT,
           properties: {
-            title: { type: Type.STRING },
-            copy: { type: Type.STRING },
-            visualPrompt: { type: Type.STRING },
-            cta: { type: Type.STRING },
-            recommendedIncentiveType: { type: Type.STRING, enum: ["credits", "pro_discount", "none"] },
-            recommendedIncentiveValue: { type: Type.NUMBER },
-            offerHeadline: { type: Type.STRING },
-            offerDetails: { type: Type.STRING }
+            title: { type: getType().STRING },
+            copy: { type: getType().STRING },
+            visualPrompt: { type: getType().STRING },
+            cta: { type: getType().STRING },
+            recommendedIncentiveType: { type: getType().STRING, enum: ["credits", "pro_discount", "none"] },
+            recommendedIncentiveValue: { type: getType().NUMBER },
+            offerHeadline: { type: getType().STRING },
+            offerDetails: { type: getType().STRING }
           },
           required: ["title", "copy", "visualPrompt", "cta", "recommendedIncentiveType", "recommendedIncentiveValue", "offerHeadline", "offerDetails"]
         }
@@ -665,15 +663,15 @@ Make each ad unique and platform-appropriate. Focus on ${campaignTheme}.`,
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
-          type: Type.ARRAY,
+          type: getType().ARRAY,
           items: {
-            type: Type.OBJECT,
+            type: getType().OBJECT,
             properties: {
-              platform: { type: Type.STRING },
-              headline: { type: Type.STRING },
-              bodyCopy: { type: Type.STRING },
-              cta: { type: Type.STRING },
-              visualPrompt: { type: Type.STRING }
+              platform: { type: getType().STRING },
+              headline: { type: getType().STRING },
+              bodyCopy: { type: getType().STRING },
+              cta: { type: getType().STRING },
+              visualPrompt: { type: getType().STRING }
             },
             required: ['platform', 'headline', 'bodyCopy', 'cta', 'visualPrompt']
           }
@@ -908,17 +906,17 @@ Respond in JSON format with ONLY this structure:
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
-          type: Type.OBJECT,
+          type: getType().OBJECT,
           properties: {
-            title: { type: Type.STRING },
-            description: { type: Type.STRING },
-            imageUrl: { type: Type.STRING },
+            title: { type: getType().STRING },
+            description: { type: getType().STRING },
+            imageUrl: { type: getType().STRING },
             colorScheme: {
-              type: Type.OBJECT,
+              type: getType().OBJECT,
               properties: {
-                primary: { type: Type.STRING },
-                secondary: { type: Type.STRING },
-                accent: { type: Type.STRING }
+                primary: { type: getType().STRING },
+                secondary: { type: getType().STRING },
+                accent: { type: getType().STRING }
               },
               required: ['primary', 'secondary', 'accent']
             }
