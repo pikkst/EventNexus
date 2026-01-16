@@ -788,7 +788,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                             {group.events.map((ev, i) => (
                               <button
                                 key={ev.id}
-                                onClick={() => { setSelectedEvent(ev); setIsFollowingUser(false); }}
+                                onClick={() => { setSelectedEvent(ev); setIsFollowingUser(false); navigate(`/event/${ev.id}`); }}
                                 className="text-left text-[11px] bg-slate-100 dark:bg-slate-800/70 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-lg px-2 py-1.5 transition"
                               >
                                 <span className="font-semibold text-slate-800 dark:text-slate-100 block">{ev.name}</span>

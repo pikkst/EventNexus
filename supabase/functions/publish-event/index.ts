@@ -563,18 +563,25 @@ serve(async (req) => {
     // EventScout AI auto-validates with 93% confidence
     console.log('Fetching validated parsed events for publishing...')
     
-    // Use LEFT JOIN to avoid missing events if event_confidence doesn't exist yet
-    const { data: parsedEventsRaw, error: parsedError } = await supabaseClient
+    // Build query with optional city_id filter
+    let query = supabaseClient
       .from('parsed_events')
       .select('*')
-      .limit(100) // Get more events, will filter below
+    
+    // Filter by city_id if provided
+    if (cityId) {
+      console.log(`🎯 Filtering parsed_events for city: ${cityId}`)
+      query = query.eq('city_id', cityId)
+    }
+    
+    const { data: parsedEventsRaw, error: parsedError } = await query.limit(100)
 
     if (parsedError) {
       console.error('Query error:', parsedError)
       throw parsedError
     }
 
-    console.log(`Found ${parsedEventsRaw?.length || 0} parsed events`)
+    console.log(`Found ${parsedEventsRaw?.length || 0} parsed events${cityId ? ` for city ${cityId}` : ''}`)
     
     // Get list of already-published parsed_events to avoid re-publishing
     const { data: publishedConfidence } = await supabaseClient
@@ -587,7 +594,7 @@ serve(async (req) => {
     console.log(`Already published: ${publishedIds.size} events`)
     
     // Filter events that are ready for publishing (have not been published yet)
-    let parsedEvents = (parsedEventsRaw || [])
+    let filteredEvents = (parsedEventsRaw || [])
       .filter(event => {
         // Only include events with structured data
         if (!event.structured_json) return false
@@ -597,16 +604,7 @@ serve(async (req) => {
       })
       .slice(0, 20) // Limit to 20 per batch
     
-    console.log(`Filtered to ${parsedEvents.length} events ready for publishing (${parsedEventsRaw?.length || 0} total, ${publishedIds.size} already published)`)
-    
-    // Filter by city_id if provided (from structured_json)
-    let filteredEvents = parsedEvents || []
-    if (cityId) {
-      console.log(`🎯 Filtering events for city: ${cityId}`)
-      // EventScout AI stores city_id in raw_events -> event_sources
-      // For now, we get city_id from the event creation context
-      // All events in this batch belong to the requested city
-    }
+    console.log(`Filtered to ${filteredEvents.length} events ready for publishing (${parsedEventsRaw?.length || 0} total, ${publishedIds.size} already published)`)
     
     console.log(`📊 Found ${filteredEvents.length} validated events ready for publishing`)
 
@@ -721,27 +719,8 @@ serve(async (req) => {
 
         console.log(`Publishing event for ${cityConfig.city_name}, ${cityConfig.country}`)
 
-        // FILTER OUT USA ADDRESSES - only if city is NOT in USA (prevents wrong "Amsterdam" mixing)
+        // Get address for validation
         const address = eventData.location_address || ''
-        const US_STATE_CODES = /\b(AL|AK|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b/
-        const US_ZIP_CODES = /\b\d{5}(-\d{4})?\b/
-        
-        // Only block USA addresses if the city itself is NOT in USA
-        const cityIsInUSA = cityConfig.country === 'United States' || cityConfig.country === 'USA' || cityConfig.country_code === 'us'
-        
-        // CRITICAL: Don't confuse country codes with US states!
-        // AZ = Arizona vs Azerbaijan (country code)
-        // AR = Arkansas vs Argentina/Andorra (country code)
-        // Check for USA context: zip codes, "USA" keyword, or city/state combinations
-        const hasUSAContext = address.match(/\bUSA\b/i) || address.match(/United States/i) || 
-                              (US_STATE_CODES.test(address) && US_ZIP_CODES.test(address))
-        
-        if (!cityIsInUSA && hasUSAContext) {
-          console.log(`⊘ Skipping USA event: ${eventData.name} (address: ${address})`)
-          await log(supabaseClient, 'publish-event', 'info', 'Skipped USA event', { event: eventData.name, address }, { city_id: eventCityId })
-          results.skipped++
-          continue
-        }
 
         // SKIP PLACEHOLDER ADDRESSES - Gemini sometimes generates fake addresses
         const PLACEHOLDER_PATTERNS = /\b(Venue Name|Street Address|City Name|TBD|To Be Determined|Various [Ll]ocations)\b/i
