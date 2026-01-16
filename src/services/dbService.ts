@@ -87,7 +87,6 @@ export const getTrendingEvents = async (limit: number = 6): Promise<EventNexusEv
       .in('visibility', ['public', 'semi-private'])
       .is('archived_at', null)
       .gte('date', sevenDaysAgo.toISOString())
-      .order('engagement_score', { ascending: false })
       .order('date', { ascending: true })
       .limit(limit);
     
