@@ -4,7 +4,20 @@ import { supabase } from './supabase';
 import { deductUserCredits, checkUserCredits } from './dbService';
 import { SUPPORTED_LANGUAGES } from './languageService';
 
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Lazily initialize GoogleGenAI to avoid TDZ issues with env vars
+let aiInstance: GoogleGenAI | null = null;
+
+const getAI = (): GoogleGenAI => {
+  if (!aiInstance) {
+    const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('GEMINI_API_KEY is not set in environment variables');
+      throw new Error('GEMINI_API_KEY is required but not configured');
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+};
 
 // ADMIN TOOLS - NO CREDIT COST (Platform marketing tools)
 // Admin promotion tools are FREE for admins to market the platform

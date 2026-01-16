@@ -569,11 +569,18 @@ Return ONLY valid JSON array with FUTURE events and ACCURATE coordinates.`
 
 RESPONSE FORMAT: Return ONLY valid JSON array (no markdown, no explanation).
 
+CRITICAL COUNTRY VALIDATION (HIGHEST PRIORITY):
+1. VERIFY EVERY ADDRESS IS IN ${country} (ISO: ${countryCode.toUpperCase()})
+2. REJECT any address with USA zip codes (5-digit format like 40601)
+3. REJECT any address with "United States", "USA", "KY", "TX", "CA" region codes
+4. REJECT if Google Search confirms venue is outside ${country}
+5. Use Google Search to VERIFY coordinates are within ${country} borders
+
 GEOCODING PRIORITIES:
-1. Use Google Search tool to verify coordinates for EVERY event
+1. Use Google Search tool to verify EVERY venue is in ${country}
 2. Find exact building/venue coordinates, NOT city center
-3. For Estonian events: verify the city name matches ${cityName} exactly
-4. Reject any venue that is not in ${cityName}
+3. For ${country} events: verify the city name matches ${cityName} exactly
+4. Reject any venue that is not in ${cityName} or ${country}
 5. Return coordinates accurate to street level (6+ decimal places)
 
 JSON array structure:
@@ -718,7 +725,64 @@ Return ONLY valid JSON array:\n\n${rawText}` }] }],
     }
   }
   
-  return events
+  // FINAL VALIDATION: Filter out events that are definitely from wrong countries
+  // This is a safety check after AI processing
+  const countryLower = country.toLowerCase()
+  const validCountryCodes = getCountryCodes(countryLower)
+  
+  const filtered = events.filter(event => {
+    const address = (event.location_address || '').toLowerCase()
+    const name = (event.name || '').toLowerCase()
+    
+    // HARD REJECT: If address explicitly contains USA indicators, reject it
+    if (address.includes('united states') || 
+        address.includes(', usa') || 
+        address.match(/\b(KY|TX|CA|FL|NY|IL|PA|OH|GA|NC|MI|NJ|VA|WA|AZ|MA|TN|IN|MD|MO|WI|CO|MN|SC|AL|LA|KS|OR|OK|CT|UT|NV|AR|MS|NM|NE|WV|ID|HI|NH|ME|RI|MT|DE|ND|SD|AK)\s+\d{5}/)) {
+      console.log(`  ⊘ HARD REJECT USA: ${event.name}`)
+      return false
+    }
+    
+    // Check for country indicators in address
+    for (const code of validCountryCodes) {
+      if (address.includes(code.toLowerCase())) {
+        return true
+      }
+    }
+    
+    // If we're looking for Estonia, be strict about coordinates
+    if (countryLower === 'estonia' && event.location_lat && event.location_lng) {
+      // Estonia coordinates roughly: lat 57-60, lng 21-28
+      if (event.location_lat < 57 || event.location_lat > 60.5 || 
+          event.location_lng < 20.5 || event.location_lng > 28.5) {
+        console.log(`  ⊘ Coordinates outside ${country}: ${event.name}`)
+        return false
+      }
+    }
+    
+    return true
+  })
+  
+  console.log(`✅ Filtered from ${events.length} to ${filtered.length} events (removed ${events.length - filtered.length} non-${country} events)`)
+  
+  return filtered
+}
+
+// Helper to get country code variations
+function getCountryCodes(country: string): string[] {
+  const countryMap: Record<string, string[]> = {
+    'estonia': ['estonia', 'ee', 'eesti'],
+    'finland': ['finland', 'fi'],
+    'latvia': ['latvia', 'lv'],
+    'lithuania': ['lithuania', 'lt'],
+    'germany': ['germany', 'de'],
+    'france': ['france', 'fr'],
+    'italy': ['italy', 'it'],
+    'spain': ['spain', 'es'],
+    'united kingdom': ['united kingdom', 'uk', 'gb', 'england', 'scotland', 'wales'],
+    'usa': ['usa', 'united states', 'us'],
+    'canada': ['canada', 'ca']
+  }
+  return countryMap[country] || [country]
 }
 
 // Main handler
@@ -933,6 +997,26 @@ serve(async (req) => {
           continue
         }
 
+        // ✅ VALIDATE: Double-check that address is NOT from USA
+        // This is a safety catch for any USA events that slipped through AI filtering
+        const address = event.location_address || ''
+        
+        // If address explicitly contains the target country, it's valid - skip USA check
+        const hasCountryConfirmation = address.toLowerCase().includes(countryCode.toLowerCase()) || 
+                                       address.toLowerCase().includes(country.toLowerCase())
+        
+        if (!hasCountryConfirmation) {
+          // Only check for USA patterns if country is NOT explicitly confirmed in address
+          const US_PATTERNS = /\b(USA|United States|KY|TX|CA|FL|NY|IL|PA|OH|GA|NC|MI|NJ|VA|WA|AZ|MA|TN|IN|MD|MO|WI|CO|MN|SC|AL|LA|KS|OR|OK|CT|UT|NV|AR|MS|NM|NE|WV|ID|HI|NH|ME|RI|MT|DE|ND|SD|AK)\b/i
+          const US_ZIP = /\b\d{5}(-\d{4})?\b/
+          
+          if (US_PATTERNS.test(address) || US_ZIP.test(address)) {
+            console.log(`  ⊘ Skip (USA address detected): ${event.name} (${address})`)
+            insertResults.skipped = (insertResults.skipped || 0) + 1
+            continue
+          }
+        }
+
         // ✅ VALIDATE: Coordinates must be within reasonable distance of city
         // This prevents events from wrong countries with similar city names
         if (cityLat && cityLng) {
@@ -977,6 +1061,7 @@ serve(async (req) => {
           .from('raw_events')
           .insert({
             source_id: sourceId,  // Link to EventScout AI source
+            city_id: cityData.city_id,  // Link to city for tracking
             raw_content: null,
             raw_content_json: event,
             content_type: 'json',
@@ -998,6 +1083,7 @@ serve(async (req) => {
           .from('parsed_events')
           .insert({
             raw_event_id: rawEvent.id,
+            city_id: cityData.city_id,  // Link to city for tracking
             structured_json: structured,
             original_language: 'en',
             confidence_partial: 0.95,  // High confidence (Google Search grounded)

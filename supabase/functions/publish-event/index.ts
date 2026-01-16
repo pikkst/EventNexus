@@ -610,7 +610,18 @@ serve(async (req) => {
           continue
         }
         
-        const confidenceScore = parsedEvent.event_confidence[0]?.final_score || 0
+        // Get confidence score from event_confidence table
+        let confidenceScore = 0
+        const { data: confidenceData } = await supabaseClient
+          .from('event_confidence')
+          .select('final_score')
+          .eq('parsed_event_id', parsedEvent.id)
+          .single()
+        
+        if (confidenceData) {
+          confidenceScore = confidenceData.final_score || 0
+        }
+        console.log(`📊 Event confidence: ${confidenceScore}%`)
 
         // Fetch city config for geocoding
         let cityConfig;
