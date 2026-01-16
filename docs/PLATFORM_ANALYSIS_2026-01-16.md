@@ -162,7 +162,7 @@ EventNexus on funktsionaalne event management platvorm järgmiste põhikomponent
 #### ✅ Mis Töötab
 - Supabase Auth integration
 - Email + password login
-- OAuth (Google, GitHub, Facebook) - configured but not tested
+- OAuth (Google, GitHub, Facebook) - configured but not tested / google töötab  ja läbi meili registeerimine töötab. / hetkel muud  -  ei           lisa
 - Session persistence
 - Automatic token refresh
 

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import logger from '../utils/logger';
 import { useEventSEO } from '../hooks/useSEO';
+import Breadcrumbs from './Breadcrumbs';
 import { 
   MapPin, 
   Calendar, 
@@ -638,16 +639,15 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
 
   return (
     <div className="min-h-screen bg-slate-950 text-white pb-32">
-      {/* Back Button - Always visible */}
-      <button
-        onClick={() => navigate('/map')}
-        className="fixed top-4 left-4 z-20 p-3 bg-slate-900/80 hover:bg-slate-800 border border-slate-700 rounded-xl transition-all shadow-xl flex items-center gap-2 text-white backdrop-blur-sm md:absolute md:top-4 md:left-4"
-        title="Back to event map"
-        aria-label="Back to event map"
-      >
-        <ArrowLeft className="w-5 h-5" aria-hidden="true" />
-        <span className="hidden sm:inline text-sm font-semibold">Back</span>
-      </button>
+      {/* Breadcrumbs */}
+      <div className="max-w-6xl mx-auto px-4 pt-4">
+        <Breadcrumbs 
+          items={[
+            { label: 'Events', path: '/map' },
+            { label: event?.name || 'Event Detail' }
+          ]}
+        />
+      </div>
 
       {/* Hero Image Section */}
       {event.imageUrl && (

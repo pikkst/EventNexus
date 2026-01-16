@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import Breadcrumbs from './Breadcrumbs';
 import { 
   ChevronRight, 
   ChevronLeft, 
@@ -1585,6 +1586,14 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12 min-h-screen">
+      {/* Breadcrumbs */}
+      <Breadcrumbs 
+        items={[
+          { label: 'Dashboard', path: '/dashboard' },
+          { label: 'Create Event' }
+        ]}
+      />
+      
       <div className="mb-12">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
