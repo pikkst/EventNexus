@@ -419,89 +419,70 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     checkStripeReturn();
   }, [user.id, onUpdateUser]);
 
-  // Load user's events from database
+  // Load user's events and revenue data in parallel (optimized loading)
   useEffect(() => {
-    const loadEvents = async () => {
-      debugLog(`Starting to load events for user: ${user.id}`);
+    const loadDashboardData = async () => {
+      debugLog(`Starting to load dashboard data for user: ${user.id}`);
       setIsLoadingEvents(true);
-      try {
-        debugLog('Calling getOrganizerEvents...');
-        const userEvents = await getOrganizerEvents(user.id);
-        debugLog(`Successfully loaded ${userEvents.length} events`, userEvents);
-        if (DISABLE_ORGANIZER_FILTERS) return events;
-        let result = [...events];
-        if (userEvents.length > 0 && !selectedEventId) {
-          setSelectedEventId(userEvents[0].id);
-        }
-      } catch (error) {
-        debugError('Error loading events', error);
-        logger.error('Error loading events:', error);
-      } finally {
-        setIsLoadingEvents(false);
-        debugLog('Event loading complete');
-      }
-    };
-    loadEvents();
-  }, [user.id, selectedEventId]);
-
-  // Auto-refresh events every 10 seconds for live updates
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const userEvents = await getOrganizerEvents(user.id);
-        setEvents(userEvents);
-      } catch (error) {
-        console.error('Error auto-refreshing events:', error);
-      }
-    }, 10000); // 10 seconds
-
-    return () => clearInterval(interval);
-  }, [user.id]);
-
-  // Load revenue data
-  useEffect(() => {
-    const loadRevenue = async () => {
       setIsLoadingRevenue(true);
+      
       try {
-        console.log('[Dashboard] Loading revenue for organizer:', user.id);
-        const [summary, byEvent, attendance] = await Promise.all([
+        // Load events and revenue in parallel for faster performance
+        const [userEvents, summary, byEvent, attendance] = await Promise.all([
+          getOrganizerEvents(user.id),
           getOrganizerRevenueSummary(user.id),
           getOrganizerRevenue(user.id),
           getOrganizerAttendanceSummary(user.id)
         ]);
+        
+        // Process events
+        debugLog(`Successfully loaded ${userEvents.length} events`, userEvents);
+        if (!DISABLE_ORGANIZER_FILTERS) {
+          if (userEvents.length > 0 && !selectedEventId) {
+            setSelectedEventId(userEvents[0].id);
+          }
+        }
+        
+        // Process revenue
         console.log('[Dashboard] Revenue summary:', summary);
         console.log('[Dashboard] Revenue by event:', byEvent);
         console.log('[Dashboard] Attendance summary:', attendance);
         setRevenueSummary(summary);
         setRevenueByEvent(byEvent);
         setAttendanceSummary(attendance);
-        // Generate sales chart data from real revenue
         setSalesData(generateSalesData(byEvent));
+        
       } catch (error) {
-        console.error('[Dashboard] Error loading revenue:', error);
-        logger.error('Error loading revenue:', error);
+        debugError('Error loading dashboard data', error);
+        logger.error('Error loading dashboard data:', error);
       } finally {
+        setIsLoadingEvents(false);
         setIsLoadingRevenue(false);
+        debugLog('Dashboard data loading complete');
       }
     };
-    loadRevenue();
-  }, [user.id]);
+    
+    loadDashboardData();
+  }, [user.id, selectedEventId]);
 
-  // Auto-refresh revenue data every 10 seconds for live updates
+  // Auto-refresh events and revenue every 10 seconds for live updates
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const [summary, byEvent, attendance] = await Promise.all([
+        const [userEvents, summary, byEvent, attendance] = await Promise.all([
+          getOrganizerEvents(user.id),
           getOrganizerRevenueSummary(user.id),
           getOrganizerRevenue(user.id),
           getOrganizerAttendanceSummary(user.id)
         ]);
+        
+        setEvents(userEvents);
         setRevenueSummary(summary);
         setRevenueByEvent(byEvent);
         setAttendanceSummary(attendance);
         setSalesData(generateSalesData(byEvent));
       } catch (error) {
-        console.error('Error auto-refreshing revenue:', error);
+        console.error('Error auto-refreshing dashboard data:', error);
       }
     }, 10000); // 10 seconds
 
