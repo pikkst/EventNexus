@@ -77,25 +77,63 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       return 'dark';
     }
   });
-  const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    description: '',
-    tagline: '',
-    aboutText: '',
-    date: '',
-    time: '',
-    end_date: '',
-    end_time: '',
-    location: '',
-    locationLat: 58.8934,
-    locationLng: 25.9659,
-    locationAddress: '',
-    locationCity: '',
-    visibility: 'public',
-    price: 0,
-    max_capacity: 100,
-    is_multilingual: false // Enable AI auto-translation for viewers
+  
+  // Load draft from localStorage on component mount
+  const [formData, setFormData] = useState(() => {
+    try {
+      const savedDraft = localStorage.getItem('eventnexus_event_draft');
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        // Validate that draft has required fields before using it
+        if (parsed && typeof parsed === 'object') {
+          console.log('[EventCreation] Restored draft from localStorage');
+          return {
+            name: parsed.name || '',
+            category: parsed.category || '',
+            description: parsed.description || '',
+            tagline: parsed.tagline || '',
+            aboutText: parsed.aboutText || '',
+            date: parsed.date || '',
+            time: parsed.time || '',
+            end_date: parsed.end_date || '',
+            end_time: parsed.end_time || '',
+            location: parsed.location || '',
+            locationLat: parsed.locationLat || 58.8934,
+            locationLng: parsed.locationLng || 25.9659,
+            locationAddress: parsed.locationAddress || '',
+            locationCity: parsed.locationCity || '',
+            visibility: parsed.visibility || 'public',
+            price: parsed.price || 0,
+            max_capacity: parsed.max_capacity || 100,
+            is_multilingual: parsed.is_multilingual || false
+          };
+        }
+      }
+    } catch (error) {
+      console.warn('[EventCreation] Failed to restore draft:', error);
+    }
+    
+    // Default empty form if no draft found
+    return {
+      name: '',
+      category: '',
+      description: '',
+      tagline: '',
+      aboutText: '',
+      date: '',
+      time: '',
+      end_date: '',
+      end_time: '',
+      location: '',
+      locationLat: 58.8934,
+      locationLng: 25.9659,
+      locationAddress: '',
+      locationCity: '',
+      visibility: 'public',
+      price: 0,
+      max_capacity: 100,
+      is_multilingual: false
+    };
   });
 
   const [ticketTemplates, setTicketTemplates] = useState<Array<{
@@ -120,6 +158,23 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       cleanupSEO();
     };
   }, []);
+
+  // Auto-save draft to localStorage every 30 seconds (prevent data loss)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      // Only save if user has started filling the form
+      if (formData.name || formData.description || formData.category) {
+        try {
+          localStorage.setItem('eventnexus_event_draft', JSON.stringify(formData));
+          console.log('[EventCreation] Draft auto-saved to localStorage');
+        } catch (error) {
+          console.warn('[EventCreation] Failed to save draft:', error);
+        }
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(timer);
+  }, [formData]);
 
   // Image handling functions
   const compressImage = async (file: File): Promise<File> => {
@@ -534,6 +589,42 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     );
   }
 
+  const handleClearDraft = () => {
+    if (confirm('Are you sure you want to clear your draft? This cannot be undone.')) {
+      try {
+        localStorage.removeItem('eventnexus_event_draft');
+        // Reset form to empty state
+        setFormData({
+          name: '',
+          category: '',
+          description: '',
+          tagline: '',
+          aboutText: '',
+          date: '',
+          time: '',
+          end_date: '',
+          end_time: '',
+          location: '',
+          locationLat: 58.8934,
+          locationLng: 25.9659,
+          locationAddress: '',
+          locationCity: '',
+          visibility: 'public',
+          price: 0,
+          max_capacity: 100,
+          is_multilingual: false
+        });
+        setImageFile(null);
+        setImagePreview('');
+        setStep(1);
+        console.log('[EventCreation] Draft cleared successfully');
+        alert('Draft cleared! Starting fresh.');
+      } catch (error) {
+        console.warn('[EventCreation] Failed to clear draft:', error);
+      }
+    }
+  };
+
   const handleGeminiTagline = async () => {
     if (!formData.name || !formData.category) return;
     
@@ -802,6 +893,15 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         const successMessage = translationCount > 0 
           ? `Event created successfully!\n\n🌐 Auto-translated into ${translationCount} languages: ${Object.keys(translations).join(', ').toUpperCase()}${scannerMessage}`
           : `Event created successfully!${scannerMessage}`;
+        
+        // Clear draft from localStorage after successful creation
+        try {
+          localStorage.removeItem('eventnexus_event_draft');
+          console.log('[EventCreation] Cleared draft after successful creation');
+        } catch (error) {
+          console.warn('[EventCreation] Failed to clear draft:', error);
+        }
+        
         alert(successMessage);
         // Notify parent to reload events
         if (onEventCreated) {
@@ -826,7 +926,18 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       case 1:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-2xl font-bold">The Basics</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">The Basics</h2>
+              {(formData.name || formData.description || formData.category) && (
+                <button
+                  onClick={handleClearDraft}
+                  className="text-xs text-slate-500 hover:text-red-400 transition-colors flex items-center gap-1"
+                  title="Clear saved draft and start fresh"
+                >
+                  <span>Clear Draft</span>
+                </button>
+              )}
+            </div>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1.5">Event Name</label>
