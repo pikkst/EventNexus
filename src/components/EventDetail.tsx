@@ -108,14 +108,15 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   
-  // Initialize selected language from user preference or browser locale
+  // Initialize selected language: use user preference if logged in, otherwise English
   const [selectedLanguage, setSelectedLanguage] = useState(() => {
-    if (user?.preferred_language && user.preferred_language !== 'en') {
+    // Registered users: use their preference
+    if (user?.preferred_language) {
       return user.preferred_language;
     }
-    // Fallback to browser language or English
-    const browserLang = navigator.language?.split('-')[0] || 'en';
-    return browserLang;
+    
+    // Guests: always English (not browser language)
+    return 'en';
   });
   
   const [organizerName, setOrganizerName] = useState<string>('EventNexus User');
@@ -217,10 +218,18 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
 
   // Sync selected language with user preference when user loads or preference changes
   useEffect(() => {
-    if (user?.preferred_language && user.preferred_language !== 'en') {
+    // Registered users: always use their preference
+    if (user?.preferred_language) {
       setSelectedLanguage(user.preferred_language);
+      return;
     }
-  }, [user?.preferred_language]);
+    
+    // Guests: use English
+    if (!user) {
+      setSelectedLanguage('en');
+      return;
+    }
+  }, [user?.preferred_language, user]);
 
   // Auto-translate event name and about text when language changes
   useEffect(() => {
