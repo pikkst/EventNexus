@@ -15,7 +15,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "populate-db": "node populate-db.js"
+    "populate-db": "node populate-db.js",
+    "deploy:functions": "supabase functions deploy --no-verify",
+    "deploy:functions:all": "supabase functions deploy discover-events-ai publish-event proximity-radar brand-monitoring intelligent-autonomous-marketing --no-verify"
   },
   "dependencies": {
     "@google/genai": "1.3.0",
