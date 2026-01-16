@@ -85,7 +85,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   // Guest language preference - for unregistered visitors
   const [guestLanguage, setGuestLanguage] = useState<string>(() => {
     try {
-      const saved = localStorage.getItem('eventnexus_guest_language');
+      const saved = localStorage.getItem('guest_language');
       return saved || 'en';
     } catch {
       return 'en';
@@ -94,7 +94,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
 
   const handleGuestLanguageChange = (lang: string) => {
     setGuestLanguage(lang);
-    localStorage.setItem('eventnexus_guest_language', lang);
+    localStorage.setItem('guest_language', lang);
   };
 
   // Update SEO meta tags on mount
@@ -174,21 +174,6 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       return false;
     }
   });
-
-  // Guest language preference
-  const [guestLanguage, setGuestLanguage] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem('guest_language');
-      return saved || 'en'; // Default: English
-    } catch {
-      return 'en';
-    }
-  });
-
-  const handleGuestLanguageChange = (lang: string) => {
-    setGuestLanguage(lang);
-    localStorage.setItem('guest_language', lang);
-  };
   
   const [nearbyNewEventsCount, setNearbyNewEventsCount] = useState(0);
   const [nearbyNewEvents, setNearbyNewEvents] = useState<EventNexusEvent[]>([]);
