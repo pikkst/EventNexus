@@ -529,10 +529,15 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   // Group events that share (roughly) the same location so one marker opens a stack
   const groupedEvents = useMemo(() => {
     const groups = new Map<string, { lat: number; lng: number; address: string; events: EventNexusEvent[] }>();
-    const round = (n: number) => Number(n.toFixed(5)); // ~1m precision
+    // Round to 4 decimal places (~11m precision) - good for grouping by building/venue
+    // Events at exactly same coordinates will be grouped even if addresses differ slightly
+    const round = (n: number) => Number(n.toFixed(4));
 
     filteredEvents.forEach((ev) => {
-      const key = `${ev.location.address.toLowerCase().trim()}|${round(ev.location.lat)},${round(ev.location.lng)}`;
+      // Key by coordinates ONLY - ignore address differences
+      // This ensures all events in same building are grouped even if address format varies
+      const key = `${round(ev.location.lat)},${round(ev.location.lng)}`;
+      
       if (!groups.has(key)) {
         groups.set(key, {
           lat: ev.location.lat,
@@ -550,6 +555,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       return Number.isFinite(ms) ? ms : Number.MAX_SAFE_INTEGER;
     };
 
+    // Sort events within each group by date (earliest first)
     return Array.from(groups.values()).map((group) => ({
       ...group,
       events: group.events.sort((a, b) => getStartMs(a) - getStartMs(b)),
@@ -721,58 +727,68 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           <Marker position={userLocation} icon={userIcon} />
           {groupedEvents.map((group, idx) => {
             const primary = group.events[0]; // soonest event at this location
-            const moreCount = group.events.length - 1;
+            const totalCount = group.events.length;
+            const isMultipleEvents = totalCount > 1;
             const isNewEvent = newEventIds.has(primary.id);
 
             return (
               <Marker
-                key={`${group.address}-${idx}`}
+                key={`${group.lat}-${group.lng}-${idx}`}
                 position={[group.lat, group.lng]}
                 icon={eventIcon(primary.price, primary.isFeatured || false, isNewEvent)}
                 eventHandlers={{ click: () => { setSelectedEvent(primary); setIsFollowingUser(false); } }}
               >
-                <Popup minWidth={260} className="rounded-xl">
+                <Popup minWidth={isMultipleEvents ? 280 : 260} className="rounded-xl">
                   <div className="space-y-3 text-sm">
-                    <div className="font-black text-base text-slate-900 dark:text-white leading-tight">{primary.name}</div>
-                    <div className="text-xs text-slate-500 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>{primary.date} {primary.time}</span>
-                    </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      <span>{group.address}</span>
-                    </div>
-
-                    {moreCount > 0 && (
-                      <div className="border-t border-slate-200 dark:border-slate-800 pt-2">
-                        <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                          {moreCount} more event{moreCount > 1 ? 's' : ''} here:
+                    {/* If multiple events at same location, show table of all events */}
+                    {isMultipleEvents ? (
+                      <>
+                        <div className="font-black text-base text-slate-900 dark:text-white leading-tight">
+                          {totalCount} Events at this location
                         </div>
-                        <div className="flex flex-col gap-1 max-h-40 overflow-auto pr-1">
-                          {group.events.slice(0, 6).map((ev, i) => (
-                            <button
-                              key={ev.id}
-                              onClick={() => { setSelectedEvent(ev); setIsFollowingUser(false); }}
-                              className="text-left text-[11px] bg-slate-100 dark:bg-slate-800/70 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-lg px-2 py-1 transition"
-                            >
-                              <span className="font-semibold text-slate-800 dark:text-slate-100">{ev.name}</span>
-                              <span className="block text-[10px] text-slate-500">{ev.date} {ev.time}</span>
-                            </button>
-                          ))}
-                          {moreCount > 6 && (
-                            <div className="text-[10px] text-slate-500">...and {moreCount - 6} more</div>
-                          )}
+                        <div className="text-xs text-slate-500 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>{group.address}</span>
                         </div>
-                      </div>
+                        <div className="border-t border-slate-200 dark:border-slate-800 pt-2">
+                          <div className="flex flex-col gap-1 max-h-64 overflow-auto pr-1">
+                            {group.events.map((ev, i) => (
+                              <button
+                                key={ev.id}
+                                onClick={() => { setSelectedEvent(ev); setIsFollowingUser(false); }}
+                                className="text-left text-[11px] bg-slate-100 dark:bg-slate-800/70 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-lg px-2 py-1.5 transition"
+                              >
+                                <span className="font-semibold text-slate-800 dark:text-slate-100 block">{ev.name}</span>
+                                <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                                  <Calendar className="w-3 h-3" />
+                                  {ev.date} {ev.time}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      /* Single event - show normal popup */
+                      <>
+                        <div className="font-black text-base text-slate-900 dark:text-white leading-tight">{primary.name}</div>
+                        <div className="text-xs text-slate-500 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>{primary.date} {primary.time}</span>
+                        </div>
+                        <div className="text-xs text-slate-500 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>{group.address}</span>
+                        </div>
+                        <button
+                          onClick={() => navigate(`/event/${primary.id}`)}
+                          className="w-full inline-flex items-center justify-center gap-2 text-xs font-semibold bg-indigo-600 text-white rounded-lg py-2 hover:bg-indigo-500 transition"
+                        >
+                          View details
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      </>
                     )}
-
-                    <button
-                      onClick={() => navigate(`/event/${primary.id}`)}
-                      className="w-full inline-flex items-center justify-center gap-2 text-xs font-semibold bg-indigo-600 text-white rounded-lg py-2 hover:bg-indigo-500 transition"
-                    >
-                      View details
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
                   </div>
                 </Popup>
               </Marker>
