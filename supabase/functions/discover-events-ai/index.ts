@@ -898,7 +898,10 @@ serve(async (req) => {
     console.log(`\n[PKG] Inserting ${events.length} events into database...`)
 
     // Extract city data for use in insertion loop
+    // Note: 'country' from request body may be undefined if called with just city_id
+    // Always use cityData values which come from database
     const countryCode = cityData.country_code || 'ee'
+    const countryName = cityData.country  // Use from database, not from request
     const cityName = cityData.city_name
     const cityLat = cityData.latitude || 0
     const cityLng = cityData.longitude || 0
@@ -1033,7 +1036,7 @@ serve(async (req) => {
         
         // If address explicitly contains the target country, it's valid - skip USA check
         const hasCountryConfirmation = address.toLowerCase().includes(countryCode.toLowerCase()) || 
-                                       address.toLowerCase().includes(country.toLowerCase())
+                                       address.toLowerCase().includes(countryName.toLowerCase())
         
         if (!hasCountryConfirmation) {
           // Only check for USA patterns if country is NOT explicitly confirmed in address
