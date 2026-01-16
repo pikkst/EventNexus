@@ -1047,6 +1047,31 @@ serve(async (req) => {
           continue
         }
 
+        // [ML] QUALITY PREDICTION: Skip low-quality events before expensive processing
+        // Uses SQL-based quality scoring (free, millisecond latency)
+        const hasCompleteData = !!(event.name && event.description && event.location_address)
+        const hasCoordinates = !!(event.location_lat && event.location_lng)
+        const hasValidTime = !!(event.start_time && event.start_time !== '00:00')
+        const addressLength = (event.location_address || '').length
+        const descriptionLength = (event.description || '').length
+        
+        const { data: qualityScore, error: qualityError } = await supabase
+          .rpc('calculate_event_quality', {
+            p_has_complete_data: hasCompleteData,
+            p_has_coordinates: hasCoordinates,
+            p_has_valid_time: hasValidTime,
+            p_address_length: addressLength,
+            p_description_length: descriptionLength,
+            p_category_confidence: 0.7,
+            p_source_score: 0.85
+          })
+        
+        if (!qualityError && qualityScore !== null && qualityScore < 0.60) {
+          console.log(`  ⊘ Skip (low quality ${qualityScore.toFixed(2)}): ${event.name}`)
+          insertResults.skipped = (insertResults.skipped || 0) + 1
+          continue
+        }
+
         // [OK] VALIDATE: Double-check that address is NOT from USA
         // This is a safety catch for any USA events that slipped through AI filtering
         const address = event.location_address || ''
