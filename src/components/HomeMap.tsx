@@ -94,6 +94,16 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   }, []);
   
   // Load saved map position from localStorage, or use geolocation if not available
+  // Track zoom level for dynamic marker sizing
+  const [currentZoom, setCurrentZoom] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('homemap_last_zoom');
+      return saved ? JSON.parse(saved) : 13;
+    } catch {
+      return 13;
+    }
+  });
+
   const [userLocation, setUserLocation] = useState<[number, number]>(() => {
     // Try to restore from localStorage first
     try {
@@ -210,6 +220,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     try {
       localStorage.setItem('homemap_last_center', JSON.stringify(center));
       localStorage.setItem('homemap_last_zoom', JSON.stringify(zoom));
+      setCurrentZoom(zoom); // Update zoom state for dynamic marker sizing
     } catch (error) {
       console.error('Failed to save map position:', error);
     }
@@ -669,22 +680,44 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     const priceDisplay = price === 0 ? 'FREE' : `FROM €${price}`;
     const newMarkerClass = isNew ? 'new-event-marker' : '';
     
+    // Dynamic scaling based on zoom level
+    // Zoom 5-10: 0.5x (small cities view)
+    // Zoom 11-13: 0.75x (city view) 
+    // Zoom 14-15: 1.0x (neighborhood view)
+    // Zoom 16+: 1.25x (street view)
+    const getScale = () => {
+      if (currentZoom <= 10) return 0.5;
+      if (currentZoom <= 12) return 0.65;
+      if (currentZoom <= 13) return 0.8;
+      if (currentZoom <= 15) return 1.0;
+      return 1.2;
+    };
+    
+    const scale = getScale();
+    const iconSize = Math.round(20 * scale); // SVG icon size
+    const padding = Math.round(2.5 * scale); // Padding
+    const fontSize = Math.round(9 * scale); // Price text size
+    const badgeSize = Math.round(10 * scale); // Star badge size
+    const newBadgeFontSize = Math.round(8 * scale); // NEW badge font
+    const containerWidth = Math.round(40 * scale);
+    const containerHeight = Math.round(50 * scale);
+    
     return L.divIcon({
       className: 'custom-marker',
       html: `
-        <div class="flex flex-col items-center gap-1 ${newMarkerClass}">
-          <div class="p-2.5 rounded-2xl ${isFeatured ? 'bg-gradient-to-br from-yellow-400 to-orange-500 animate-pulse' : 'bg-indigo-600'} border-2 border-white text-white shadow-2xl relative">
-            ${isFeatured ? '<div class="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>' : ''}
-            ${isNew ? '<div class="absolute -top-2 -right-2 bg-green-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-white">NEW</div>' : ''}
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div class="flex flex-col items-center gap-1 ${newMarkerClass}" style="transform: scale(${scale}); transform-origin: bottom center;">
+          <div style="padding: ${padding}px;" class="rounded-2xl ${isFeatured ? 'bg-gradient-to-br from-yellow-400 to-orange-500 animate-pulse' : 'bg-indigo-600'} border-2 border-white text-white shadow-2xl relative">
+            ${isFeatured ? `<div class="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-1"><svg width="${badgeSize}" height="${badgeSize}" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>` : ''}
+            ${isNew ? `<div class="absolute -top-2 -right-2 bg-green-500 text-white font-black px-1.5 py-0.5 rounded-full shadow-lg border border-white" style="font-size: ${newBadgeFontSize}px;">NEW</div>` : ''}
+            <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           </div>
-          <div class="${isFeatured ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white' : 'bg-white text-indigo-600'} text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full shadow-lg border ${isFeatured ? 'border-yellow-200' : 'border-indigo-100'}">
+          <div class="${isFeatured ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white' : 'bg-white text-indigo-600'} font-black uppercase tracking-widest px-2 py-0.5 rounded-full shadow-lg border ${isFeatured ? 'border-yellow-200' : 'border-indigo-100'}" style="font-size: ${fontSize}px;">
             ${isFeatured ? '⭐ ' : ''}${priceDisplay}
           </div>
         </div>
       `,
-      iconSize: [40, 50],
-      iconAnchor: [20, 50]
+      iconSize: [containerWidth, containerHeight],
+      iconAnchor: [containerWidth / 2, containerHeight]
     });
   };
 
