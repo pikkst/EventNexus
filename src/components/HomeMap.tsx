@@ -81,6 +81,9 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchRadius, setSearchRadius] = useState(1); // 1km radius for urban proximity notifications
+  // Date filter and sorting state for map events
+  const [selectedDate, setSelectedDate] = useState<string>(''); // ISO format yyyy-mm-dd
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Guest language preference - for unregistered visitors
   const [guestLanguage, setGuestLanguage] = useState<string>(() => {
@@ -239,6 +242,30 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     } catch (error) {
       console.error('Failed to save map position:', error);
     }
+  }, []);
+
+  // Normalize event date strings to ISO yyyy-mm-dd (supports dd.mm.yyyy and ISO)
+  const normalizeDate = useCallback((dateStr: string): string => {
+    if (!dateStr || typeof dateStr !== 'string') return '';
+    // If already ISO-like (yyyy-mm-dd), return first 10 chars
+    const isoMatch = /^\d{4}-\d{2}-\d{2}/.test(dateStr);
+    if (isoMatch) return dateStr.substring(0, 10);
+    // Support Estonian style: dd.mm.yyyy
+    const dotMatch = dateStr.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+    if (dotMatch) {
+      const [, dd, mm, yyyy] = dotMatch;
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    // Fallback: try Date.parse then format
+    const ms = Date.parse(dateStr);
+    if (Number.isFinite(ms)) {
+      const d = new Date(ms);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    return '';
   }, []);
 
 
@@ -540,6 +567,14 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         return false;
       }
       
+      // Date filter: match events occurring on selectedDate (if set)
+      if (selectedDate) {
+        const evISO = normalizeDate(event.date || '');
+        if (!evISO || evISO !== selectedDate) {
+          return false;
+        }
+      }
+
       if (!activeCategory || event.category === activeCategory) {
         console.log(`✅ Event passes filter: ${event.name} at [${event.location.lat}, ${event.location.lng}]`);
         return true;
@@ -550,7 +585,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     
     console.log(`📍 HomeMap: ${filtered.length} events will be displayed on map`);
     return filtered;
-  }, [events, activeCategory]);
+  }, [events, activeCategory, selectedDate, normalizeDate]);
 
   // Group events that share (roughly) the same location so one marker opens a stack
   const groupedEvents = useMemo(() => {
@@ -587,6 +622,22 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       events: group.events.sort((a, b) => getStartMs(a) - getStartMs(b)),
     }));
   }, [filteredEvents]);
+
+  // Sort groups by primary event date according to sortOrder
+  const sortedGroupedEvents = useMemo(() => {
+    const getStartMs = (ev: EventNexusEvent) => {
+      const ts = `${ev.date}T${ev.time || '00:00'}`;
+      const ms = Date.parse(ts);
+      return Number.isFinite(ms) ? ms : Number.MAX_SAFE_INTEGER;
+    };
+    const groupsCopy = [...groupedEvents];
+    groupsCopy.sort((a, b) => {
+      const aMs = a.events.length ? getStartMs(a.events[0]) : Number.MAX_SAFE_INTEGER;
+      const bMs = b.events.length ? getStartMs(b.events[0]) : Number.MAX_SAFE_INTEGER;
+      return sortOrder === 'asc' ? aMs - bMs : bMs - aMs;
+    });
+    return groupsCopy;
+  }, [groupedEvents, sortOrder]);
 
   // Auto-translate selected event title/description based on viewer locale
   useEffect(() => {
@@ -773,7 +824,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           />
           <Circle center={userLocation} radius={searchRadius * 1000} pathOptions={{ fillColor: '#6366f1', fillOpacity: 0.03, color: '#6366f1', weight: 1, dashArray: '8, 12' }} />
           <Marker position={userLocation} icon={userIcon} />
-          {groupedEvents.map((group, idx) => {
+          {sortedGroupedEvents.map((group, idx) => {
             const primary = group.events[0]; // soonest event at this location
             const totalCount = group.events.length;
             const isMultipleEvents = totalCount > 1;
@@ -924,7 +975,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
 
       {/* Overlays */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-2 sm:px-4 z-[400] space-y-3">
-        <div className={`${
+        <div className={`$
           theme === 'light'
             ? 'bg-white/95 border-slate-200'
             : 'bg-slate-900/90 border-slate-800'
@@ -945,6 +996,37 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
             />
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto">
+            {/* Date filter */}
+            <div className={`relative flex items-center ${theme === 'light' ? 'bg-white' : 'bg-slate-800/60'} border ${theme === 'light' ? 'border-slate-200' : 'border-slate-700'} rounded-xl px-3 py-2`}>
+              <Calendar className={`w-4 h-4 mr-2 ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`} />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className={`text-sm ${theme === 'light' ? 'bg-white text-slate-900' : 'bg-transparent text-white'} focus:outline-none`}
+                aria-label="Filter events by date"
+              />
+              {selectedDate && (
+                <button
+                  onClick={() => setSelectedDate('')}
+                  className={`ml-2 p-1 rounded ${theme === 'light' ? 'hover:bg-slate-100' : 'hover:bg-slate-700'}`}
+                  aria-label="Clear date filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+            {/* Sort toggle */}
+            <button
+              onClick={() => setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))}
+              className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border ${
+                theme === 'light' ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-slate-800/60 border-slate-700 text-white hover:bg-slate-700'
+              }`}
+              aria-label={`Sort events by date ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
+            >
+              <Clock className="w-4 h-4" />
+              <span className="text-xs font-semibold">{sortOrder === 'asc' ? 'Earliest First' : 'Latest First'}</span>
+            </button>
             <div className="px-6 py-3 bg-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg shadow-indigo-600/30">
               {filteredEvents.length} Events Found
             </div>

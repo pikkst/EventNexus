@@ -325,10 +325,9 @@ const handleSubmit = async () => {
 #### ⚠️ Probleemid Leitud
 1. **No error recovery:** Pipeline fails on one bad event, stops entire batch
 2. **Rate limit handling:** Gemini 429 errors cause crash
-3. **No human review:** Events auto-publish without moderation
-4. **Country validation weak:** Still finds USA events sometimes
-5. **No scheduling:** Runs manually via Admin panel
-6. **Logs not persistent:** Console logs lost after browser refresh
+3. **No human review:** see on lahetatud kasutajate eventite reportimise võimalusega.
+4. **No scheduling:** Runs manually via Admin panel
+5. **Logs not persistent:** Console logs lost after browser refresh
 
 #### 📊 Kood Audit
 ```typescript
