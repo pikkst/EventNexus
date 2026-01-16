@@ -147,6 +147,46 @@ export const getOrganizerEvents = async (organizerId: string): Promise<EventNexu
   return (data || []).map(transformEventFromDB);
 };
 
+export const searchEvents = async (query: string, limit: number = 50): Promise<EventNexusEvent[]> => {
+  if (!query || query.trim().length === 0) {
+    return getEvents();
+  }
+
+  try {
+    // Try RPC full-text search first
+    const { data, error } = await supabase.rpc('search_events', {
+      search_query: query,
+      result_limit: limit
+    });
+
+    if (!error && data) {
+      return (data || []).map(transformEventFromDB);
+    }
+
+    // Fallback to LIKE search if RPC unavailable
+    const searchTerm = `%${query}%`;
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('events')
+      .select('*')
+      .eq('status', 'active')
+      .in('visibility', ['public', 'semi-private'])
+      .is('archived_at', null)
+      .or(`name.ilike.${searchTerm},description.ilike.${searchTerm},category.ilike.${searchTerm}`)
+      .order('date', { ascending: true })
+      .limit(limit);
+    
+    if (fallbackError) {
+      logger.error('Error searching events (fallback):', fallbackError);
+      return [];
+    }
+
+    return (fallbackData || []).map(transformEventFromDB);
+  } catch (err) {
+    logger.error('Error searching events:', err);
+    return [];
+  }
+};
+
 export const getAllUsers = async (): Promise<User[]> => {
   const { data, error } = await supabase
     .from('users')
