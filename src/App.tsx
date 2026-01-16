@@ -65,6 +65,7 @@ const OnboardingTutorial = lazy(() => import('./components/OnboardingTutorial'))
 const AdminCreditManager = lazy(() => import('./components/AdminCreditManager'));
 const CodeRedemption = lazy(() => import('./components/CodeRedemption'));
 const PublicEventsBrowse = lazy(() => import('./components/PublicEventsBrowse'));
+import ErrorBoundary from './components/ErrorBoundary';
 
 import { User, Notification, EventNexusEvent } from './types';
 import { CATEGORIES } from './constants';
@@ -830,8 +831,9 @@ const App: React.FC = () => {
         <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} user={user} />
         
         <main className="pt-16 flex-grow">
-          <Suspense fallback={<DashboardSkeleton />}>
-            <Routes>
+          <ErrorBoundary>
+            <Suspense fallback={<DashboardSkeleton />}>
+              <Routes>
               <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/browse" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/events" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} />} />
@@ -863,8 +865,9 @@ const App: React.FC = () => {
               <Route path="/cookies" element={<CookieSettings />} />
               <Route path="/gdpr" element={<GDPRCompliance />} />
               <Route path="/notifications" element={user ? <NotificationSettings user={user} onUpdatePrefs={handleUpdatePrefs} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            </Routes>
-          </Suspense>
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </main>
 
         <ConditionalFooter />
