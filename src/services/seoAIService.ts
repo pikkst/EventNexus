@@ -71,7 +71,7 @@ export async function generateSEORecommendations(
   seoMetrics: SEOMetric[]
 ): Promise<SEORecommendation[]> {
   try {
-    const ai = genAI;
+    const ai = getAI();
     
     // Analyze current metrics
     const avgPosition = seoMetrics.reduce((sum, m) => sum + m.position, 0) / seoMetrics.length;
@@ -134,7 +134,7 @@ export async function generateKeywordOptimization(
   seoMetrics: SEOMetric[]
 ): Promise<SEOOptimizationSuggestion[]> {
   try {
-    const ai = genAI;
+    const ai = getAI();
 
     // Identify keywords that could move from position 4-10 to 1-3
     const opportunityKeywords = seoMetrics.filter(m => m.position > 3 && m.position <= 10);
@@ -179,7 +179,7 @@ export async function generateMetaTagSuggestions(
   pageTitles?: Record<string, string>
 ): Promise<MetaTagSuggestion[]> {
   try {
-    const ai = genAI;
+    const ai = getAI();
 
     // Group keywords by URL
     const pageKeywords: Record<string, SEOMetric[]> = {};
@@ -247,7 +247,7 @@ export async function analyzeContentOptimization(
   semanticRelated: string[];
 }> {
   try {
-    const ai = genAI;
+    const ai = getAI();
 
     // Find related keywords for semantic SEO
     const relatedKeywords = seoMetrics
@@ -303,7 +303,7 @@ export async function generateSEOStrategy(
   monthlyGoals: string[];
 } | null> {
   try {
-    const ai = genAI;
+    const ai = getAI();
 
     const avgPosition = seoMetrics.reduce((sum, m) => sum + m.position, 0) / seoMetrics.length;
     const topKeywords = seoMetrics.slice(0, 5).map(m => m.keyword);
