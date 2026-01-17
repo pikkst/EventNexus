@@ -42,8 +42,36 @@ serve(async (req) => {
     console.log('Initializing Supabase client...');
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get real platform context
-    console.log('Fetching platform stats...');
+    // Refresh AI platform stats first
+    console.log('Refreshing AI platform stats...');
+    try {
+      const { error: refreshError } = await supabase.rpc('refresh_ai_platform_stats');
+      if (refreshError) {
+        console.error('Refresh error (non-critical):', refreshError);
+      } else {
+        console.log('Stats refreshed successfully');
+      }
+    } catch (e) {
+      console.error('Failed to refresh stats (non-critical):', e);
+    }
+
+    // Get real platform context - query directly from tables for accurate data
+    console.log('Fetching platform stats directly...');
+    
+    // Count active events
+    const { count: eventCount } = await supabase
+      .from('events')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active');
+    
+    // Count users
+    const { count: userCount } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+    
+    console.log('Direct counts - Events:', eventCount, 'Users:', userCount);
+
+    // Still try to get cached stats for other metrics
     const { data: stats, error: statsError } = await supabase
       .from('ai_platform_stats_cache')
       .select('*');
@@ -68,10 +96,13 @@ serve(async (req) => {
       console.log('Changelog loaded:', changelog?.length, 'entries');
     }
 
-    const userStat = stats?.find((s: any) => s.stat_name === 'total_users');
-    const eventStat = stats?.find((s: any) => s.stat_name === 'total_events');
+    // Use real counts or fallback to cached stats
+    const userStat = userCount || stats?.find((s: any) => s.stat_name === 'total_users')?.stat_value || 0;
+    const eventStat = eventCount || stats?.find((s: any) => s.stat_name === 'total_events')?.stat_value || 0;
     const platformPhase = stats?.find((s: any) => s.stat_name === 'platform_phase');
     const trendStat = stats?.find((s: any) => s.stat_name === 'event_creation_trend');
+
+    console.log('Final stats - Users:', userStat, 'Events:', eventStat);
 
     // Format changelog
     const changelogText = changelog?.map((c: any, i: number) => 
@@ -113,10 +144,10 @@ serve(async (req) => {
         <h2 style="margin: 0 0 16px 0; color: #fb923c; font-size: 18px; font-weight: bold;">📊 Reaalsed Platvormi Andmed</h2>
         <p style="margin: 0 0 8px 0; font-size: 14px; color: #cbd5e1;">Kuupäev: ${new Date().toLocaleDateString('et-EE')}</p>
         <ul style="margin: 12px 0; padding-left: 20px; font-size: 14px; line-height: 2;">
-          <li><strong style="color: #fb923c;">Platform Phase:</strong> ${platformPhase?.stat_value || 'new_platform'}</li>
-          <li><strong style="color: #fb923c;">Kasutajaid kokku:</strong> ${userStat?.stat_value || 0}</li>
-          <li><strong style="color: #fb923c;">Aktiivseid üritusi:</strong> ${eventStat?.stat_value || 0}</li>
-          <li><strong style="color: #fb923c;">Trend:</strong> ${trendStat?.stat_value || 'stable'}</li>
+          <li><strong style="color: #fb923c;">Platform Phase:</strong> ${platformPhase?.stat_value || 'active_growth'}</li>
+          <li><strong style="color: #fb923c;">Kasutajaid kokku:</strong> ${userStat}</li>
+          <li><strong style="color: #fb923c;">Aktiivseid üritusi:</strong> ${eventStat}</li>
+          <li><strong style="color: #fb923c;">Trend:</strong> ${trendStat?.stat_value || 'growing'}</li>
           <li><strong style="color: #fb923c;">Piletitasu:</strong> 2.5%</li>
         </ul>
       </div>
@@ -226,8 +257,8 @@ serve(async (req) => {
         emailId: resendData.id,
         recipientEmail,
         stats: {
-          totalUsers: userStat?.stat_value || 0,
-          totalEvents: eventStat?.stat_value || 0,
+          totalUsers: userStat,
+          totalEvents: eventStat,
           changelogEntries: changelog?.length || 0,
         },
       }),
