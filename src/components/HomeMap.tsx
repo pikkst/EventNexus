@@ -20,10 +20,11 @@ interface MapEffectsProps {
   center: [number, number];
   isFollowing: boolean;
   onMapMove?: (center: [number, number], zoom: number) => void;
+  onBoundsChange?: (bounds: L.LatLngBounds) => void;
   mapRef?: React.MutableRefObject<any>;
 }
 
-const MapEffects = ({ center, isFollowing, onMapMove, mapRef }: MapEffectsProps) => {
+const MapEffects = ({ center, isFollowing, onMapMove, onBoundsChange, mapRef }: MapEffectsProps) => {
   // SEO optimization for AI crawlers
   usePageSEO({
     path: '/map',
@@ -49,22 +50,20 @@ const MapEffects = ({ center, isFollowing, onMapMove, mapRef }: MapEffectsProps)
     if (isFollowing) { map.setView(center, map.getZoom(), { animate: true }); }
   }, [center, isFollowing, map]);
   
-  // Save map position whenever it changes
+  // Save map position and bounds whenever it changes
   useEffect(() => {
     const handleMapMove = () => {
       const center = map.getCenter();
       const zoom = map.getZoom();
+      const bounds = map.getBounds();
+      
       onMapMove?.([center.lat, center.lng], zoom);
+      onBoundsChange?.(bounds); // Notify parent of bounds change
     };
 
     map.on('moveend', handleMapMove);
-    map.on('zoomend', handleMapMove);
-
-    return () => {
-      map.off('moveend', handleMapMove);
-      map.off('zoomend', handleMapMove);
-    };
-  }, [map, onMapMove]);
+    return () => map.off('moveend', handleMapMove);
+  }, [map, onMapMove, onBoundsChange]);
   
   return null;
 };
@@ -261,6 +260,20 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     setCompactMode(next);
     try { localStorage.setItem('homemap_compact_mode', JSON.stringify(next)); } catch {}
   }, [compactMode]);
+
+  // Map bounds filtering: track visible region and show only events in bounds
+  const [allEvents, setAllEvents] = useState<EventNexusEvent[]>([]); // Cache all events
+  const [visibleBounds, setVisibleBounds] = useState<L.LatLngBounds | null>(null); // Current map bounds
+  const [visibleEventCount, setVisibleEventCount] = useState(0); // How many events are in bounds
+  
+  // Filter events based on map bounds
+  const filterEventsByBounds = useCallback((evts: EventNexusEvent[], bounds: L.LatLngBounds | null): EventNexusEvent[] => {
+    if (!bounds) return evts; // No bounds, show all
+    return evts.filter(evt => {
+      if (!evt.latitude || !evt.longitude) return false;
+      return bounds.contains([evt.latitude, evt.longitude]);
+    });
+  }, []);
   
   // Play notification sound
   const playNotificationSound = useCallback(() => {
@@ -332,7 +345,9 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     if (propEvents) {
       console.log(`📍 Using ${propEvents.length} events from parent (real-time mode)`);
       const activeEvents = filterActiveEvents(propEvents);
-      setEvents(activeEvents);
+      setAllEvents(activeEvents); // Store in allEvents cache
+      setEvents(filterEventsByBounds(activeEvents, visibleBounds)); // Show only visible
+      setVisibleEventCount(events.length);
       setIsLoading(false);
       return;
     }
@@ -351,21 +366,28 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         
         if (activeEvents.length > BATCH_SIZE) {
           console.log(`📍 Loading ${activeEvents.length} events in batches of ${BATCH_SIZE}...`);
+          setAllEvents(activeEvents); // Store all events in cache
           setEvents([]); // Clear first
           
-          for (let i = 0; i < activeEvents.length; i += BATCH_SIZE) {
-            const batch = activeEvents.slice(i, i + BATCH_SIZE);
+          // Load only visible events in batches
+          const visibleEvents = filterEventsByBounds(activeEvents, visibleBounds);
+          for (let i = 0; i < visibleEvents.length; i += BATCH_SIZE) {
+            const batch = visibleEvents.slice(i, i + BATCH_SIZE);
             setEvents(prev => [...prev, ...batch]);
             
             // Wait before next batch (except for last batch)
-            if (i + BATCH_SIZE < activeEvents.length) {
+            if (i + BATCH_SIZE < visibleEvents.length) {
               await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
             }
           }
-          console.log(`✅ All ${activeEvents.length} events loaded`);
+          setVisibleEventCount(visibleEvents.length);
+          console.log(`✅ All ${activeEvents.length} events loaded (${visibleEvents.length} visible in bounds)`);
         } else {
           // Small number of events, load directly
-          setEvents(activeEvents);
+          setAllEvents(activeEvents);
+          const visibleEvents = filterEventsByBounds(activeEvents, visibleBounds);
+          setEvents(visibleEvents);
+          setVisibleEventCount(visibleEvents.length);
         }
       } catch (error) {
         console.error('Error loading events:', error);
@@ -374,7 +396,17 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       }
     };
     loadEvents();
-  }, [propEvents]);
+  }, [propEvents, visibleBounds, filterEventsByBounds]);
+
+  // When bounds change and we have all events cached, re-filter display events
+  useEffect(() => {
+    if (allEvents.length > 0 && visibleBounds) {
+      const visibleEvents = filterEventsByBounds(allEvents, visibleBounds);
+      setEvents(visibleEvents);
+      setVisibleEventCount(visibleEvents.length);
+      console.log(`📍 Bounds changed: ${visibleEvents.length}/${allEvents.length} events visible`);
+    }
+  }, [visibleBounds, allEvents, filterEventsByBounds]);
 
   // Real-time subscription: Listen for new/updated/deleted events
   useEffect(() => {
@@ -876,6 +908,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
             center={userLocation} 
             isFollowing={isFollowingUser}
             onMapMove={saveMapPosition}
+            onBoundsChange={setVisibleBounds}
             mapRef={mapRef}
           />
           <Circle center={userLocation} radius={searchRadius * 1000} pathOptions={{ fillColor: '#6366f1', fillOpacity: 0.03, color: '#6366f1', weight: 1, dashArray: '8, 12' }} />
