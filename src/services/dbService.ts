@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { EventNexusEvent, User, Notification } from '../types';
 import logger from '../utils/logger';
+import { logAuth, logEventAction, logError, logEvent } from './auditService';
 
 // Helper function to transform database event to EventNexusEvent
 const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
@@ -268,9 +269,17 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
   
   if (error) {
     console.error('Error creating event:', error);
+    // Log event creation failure
+    logError(error, 'event_creation', event.organizerId, undefined, { eventName: event.name });
     return null;
   }
   
+  // Log successful event creation
+  logEventAction('create', data.id, event.name, event.organizerId, event.organizerName || 'Unknown', {
+    category: event.category,
+    price: event.price,
+    visibility: event.visibility
+  });
   // Notify followers of the organizer
   try {
     // Get all users who follow this organizer
@@ -963,11 +972,14 @@ export const signInUser = async (email: string, password: string) => {
   
   if (error) {
     console.error('Error signing in:', error);
+    // Log failed login attempt
+    logEvent('user_login', `Failed login attempt: ${email}`, { email, error: error.message }, 'warning');
     return { user: null, error };
   }
 
   // Check if email is confirmed
   if (data.user && !data.user.email_confirmed_at) {
+    logEvent('user_login', `Login blocked: email not confirmed - ${email}`, { email }, 'warning');
     return { 
       user: null, 
       error: { 
@@ -978,15 +990,26 @@ export const signInUser = async (email: string, password: string) => {
     };
   }
   
+  // Log successful login
+  if (data.user) {
+    logAuth('login', data.user.id, email);
+  }
+  
   return { user: data.user, error: null };
 };
 
 export const signOutUser = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase.auth.signOut();
   
   if (error) {
     console.error('Error signing out:', error);
     return false;
+  }
+  
+  // Log logout
+  if (user) {
+    logAuth('logout', user.id, user.email || 'unknown');
   }
   
   return true;
