@@ -831,7 +831,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
       )}
 
       {/* Analytics Tab */}
-      {activeTab === 'analytics' && analytics && analytics.emailStats && (
+      {activeTab === 'analytics' && analytics && analytics.emailStats && analytics.conversionFunnel && (
         <div className="space-y-6">
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -839,7 +839,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               <div className="flex items-center justify-between mb-2">
                 <Users className="w-8 h-8 text-white/80" />
               </div>
-              <p className="text-3xl font-black text-white">{analytics.totalProspects}</p>
+              <p className="text-3xl font-black text-white">{analytics?.totalProspects || 0}</p>
               <p className="text-sm text-white/80 font-medium">Total Prospects</p>
             </div>
 
@@ -855,7 +855,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               <div className="flex items-center justify-between mb-2">
                 <Eye className="w-8 h-8 text-white/80" />
               </div>
-              <p className="text-3xl font-black text-white">{analytics.openRate}%</p>
+              <p className="text-3xl font-black text-white">{analytics?.openRate || '0.0'}%</p>
               <p className="text-sm text-white/80 font-medium">Open Rate</p>
             </div>
 
@@ -863,7 +863,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               <div className="flex items-center justify-between mb-2">
                 <TrendingUp className="w-8 h-8 text-white/80" />
               </div>
-              <p className="text-3xl font-black text-white">{analytics.conversionRate}%</p>
+              <p className="text-3xl font-black text-white">{analytics?.conversionRate || '0.0'}%</p>
               <p className="text-sm text-white/80 font-medium">Conversion Rate</p>
             </div>
           </div>
@@ -873,15 +873,15 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
             <h3 className="text-xl font-black tracking-tighter mb-6">Conversion Funnel</h3>
             <div className="space-y-4">
               {[
-                { label: 'New', count: analytics.conversionFunnel.new, color: 'bg-blue-500' },
-                { label: 'Contacted', count: analytics.conversionFunnel.contacted, color: 'bg-yellow-500' },
-                { label: 'Responded', count: analytics.conversionFunnel.responded, color: 'bg-purple-500' },
-                { label: 'Interested', count: analytics.conversionFunnel.interested, color: 'bg-emerald-500' },
-                { label: 'Converted', count: analytics.conversionFunnel.converted, color: 'bg-green-600' },
-                { label: 'Not Interested', count: analytics.conversionFunnel.not_interested, color: 'bg-orange-500' },
+                { label: 'New', count: analytics?.conversionFunnel?.new || 0, color: 'bg-blue-500' },
+                { label: 'Contacted', count: analytics?.conversionFunnel?.contacted || 0, color: 'bg-yellow-500' },
+                { label: 'Responded', count: analytics?.conversionFunnel?.responded || 0, color: 'bg-purple-500' },
+                { label: 'Interested', count: analytics?.conversionFunnel?.interested || 0, color: 'bg-emerald-500' },
+                { label: 'Converted', count: analytics?.conversionFunnel?.converted || 0, color: 'bg-green-600' },
+                { label: 'Not Interested', count: analytics?.conversionFunnel?.not_interested || 0, color: 'bg-orange-500' },
               ].map((stage) => {
-                const percentage = analytics.totalProspects > 0 
-                  ? ((stage.count / analytics.totalProspects) * 100).toFixed(1)
+                const percentage = (analytics?.totalProspects || 0) > 0 
+                  ? ((stage.count / (analytics?.totalProspects || 1)) * 100).toFixed(1)
                   : '0.0';
                 return (
                   <div key={stage.label}>
@@ -907,7 +907,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8">
               <h3 className="text-xl font-black tracking-tighter mb-6">Prospects by Country</h3>
               <div className="space-y-3">
-                {Object.entries(analytics.byCountry)
+                {analytics?.byCountry && Object.entries(analytics.byCountry)
                   .sort(([, a], [, b]) => (b as number) - (a as number))
                   .map(([country, count]) => (
                     <div key={country} className="flex items-center justify-between">
