@@ -63,6 +63,7 @@ import {
   exportNewsletterEmails,
   unsubscribeNewsletter,
   deleteNewsletterSignup,
+  importNewsletterSignups,
   NewsletterSignup
 } from '../services/dbService';
 import MasterAuthModal from './MasterAuthModal';
@@ -156,6 +157,8 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [newsletterStats, setNewsletterStats] = useState<any>(null);
   const [isLoadingNewsletter, setIsLoadingNewsletter] = useState(true);
   const [newsletterFilter, setNewsletterFilter] = useState<'all' | 'active' | 'unsubscribed'>('all');
+  const [isImportingNewsletter, setIsImportingNewsletter] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const filteredUsers = useMemo(() => {
     return platformUsers.filter(u => {
@@ -725,6 +728,51 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       alert('Newsletter signup deleted successfully');
     } else {
       alert('Failed to delete newsletter signup');
+    }
+  };
+
+  const handleImportNewsletterCSV = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.endsWith('.csv')) {
+      alert('❌ Please select a CSV file');
+      return;
+    }
+
+    setIsImportingNewsletter(true);
+    try {
+      const content = await file.text();
+      const results = await importNewsletterSignups(content);
+
+      // Show results
+      let message = `✅ Import completed!\n\n`;
+      message += `• Successfully imported: ${results.success}\n`;
+      message += `• Failed: ${results.failed}\n`;
+      
+      if (results.errors.length > 0) {
+        message += `\n⚠️ Errors:\n`;
+        message += results.errors.slice(0, 10).join('\n');
+        if (results.errors.length > 10) {
+          message += `\n... and ${results.errors.length - 10} more errors`;
+        }
+      }
+
+      alert(message);
+
+      // Reload newsletter data
+      await loadNewsletter();
+
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      logger.error('Error importing CSV:', error);
+      alert('❌ Failed to import CSV file');
+    } finally {
+      setIsImportingNewsletter(false);
     }
   };
 
@@ -1414,6 +1462,30 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                   >
                     {newsletterFilter === 'active' ? 'Active Only' : 'Show All'}
                   </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isImportingNewsletter}
+                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-sm text-white transition-all flex items-center gap-2"
+                  >
+                    {isImportingNewsletter ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Importing...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4" />
+                        Import CSV
+                      </>
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv"
+                    onChange={handleImportNewsletterCSV}
+                    className="hidden"
+                  />
                   <button
                     onClick={handleExportNewsletterEmails}
                     className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold text-sm text-white transition-all flex items-center gap-2"

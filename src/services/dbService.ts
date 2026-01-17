@@ -5944,3 +5944,95 @@ export const deleteNewsletterSignup = async (id: string): Promise<boolean> => {
     return false;
   }
 };
+
+/**
+ * Import newsletter signups from CSV (admin only)
+ * CSV format: Email,Source,Subscribed At,Status
+ * Returns: { success: number, failed: number, errors: string[] }
+ */
+export const importNewsletterSignups = async (csvContent: string): Promise<{
+  success: number;
+  failed: number;
+  errors: string[];
+}> => {
+  const results = {
+    success: 0,
+    failed: 0,
+    errors: [] as string[]
+  };
+
+  try {
+    const lines = csvContent.trim().split('\n');
+    
+    // Skip header row
+    if (lines.length < 2) {
+      results.errors.push('CSV file is empty or has no data rows');
+      return results;
+    }
+
+    const dataRows = lines.slice(1); // Skip header
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i].trim();
+      if (!row) continue; // Skip empty rows
+
+      const parts = row.split(',').map(p => p.trim());
+      
+      if (parts.length < 1) {
+        results.errors.push(`Row ${i + 2}: Invalid format (missing email)`);
+        results.failed++;
+        continue;
+      }
+
+      const email = parts[0].toLowerCase();
+      const source = parts[1] || 'csv_import';
+      const subscribedAt = parts[2] || new Date().toISOString();
+      const isActive = parts[3] !== 'Unsubscribed';
+
+      // Validate email
+      if (!emailRegex.test(email)) {
+        results.errors.push(`Row ${i + 2}: Invalid email format (${email})`);
+        results.failed++;
+        continue;
+      }
+
+      // Check if email already exists
+      const { data: existing } = await supabase
+        .from('newsletter_signups')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (existing) {
+        results.errors.push(`Row ${i + 2}: Email already exists (${email})`);
+        results.failed++;
+        continue;
+      }
+
+      // Insert new signup
+      const { error } = await supabase
+        .from('newsletter_signups')
+        .insert({
+          email,
+          source,
+          subscribed_at: subscribedAt,
+          is_active: isActive,
+          unsubscribed_at: isActive ? null : new Date().toISOString()
+        });
+
+      if (error) {
+        results.errors.push(`Row ${i + 2}: Database error (${error.message})`);
+        results.failed++;
+      } else {
+        results.success++;
+      }
+    }
+
+    return results;
+  } catch (error) {
+    logger.error('Error importing newsletter signups:', error);
+    results.errors.push('Fatal error: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    return results;
+  }
+};
