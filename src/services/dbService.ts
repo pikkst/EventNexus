@@ -6360,3 +6360,256 @@ export const getMarketingAnalytics = async (days: number = 30): Promise<any> => 
   }
 };
 
+// ============================================================================
+// AI KNOWLEDGE BASE & CONTEXT SYSTEM
+// ============================================================================
+
+export interface AIKnowledgeEntry {
+  id: string;
+  category: string;
+  question: string;
+  answer: string;
+  language: string;
+  is_public: boolean;
+  priority: number;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AIPlatformStat {
+  stat_key: string;
+  stat_value: string;
+  stat_type: 'count' | 'percentage' | 'currency' | 'text' | 'trend';
+  is_public: boolean;
+  last_updated: string;
+  metadata: any;
+}
+
+export interface AIChangelog {
+  version: string;
+  release_date: string;
+  title: string;
+  description: string;
+  category: 'feature' | 'improvement' | 'bugfix' | 'security' | 'breaking_change';
+  is_public: boolean;
+}
+
+/**
+ * Get AI-safe platform context (real-time stats + knowledge base)
+ * This is the ONLY function AI agents should use to get platform data
+ * Automatically filters out private/sensitive information
+ */
+export const getAIPlatformContext = async (language: string = 'en'): Promise<{
+  statistics: AIPlatformStat[];
+  knowledge: AIKnowledgeEntry[];
+  recentChanges: AIChangelog[];
+  platformPhase: string;
+  lastUpdated: string;
+}> => {
+  try {
+    // Refresh stats before querying (ensures fresh data)
+    await supabase.rpc('refresh_ai_platform_stats');
+
+    // Get public statistics only
+    const { data: stats, error: statsError } = await supabase
+      .from('ai_platform_stats_cache')
+      .select('*')
+      .eq('is_public', true);
+
+    if (statsError) throw statsError;
+
+    // Get knowledge base for requested language
+    const { data: knowledge, error: knowledgeError } = await supabase
+      .from('ai_knowledge_base')
+      .select('*')
+      .eq('language', language)
+      .eq('is_public', true)
+      .order('priority', { ascending: false });
+
+    if (knowledgeError) throw knowledgeError;
+
+    // Get recent changelog (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: changelog, error: changelogError } = await supabase
+      .from('ai_platform_changelog')
+      .select('*')
+      .eq('is_public', true)
+      .gte('release_date', thirtyDaysAgo.toISOString().split('T')[0])
+      .order('release_date', { ascending: false })
+      .limit(10);
+
+    if (changelogError) throw changelogError;
+
+    const platformPhase = stats?.find(s => s.stat_key === 'platform_phase')?.stat_value || 'Beta Launch';
+
+    return {
+      statistics: stats || [],
+      knowledge: knowledge || [],
+      recentChanges: changelog || [],
+      platformPhase,
+      lastUpdated: new Date().toISOString()
+    };
+  } catch (error) {
+    logger.error('Error fetching AI platform context:', error);
+    return {
+      statistics: [],
+      knowledge: [],
+      recentChanges: [],
+      platformPhase: 'Unknown',
+      lastUpdated: new Date().toISOString()
+    };
+  }
+};
+
+/**
+ * Search knowledge base by question/topic
+ */
+export const searchKnowledgeBase = async (
+  query: string,
+  language: string = 'en',
+  limit: number = 5
+): Promise<AIKnowledgeEntry[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('ai_knowledge_base')
+      .select('*')
+      .eq('language', language)
+      .eq('is_public', true)
+      .or(`question.ilike.%${query}%,answer.ilike.%${query}%`)
+      .order('priority', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    logger.error('Error searching knowledge base:', error);
+    return [];
+  }
+};
+
+/**
+ * Log AI conversation for compliance and improvement
+ */
+export const logAIConversation = async (data: {
+  prospect_id?: string;
+  conversation_id: string;
+  user_message: string;
+  ai_response: string;
+  context_used: any;
+  credits_used?: number;
+}): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('ai_conversation_logs')
+      .insert(data);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    logger.error('Error logging AI conversation:', error);
+    return false;
+  }
+};
+
+/**
+ * Get privacy blacklist patterns (for client-side filtering)
+ */
+export const getPrivacyBlacklist = async (): Promise<Array<{
+  data_type: string;
+  description: string;
+  regex_pattern: string | null;
+}>> => {
+  try {
+    const { data, error } = await supabase
+      .from('ai_privacy_blacklist')
+      .select('data_type, description, regex_pattern');
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    logger.error('Error fetching privacy blacklist:', error);
+    return [];
+  }
+};
+
+/**
+ * Admin: Add knowledge base entry
+ */
+export const addKnowledgeEntry = async (entry: Omit<AIKnowledgeEntry, 'id' | 'created_at' | 'updated_at'>): Promise<AIKnowledgeEntry | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('ai_knowledge_base')
+      .insert(entry)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    logger.error('Error adding knowledge entry:', error);
+    return null;
+  }
+};
+
+/**
+ * Admin: Update knowledge base entry
+ */
+export const updateKnowledgeEntry = async (
+  id: string,
+  updates: Partial<AIKnowledgeEntry>
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('ai_knowledge_base')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    logger.error('Error updating knowledge entry:', error);
+    return false;
+  }
+};
+
+/**
+ * Get platform trend analysis (for AI context)
+ */
+export const getPlatformTrendAnalysis = async (): Promise<{
+  eventCreationTrend: string;
+  growthPercentage: number;
+  userGrowth: string;
+  ticketSales: string;
+}> => {
+  try {
+    const { data: stats } = await supabase
+      .from('ai_platform_stats_cache')
+      .select('*')
+      .eq('is_public', true);
+
+    if (!stats) throw new Error('No stats available');
+
+    const trendStat = stats.find(s => s.stat_key === 'event_creation_trend');
+    const totalEvents = stats.find(s => s.stat_key === 'total_events');
+    const totalUsers = stats.find(s => s.stat_key === 'total_users');
+    const totalTickets = stats.find(s => s.stat_key === 'total_tickets_sold');
+
+    return {
+      eventCreationTrend: trendStat?.stat_value || 'stable',
+      growthPercentage: trendStat?.metadata?.growth_percentage || 0,
+      userGrowth: `${totalUsers?.stat_value || 0} users`,
+      ticketSales: `${totalTickets?.stat_value || 0} tickets sold`
+    };
+  } catch (error) {
+    logger.error('Error getting platform trend analysis:', error);
+    return {
+      eventCreationTrend: 'stable',
+      growthPercentage: 0,
+      userGrowth: 'Growing',
+      ticketSales: 'Available on request'
+    };
+  }
+};

@@ -998,6 +998,26 @@ export const generateOutreachEmail = async (
       }
     }
 
+    // Import AI knowledge base functions dynamically to avoid circular dependencies
+    const { getAIPlatformContext, getPlatformTrendAnalysis } = await import('./dbService');
+
+    // Get REAL platform context (stats, trends, features)
+    const platformContext = await getAIPlatformContext(language);
+    const trendAnalysis = await getPlatformTrendAnalysis();
+
+    // Extract key stats for prompt
+    const totalUsers = platformContext.statistics.find(s => s.stat_key === 'total_users')?.stat_value || 'growing';
+    const totalEvents = platformContext.statistics.find(s => s.stat_key === 'total_events')?.stat_value || 'hundreds';
+    const platformPhase = platformContext.platformPhase || 'Beta Launch';
+    const eventTrend = trendAnalysis.eventCreationTrend || 'growing';
+    const growthRate = trendAnalysis.growthPercentage || 0;
+
+    // Get recent features from changelog
+    const recentFeatures = platformContext.recentChanges
+      .slice(0, 3)
+      .map(ch => `${ch.title} (${ch.version})`)
+      .join(', ');
+
     const ai = getAI();
     const model = ai.getGenerativeModel({
       model: 'gemini-2.0-flash-exp',
@@ -1022,6 +1042,22 @@ export const generateOutreachEmail = async (
 
     const prompt = `You are a professional B2B marketing specialist writing a personalized partnership email for EventNexus, an event discovery and ticketing platform.
 
+**REAL PLATFORM DATA (DO NOT INVENT OR MODIFY):**
+- Platform Phase: ${platformPhase}
+- Total Users: ${totalUsers}
+- Total Events: ${totalEvents}
+- Event Creation Trend: ${eventTrend} (${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}% last 7 days)
+- Recent Features: ${recentFeatures || 'AI-powered search, multilingual support, advanced analytics'}
+- Last Updated: ${new Date(platformContext.lastUpdated).toLocaleDateString()}
+
+**CRITICAL RULES:**
+1. Use ONLY the real platform data provided above
+2. DO NOT invent statistics, user counts, or revenue numbers
+3. DO NOT mention specific client names or private user data
+4. DO NOT share internal API keys, credentials, or secrets
+5. Focus on platform features, trends, and public information
+6. If you don't have specific data, use general terms like "growing user base" instead of inventing numbers
+
 **Target Company:**
 - Name: ${prospect.name}
 - Category: ${prospect.category}
@@ -1044,6 +1080,7 @@ ${template.body_template}
    - Replacing {senderName} with "EventNexus Team"
    - Adding 1-2 specific compliments based on their category and description
    - Tailoring benefits to their specific business type
+   - Incorporating REAL platform stats naturally (e.g., "with our ${eventTrend} platform...")
 
 2. Write in ${targetLanguage} language (maintain professional tone)
 
