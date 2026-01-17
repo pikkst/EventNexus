@@ -6247,6 +6247,44 @@ export const getMarketingTemplates = async (language?: string): Promise<Marketin
 /**
  * Get outreach history for a prospect
  */
+/**
+ * Get all outreach emails with prospect details
+ */
+export const getAllOutreachEmails = async (filters?: {
+  status?: string;
+  prospectId?: string;
+}): Promise<(MarketingOutreach & { prospect?: MarketingProspect })[]> => {
+  try {
+    let query = supabase
+      .from('marketing_outreach')
+      .select(`
+        *,
+        prospect:marketing_prospects(*)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (filters?.status && filters.status !== 'all') {
+      query = query.eq('status', filters.status);
+    }
+
+    if (filters?.prospectId) {
+      query = query.eq('prospect_id', filters.prospectId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    
+    return (data || []).map(item => ({
+      ...item,
+      prospect: Array.isArray(item.prospect) ? item.prospect[0] : item.prospect
+    }));
+  } catch (error) {
+    logger.error('Error fetching all outreach emails:', error);
+    return [];
+  }
+};
+
 export const getProspectOutreach = async (prospectId: string): Promise<MarketingOutreach[]> => {
   try {
     const { data, error } = await supabase
@@ -6330,33 +6368,73 @@ export const getMarketingAnalytics = async (days: number = 30): Promise<any> => 
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const { data, error } = await supabase
-      .from('marketing_analytics')
+    // Get all prospects with statistics
+    const { data: prospects, error: prospectsError } = await supabase
+      .from('marketing_prospects')
+      .select('*');
+
+    if (prospectsError) throw prospectsError;
+
+    // Get all outreach emails
+    const { data: outreach, error: outreachError } = await supabase
+      .from('marketing_outreach')
       .select('*')
-      .gte('date', startDate.toISOString().split('T')[0])
-      .order('date', { ascending: true });
+      .gte('created_at', startDate.toISOString());
 
-    if (error) throw error;
+    if (outreachError) throw outreachError;
 
-    // Aggregate totals
-    const totals = (data || []).reduce((acc, row) => ({
-      sent: acc.sent + (row.emails_sent || 0),
-      opened: acc.opened + (row.emails_opened || 0),
-      replied: acc.replied + (row.emails_replied || 0),
-      bounced: acc.bounced + (row.emails_bounced || 0),
-      conversions: acc.conversions + (row.conversions || 0)
-    }), { sent: 0, opened: 0, replied: 0, bounced: 0, conversions: 0 });
+    // Calculate statistics
+    const totalProspects = prospects?.length || 0;
+    const byStatus = (prospects || []).reduce((acc, p) => {
+      acc[p.status] = (acc[p.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const byCountry = (prospects || []).reduce((acc, p) => {
+      acc[p.country] = (acc[p.country] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const emailStats = {
+      total: outreach?.length || 0,
+      sent: outreach?.filter(e => e.status === 'sent' || e.status === 'opened' || e.status === 'replied').length || 0,
+      opened: outreach?.filter(e => e.status === 'opened' || e.status === 'replied').length || 0,
+      replied: outreach?.filter(e => e.status === 'replied').length || 0,
+      bounced: outreach?.filter(e => e.status === 'bounced').length || 0,
+      draft: outreach?.filter(e => e.status === 'draft').length || 0,
+    };
+
+    const conversionFunnel = {
+      new: byStatus['new'] || 0,
+      contacted: byStatus['contacted'] || 0,
+      responded: byStatus['responded'] || 0,
+      interested: byStatus['interested'] || 0,
+      converted: byStatus['converted'] || 0,
+      not_interested: byStatus['not_interested'] || 0,
+    };
 
     return {
-      daily: data || [],
-      totals,
-      openRate: totals.sent > 0 ? ((totals.opened / totals.sent) * 100).toFixed(1) : '0.0',
-      replyRate: totals.sent > 0 ? ((totals.replied / totals.sent) * 100).toFixed(1) : '0.0',
-      conversionRate: totals.sent > 0 ? ((totals.conversions / totals.sent) * 100).toFixed(1) : '0.0'
+      totalProspects,
+      byStatus,
+      byCountry,
+      emailStats,
+      conversionFunnel,
+      openRate: emailStats.sent > 0 ? ((emailStats.opened / emailStats.sent) * 100).toFixed(1) : '0.0',
+      replyRate: emailStats.sent > 0 ? ((emailStats.replied / emailStats.sent) * 100).toFixed(1) : '0.0',
+      conversionRate: totalProspects > 0 ? ((conversionFunnel.converted / totalProspects) * 100).toFixed(1) : '0.0'
     };
   } catch (error) {
     logger.error('Error fetching marketing analytics:', error);
-    return { daily: [], totals: { sent: 0, opened: 0, replied: 0, bounced: 0, conversions: 0 }, openRate: '0.0', replyRate: '0.0', conversionRate: '0.0' };
+    return { 
+      totalProspects: 0, 
+      byStatus: {}, 
+      byCountry: {}, 
+      emailStats: { total: 0, sent: 0, opened: 0, replied: 0, bounced: 0, draft: 0 },
+      conversionFunnel: { new: 0, contacted: 0, responded: 0, interested: 0, converted: 0, not_interested: 0 },
+      openRate: '0.0', 
+      replyRate: '0.0', 
+      conversionRate: '0.0' 
+    };
   }
 };
 
