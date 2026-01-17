@@ -86,7 +86,7 @@ export const generateSocialMediaPosts = async (
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-2.0-flash-thinking-exp',  // Thinking mode for strategic campaign analysis
       contents: `You are a social media marketing expert for EventNexus.
       Campaign: ${campaignTitle}
       Copy: ${campaignCopy}
@@ -273,7 +273,7 @@ export const generatePlatformGrowthCampaign = async (
       : platformFeatures.for_attendees;
     
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-2.0-flash-thinking-exp',  // Thinking mode for growth strategy analysis
       contents: `You are an expert growth marketing strategist for EventNexus, a premium map-first event discovery WEB PLATFORM.
       
       CRITICAL PLATFORM INFO:
@@ -1012,10 +1012,10 @@ export const generateOutreachEmail = async (
 
     const ai = getAI();
     const model = ai.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.0-flash-thinking-exp',  // Thinking mode for strategic B2B outreach
       generationConfig: {
         temperature: 0.8,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 4096,  // Increased for thinking process
       }
     });
 
