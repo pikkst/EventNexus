@@ -57,7 +57,13 @@ import {
   transitionToproduction,
   getCurrentEnvironment,
   getProductionTransitionHistory,
-  FinancialTransaction
+  FinancialTransaction,
+  getNewsletterSignups,
+  getNewsletterStats,
+  exportNewsletterEmails,
+  unsubscribeNewsletter,
+  deleteNewsletterSignup,
+  NewsletterSignup
 } from '../services/dbService';
 import MasterAuthModal from './MasterAuthModal';
 import Button from './Button';
@@ -144,6 +150,12 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
   const [consoleLogs, setConsoleLogs] = useState<LogEntry[]>([]);
   const [logFilter, setLogFilter] = useState<'all' | 'error' | 'warn' | 'info'>('all');
   const [autoScroll, setAutoScroll] = useState(true);
+
+  // Newsletter State
+  const [newsletterSignups, setNewsletterSignups] = useState<NewsletterSignup[]>([]);
+  const [newsletterStats, setNewsletterStats] = useState<any>(null);
+  const [isLoadingNewsletter, setIsLoadingNewsletter] = useState(true);
+  const [newsletterFilter, setNewsletterFilter] = useState<'all' | 'active' | 'unsubscribed'>('all');
 
   const filteredUsers = useMemo(() => {
     return platformUsers.filter(u => {
@@ -300,6 +312,17 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
           setPlatformUsers(users);
         } catch (error) {
           logger.error('Error refreshing users:', error);
+        }
+      }
+
+      if (activeTab === 'newsletter') {
+        try {
+          const signups = await getNewsletterSignups(newsletterFilter === 'active');
+          setNewsletterSignups(signups);
+          const stats = await getNewsletterStats();
+          setNewsletterStats(stats);
+        } catch (error) {
+          logger.error('Error refreshing newsletter data:', error);
         }
       }
     }, 10000);
@@ -645,12 +668,67 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     alert('System configuration updated successfully');
   };
 
+  const loadNewsletter = async () => {
+    setIsLoadingNewsletter(true);
+    try {
+      const [signups, stats] = await Promise.all([
+        getNewsletterSignups(newsletterFilter === 'active'),
+        getNewsletterStats()
+      ]);
+      setNewsletterSignups(signups);
+      setNewsletterStats(stats);
+    } catch (error) {
+      logger.error('Error loading newsletter data:', error);
+    } finally {
+      setIsLoadingNewsletter(false);
+    }
+  };
+
+  const handleExportNewsletterEmails = async () => {
+    try {
+      const csv = await exportNewsletterEmails(newsletterFilter === 'active');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `newsletter_subscribers_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      logger.error('Error exporting newsletter emails:', error);
+      alert('Failed to export newsletter emails');
+    }
+  };
+
+  const handleUnsubscribeEmail = async (email: string) => {
+    if (!confirm(`Unsubscribe ${email} from newsletter?`)) return;
+    const success = await unsubscribeNewsletter(email);
+    if (success) {
+      await loadNewsletter();
+      alert('Email unsubscribed successfully');
+    } else {
+      alert('Failed to unsubscribe email');
+    }
+  };
+
+  const handleDeleteNewsletterSignup = async (id: string) => {
+    if (!confirm('Permanently delete this newsletter signup? This action cannot be undone.')) return;
+    const success = await deleteNewsletterSignup(id);
+    if (success) {
+      await loadNewsletter();
+      alert('Newsletter signup deleted successfully');
+    } else {
+      alert('Failed to delete newsletter signup');
+    }
+  };
+
   const navItems = [
     { id: 'analytics', label: 'Global Insights', icon: <PieChart /> },
     { id: 'analytics-dashboard', label: 'GA & Meta Analytics', icon: <TrendingUp /> },
     { id: 'users', label: 'User Governance', icon: <Users /> },
     { id: 'event-reports', label: 'Event Reports', icon: <Flag /> },
     { id: 'inbox', label: 'Email Inbox', icon: <Mail /> },
+    { id: 'newsletter', label: 'Newsletter Subscribers', icon: <MailIcon /> },
     { id: 'ai-agents', label: 'AI Agent System', icon: <Bot /> },
     { id: 'marketing', label: 'Campaign Engine', icon: <Rocket /> },
     { id: 'analytics-campaign', label: 'Campaign Analytics', icon: <Target /> },
@@ -1256,6 +1334,170 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         {activeTab === 'inbox' && (
           <div className="animate-in fade-in duration-500">
             <AdminInbox />
+          </div>
+        )}
+
+        {activeTab === 'newsletter' && (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Newsletter Stats Cards */}
+            {newsletterStats && (
+              <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MailIcon className="w-4 h-4 text-indigo-400" />
+                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Total</p>
+                  </div>
+                  <p className="text-3xl font-black text-white">{newsletterStats.total}</p>
+                </div>
+                <div className="bg-slate-900 border border-emerald-800 rounded-2xl p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Active</p>
+                  </div>
+                  <p className="text-3xl font-black text-emerald-400">{newsletterStats.active}</p>
+                </div>
+                <div className="bg-slate-900 border border-orange-800 rounded-2xl p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <UserX className="w-4 h-4 text-orange-400" />
+                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Unsubscribed</p>
+                  </div>
+                  <p className="text-3xl font-black text-orange-400">{newsletterStats.unsubscribed}</p>
+                </div>
+                <div className="bg-slate-900 border border-blue-800 rounded-2xl p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-blue-400" />
+                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Today</p>
+                  </div>
+                  <p className="text-3xl font-black text-blue-400">{newsletterStats.today}</p>
+                </div>
+                <div className="bg-slate-900 border border-purple-800 rounded-2xl p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-4 h-4 text-purple-400" />
+                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest">This Week</p>
+                  </div>
+                  <p className="text-3xl font-black text-purple-400">{newsletterStats.thisWeek}</p>
+                </div>
+                <div className="bg-slate-900 border border-pink-800 rounded-2xl p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4 text-pink-400" />
+                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest">This Month</p>
+                  </div>
+                  <p className="text-3xl font-black text-pink-400">{newsletterStats.thisMonth}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Newsletter Actions */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h3 className="text-2xl font-black tracking-tighter mb-2">Newsletter Subscribers</h3>
+                  <p className="text-sm text-slate-400">Manage email signups from landing page and other sources</p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setNewsletterFilter(newsletterFilter === 'active' ? 'all' : 'active');
+                      loadNewsletter();
+                    }}
+                    className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${
+                      newsletterFilter === 'active'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                    }`}
+                  >
+                    {newsletterFilter === 'active' ? 'Active Only' : 'Show All'}
+                  </button>
+                  <button
+                    onClick={handleExportNewsletterEmails}
+                    className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold text-sm text-white transition-all flex items-center gap-2"
+                  >
+                    <ArrowUpRight className="w-4 h-4" />
+                    Export CSV
+                  </button>
+                </div>
+              </div>
+
+              {/* Newsletter Table */}
+              {isLoadingNewsletter ? (
+                <div className="text-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-400 mb-4" />
+                  <p className="text-slate-400">Loading newsletter subscribers...</p>
+                </div>
+              ) : newsletterSignups.length === 0 ? (
+                <div className="text-center py-12">
+                  <MailIcon className="w-12 h-12 mx-auto text-slate-600 mb-4" />
+                  <p className="text-slate-400 font-medium">No newsletter signups yet</p>
+                  <p className="text-sm text-slate-500 mt-2">Signups from landing page will appear here</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-800">
+                        <th className="text-left py-4 px-4 text-xs font-black text-slate-500 uppercase tracking-wider">Email</th>
+                        <th className="text-left py-4 px-4 text-xs font-black text-slate-500 uppercase tracking-wider">Source</th>
+                        <th className="text-left py-4 px-4 text-xs font-black text-slate-500 uppercase tracking-wider">Subscribed At</th>
+                        <th className="text-left py-4 px-4 text-xs font-black text-slate-500 uppercase tracking-wider">Status</th>
+                        <th className="text-right py-4 px-4 text-xs font-black text-slate-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {newsletterSignups.map((signup) => (
+                        <tr key={signup.id} className="border-b border-slate-800/50 hover:bg-slate-800/30">
+                          <td className="py-4 px-4">
+                            <p className="font-mono text-sm text-white">{signup.email}</p>
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className="inline-block px-3 py-1 bg-slate-800 rounded-full text-xs font-bold text-slate-300">
+                              {signup.source}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4">
+                            <p className="text-sm text-slate-400">
+                              {new Date(signup.subscribed_at).toLocaleDateString()} {new Date(signup.subscribed_at).toLocaleTimeString()}
+                            </p>
+                          </td>
+                          <td className="py-4 px-4">
+                            {signup.is_active ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-xs font-bold text-emerald-400">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-500/10 border border-orange-500/30 rounded-full text-xs font-bold text-orange-400">
+                                <UserX className="w-3 h-3" />
+                                Unsubscribed
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex items-center justify-end gap-2">
+                              {signup.is_active && (
+                                <button
+                                  onClick={() => handleUnsubscribeEmail(signup.email)}
+                                  className="p-2 bg-orange-600/10 hover:bg-orange-600/20 rounded-lg text-orange-400 transition-all"
+                                  title="Unsubscribe"
+                                >
+                                  <UserX className="w-4 h-4" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDeleteNewsletterSignup(signup.id)}
+                                className="p-2 bg-red-600/10 hover:bg-red-600/20 rounded-lg text-red-400 transition-all"
+                                title="Delete permanently"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

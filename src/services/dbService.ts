@@ -5801,3 +5801,146 @@ export const getUserSocialStats = async (userId: string): Promise<any | null> =>
     return null;
   }
 };
+
+/**
+ * Newsletter Signup Management
+ */
+export interface NewsletterSignup {
+  id: string;
+  email: string;
+  source: string;
+  subscribed_at: string;
+  is_active: boolean;
+  unsubscribed_at?: string;
+  metadata?: any;
+}
+
+/**
+ * Get all newsletter signups (admin only)
+ */
+export const getNewsletterSignups = async (
+  activeOnly: boolean = true
+): Promise<NewsletterSignup[]> => {
+  try {
+    let query = supabase
+      .from('newsletter_signups')
+      .select('*')
+      .order('subscribed_at', { ascending: false });
+
+    if (activeOnly) {
+      query = query.eq('is_active', true);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    logger.error('Error fetching newsletter signups:', error);
+    return [];
+  }
+};
+
+/**
+ * Get newsletter stats (admin only)
+ */
+export const getNewsletterStats = async (): Promise<{
+  total: number;
+  active: number;
+  unsubscribed: number;
+  today: number;
+  thisWeek: number;
+  thisMonth: number;
+}> => {
+  try {
+    const { data: all, error: allError } = await supabase
+      .from('newsletter_signups')
+      .select('id, is_active, subscribed_at');
+
+    if (allError) throw allError;
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const stats = {
+      total: all?.length || 0,
+      active: all?.filter(s => s.is_active).length || 0,
+      unsubscribed: all?.filter(s => !s.is_active).length || 0,
+      today: all?.filter(s => new Date(s.subscribed_at) >= today).length || 0,
+      thisWeek: all?.filter(s => new Date(s.subscribed_at) >= weekAgo).length || 0,
+      thisMonth: all?.filter(s => new Date(s.subscribed_at) >= monthAgo).length || 0,
+    };
+
+    return stats;
+  } catch (error) {
+    logger.error('Error fetching newsletter stats:', error);
+    return {
+      total: 0,
+      active: 0,
+      unsubscribed: 0,
+      today: 0,
+      thisWeek: 0,
+      thisMonth: 0,
+    };
+  }
+};
+
+/**
+ * Export newsletter emails to CSV format
+ */
+export const exportNewsletterEmails = async (activeOnly: boolean = true): Promise<string> => {
+  try {
+    const signups = await getNewsletterSignups(activeOnly);
+    const csv = [
+      'Email,Source,Subscribed At,Status',
+      ...signups.map(s => 
+        `${s.email},${s.source},${s.subscribed_at},${s.is_active ? 'Active' : 'Unsubscribed'}`
+      )
+    ].join('\n');
+    return csv;
+  } catch (error) {
+    logger.error('Error exporting newsletter emails:', error);
+    return '';
+  }
+};
+
+/**
+ * Unsubscribe email from newsletter (admin action)
+ */
+export const unsubscribeNewsletter = async (email: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('newsletter_signups')
+      .update({
+        is_active: false,
+        unsubscribed_at: new Date().toISOString()
+      })
+      .eq('email', email);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    logger.error('Error unsubscribing newsletter:', error);
+    return false;
+  }
+};
+
+/**
+ * Delete newsletter signup (admin only)
+ */
+export const deleteNewsletterSignup = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('newsletter_signups')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    logger.error('Error deleting newsletter signup:', error);
+    return false;
+  }
+};
