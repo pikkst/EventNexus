@@ -274,8 +274,11 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const filterEventsByBounds = useCallback((evts: EventNexusEvent[], bounds: L.LatLngBounds | null): EventNexusEvent[] => {
     if (!bounds) return evts; // No bounds, show all
     return evts.filter(evt => {
-      if (!evt.latitude || !evt.longitude) return false;
-      return bounds.contains([evt.latitude, evt.longitude]);
+      // Check both location object and direct properties for compatibility
+      const lat = evt.location?.lat ?? evt.latitude;
+      const lng = evt.location?.lng ?? evt.longitude;
+      if (!lat || !lng) return false;
+      return bounds.contains([lat, lng]);
     });
   }, []);
   
