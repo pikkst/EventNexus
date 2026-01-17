@@ -176,20 +176,25 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       setIsLoadingInfra(true);
       setIsLoadingCampaigns(true);
       setIsLoadingFinancials(true);
+      setIsLoadingNewsletter(true);
       try {
-        const [users, stats, infra, campaignsData, config, ledger] = await Promise.all([
+        const [users, stats, infra, campaignsData, config, ledger, newsletterSignupsData, newsletterStatsData] = await Promise.all([
           getAllUsers(),
           getPlatformStats(),
           getInfrastructureStats(),
           getCampaigns(),
           getSystemConfig(),
-          getFinancialLedger()
+          getFinancialLedger(),
+          getNewsletterSignups(newsletterFilter === 'active'),
+          getNewsletterStats()
         ]);
         setPlatformUsers(users);
         setPlatformStats(stats);
         setInfrastructureStats(infra);
         setCampaigns(campaignsData);
         setFinancialLedger(ledger);
+        setNewsletterSignups(newsletterSignupsData);
+        setNewsletterStats(newsletterStatsData);
         
         // Load system config
         if (config.global_ticket_fee) setGlobalTicketFee(parseFloat(config.global_ticket_fee));
@@ -263,6 +268,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
         setIsLoadingInfra(false);
         setIsLoadingCampaigns(false);
         setIsLoadingFinancials(false);
+        setIsLoadingNewsletter(false);
       }
     };
 
