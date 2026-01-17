@@ -237,6 +237,30 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     setCompactMode(next);
     try { localStorage.setItem('homemap_compact_mode', JSON.stringify(next)); } catch {}
   }, [compactMode]);
+
+  // Normalize event date strings to ISO yyyy-mm-dd (supports dd.mm.yyyy and ISO)
+  const normalizeDate = useCallback((dateStr: string): string => {
+    if (!dateStr || typeof dateStr !== 'string') return '';
+    // If already ISO-like (yyyy-mm-dd), return first 10 chars
+    const isoMatch = /^\d{4}-\d{2}-\d{2}/.test(dateStr);
+    if (isoMatch) return dateStr.substring(0, 10);
+    // Support Estonian style: dd.mm.yyyy
+    const dotMatch = dateStr.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+    if (dotMatch) {
+      const [, dd, mm, yyyy] = dotMatch;
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    // Fallback: try Date.parse then format
+    const ms = Date.parse(dateStr);
+    if (Number.isFinite(ms)) {
+      const d = new Date(ms);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    return '';
+  }, []);
   
   // Play notification sound
   const playNotificationSound = useCallback(() => {
@@ -298,30 +322,6 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     } catch (error) {
       console.error('Failed to save map position:', error);
     }
-  }, []);
-
-  // Normalize event date strings to ISO yyyy-mm-dd (supports dd.mm.yyyy and ISO)
-  const normalizeDate = useCallback((dateStr: string): string => {
-    if (!dateStr || typeof dateStr !== 'string') return '';
-    // If already ISO-like (yyyy-mm-dd), return first 10 chars
-    const isoMatch = /^\d{4}-\d{2}-\d{2}/.test(dateStr);
-    if (isoMatch) return dateStr.substring(0, 10);
-    // Support Estonian style: dd.mm.yyyy
-    const dotMatch = dateStr.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-    if (dotMatch) {
-      const [, dd, mm, yyyy] = dotMatch;
-      return `${yyyy}-${mm}-${dd}`;
-    }
-    // Fallback: try Date.parse then format
-    const ms = Date.parse(dateStr);
-    if (Number.isFinite(ms)) {
-      const d = new Date(ms);
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    }
-    return '';
   }, []);
 
 
