@@ -989,17 +989,26 @@ export const generateOutreachEmail = async (
   userId?: string
 ): Promise<{ subject: string; body: string } | null> => {
   try {
-    // Check and deduct credits (25 credits for email generation)
+    // Import AI knowledge base functions dynamically to avoid circular dependencies
+    const { getAIPlatformContext, getPlatformTrendAnalysis, getUser } = await import('./dbService');
+
+    // Check if user is admin - admins don't use credits
+    let isAdmin = false;
     if (userId) {
-      const hasCredits = await checkUserCredits(userId, 25);
-      if (!hasCredits) {
-        console.error('Insufficient credits for outreach email generation');
-        return null;
+      const user = await getUser(userId);
+      isAdmin = user?.role === 'admin';
+      
+      // Only check credits for non-admin users
+      if (!isAdmin) {
+        const hasCredits = await checkUserCredits(userId, 25);
+        if (!hasCredits) {
+          console.error('Insufficient credits for outreach email generation');
+          return null;
+        }
+      } else {
+        console.log('Admin user - bypassing credit check');
       }
     }
-
-    // Import AI knowledge base functions dynamically to avoid circular dependencies
-    const { getAIPlatformContext, getPlatformTrendAnalysis } = await import('./dbService');
 
     // Get REAL platform context (stats, trends, features)
     const platformContext = await getAIPlatformContext(language);
