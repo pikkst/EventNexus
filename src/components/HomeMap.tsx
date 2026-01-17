@@ -409,18 +409,37 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   useEffect(() => {
     if (allEvents.length > 0 && visibleBounds) {
       const visibleEvents = filterEventsByBounds(allEvents, visibleBounds);
-      // Fallback: if nothing is inside current bounds, show all events so guest users still see AI-imported events
-      if (visibleEvents.length === 0) {
-        console.log('📍 Bounds empty, showing all events (global fallback)');
+      
+      // Keep recently-added new events visible regardless of bounds (for 10 seconds)
+      const now = Date.now();
+      const recentNewEvents = allEvents.filter(evt => {
+        // Only include events added in the last 10 seconds
+        const createdAtMs = new Date(evt.created_at || 0).getTime();
+        return (now - createdAtMs) < 10000;
+      });
+      
+      // Combine: visible by bounds + recently added new events (deduplicated)
+      const visibleEventIds = new Set(visibleEvents.map(e => e.id));
+      const combinedEvents = [
+        ...visibleEvents,
+        ...recentNewEvents.filter(e => !visibleEventIds.has(e.id))
+      ];
+      
+      // Fallback: if nothing is visible AND no recent new events, show all events
+      if (combinedEvents.length === 0) {
+        console.log('📍 Bounds empty and no new events, showing all events (global fallback)');
         setEvents(allEvents);
         setVisibleEventCount(allEvents.length);
       } else {
-        setEvents(visibleEvents);
-        setVisibleEventCount(visibleEvents.length);
+        setEvents(combinedEvents);
+        setVisibleEventCount(combinedEvents.length);
+        if (recentNewEvents.length > 0) {
+          console.log(`📍 Bounds: ${visibleEvents.length} visible + ${recentNewEvents.length} recent new = ${combinedEvents.length} total`);
+        }
       }
-      console.log(`📍 Bounds changed: ${visibleEvents.length}/${allEvents.length} events visible`);
     }
   }, [visibleBounds, allEvents, filterEventsByBounds]);
+
 
   // Fetch current user ID for recommendations
   useEffect(() => {
@@ -466,7 +485,14 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               
               // Only add if active and has valid location (check for lat/lng, not coordinates)
               if (newEvent.location && newEvent.location.lat && newEvent.location.lng) {
-                setEvents(prev => [...prev, newEvent]);
+                setAllEvents(prev => {
+                  const exists = prev.some(e => e.id === newEvent.id);
+                  return exists ? prev.map(e => e.id === newEvent.id ? newEvent : e) : [...prev, newEvent];
+                });
+                setEvents(prev => {
+                  const exists = prev.some(e => e.id === newEvent.id);
+                  return exists ? prev.map(e => e.id === newEvent.id ? newEvent : e) : [...prev, newEvent];
+                });
                 setNewEventIds(prev => new Set(prev).add(newEvent.id));
                 setLiveUpdateCount(c => c + 1);
                 
@@ -516,6 +542,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               console.log('🔄 REALTIME: Event updated:', payload.new);
               const updatedEvent = payload.new as EventNexusEvent;
               
+              setAllEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
               setEvents(prev => prev.map(e => 
                 e.id === updatedEvent.id ? updatedEvent : e
               ));
@@ -533,6 +560,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               console.log('🗑️ REALTIME: Event deleted:', payload.old);
               const deletedId = (payload.old as any).id;
               
+              setAllEvents(prev => prev.filter(e => e.id !== deletedId));
               setEvents(prev => prev.filter(e => e.id !== deletedId));
               setLiveUpdateCount(c => c + 1);
             }
@@ -604,6 +632,10 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           
           if (!currentEventIds.has(newEvent.id)) {
             console.log('📡 POLL: Found new event:', newEvent.name);
+            setAllEvents(prev => {
+              const exists = prev.some(e => e.id === newEvent.id);
+              return exists ? prev.map(e => e.id === newEvent.id ? newEvent as EventNexusEvent : e) : [...prev, newEvent as EventNexusEvent];
+            });
             setEvents(prev => [...prev, newEvent as EventNexusEvent]);
             setNewEventIds(prev => new Set(prev).add(newEvent.id));
             setLiveUpdateCount(c => c + 1);
