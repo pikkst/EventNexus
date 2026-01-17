@@ -2,7 +2,10 @@
  * Geocoding Service with Caching and Retry Logic
  * Handles location lookup from address strings and coordinates
  * Caches results for 24 hours to reduce Nominatim API calls
+ * Rate limits requests to prevent abuse
  */
+
+import { rateLimiters } from './rateLimitService';
 
 interface GeocodeResult {
   lat: number;
@@ -86,7 +89,7 @@ async function retryWithBackoff<T>(
 
 /**
  * Geocode address string to coordinates
- * Implements caching and retry logic
+ * Implements caching and retry logic with rate limiting
  */
 export async function geocodeAddress(address: string): Promise<GeocodeResult> {
   if (!address || address.trim().length === 0) {
@@ -98,6 +101,18 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
   if (cached) {
     console.log('📍 Geocode cache hit:', address);
     return cached;
+  }
+  
+  // Check rate limit
+  const limiter = rateLimiters.geocoding;
+  const status = limiter.checkLimit();
+  if (status.limited) {
+    throw new Error(`Rate limited. Try again in ${(status.retryAfterMs / 1000).toFixed(1)}s`);
+  }
+  
+  // Record rate limit
+  if (!limiter.recordRequest()) {
+    throw new Error('Rate limited');
   }
   
   console.log('🔍 Geocoding address:', address);
@@ -141,6 +156,7 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
 /**
  * Reverse geocode coordinates to address
  * Useful for map-based location selection
+ * Rate limited to prevent abuse
  */
 export async function reverseGeocode(lat: number, lng: number): Promise<GeocodeResult> {
   const query = `${lat},${lng}`;
@@ -150,6 +166,18 @@ export async function reverseGeocode(lat: number, lng: number): Promise<GeocodeR
   if (cached) {
     console.log('📍 Reverse geocode cache hit:', query);
     return cached;
+  }
+  
+  // Check rate limit
+  const limiter = rateLimiters.geocoding;
+  const status = limiter.checkLimit();
+  if (status.limited) {
+    throw new Error(`Rate limited. Try again in ${(status.retryAfterMs / 1000).toFixed(1)}s`);
+  }
+  
+  // Record rate limit
+  if (!limiter.recordRequest()) {
+    throw new Error('Rate limited');
   }
   
   console.log('🔍 Reverse geocoding:', query);
