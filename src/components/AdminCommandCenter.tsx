@@ -800,7 +800,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
       )}
       
       {/* Sidebar Navigation */}
-      <aside className={`fixed inset-y-0 left-0 z-[100] w-72 bg-slate-900 border-r border-slate-800 transition-transform lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col`}>
+      <aside className={`fixed inset-y-0 left-0 z-[100] w-72 bg-slate-900 border-r border-slate-800 transition-transform lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col max-h-screen overflow-hidden`}>
         <div className="p-8 border-b border-slate-800/50 flex items-center gap-3 flex-shrink-0">
           <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-600/20"><ShieldAlert className="text-white" size={20} /></div>
           <div>
@@ -808,7 +808,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
             <p className="text-[8px] font-black uppercase text-slate-500 tracking-[0.2em]">Platform Management</p>
           </div>
         </div>
-        <nav className="p-4 space-y-1 mt-4 flex-1 overflow-y-auto scrollbar-hide">
+        <nav className="p-4 space-y-1 mt-4 flex-1 overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: 'thin', scrollbarColor: '#475569 #1e293b' }}>
           {navItems.map((item) => (
             <button 
               key={item.id} 

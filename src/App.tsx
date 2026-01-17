@@ -1131,8 +1131,8 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
   return (
     <>
       {isOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1050]" onClick={closeSidebar} />}
-      <aside className={`fixed inset-y-0 left-0 z-[1100] w-72 bg-slate-900 transform transition-transform duration-300 ease-in-out border-r border-slate-800 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-6 flex items-center justify-between border-b border-slate-800">
+      <aside className={`fixed inset-y-0 left-0 z-[1100] w-72 bg-slate-900 transform transition-transform duration-300 ease-in-out border-r border-slate-800 max-h-screen overflow-hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
             <Compass className="w-6 h-6 text-indigo-500" />
             <span className="font-black text-xl tracking-tighter text-white">EventNexus</span>
@@ -1141,7 +1141,7 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
             <X className="w-6 h-6" />
           </button>
         </div>
-        <div className="p-4 space-y-1">
+        <nav className="p-4 space-y-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 97px)', scrollbarWidth: 'thin', scrollbarColor: '#475569 #1e293b' }}>
           <SidebarItem icon={<MapIcon />} label="Explore Map" to="/map" onClick={closeSidebar} />
           <SidebarItem icon={<PlusCircle />} label="Create Event" to="/create" onClick={closeSidebar} />
           <SidebarItem icon={<TicketIcon />} label="My Tickets" to="/profile" onClick={closeSidebar} />
@@ -1167,7 +1167,7 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
               <SidebarItem icon={<Globe />} label="Social Media" to="/social-media" onClick={closeSidebar} />
             </>
           )}
-        </div>
+        </nav>
       </aside>
     </>
   );
