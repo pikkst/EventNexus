@@ -85,8 +85,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
     if (exitIntentShown) return; // Only show once per session
     
     const handleMouseLeave = (e: MouseEvent) => {
-      // Only trigger if mouse is leaving from top of the page
-      if (e.clientY <= 0) {
+      // Only trigger if:
+      // 1. Mouse is leaving from top of the page (actual exit intent)
+      // 2. User hasn't seen the popup yet this session
+      if (e.clientY <= 10 && e.clientY >= 0) {
+        // Additional check: ensure user has scrolled some content first (min 500px)
+        if (window.scrollY < 500) {
+          return; // Don't show if user hasn't engaged with the page yet
+        }
+        
         trackCTAClick('exit_intent_shown');
         setShowExitIntentPopup(true);
         setExitIntentShown(true);

@@ -42,10 +42,10 @@ class ErrorBoundary extends Component<Props, State> {
     console.error('Error Boundary caught an error:', error, errorInfo);
     
     // Store error for debugging on page
-    if (!window.__errorLog) {
-      window.__errorLog = [];
+    if (!(window as any).__errorLog) {
+      (window as any).__errorLog = [];
     }
-    window.__errorLog.push({
+    (window as any).__errorLog.push({
       component: 'ErrorBoundary',
       timestamp: new Date().toISOString(),
       message: error.message,

@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import Breadcrumbs from './Breadcrumbs';
+import { MapLocationPicker } from './MapLocationPicker';
 import { 
   ChevronRight, 
   ChevronLeft, 
@@ -26,12 +28,14 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { createEvent, getEvents, getUser, deductUserCredits, uploadEventImage } from '../services/dbService';
+import { geocodeAddress as geocodeAddressService } from '../services/geocodingService';
 import { createScannerCode } from '../services/scannerCodeService';
 import { trackEventCreation } from '../services/analyticsService';
 import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
 import { FEATURE_UNLOCK_COSTS } from '../services/featureUnlockService';
 import { User, EventNexusEvent } from '../types';
 import { generateCreateEventSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
+import CreditsPricingModal from './CreditsPricingModal';
 
 // Simple logger for debugging
 const logger = {
@@ -77,28 +81,75 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       return 'dark';
     }
   });
-  const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    description: '',
-    tagline: '',
-    aboutText: '',
-    date: '',
-    time: '',
-    end_date: '',
-    end_time: '',
-    location: '',
-    locationLat: 58.8934,
-    locationLng: 25.9659,
-    locationAddress: '',
-    locationCity: '',
-    visibility: 'public',
-    price: 0,
-    max_capacity: 100,
-    is_multilingual: false // Enable AI auto-translation for viewers
+  
+  // Load draft from localStorage on component mount
+  const [formData, setFormData] = useState(() => {
+    try {
+      const savedDraft = localStorage.getItem('eventnexus_event_draft');
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        // Validate that draft has required fields before using it
+        if (parsed && typeof parsed === 'object') {
+          console.log('[EventCreation] Restored draft from localStorage');
+          return {
+            name: parsed.name || '',
+            category: parsed.category || '',
+            description: parsed.description || '',
+            tagline: parsed.tagline || '',
+            aboutText: parsed.aboutText || '',
+            date: parsed.date || '',
+            time: parsed.time || '',
+            end_date: parsed.end_date || '',
+            end_time: parsed.end_time || '',
+            location: parsed.location || '',
+            locationLat: parsed.locationLat || 58.8934,
+            locationLng: parsed.locationLng || 25.9659,
+            locationAddress: parsed.locationAddress || '',
+            locationCity: parsed.locationCity || '',
+            visibility: parsed.visibility || 'public',
+            price: parsed.price || 0,
+            max_capacity: parsed.max_capacity || 100,
+            is_multilingual: parsed.is_multilingual || false
+          };
+        }
+      }
+    } catch (error) {
+      console.warn('[EventCreation] Failed to restore draft:', error);
+    }
+    
+    // Default empty form if no draft found
+    return {
+      name: '',
+      category: '',
+      description: '',
+      tagline: '',
+      aboutText: '',
+      date: '',
+      time: '',
+      end_date: '',
+      end_time: '',
+      location: '',
+      locationLat: 58.8934,
+      locationLng: 25.9659,
+      locationAddress: '',
+      locationCity: '',
+      visibility: 'public',
+      price: 0,
+      max_capacity: 100,
+      is_multilingual: false
+    };
   });
 
-  const [ticketTemplates, setTicketTemplates] = useState<Array<{
+  // Credits pricing modal state
+  const [showCreditsPricingModal, setShowCreditsPricingModal] = useState(() => {
+    // Show modal on first mount if user is free tier with low credits
+    try {
+      const shown = localStorage.getItem('eventnexus_credits_modal_shown');
+      return !shown && (user.subscription_tier === 'free' && userCredits < 50);
+    } catch {
+      return false;
+    }
+  });  const [ticketTemplates, setTicketTemplates] = useState<Array<{
     name: string;
     type: 'general' | 'vip' | 'early_bird' | 'day_pass' | 'multi_day' | 'backstage' | 'student' | 'group';
     price: number;
@@ -120,6 +171,23 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       cleanupSEO();
     };
   }, []);
+
+  // Auto-save draft to localStorage every 30 seconds (prevent data loss)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      // Only save if user has started filling the form
+      if (formData.name || formData.description || formData.category) {
+        try {
+          localStorage.setItem('eventnexus_event_draft', JSON.stringify(formData));
+          console.log('[EventCreation] Draft auto-saved to localStorage');
+        } catch (error) {
+          console.warn('[EventCreation] Failed to save draft:', error);
+        }
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(timer);
+  }, [formData]);
 
   // Image handling functions
   const compressImage = async (file: File): Promise<File> => {
@@ -281,34 +349,23 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     }
   };
 
-  // Geocode address using Nominatim (OpenStreetMap)
+  // Geocode address using improved service with caching and retry logic
   const geocodeAddress = async (address: string) => {
     if (!address || address.trim().length < 3) return;
     
     setIsGeocoding(true);
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=ee&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': 'EventNexus/1.0'
-          }
-        }
-      );
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        const result = data[0];
-        setFormData(prev => ({
-          ...prev,
-          locationLat: parseFloat(result.lat),
-          locationLng: parseFloat(result.lon),
-          locationAddress: result.display_name,
-          locationCity: result.address?.city || result.address?.town || result.address?.village || 'Estonia'
-        }));
-      }
+      const result = await geocodeAddressService(address);
+      setFormData(prev => ({
+        ...prev,
+        locationLat: result.lat,
+        locationLng: result.lng,
+        locationAddress: result.address || result.displayName,
+        locationCity: result.city || 'Estonia'
+      }));
     } catch (error) {
       logger.error('Geocoding error:', error);
+      alert(`Could not find location: ${address}. Please try again or use the map picker.`);
     } finally {
       setIsGeocoding(false);
     }
@@ -533,6 +590,52 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       </div>
     );
   }
+
+  const handleClearDraft = () => {
+    if (confirm('Are you sure you want to clear your draft? This cannot be undone.')) {
+      try {
+        localStorage.removeItem('eventnexus_event_draft');
+        // Reset form to empty state
+        setFormData({
+          name: '',
+          category: '',
+          description: '',
+          tagline: '',
+          aboutText: '',
+          date: '',
+          time: '',
+          end_date: '',
+          end_time: '',
+          location: '',
+          locationLat: 58.8934,
+          locationLng: 25.9659,
+          locationAddress: '',
+          locationCity: '',
+          visibility: 'public',
+          price: 0,
+          max_capacity: 100,
+          is_multilingual: false
+        });
+        setImageFile(null);
+        setImagePreview('');
+        setStep(1);
+        console.log('[EventCreation] Draft cleared successfully');
+        alert('Draft cleared! Starting fresh.');
+      } catch (error) {
+        console.warn('[EventCreation] Failed to clear draft:', error);
+      }
+    }
+  };
+
+  const handleCloseCreditsPricingModal = () => {
+    setShowCreditsPricingModal(false);
+    // Mark modal as shown to avoid showing it again
+    try {
+      localStorage.setItem('eventnexus_credits_modal_shown', 'true');
+    } catch (error) {
+      console.warn('[EventCreation] Failed to save modal state:', error);
+    }
+  };
 
   const handleGeminiTagline = async () => {
     if (!formData.name || !formData.category) return;
@@ -802,6 +905,15 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         const successMessage = translationCount > 0 
           ? `Event created successfully!\n\n🌐 Auto-translated into ${translationCount} languages: ${Object.keys(translations).join(', ').toUpperCase()}${scannerMessage}`
           : `Event created successfully!${scannerMessage}`;
+        
+        // Clear draft from localStorage after successful creation
+        try {
+          localStorage.removeItem('eventnexus_event_draft');
+          console.log('[EventCreation] Cleared draft after successful creation');
+        } catch (error) {
+          console.warn('[EventCreation] Failed to clear draft:', error);
+        }
+        
         alert(successMessage);
         // Notify parent to reload events
         if (onEventCreated) {
@@ -826,7 +938,18 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       case 1:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-2xl font-bold">The Basics</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">The Basics</h2>
+              {(formData.name || formData.description || formData.category) && (
+                <button
+                  onClick={handleClearDraft}
+                  className="text-xs text-slate-500 hover:text-red-400 transition-colors flex items-center gap-1"
+                  title="Clear saved draft and start fresh"
+                >
+                  <span>Clear Draft</span>
+                </button>
+              )}
+            </div>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1.5">Event Name</label>
@@ -861,15 +984,18 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               <div>
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="block text-sm font-medium text-slate-400">Catchy Tagline</label>
-                  <button 
-                    onClick={handleGeminiTagline}
-                    disabled={isGenerating || !formData.name || !formData.category}
-                    aria-label="Generate AI tagline"
-                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 disabled:opacity-50"
-                    title="AI will generate a catchy tagline based on your event name and category"
-                  >
-                    <Sparkles className="w-3 h-3" aria-hidden="true" /> AI Generate
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">2 credits</span>
+                    <button 
+                      onClick={handleGeminiTagline}
+                      disabled={isGenerating || !formData.name || !formData.category}
+                      aria-label="Generate AI tagline"
+                      className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 disabled:opacity-50"
+                      title="AI will generate a catchy tagline based on your event name and category"
+                    >
+                      <Sparkles className="w-3 h-3" aria-hidden="true" /> AI Generate
+                    </button>
+                  </div>
                 </div>
                 <input 
                   type="text" 
@@ -989,38 +1115,27 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               </div>
             </div>
             
-            {/* Interactive Map */}
-            <div className="relative rounded-2xl border border-slate-800 overflow-hidden h-64">
-              <MapContainer 
-                center={[formData.locationLat, formData.locationLng]} 
-                zoom={formData.locationAddress ? 15 : 7}
-                style={{ height: '100%', width: '100%' }}
-                key={`${formData.locationLat}-${formData.locationLng}`}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url={mapTheme === 'light' 
-                    ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                  }
-                />
-                {formData.locationAddress && (
-                  <Marker position={[formData.locationLat, formData.locationLng]}>
-                    <Popup>
-                      <div className="text-sm">
-                        <p className="font-semibold">{formData.name || 'Event Location'}</p>
-                        <p className="text-xs text-slate-600 mt-1">{formData.locationCity}</p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                )}
-              </MapContainer>
-              {!formData.locationAddress && (
-                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-                  <p className="text-sm font-medium flex items-center gap-2 text-slate-400">
-                    <MapPin className="w-4 h-4" /> Enter address and click Search to preview location
-                  </p>
-                </div>
+            {/* Interactive Map Location Picker */}
+            <div>
+              <label className="block text-sm font-medium mb-2 text-slate-200">Drag pin or click on map to select location</label>
+              <MapLocationPicker
+                initialLat={formData.locationLat}
+                initialLng={formData.locationLng}
+                onLocationSelect={(lat, lng, address) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    locationLat: lat,
+                    locationLng: lng,
+                    locationAddress: address || prev.locationAddress,
+                    locationCity: prev.locationCity
+                  }));
+                }}
+                isLoading={isGeocoding}
+              />
+              {formData.locationAddress && (
+                <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                  📍 {formData.locationAddress}
+                </p>
               )}
             </div>
           </div>
@@ -1075,8 +1190,13 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   type="button"
                   onClick={handleGenerateAIImage}
                   disabled={isGeneratingImage || !formData.name || !formData.category}
-                  className="h-48 border-2 border-dashed border-slate-700 hover:border-orange-500 rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-48 border-2 border-dashed border-slate-700 hover:border-orange-500 rounded-2xl flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/50 disabled:opacity-50 disabled:cursor-not-allowed relative"
                 >
+                  {/* Credit Cost Badge */}
+                  <div className="absolute top-3 right-3 bg-orange-600/20 border border-orange-600/50 px-2 py-1 rounded text-xs font-semibold text-orange-400">
+                    5 credits
+                  </div>
+
                   <div className="w-16 h-16 bg-orange-600/10 rounded-2xl flex items-center justify-center">
                     {isGeneratingImage ? (
                       <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin" />
@@ -1313,7 +1433,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   className="mt-1 w-5 h-5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-950"
                 />
                 <div className="flex-1">
-                  <h4 className="font-bold mb-1">Enable Multilingual Event 🌍</h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold">Enable Multilingual Event 🌍</h4>
+                    <span className="text-xs bg-purple-600/20 border border-purple-600/50 px-2 py-0.5 rounded text-purple-400 font-semibold">3 credits</span>
+                  </div>
                   <p className="text-xs text-slate-400 mb-2">
                     AI automatically translates your event for international visitors based on their language preferences.
                   </p>
@@ -1474,6 +1597,22 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12 min-h-screen">
+      {/* Credits Pricing Modal */}
+      <CreditsPricingModal
+        isOpen={showCreditsPricingModal}
+        onClose={handleCloseCreditsPricingModal}
+        userCredits={userCredits}
+        userTier={user.subscription_tier || 'free'}
+      />
+
+      {/* Breadcrumbs */}
+      <Breadcrumbs 
+        items={[
+          { label: 'Dashboard', path: '/dashboard' },
+          { label: 'Create Event' }
+        ]}
+      />
+      
       <div className="mb-12">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">

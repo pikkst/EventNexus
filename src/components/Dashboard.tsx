@@ -122,12 +122,109 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }) => {
   const navigate = useNavigate();
+  
+  // ====== ALL STATE DECLARATIONS FIRST - BEFORE ANY EFFECTS OR MEMOS ======
+  
+  // Main events and loading state
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [salesData, setSalesData] = useState<any[]>([]);
+  
+  // Tab and UI state
   const [activeTab, setActiveTab] = useState<'overview' | 'payouts' | 'marketing' | 'infra' | 'branding' | 'integrations' | 'affiliate' | 'scanner-codes'>('overview');
   const [isGeneratingAd, setIsGeneratingAd] = useState(false);
   const [componentError, setComponentError] = useState<Error | null>(null);
+  const [genStage, setGenStage] = useState('');
+  const [adCampaign, setAdCampaign] = useState<any[]>([]);
+  const [isSuccessManagerOpen, setIsSuccessManagerOpen] = useState(false);
+  const [showConnectSuccess, setShowConnectSuccess] = useState(false);
+  const [isVerifyingConnect, setIsVerifyingConnect] = useState(false);
+  
+  // Event selection and broadcasting
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [broadcastingTo, setBroadcastingTo] = useState<string | null>(null);
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  
+  // Campaign generation
+  const [campaignTheme, setCampaignTheme] = useState('');
+  const [campaignAudience, setCampaignAudience] = useState('general');
+  const [deployModalOpen, setDeployModalOpen] = useState(false);
+  const [selectedAdForDeploy, setSelectedAdForDeploy] = useState<any>(null);
+  
+  // Social media accounts
+  const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  
+  // Poster generation
+  const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
+  const [posterDesign, setPosterDesign] = useState<PosterDesign | null>(null);
+  const [selectedAdForPoster, setSelectedAdForPoster] = useState<any>(null);
+  
+  // Translations
+  const [eventTranslations, setEventTranslations] = useState<{ [eventId: string]: { name: string } }>({});
+  
+  // Event filtering
+  const [eventSearchTerm, setEventSearchTerm] = useState('');
+  const [eventStatusFilter, setEventStatusFilter] = useState<'all' | 'upcoming' | 'past' | 'free' | 'paid'>('all');
+  const [eventCategoryFilter, setEventCategoryFilter] = useState<string>('all');
+  const [eventSortBy, setEventSortBy] = useState<'date-asc' | 'date-desc' | 'name' | 'revenue'>('date-asc');
+  
+  // Branding/edit state
+  const [tempBranding, setTempBranding] = useState(user.branding || {
+    primaryColor: '#6366f1',
+    accentColor: '#818cf8',
+    tagline: '',
+    customDomain: '',
+    bannerUrl: '',
+    services: [],
+    pageConfig: {
+      heroType: 'image',
+      heroMedia: '',
+      showStats: true,
+      showTestimonials: true,
+      showTeam: true,
+      showPartners: true,
+      showMediaCoverage: true,
+      showEventHighlights: true,
+      enableContactForm: true,
+      enableNewsletter: true,
+      enableSocialSharing: true,
+      enableVIPAccess: false,
+      customSections: [],
+      layout: 'modern',
+      theme: 'dark'
+    }
+  });
+  const [tempBio, setTempBio] = useState(user.bio || '');
+  const [tempSlug, setTempSlug] = useState(user.agency_slug || user.agencySlug || '');
+  
+  // Enterprise integrations
+  const [integrations, setIntegrations] = useState({
+    meta: { connected: true, apiKey: 'pk_meta_live_9201...' },
+    google: { connected: true, apiKey: 'google_ads_v14_...' },
+    tiktok: { connected: false, apiKey: null },
+    x: { connected: true, apiKey: 'x_auth_token_...' }
+  });
+  
+  // Revenue state
+  const [revenueSummary, setRevenueSummary] = useState<RevenueSummary | null>(null);
+  const [revenueByEvent, setRevenueByEvent] = useState<RevenueByEvent[]>([]);
+  const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
+  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummaryItem[]>([]);
+  const [isProcessingPayouts, setIsProcessingPayouts] = useState(false);
+  const [payoutProcessingResult, setPayoutProcessingResult] = useState<any>(null);
+  
+  // Affiliate state
+  const [affiliateStats, setAffiliateStats] = useState<AffiliateStats | null>(null);
+  const [affiliateReferrals, setAffiliateReferrals] = useState<AffiliateReferralActivity[]>([]);
+  const [isLoadingAffiliate, setIsLoadingAffiliate] = useState(false);
+  const [affiliateCodeCopied, setAffiliateCodeCopied] = useState(false);
+  
+  // Refs (hooks that must come before effects)
+  const translationCache = useRef<Map<string, { name: string }>>(new Map());
+  
+  const DISABLE_ORGANIZER_FILTERS = true;
 
   // Log component mount and initialization
   useEffect(() => {
@@ -140,36 +237,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       debugLog(`Dashboard component unmounted`);
     };
   }, [user.id, user.name, user.email, user.role]);
-  const [genStage, setGenStage] = useState('');
-  const [adCampaign, setAdCampaign] = useState<any[]>([]);
-  const [isSuccessManagerOpen, setIsSuccessManagerOpen] = useState(false);
-  const [showConnectSuccess, setShowConnectSuccess] = useState(false);
-  const [isVerifyingConnect, setIsVerifyingConnect] = useState(false);
-  
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [broadcastingTo, setBroadcastingTo] = useState<string | null>(null);
-  const [broadcastMessage, setBroadcastMessage] = useState('');
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
-  const [campaignTheme, setCampaignTheme] = useState('');
-  const [campaignAudience, setCampaignAudience] = useState('general');
-  const [deployModalOpen, setDeployModalOpen] = useState(false);
-  const [selectedAdForDeploy, setSelectedAdForDeploy] = useState<any>(null);
-  const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
-  const [loadingAccounts, setLoadingAccounts] = useState(false);
-  
-  // Poster generation state
-  const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
-  const [posterDesign, setPosterDesign] = useState<PosterDesign | null>(null);
-  const [selectedAdForPoster, setSelectedAdForPoster] = useState<any>(null);
-  const [eventTranslations, setEventTranslations] = useState<{ [eventId: string]: { name: string } }>({});
-  const translationCache = useRef<Map<string, { name: string }>>(new Map());
-
-  // Event filtering state
-  const [eventSearchTerm, setEventSearchTerm] = useState('');
-  const [eventStatusFilter, setEventStatusFilter] = useState<'all' | 'upcoming' | 'past' | 'free' | 'paid'>('all');
-  const [eventCategoryFilter, setEventCategoryFilter] = useState<string>('all');
-  const [eventSortBy, setEventSortBy] = useState<'date-asc' | 'date-desc' | 'name' | 'revenue'>('date-asc');
-  const DISABLE_ORGANIZER_FILTERS = true;
 
   // Filter and sort events
   const filteredAndSortedEvents = useMemo(() => {
@@ -352,89 +419,70 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     checkStripeReturn();
   }, [user.id, onUpdateUser]);
 
-  // Load user's events from database
+  // Load user's events and revenue data in parallel (optimized loading)
   useEffect(() => {
-    const loadEvents = async () => {
-      debugLog(`Starting to load events for user: ${user.id}`);
+    const loadDashboardData = async () => {
+      debugLog(`Starting to load dashboard data for user: ${user.id}`);
       setIsLoadingEvents(true);
-      try {
-        debugLog('Calling getOrganizerEvents...');
-        const userEvents = await getOrganizerEvents(user.id);
-        debugLog(`Successfully loaded ${userEvents.length} events`, userEvents);
-        if (DISABLE_ORGANIZER_FILTERS) return events;
-        let result = [...events];
-        if (userEvents.length > 0 && !selectedEventId) {
-          setSelectedEventId(userEvents[0].id);
-        }
-      } catch (error) {
-        debugError('Error loading events', error);
-        logger.error('Error loading events:', error);
-      } finally {
-        setIsLoadingEvents(false);
-        debugLog('Event loading complete');
-      }
-    };
-    loadEvents();
-  }, [user.id, selectedEventId]);
-
-  // Auto-refresh events every 10 seconds for live updates
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const userEvents = await getOrganizerEvents(user.id);
-        setEvents(userEvents);
-      } catch (error) {
-        console.error('Error auto-refreshing events:', error);
-      }
-    }, 10000); // 10 seconds
-
-    return () => clearInterval(interval);
-  }, [user.id]);
-
-  // Load revenue data
-  useEffect(() => {
-    const loadRevenue = async () => {
       setIsLoadingRevenue(true);
+      
       try {
-        console.log('[Dashboard] Loading revenue for organizer:', user.id);
-        const [summary, byEvent, attendance] = await Promise.all([
+        // Load events and revenue in parallel for faster performance
+        const [userEvents, summary, byEvent, attendance] = await Promise.all([
+          getOrganizerEvents(user.id),
           getOrganizerRevenueSummary(user.id),
           getOrganizerRevenue(user.id),
           getOrganizerAttendanceSummary(user.id)
         ]);
+        
+        // Process events
+        debugLog(`Successfully loaded ${userEvents.length} events`, userEvents);
+        if (!DISABLE_ORGANIZER_FILTERS) {
+          if (userEvents.length > 0 && !selectedEventId) {
+            setSelectedEventId(userEvents[0].id);
+          }
+        }
+        
+        // Process revenue
         console.log('[Dashboard] Revenue summary:', summary);
         console.log('[Dashboard] Revenue by event:', byEvent);
         console.log('[Dashboard] Attendance summary:', attendance);
         setRevenueSummary(summary);
         setRevenueByEvent(byEvent);
         setAttendanceSummary(attendance);
-        // Generate sales chart data from real revenue
         setSalesData(generateSalesData(byEvent));
+        
       } catch (error) {
-        console.error('[Dashboard] Error loading revenue:', error);
-        logger.error('Error loading revenue:', error);
+        debugError('Error loading dashboard data', error);
+        logger.error('Error loading dashboard data:', error);
       } finally {
+        setIsLoadingEvents(false);
         setIsLoadingRevenue(false);
+        debugLog('Dashboard data loading complete');
       }
     };
-    loadRevenue();
-  }, [user.id]);
+    
+    loadDashboardData();
+  }, [user.id, selectedEventId]);
 
-  // Auto-refresh revenue data every 10 seconds for live updates
+  // Auto-refresh events and revenue every 10 seconds for live updates
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const [summary, byEvent, attendance] = await Promise.all([
+        const [userEvents, summary, byEvent, attendance] = await Promise.all([
+          getOrganizerEvents(user.id),
           getOrganizerRevenueSummary(user.id),
           getOrganizerRevenue(user.id),
           getOrganizerAttendanceSummary(user.id)
         ]);
+        
+        setEvents(userEvents);
         setRevenueSummary(summary);
         setRevenueByEvent(byEvent);
         setAttendanceSummary(attendance);
         setSalesData(generateSalesData(byEvent));
       } catch (error) {
-        console.error('Error auto-refreshing revenue:', error);
+        console.error('Error auto-refreshing dashboard data:', error);
       }
     }, 10000); // 10 seconds
 
@@ -492,56 +540,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
     loadAffiliateData();
   }, [user.id, activeTab, user.subscription_tier]);
 
-  // Edit State
-  const [tempBranding, setTempBranding] = useState(user.branding || {
-    primaryColor: '#6366f1',
-    accentColor: '#818cf8',
-    tagline: '',
-    customDomain: '',
-    bannerUrl: '',
-    services: [],
-    pageConfig: {
-      heroType: 'image',
-      heroMedia: '',
-      showStats: true,
-      showTestimonials: true,
-      showTeam: true,
-      showPartners: true,
-      showMediaCoverage: true,
-      showEventHighlights: true,
-      enableContactForm: true,
-      enableNewsletter: true,
-      enableSocialSharing: true,
-      enableVIPAccess: false,
-      customSections: [],
-      layout: 'modern',
-      theme: 'dark'
-    }
-  });
-  const [tempBio, setTempBio] = useState(user.bio || '');
-  const [tempSlug, setTempSlug] = useState(user.agency_slug || user.agencySlug || '');
 
-  // Enterprise Integration State
-  const [integrations, setIntegrations] = useState({
-    meta: { connected: true, apiKey: 'pk_meta_live_9201...' },
-    google: { connected: true, apiKey: 'google_ads_v14_...' },
-    tiktok: { connected: false, apiKey: null },
-    x: { connected: true, apiKey: 'x_auth_token_...' }
-  });
-
-  // Revenue State
-  const [revenueSummary, setRevenueSummary] = useState<RevenueSummary | null>(null);
-  const [revenueByEvent, setRevenueByEvent] = useState<RevenueByEvent[]>([]);
-  const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
-  const [attendanceSummary, setAttendanceSummary] = useState<AttendanceSummaryItem[]>([]);
-  const [isProcessingPayouts, setIsProcessingPayouts] = useState(false);
-  const [payoutProcessingResult, setPayoutProcessingResult] = useState<any>(null);
-
-  // Affiliate State
-  const [affiliateStats, setAffiliateStats] = useState<AffiliateStats | null>(null);
-  const [affiliateReferrals, setAffiliateReferrals] = useState<AffiliateReferralActivity[]>([]);
-  const [isLoadingAffiliate, setIsLoadingAffiliate] = useState(false);
-  const [affiliateCodeCopied, setAffiliateCodeCopied] = useState(false);
 
   // Only gate free users when they have no events yet; free users with events unlocked via credits should have full access
   const isGated = user.subscription_tier === 'free' && !isLoadingEvents && events.length === 0;

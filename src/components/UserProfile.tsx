@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Breadcrumbs from './Breadcrumbs';
 import { 
   Ticket as TicketIcon, 
   Heart, 
@@ -783,6 +784,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
+      {/* Breadcrumbs */}
+      <Breadcrumbs 
+        items={[
+          { label: 'Dashboard', path: '/dashboard' },
+          { label: 'Profile' }
+        ]}
+      />
+      
       {/* Profile Header */}
       <div className="relative mb-16">
         <div 
