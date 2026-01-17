@@ -13,6 +13,7 @@ import {
   getMarketingProspects,
   getMarketingTemplates,
   getProspectOutreach,
+  getAllOutreachEmails,
   createOutreachEmail,
   updateProspectStatus,
   getMarketingAnalytics
@@ -29,6 +30,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
   const [activeTab, setActiveTab] = useState<'prospects' | 'outreach' | 'analytics' | 'templates'>('prospects');
   const [prospects, setProspects] = useState<MarketingProspect[]>([]);
   const [templates, setTemplates] = useState<MarketingTemplate[]>([]);
+  const [allOutreach, setAllOutreach] = useState<(MarketingOutreach & { prospect?: MarketingProspect })[]>([]);
   const [selectedProspect, setSelectedProspect] = useState<MarketingProspect | null>(null);
   const [prospectOutreach, setProspectOutreach] = useState<MarketingOutreach[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
@@ -64,15 +66,17 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
       if (statusFilter !== 'all') filters.status = statusFilter;
       if (countryFilter !== 'all') filters.country = countryFilter;
 
-      const [prospectsData, templatesData, analyticsData] = await Promise.all([
+      const [prospectsData, templatesData, analyticsData, outreachData] = await Promise.all([
         getMarketingProspects(filters),
         getMarketingTemplates(),
-        getMarketingAnalytics(30)
+        getMarketingAnalytics(30),
+        getAllOutreachEmails()
       ]);
 
       setProspects(prospectsData);
       setTemplates(templatesData);
       setAnalytics(analyticsData);
+      setAllOutreach(outreachData);
     } catch (error) {
       logger.error('Error loading marketing data:', error);
     } finally {
@@ -716,6 +720,236 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
                 <Download className="w-4 h-4" />
                 Copy to Clipboard
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Campaigns Tab */}
+      {activeTab === 'outreach' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-black tracking-tighter">Email Campaigns</h3>
+              <div className="flex gap-2">
+                <select
+                  onChange={(e) => {
+                    const filtered = e.target.value === 'all' 
+                      ? allOutreach 
+                      : allOutreach.filter(o => o.status === e.target.value);
+                    setAllOutreach(filtered);
+                  }}
+                  className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
+                >
+                  <option value="all">All Status</option>
+                  <option value="sent">Sent</option>
+                  <option value="draft">Draft</option>
+                  <option value="opened">Opened</option>
+                  <option value="replied">Replied</option>
+                  <option value="bounced">Bounced</option>
+                </select>
+                <button
+                  onClick={loadData}
+                  className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {allOutreach.length === 0 ? (
+              <div className="text-center py-12">
+                <Mail className="w-12 h-12 mx-auto text-slate-600 mb-4" />
+                <p className="text-slate-400 font-medium">No emails yet</p>
+                <p className="text-sm text-slate-500 mt-2">Start sending emails from the Prospects tab</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {allOutreach.map((email) => (
+                  <div key={email.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-6 hover:border-indigo-500/30 transition-all">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h4 className="font-black text-white">{email.subject}</h4>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            email.status === 'sent' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                            email.status === 'opened' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                            email.status === 'replied' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
+                            email.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                            email.status === 'bounced' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                            'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                          }`}>
+                            {email.status.toUpperCase()}
+                          </span>
+                        </div>
+                        {email.prospect && (
+                          <div className="flex items-center gap-4 text-sm text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <Users className="w-4 h-4" />
+                              {email.prospect.name}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Mail className="w-4 h-4" />
+                              {email.prospect.email}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Globe className="w-4 h-4" />
+                              {email.prospect.country}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right text-xs text-slate-500">
+                        {email.sent_at ? (
+                          <div className="flex items-center gap-1">
+                            <CheckCircle2 className="w-4 h-4 text-green-400" />
+                            Sent {new Date(email.sent_at).toLocaleDateString()}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-4 h-4 text-yellow-400" />
+                            Created {new Date(email.created_at).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="bg-slate-900/50 rounded-lg p-4">
+                      <p className="text-sm text-slate-300 line-clamp-3">{email.body}</p>
+                    </div>
+                    {email.ai_generated && (
+                      <div className="mt-3 flex items-center gap-2 text-xs text-indigo-400">
+                        <Sparkles className="w-3 h-3" />
+                        AI-Generated
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Analytics Tab */}
+      {activeTab === 'analytics' && analytics && (
+        <div className="space-y-6">
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-3xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <Users className="w-8 h-8 text-white/80" />
+              </div>
+              <p className="text-3xl font-black text-white">{analytics.totalProspects}</p>
+              <p className="text-sm text-white/80 font-medium">Total Prospects</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-3xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <Send className="w-8 h-8 text-white/80" />
+              </div>
+              <p className="text-3xl font-black text-white">{analytics.emailStats.sent}</p>
+              <p className="text-sm text-white/80 font-medium">Emails Sent</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-3xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <Eye className="w-8 h-8 text-white/80" />
+              </div>
+              <p className="text-3xl font-black text-white">{analytics.openRate}%</p>
+              <p className="text-sm text-white/80 font-medium">Open Rate</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-3xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <TrendingUp className="w-8 h-8 text-white/80" />
+              </div>
+              <p className="text-3xl font-black text-white">{analytics.conversionRate}%</p>
+              <p className="text-sm text-white/80 font-medium">Conversion Rate</p>
+            </div>
+          </div>
+
+          {/* Conversion Funnel */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8">
+            <h3 className="text-xl font-black tracking-tighter mb-6">Conversion Funnel</h3>
+            <div className="space-y-4">
+              {[
+                { label: 'New', count: analytics.conversionFunnel.new, color: 'bg-blue-500' },
+                { label: 'Contacted', count: analytics.conversionFunnel.contacted, color: 'bg-yellow-500' },
+                { label: 'Responded', count: analytics.conversionFunnel.responded, color: 'bg-purple-500' },
+                { label: 'Interested', count: analytics.conversionFunnel.interested, color: 'bg-emerald-500' },
+                { label: 'Converted', count: analytics.conversionFunnel.converted, color: 'bg-green-600' },
+                { label: 'Not Interested', count: analytics.conversionFunnel.not_interested, color: 'bg-orange-500' },
+              ].map((stage) => {
+                const percentage = analytics.totalProspects > 0 
+                  ? ((stage.count / analytics.totalProspects) * 100).toFixed(1)
+                  : '0.0';
+                return (
+                  <div key={stage.label}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-bold text-white">{stage.label}</span>
+                      <span className="text-sm text-slate-400">{stage.count} ({percentage}%)</span>
+                    </div>
+                    <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
+                      <div 
+                        className={`h-full ${stage.color} transition-all duration-500`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Countries & Email Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* By Country */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8">
+              <h3 className="text-xl font-black tracking-tighter mb-6">Prospects by Country</h3>
+              <div className="space-y-3">
+                {Object.entries(analytics.byCountry)
+                  .sort(([, a], [, b]) => (b as number) - (a as number))
+                  .map(([country, count]) => (
+                    <div key={country} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-slate-500" />
+                        <span className="text-sm font-bold text-white">{country}</span>
+                      </div>
+                      <span className="text-sm text-slate-400">{count as number}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* Email Statistics */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8">
+              <h3 className="text-xl font-black tracking-tighter mb-6">Email Statistics</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
+                  <span className="text-sm font-bold text-slate-400">Total Emails</span>
+                  <span className="text-lg font-black text-white">{analytics.emailStats.total}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
+                  <span className="text-sm font-bold text-slate-400">Sent</span>
+                  <span className="text-lg font-black text-green-400">{analytics.emailStats.sent}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
+                  <span className="text-sm font-bold text-slate-400">Opened</span>
+                  <span className="text-lg font-black text-blue-400">{analytics.emailStats.opened}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
+                  <span className="text-sm font-bold text-slate-400">Replied</span>
+                  <span className="text-lg font-black text-purple-400">{analytics.emailStats.replied}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
+                  <span className="text-sm font-bold text-slate-400">Drafts</span>
+                  <span className="text-lg font-black text-yellow-400">{analytics.emailStats.draft}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
+                  <span className="text-sm font-bold text-slate-400">Bounced</span>
+                  <span className="text-lg font-black text-red-400">{analytics.emailStats.bounced}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
