@@ -823,3 +823,189 @@ export interface EventReport {
   created_at: string;
   updated_at?: string;
 }
+
+// ============================================
+// Social Features - Phase 1
+// ============================================
+
+export interface EventAttendee {
+  id: string;
+  event_id: string;
+  user_id: string;
+  visibility: 'public' | 'friends_only' | 'hidden';
+  status: 'going' | 'interested' | 'maybe';
+  joined_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserInterests {
+  id: string;
+  user_id: string;
+  categories: string[]; // Array of event categories
+  preferred_days: string[]; // ['Monday', 'Saturday', etc]
+  preferred_time: 'morning' | 'afternoon' | 'evening' | 'any';
+  bio: string;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventCheckin {
+  id: string;
+  event_id: string;
+  user_id: string;
+  checked_in_at: string;
+  post_text: string;
+  media_url?: string;
+  location_lat?: number;
+  location_lng?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserFeedItem {
+  id: string;
+  user_id: string;
+  type: 'checkin' | 'rsvp' | 'review' | 'photo' | 'achievement';
+  event_id?: string;
+  content: Record<string, any>;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventAttendeePreview {
+  user_id: string;
+  name: string;
+  avatar_url?: string;
+}
+
+// ============= PHASE 2: Buddy Matching, Communities, Reviews =============
+
+/**
+ * User Buddy/Friends System
+ * Manages peer-to-peer connections between users based on shared interests
+ */
+export interface UserBuddy {
+  id: string;
+  user_id_1: string;
+  user_id_2: string;
+  status: 'pending' | 'accepted' | 'blocked';
+  common_interests: string[];
+  common_events: number;
+  initiated_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Buddy Match Suggestion
+ * Recommended friends based on shared interests and events
+ */
+export interface BuddyMatch {
+  user_id: string;
+  name: string;
+  avatar: string;
+  common_categories: string[];
+  common_event_count: number;
+  similarity_score: number;
+}
+
+/**
+ * Event Community/Group
+ * Groups organized around specific interests or event types
+ */
+export interface EventCommunity {
+  id: string;
+  name: string;
+  description: string;
+  organizer_id: string;
+  category: string;
+  interests: string[];
+  avatar_url?: string;
+  banner_url?: string;
+  is_public: boolean;
+  member_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Community Membership
+ * User's role and status within a community
+ */
+export interface CommunityMember {
+  id: string;
+  community_id: string;
+  user_id: string;
+  role: 'member' | 'moderator' | 'organizer';
+  joined_at: string;
+}
+
+/**
+ * Event Review
+ * User feedback and rating for attended events
+ */
+export interface EventReview {
+  id: string;
+  event_id: string;
+  user_id: string;
+  rating: number; // 1-5 stars
+  title?: string;
+  content: string;
+  atmosphere_rating?: number; // 1-5
+  value_rating?: number; // 1-5 (price/value)
+  organization_rating?: number; // 1-5
+  photos?: string[];
+  is_verified_attendee: boolean;
+  helpful_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Event Rating Summary
+ * Aggregated ratings for an event
+ */
+export interface EventRatingSummary {
+  avg_rating: number;
+  total_reviews: number;
+  avg_atmosphere?: number;
+  avg_value?: number;
+  avg_organization?: number;
+}
+
+/**
+ * Review Helpful Vote
+ * User vote on review helpfulness
+ */
+export interface ReviewHelpfulVote {
+  id: string;
+  review_id: string;
+  user_id: string;
+  is_helpful: boolean;
+  created_at: string;
+}
+
+/**
+ * User Following
+ * Social graph for following users
+ */
+export interface UserFollower {
+  id: string;
+  follower_id: string;
+  following_id: string;
+  created_at: string;
+}
+
+/**
+ * User Social Stats
+ * Aggregated social metrics for a user
+ */
+export interface UserSocialStats {
+  followers_count: number;
+  following_count: number;
+  friends_count: number;
+  reviews_count: number;
+}

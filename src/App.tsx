@@ -29,7 +29,9 @@ import {
   Mail,
   Gift,
   Coins,
-  Smartphone
+  Smartphone,
+  Users,
+  Heart
 } from 'lucide-react';
 
 // Lightweight components - load immediately
@@ -65,6 +67,9 @@ const OnboardingTutorial = lazy(() => import('./components/OnboardingTutorial'))
 const AdminCreditManager = lazy(() => import('./components/AdminCreditManager'));
 const CodeRedemption = lazy(() => import('./components/CodeRedemption'));
 const PublicEventsBrowse = lazy(() => import('./components/PublicEventsBrowse'));
+const PublicUserProfile = lazy(() => import('./components/PublicUserProfile'));
+const EventFeed = lazy(() => import('./components/EventFeed'));
+const Communities = lazy(() => import('./components/Communities'));
 import ErrorBoundary from './components/ErrorBoundary';
 
 import { User, Notification, EventNexusEvent } from './types';
@@ -854,6 +859,9 @@ const App: React.FC = () => {
               <Route path="/beta-signup" element={<BetaInvitation />} />
               <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
               <Route path="/agency/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
+                <Route path="/user/:username" element={<PublicUserProfile currentUser={user} />} />
+                  <Route path="/feed" element={<EventFeed user={user} />} />
+              <Route path="/communities" element={<Communities user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/ai-agents" element={user?.role === 'admin' ? <AIAgentDashboard user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
@@ -1138,6 +1146,10 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
           <SidebarItem icon={<Gift />} label="Redeem Code" to="/redeem" onClick={closeSidebar} />
           <SidebarItem icon={<Smartphone />} label="Mobile Apps" to="/mobile" onClick={closeSidebar} />
           <SidebarItem icon={<Zap />} label="Pricing" to="/pricing" onClick={closeSidebar} />
+          
+          <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">Social</div>
+          <SidebarItem icon={<Users />} label="Social Feed" to="/feed" onClick={closeSidebar} />
+          <SidebarItem icon={<Heart />} label="Find Friends" to="/communities" onClick={closeSidebar} />
           
           <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">User</div>
           <SidebarItem icon={<Settings />} label="Settings" to="/notifications" onClick={closeSidebar} />
