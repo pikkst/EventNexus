@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logger from '../utils/logger';
 import { usePageSEO } from '../hooks/useSEO';
-import { Compass, Zap, Shield, Globe, Map as MapIcon, ChevronRight, Star, Plus, ArrowRight, Gift, Award, TrendingUp, Quote, Newspaper, ExternalLink, Users, Calendar, Ticket, Play, Check, Mail, Send, ChevronDown, DollarSign, Sparkles } from 'lucide-react';
+import { Compass, Zap, Shield, Globe, Map as MapIcon, ChevronRight, Star, Plus, ArrowRight, Gift, Award, TrendingUp, Quote, Newspaper, ExternalLink, Users, Calendar, Ticket, Play, Check, Mail, Send, ChevronDown, DollarSign, Sparkles, Trophy, Heart, Target, Zap as ZapIcon, Bot, Languages, Paintbrush } from 'lucide-react';
 import { User, PlatformCampaign, SuccessStory, PressMention, PlatformMedia } from '../types';
 import { getCampaigns, getTopOrganizers, OrganizerRatingStats, getSuccessStories, getPressMentions, getPlatformStats, getPlatformMedia } from '../services/dbService';
 import { supabase } from '../services/supabase';
@@ -576,6 +576,152 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
       {/* Featured Events Carousel */}
       <FeaturedEventsCarousel className="bg-slate-950/50 py-6" />
 
+      {/* Why Choose EventNexus - Benefits Section */}
+      <section className="max-w-7xl mx-auto px-4">
+        <div className="relative bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 rounded-[48px] p-12 md:p-16 overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl" />
+          
+          <div className="relative z-10">
+            <div className="text-center mb-16 space-y-3">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 px-4 py-2 rounded-full border border-indigo-500/30 mb-4">
+                <Star className="w-4 h-4 text-indigo-400" />
+                <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Why EventNexus</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tight">Built for Modern Event Discovery</h2>
+              <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+                We're not just another events platform. We're the future of how people discover and experience events.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Left Column */}
+              <div className="space-y-6">
+                <div className="flex gap-4 items-start group">
+                  <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <MapIcon className="w-6 h-6 text-indigo-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white mb-2 text-lg">Visual, Not Lists</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      See events on an interactive map, not in boring lists. Filter by radius, category, date—discover events intuitively.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start group">
+                  <div className="w-12 h-12 bg-emerald-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Globe className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white mb-2 text-lg">Global Reach, Local Feel</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      AI-powered translation in 50+ languages. Host in Estonian, reach audiences in Finnish, Swedish, German, and beyond.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start group">
+                  <div className="w-12 h-12 bg-yellow-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Trophy className="w-6 h-6 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white mb-2 text-lg">Gamified Experience</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      Earn badges, level up, compete on leaderboards. Make attending events fun and rewarding with our achievement system.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start group">
+                  <div className="w-12 h-12 bg-pink-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Heart className="w-6 h-6 text-pink-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white mb-2 text-lg">Community-Driven</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      Join communities, connect with like-minded people, discover events through your network. Social discovery at its best.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                <div className="flex gap-4 items-start group">
+                  <div className="w-12 h-12 bg-purple-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Bot className="w-6 h-6 text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white mb-2 text-lg">AI-Powered Everything</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      From marketing materials to personalized recommendations—our AI does the heavy lifting so you can focus on what matters.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start group">
+                  <div className="w-12 h-12 bg-orange-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Shield className="w-6 h-6 text-orange-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white mb-2 text-lg">Bank-Level Security</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      Fraud-proof QR codes, Stripe-powered payments, encrypted storage. Your data and money are always protected.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start group">
+                  <div className="w-12 h-12 bg-cyan-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Zap className="w-6 h-6 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white mb-2 text-lg">Instant Everything</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      Buy tickets, get QR codes, check in—all in seconds. No printing, no hassle, no delays. Just seamless experiences.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-start group">
+                  <div className="w-12 h-12 bg-red-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <DollarSign className="w-6 h-6 text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white mb-2 text-lg">Fair Pricing, Always</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                      Platform fees as low as 1.5%. No hidden costs. What you see is what you pay. Start free, upgrade when you grow.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom CTA */}
+            <div className="mt-16 text-center">
+              <p className="text-slate-400 mb-6 text-lg">Ready to experience the difference?</p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  to="/browse"
+                  onClick={() => trackCTAClick('why_choose_browse')}
+                  className="inline-flex items-center gap-2 px-10 py-5 bg-indigo-600 hover:bg-indigo-700 rounded-3xl text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/30"
+                >
+                  <Calendar className="w-6 h-6" /> Browse Events
+                </Link>
+                <button
+                  onClick={handleCreateEvent}
+                  className="inline-flex items-center gap-2 px-10 py-5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 rounded-3xl text-white font-black text-lg transition-all"
+                >
+                  <Plus className="w-6 h-6" /> Create Event
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Urgency / Quick Action Section */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 rounded-[40px] p-8 md:p-12 overflow-hidden shadow-2xl shadow-indigo-600/20">
@@ -1012,23 +1158,118 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-8">
-        <FeatureCard 
-          icon={<Compass className="w-8 h-8" />} 
-          title="Map-First Discovery" 
-          description="Forget lists. Explore events exactly where they are. Radius search and smart filters built-in." 
-        />
-        <FeatureCard 
-          icon={<Globe className="w-8 h-8" />} 
-          title="AI Translation" 
-          description="Powered by Gemini. Host events in any language; reach a global audience automatically." 
-        />
-        <FeatureCard 
-          icon={<Shield className="w-8 h-8" />} 
-          title="Secure Ticketing" 
-          description="Fraud-proof QR codes and instant validation. Secure payments via Stripe." 
-        />
+      {/* Platform Features Grid - NEW & GAMIFICATION */}
+      <section className="max-w-7xl mx-auto px-4">
+        <div className="text-center mb-16 space-y-3">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-500/10 to-orange-500/10 px-4 py-2 rounded-full border border-pink-500/30 mb-4">
+            <Sparkles className="w-4 h-4 text-pink-400" />
+            <span className="text-xs font-bold text-pink-400 uppercase tracking-wider">Powerful Features</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight">Everything You Need, Built In</h2>
+          <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+            From discovery to gamification—EventNexus is your all-in-one events platform
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Core Features */}
+          <FeatureCard 
+            icon={<Compass className="w-8 h-8" />} 
+            title="Map-First Discovery" 
+            description="Forget lists. Explore events exactly where they are. Radius search and smart filters built-in."
+            gradient="from-blue-500/10 to-cyan-500/10"
+            borderColor="border-blue-500/30"
+            iconBg="bg-blue-600/20"
+            iconColor="text-blue-400"
+            hoverBorder="hover:border-blue-500/50"
+          />
+          <FeatureCard 
+            icon={<Globe className="w-8 h-8" />} 
+            title="AI Translation" 
+            description="Powered by Gemini. Host events in any language; reach a global audience automatically."
+            gradient="from-emerald-500/10 to-green-500/10"
+            borderColor="border-emerald-500/30"
+            iconBg="bg-emerald-600/20"
+            iconColor="text-emerald-400"
+            hoverBorder="hover:border-emerald-500/50"
+          />
+          <FeatureCard 
+            icon={<Shield className="w-8 h-8" />} 
+            title="Secure Ticketing" 
+            description="Fraud-proof QR codes and instant validation. Secure payments via Stripe."
+            gradient="from-indigo-500/10 to-purple-500/10"
+            borderColor="border-indigo-500/30"
+            iconBg="bg-indigo-600/20"
+            iconColor="text-indigo-400"
+            hoverBorder="hover:border-indigo-500/50"
+          />
+          
+          {/* NEW Phase 3 Features */}
+          <FeatureCard 
+            icon={<Trophy className="w-8 h-8" />} 
+            title="Gamification & Badges" 
+            description="Earn achievements, level up, and climb the leaderboard. Compete with friends and unlock exclusive rewards."
+            gradient="from-yellow-500/10 to-orange-500/10"
+            borderColor="border-yellow-500/30"
+            iconBg="bg-yellow-600/20"
+            iconColor="text-yellow-400"
+            hoverBorder="hover:border-yellow-500/50"
+            badge="NEW"
+          />
+          <FeatureCard 
+            icon={<Heart className="w-8 h-8" />} 
+            title="Communities & Groups" 
+            description="Join event communities, connect with like-minded people, and discover events together with your tribe."
+            gradient="from-pink-500/10 to-rose-500/10"
+            borderColor="border-pink-500/30"
+            iconBg="bg-pink-600/20"
+            iconColor="text-pink-400"
+            hoverBorder="hover:border-pink-500/50"
+            badge="NEW"
+          />
+          <FeatureCard 
+            icon={<Bot className="w-8 h-8" />} 
+            title="AI Event Assistant" 
+            description="NexusBot helps you find the perfect events, answers questions, and provides personalized recommendations 24/7."
+            gradient="from-purple-500/10 to-violet-500/10"
+            borderColor="border-purple-500/30"
+            iconBg="bg-purple-600/20"
+            iconColor="text-purple-400"
+            hoverBorder="hover:border-purple-500/50"
+          />
+          
+          {/* AI Marketing Tools */}
+          <FeatureCard 
+            icon={<Paintbrush className="w-8 h-8" />} 
+            title="AI Marketing Suite" 
+            description="Auto-generate posters, social ads, and campaigns with Gemini + Imagen. Professional designs in seconds."
+            gradient="from-orange-500/10 to-red-500/10"
+            borderColor="border-orange-500/30"
+            iconBg="bg-orange-600/20"
+            iconColor="text-orange-400"
+            hoverBorder="hover:border-orange-500/50"
+          />
+          <FeatureCard 
+            icon={<Languages className="w-8 h-8" />} 
+            title="50+ Languages" 
+            description="AI-powered translation for your events. Reach audiences in Estonian, Finnish, German, Swedish, and 40+ more."
+            gradient="from-teal-500/10 to-cyan-500/10"
+            borderColor="border-teal-500/30"
+            iconBg="bg-teal-600/20"
+            iconColor="text-teal-400"
+            hoverBorder="hover:border-teal-500/50"
+          />
+          <FeatureCard 
+            icon={<Target className="w-8 h-8" />} 
+            title="Smart Recommendations" 
+            description="Our AI learns your preferences and suggests events you'll love. Personalized discovery at its finest."
+            gradient="from-red-500/10 to-pink-500/10"
+            borderColor="border-red-500/30"
+            iconBg="bg-red-600/20"
+            iconColor="text-red-400"
+            hoverBorder="hover:border-red-500/50"
+          />
+        </div>
       </section>
 
       {/* FAQ Section */}
@@ -1116,61 +1357,98 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         </div>
       </section>
 
-      {/* Newsletter Signup */}
-      <section className="max-w-4xl mx-auto px-4">
-        <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-[40px] p-12 md:p-16 text-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 bg-indigo-600/20 px-4 py-2 rounded-full border border-indigo-500/30 mb-6">
-              <Mail className="w-4 h-4 text-indigo-400" />
-              <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Stay Updated</span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-4">
-              Get Event Recommendations
-            </h2>
-            <p className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">
-              Subscribe to our newsletter and get personalized event recommendations, early access to new features, and exclusive organizer tips.
-            </p>
-            <form onSubmit={handleNewsletterSignup} className="max-w-md mx-auto">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="email"
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
-                  className="flex-1 px-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all disabled:opacity-50"
-                  required
-                  aria-label="Email address for newsletter subscription"
-                />
-                <button
-                  type="submit"
-                  disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
-                  className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-emerald-600 disabled:cursor-not-allowed rounded-2xl font-bold text-white transition-all flex items-center justify-center gap-2 whitespace-nowrap"
-                  aria-label={
-                    newsletterStatus === 'loading'
-                      ? 'Subscribing to newsletter'
-                      : newsletterStatus === 'success'
-                        ? 'Successfully subscribed to newsletter'
-                        : 'Subscribe to newsletter'
-                  }
-                >
-                  {newsletterStatus === 'loading' ? (
-                    'Subscribing...'
-                  ) : newsletterStatus === 'success' ? (
-                    <><Check className="w-5 h-5" aria-hidden="true" /> Subscribed!</>
-                  ) : (
-                    <><Send className="w-5 h-5" aria-hidden="true" /> Subscribe</>
-                  )}
-                </button>
+      {/* Newsletter Signup - ENHANCED */}
+      <section className="max-w-5xl mx-auto px-4">
+        <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-[48px] p-1 shadow-2xl shadow-indigo-600/30">
+          <div className="bg-slate-950 rounded-[44px] p-12 md:p-16">
+            <div className="text-center relative z-10">
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 mb-6">
+                <Mail className="w-4 h-4 text-white" />
+                <span className="text-xs font-bold text-white uppercase tracking-wider">Join the Community</span>
               </div>
-              {newsletterStatus === 'error' && (
-                <p className="text-red-400 text-sm mt-3">Invalid email or already subscribed</p>
-              )}
-              <p className="text-slate-500 text-xs mt-4">
-                No spam. Unsubscribe anytime. By subscribing, you agree to our Privacy Policy.
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 bg-gradient-to-r from-white via-indigo-100 to-purple-200 bg-clip-text text-transparent">
+                Never Miss an Event Again
+              </h2>
+              <p className="text-slate-300 text-lg md:text-xl mb-8 max-w-2xl mx-auto leading-relaxed">
+                Get personalized event recommendations delivered to your inbox. Be the first to know about new features, exclusive organizer tips, and limited-time offers.
               </p>
-            </form>
+              
+              {/* Trust signals */}
+              <div className="flex flex-wrap items-center justify-center gap-6 mb-10 text-sm text-slate-400">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span>13,000+ subscribers</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span>Weekly updates</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span>Unsubscribe anytime</span>
+                </div>
+              </div>
+
+              <form onSubmit={handleNewsletterSignup} className="max-w-xl mx-auto">
+                <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                  <input
+                    type="email"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="your.email@example.com"
+                    disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
+                    className="flex-1 px-6 py-5 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 transition-all disabled:opacity-50 text-lg"
+                    required
+                    aria-label="Email address for newsletter subscription"
+                  />
+                  <button
+                    type="submit"
+                    disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
+                    className="px-8 py-5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:from-emerald-500 disabled:to-emerald-600 disabled:cursor-not-allowed rounded-2xl font-black text-white text-lg transition-all flex items-center justify-center gap-3 whitespace-nowrap shadow-lg"
+                    aria-label={
+                      newsletterStatus === 'loading'
+                        ? 'Subscribing to newsletter'
+                        : newsletterStatus === 'success'
+                          ? 'Successfully subscribed to newsletter'
+                          : 'Subscribe to newsletter'
+                    }
+                  >
+                    {newsletterStatus === 'loading' ? (
+                      <><Zap className="w-5 h-5 animate-pulse" aria-hidden="true" /> Subscribing...</>
+                    ) : newsletterStatus === 'success' ? (
+                      <><Check className="w-6 h-6" aria-hidden="true" /> Subscribed!</>
+                    ) : (
+                      <><Send className="w-5 h-5" aria-hidden="true" /> Subscribe Free</>
+                    )}
+                  </button>
+                </div>
+                {newsletterStatus === 'error' && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+                    <p className="text-red-400 text-sm font-medium">⚠️ Invalid email or already subscribed. Please try again.</p>
+                  </div>
+                )}
+                {newsletterStatus === 'success' && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 mb-4">
+                    <p className="text-emerald-400 text-sm font-medium">✅ Success! Check your inbox for a confirmation email.</p>
+                  </div>
+                )}
+                <p className="text-slate-500 text-xs">
+                  🔒 No spam ever. We respect your privacy. By subscribing, you agree to our <Link to="/privacy" className="underline hover:text-slate-400">Privacy Policy</Link>.
+                </p>
+              </form>
+
+              {/* Social proof */}
+              <div className="mt-12 pt-8 border-t border-slate-800">
+                <p className="text-slate-400 text-sm mb-4">Trusted by event lovers worldwide</p>
+                <div className="flex items-center justify-center gap-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                  <span className="text-white font-bold ml-2">4.9/5</span>
+                  <span className="text-slate-500 text-sm ml-2">(2,400+ reviews)</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1226,9 +1504,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   );
 };
 
-const FeatureCard = ({ icon, title, description }: any) => (
-  <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-[32px] hover:border-indigo-500/50 transition-all group">
-    <div className="bg-indigo-600/10 text-indigo-500 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+const FeatureCard = ({ icon, title, description, gradient, borderColor, iconBg, iconColor, hoverBorder, badge }: any) => (
+  <div className={`relative bg-slate-900/50 border ${borderColor} p-8 rounded-[32px] ${hoverBorder} transition-all group`}>
+    {badge && (
+      <div className="absolute -top-3 -right-3 bg-gradient-to-r from-orange-500 to-pink-500 px-3 py-1 rounded-full text-xs font-black text-white uppercase tracking-wider shadow-lg">
+        {badge}
+      </div>
+    )}
+    <div className={`${iconBg} ${iconColor} w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
       {icon}
     </div>
     <h3 className="text-xl font-bold mb-3">{title}</h3>
