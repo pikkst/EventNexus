@@ -26,6 +26,10 @@ import {
   Flag
 } from 'lucide-react';
 import { getEvents, getEventById, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates } from '../services/dbService';
+import EventAttendeesList from './EventAttendeesList';
+import EventCheckIn from './EventCheckIn';
+import EventReviews from './EventReviews';
+import BuddyMatching from './BuddyMatching';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
 import { isEventExpired } from '../utils/eventUtils';
@@ -791,6 +795,12 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                   </pre>
                 </div>
               )}
+
+                {/* Attendees Section - Phase 1 Social Feature */}
+                <div className="mt-8 pt-8 border-t border-slate-800">
+                  <h3 className="text-lg sm:text-xl font-bold mb-4">Who's Attending</h3>
+                  <EventAttendeesList eventId={event.id} currentUserId={user?.id} />
+                </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-slate-800">
                 <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50 flex items-center gap-4">
@@ -1015,6 +1025,46 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                     <ShieldCheck className="w-6 h-6 shrink-0" /> 
                     <span>Booking confirmed!</span>
                   </p>
+                </div>
+              )}
+
+                {/* Event Check-in Section - Phase 1 Social Feature */}
+                {user && (
+                  <div className="mt-8">
+                    <h3 className="text-lg sm:text-xl font-bold mb-4">Share Your Experience</h3>
+                    <EventCheckIn 
+                      eventId={event.id}
+                      userId={user.id}
+                      eventName={event.name}
+                      onCheckInSuccess={() => {
+                        // Optionally refresh attendees list or show confirmation
+                        logger.log('Check-in successful for event:', event.id);
+                      }}
+                    />
+                  </div>
+                )}
+
+              {/* Event Reviews Section - Phase 2 Social Feature */}
+              <div className="mt-8">
+                <h3 className="text-lg sm:text-xl font-bold mb-4">Reviews & Ratings</h3>
+                <EventReviews 
+                  eventId={event.id}
+                  eventName={event.name}
+                  user={user}
+                  onOpenAuth={() => onOpenAuth?.()}
+                />
+              </div>
+
+              {/* Buddy Matching Section - Phase 2 Social Feature */}
+              {user && (
+                <div className="mt-8">
+                  <h3 className="text-lg sm:text-xl font-bold mb-4">Find Event Friends</h3>
+                  <BuddyMatching 
+                    user={user}
+                    onUpdate={() => {
+                      logger.log('Buddy list updated');
+                    }}
+                  />
                 </div>
               )}
             </div>

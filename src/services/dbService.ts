@@ -4909,3 +4909,696 @@ export const getOrganizerEventsWithReportCounts = async (organizerId: string): P
     return [];
   }
 }
+
+// ============================================
+// SOCIAL FEATURES - PHASE 1
+// ============================================
+
+import {
+  EventAttendee,
+  UserInterests,
+  EventCheckin,
+  UserFeedItem,
+  EventAttendeePreview
+} from '../types';
+
+/**
+ * RSVP to event - add user as attendee
+ */
+export const rsvpToEvent = async (
+  userId: string,
+  eventId: string,
+  status: 'going' | 'interested' | 'maybe' = 'going',
+  visibility: 'public' | 'friends_only' | 'hidden' = 'public'
+): Promise<EventAttendee | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_attendees')
+      .upsert({
+        event_id: eventId,
+        user_id: userId,
+        status,
+        visibility,
+        joined_at: new Date().toISOString()
+      }, {
+        onConflict: 'event_id,user_id'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Create feed item
+    await supabase
+      .from('user_feed_items')
+      .insert({
+        user_id: userId,
+        type: 'rsvp',
+        event_id: eventId,
+        content: { status, visibility },
+        is_public: visibility !== 'hidden'
+      });
+
+    return data;
+  } catch (error) {
+    console.error('Error RSVPing to event:', error);
+    return null;
+  }
+};
+
+/**
+ * Cancel RSVP - remove user from event attendees
+ */
+export const cancelRsvp = async (userId: string, eventId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('event_attendees')
+      .delete()
+      .eq('user_id', userId)
+      .eq('event_id', eventId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error canceling RSVP:', error);
+    return false;
+  }
+};
+
+/**
+ * Get event attendees with preview
+ */
+export const getEventAttendees = async (
+  eventId: string,
+  limit: number = 50
+): Promise<EventAttendeePreview[]> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_event_attendees_preview', {
+        p_event_id: eventId,
+        p_limit: limit
+      });
+
+    if (error) throw error;
+    return (data || []) as EventAttendeePreview[];
+  } catch (error) {
+    console.error('Error fetching event attendees:', error);
+    return [];
+  }
+};
+
+/**
+ * Get number of attendees for event
+ */
+export const getEventAttendeeCount = async (eventId: string): Promise<number> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_event_attendee_count', { p_event_id: eventId });
+
+    if (error) throw error;
+    return data || 0;
+  } catch (error) {
+    console.error('Error getting attendee count:', error);
+    return 0;
+  }
+};
+
+/**
+ * Check if user is attending event
+ */
+export const isUserAttending = async (userId: string, eventId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('is_user_attending', {
+        p_user_id: userId,
+        p_event_id: eventId
+      });
+
+    if (error) throw error;
+    return data || false;
+  } catch (error) {
+    console.error('Error checking attendance:', error);
+    return false;
+  }
+};
+
+/**
+ * Update user interests
+ */
+export const updateUserInterests = async (
+  userId: string,
+  interests: Partial<UserInterests>
+): Promise<UserInterests | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_interests')
+      .upsert({
+        user_id: userId,
+        categories: interests.categories || [],
+        preferred_days: interests.preferred_days || [],
+        preferred_time: interests.preferred_time || 'any',
+        bio: interests.bio || '',
+        is_public: interests.is_public !== undefined ? interests.is_public : true
+      }, {
+        onConflict: 'user_id'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating user interests:', error);
+    return null;
+  }
+};
+
+/**
+ * Get user's interests
+ */
+export const getUserInterests = async (userId: string): Promise<UserInterests | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_interests')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code === 'PGRST116') {
+      // No interests found, return default
+      return {
+        id: '',
+        user_id: userId,
+        categories: [],
+        preferred_days: [],
+        preferred_time: 'any',
+        bio: '',
+        is_public: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching user interests:', error);
+    return null;
+  }
+};
+
+/**
+ * Check-in to event
+ */
+export const checkInToEvent = async (
+  userId: string,
+  eventId: string,
+  postText?: string,
+  mediaUrl?: string,
+  lat?: number,
+  lng?: number
+): Promise<EventCheckin | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_checkins')
+      .insert({
+        event_id: eventId,
+        user_id: userId,
+        post_text: postText || '',
+        media_url: mediaUrl,
+        location_lat: lat,
+        location_lng: lng,
+        checked_in_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Create feed item
+    await supabase
+      .from('user_feed_items')
+      .insert({
+        user_id: userId,
+        type: 'checkin',
+        event_id: eventId,
+        content: { text: postText, mediaUrl, location: { lat, lng } },
+        is_public: true
+      });
+
+    return data;
+  } catch (error) {
+    console.error('Error checking in to event:', error);
+    return null;
+  }
+};
+
+/**
+ * Get event check-ins
+ */
+export const getEventCheckins = async (eventId: string, limit: number = 20): Promise<EventCheckin[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_checkins')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('checked_in_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return (data || []) as EventCheckin[];
+  } catch (error) {
+    console.error('Error fetching event check-ins:', error);
+    return [];
+  }
+};
+
+/**
+ * Get user's feed items
+ */
+export const getUserFeed = async (userId: string, limit: number = 20): Promise<UserFeedItem[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_feed_items')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return (data || []) as UserFeedItem[];
+  } catch (error) {
+    console.error('Error fetching user feed:', error);
+    return [];
+  }
+};
+
+/**
+ * Get global feed (all public activities)
+ */
+export const getGlobalFeed = async (limit: number = 30): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_feed_items')
+      .select(`
+        *,
+        user:users!user_id(id, name, avatar),
+        event:events!event_id(id, name, category)
+      `)
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return (data || []);
+  } catch (error) {
+    console.error('Error fetching global feed:', error);
+    return [];
+  }
+};
+
+/**
+ * Get users attending same events as given user
+ */
+export const getFriendsAttendingEvent = async (
+  userId: string,
+  eventId: string
+): Promise<any[]> => {
+  try {
+    // Get users attending the event
+    const { data, error } = await supabase
+      .from('event_attendees')
+      .select(`
+        user_id,
+        users!user_id(id, name, avatar)
+      `)
+      .eq('event_id', eventId)
+      .eq('visibility', 'public')
+      .neq('user_id', userId);
+
+    if (error) throw error;
+    return (data || []);
+  } catch (error) {
+    console.error('Error fetching friends at event:', error);
+    return [];
+  }
+};
+
+/**
+ * Get common events between two users
+ */
+export const getCommonEvents = async (userId1: string, userId2: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_attendees')
+      .select(`
+        event_id,
+        event:events!event_id(id, name, date, category)
+      `)
+      .eq('user_id', userId1)
+      .in('event_id', 
+        supabase
+          .from('event_attendees')
+          .select('event_id')
+          .eq('user_id', userId2)
+      );
+
+    if (error) throw error;
+    return (data || []);
+  } catch (error) {
+    console.error('Error fetching common events:', error);
+    return [];
+  }
+};
+
+// ============= PHASE 2: Buddy Matching, Communities, Reviews =============
+
+/**
+ * Send buddy request to another user
+ */
+export const sendBuddyRequest = async (userId1: string, userId2: string): Promise<any | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_buddies')
+      .insert([{
+        user_id_1: userId1,
+        user_id_2: userId2,
+        status: 'pending',
+        initiated_by: userId1
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error sending buddy request:', error);
+    return null;
+  }
+};
+
+/**
+ * Accept or reject buddy request
+ */
+export const updateBuddyStatus = async (buddyId: string, status: 'accepted' | 'blocked'): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('user_buddies')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', buddyId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error updating buddy status:', error);
+    return false;
+  }
+};
+
+/**
+ * Get buddy match suggestions for a user
+ */
+export const getBuddyMatches = async (userId: string, limit: number = 10): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_buddy_matches', { p_user_id: userId, p_limit: limit });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching buddy matches:', error);
+    return [];
+  }
+};
+
+/**
+ * Get user's buddies/friends
+ */
+export const getUserBuddies = async (userId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_buddies')
+      .select('*, user1:user_id_1(id, full_name, avatar), user2:user_id_2(id, full_name, avatar)')
+      .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+      .eq('status', 'accepted');
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching buddies:', error);
+    return [];
+  }
+};
+
+/**
+ * Create new event community
+ */
+export const createCommunity = async (communityData: {
+  name: string;
+  description: string;
+  organizer_id: string;
+  category: string;
+  interests: string[];
+  is_public?: boolean;
+}): Promise<any | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_communities')
+      .insert([communityData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating community:', error);
+    return null;
+  }
+};
+
+/**
+ * Join a community
+ */
+export const joinCommunity = async (communityId: string, userId: string): Promise<boolean> => {
+  try {
+    const { error: insertError } = await supabase
+      .from('community_members')
+      .insert([{
+        community_id: communityId,
+        user_id: userId,
+        role: 'member'
+      }]);
+
+    if (insertError) throw insertError;
+
+    // Increment member count
+    const { data: community } = await supabase
+      .from('event_communities')
+      .select('member_count')
+      .eq('id', communityId)
+      .single();
+
+    if (community) {
+      await supabase
+        .from('event_communities')
+        .update({ member_count: (community.member_count || 0) + 1 })
+        .eq('id', communityId);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error joining community:', error);
+    return false;
+  }
+};
+
+/**
+ * Leave a community
+ */
+export const leaveCommunity = async (communityId: string, userId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('community_members')
+      .delete()
+      .eq('community_id', communityId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    // Decrement member count
+    const { data: community } = await supabase
+      .from('event_communities')
+      .select('member_count')
+      .eq('id', communityId)
+      .single();
+
+    if (community && community.member_count > 0) {
+      await supabase
+        .from('event_communities')
+        .update({ member_count: community.member_count - 1 })
+        .eq('id', communityId);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error leaving community:', error);
+    return false;
+  }
+};
+
+/**
+ * Get all communities (paginated)
+ */
+export const getCommunities = async (limit: number = 20, offset: number = 0): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_communities')
+      .select('*')
+      .eq('is_public', true)
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching communities:', error);
+    return [];
+  }
+};
+
+/**
+ * Get community members
+ */
+export const getCommunityMembers = async (communityId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('community_members')
+      .select('*, user:user_id(id, full_name, avatar)')
+      .eq('community_id', communityId);
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching community members:', error);
+    return [];
+  }
+};
+
+/**
+ * Create event review
+ */
+export const createEventReview = async (reviewData: {
+  event_id: string;
+  user_id: string;
+  rating: number;
+  title?: string;
+  content: string;
+  atmosphere_rating?: number;
+  value_rating?: number;
+  organization_rating?: number;
+}): Promise<any | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_reviews')
+      .insert([reviewData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating review:', error);
+    return null;
+  }
+};
+
+/**
+ * Get event reviews
+ */
+export const getEventReviews = async (eventId: string, limit: number = 10): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_reviews')
+      .select('*, user:user_id(id, full_name, avatar)')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    return [];
+  }
+};
+
+/**
+ * Get event rating summary
+ */
+export const getEventRatingSummary = async (eventId: string): Promise<any | null> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_event_rating', { p_event_id: eventId });
+
+    if (error) throw error;
+    return data?.[0] || null;
+  } catch (error) {
+    console.error('Error fetching rating summary:', error);
+    return null;
+  }
+};
+
+/**
+ * Follow a user
+ */
+export const followUser = async (followerId: string, followingId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('user_followers')
+      .insert([{
+        follower_id: followerId,
+        following_id: followingId
+      }]);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error following user:', error);
+    return false;
+  }
+};
+
+/**
+ * Unfollow a user
+ */
+export const unfollowUser = async (followerId: string, followingId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('user_followers')
+      .delete()
+      .eq('follower_id', followerId)
+      .eq('following_id', followingId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error unfollowing user:', error);
+    return false;
+  }
+};
+
+/**
+ * Get user social stats
+ */
+export const getUserSocialStats = async (userId: string): Promise<any | null> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_user_stats', { p_user_id: userId });
+
+    if (error) throw error;
+    return data?.[0] || null;
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    return null;
+  }
+};
