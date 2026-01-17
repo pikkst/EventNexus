@@ -6036,3 +6036,327 @@ export const importNewsletterSignups = async (csvContent: string): Promise<{
     return results;
   }
 };
+
+// ============================================================================
+// MARKETING OUTREACH SYSTEM
+// ============================================================================
+
+export interface MarketingProspect {
+  id: string;
+  name: string;
+  website: string | null;
+  category: string;
+  email: string;
+  description: string | null;
+  country: string;
+  language: string;
+  source_url: string | null;
+  added_at: string;
+  last_contacted_at: string | null;
+  status: 'new' | 'contacted' | 'responded' | 'interested' | 'converted' | 'not_interested' | 'invalid';
+  contact_count: number;
+  notes: string | null;
+  metadata: any;
+}
+
+export interface MarketingOutreach {
+  id: string;
+  prospect_id: string;
+  campaign_name: string;
+  subject: string;
+  body: string;
+  language: string;
+  sent_at: string | null;
+  opened_at: string | null;
+  replied_at: string | null;
+  status: 'draft' | 'scheduled' | 'sent' | 'opened' | 'replied' | 'bounced' | 'failed';
+  ai_generated: boolean;
+  personalization_data: any;
+  created_at: string;
+  created_by: string;
+}
+
+export interface MarketingTemplate {
+  id: string;
+  name: string;
+  subject_template: string;
+  body_template: string;
+  language: string;
+  category: string | null;
+  variables: string[];
+  ai_prompt: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Import prospects from CSV (admin only)
+ * CSV format: Name,Website,Category,Email,Description,Source
+ */
+export const importMarketingProspects = async (csvContent: string, country: string = 'Estonia'): Promise<{
+  success: number;
+  failed: number;
+  errors: string[];
+}> => {
+  const results = {
+    success: 0,
+    failed: 0,
+    errors: [] as string[]
+  };
+
+  try {
+    const lines = csvContent.trim().split('\n');
+    
+    if (lines.length < 2) {
+      results.errors.push('CSV file is empty or has no data rows');
+      return results;
+    }
+
+    const dataRows = lines.slice(1); // Skip header
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i].trim();
+      if (!row) continue;
+
+      // Parse CSV with quotes support
+      const parts = row.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g)?.map(p => p.replace(/^"|"$/g, '').trim()) || [];
+      
+      if (parts.length < 4) {
+        results.errors.push(`Row ${i + 2}: Invalid format (missing required fields)`);
+        results.failed++;
+        continue;
+      }
+
+      const [name, website, category, email, description, sourceUrl] = parts;
+
+      // Validate email
+      if (!emailRegex.test(email.toLowerCase())) {
+        results.errors.push(`Row ${i + 2}: Invalid email format (${email})`);
+        results.failed++;
+        continue;
+      }
+
+      // Check if email already exists
+      const { data: existing } = await supabase
+        .from('marketing_prospects')
+        .select('id')
+        .eq('email', email.toLowerCase())
+        .single();
+
+      if (existing) {
+        results.errors.push(`Row ${i + 2}: Email already exists (${email})`);
+        results.failed++;
+        continue;
+      }
+
+      // Detect language from country
+      const languageMap: Record<string, string> = {
+        'Estonia': 'et',
+        'Finland': 'fi',
+        'Latvia': 'lv',
+        'Lithuania': 'lt',
+        'Sweden': 'sv',
+        'Norway': 'no',
+        'Denmark': 'da'
+      };
+      const language = languageMap[country] || 'en';
+
+      // Insert prospect
+      const { error } = await supabase
+        .from('marketing_prospects')
+        .insert({
+          name,
+          website: website || null,
+          category,
+          email: email.toLowerCase(),
+          description: description || null,
+          country,
+          language,
+          source_url: sourceUrl || null,
+          status: 'new',
+          contact_count: 0
+        });
+
+      if (error) {
+        results.errors.push(`Row ${i + 2}: Database error (${error.message})`);
+        results.failed++;
+      } else {
+        results.success++;
+      }
+    }
+
+    return results;
+  } catch (error) {
+    logger.error('Error importing marketing prospects:', error);
+    results.errors.push('Fatal error: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    return results;
+  }
+};
+
+/**
+ * Get all marketing prospects (admin only)
+ */
+export const getMarketingProspects = async (filters?: {
+  status?: string;
+  country?: string;
+  category?: string;
+}): Promise<MarketingProspect[]> => {
+  try {
+    let query = supabase
+      .from('marketing_prospects')
+      .select('*')
+      .order('added_at', { ascending: false });
+
+    if (filters?.status) query = query.eq('status', filters.status);
+    if (filters?.country) query = query.eq('country', filters.country);
+    if (filters?.category) query = query.eq('category', filters.category);
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    logger.error('Error fetching marketing prospects:', error);
+    return [];
+  }
+};
+
+/**
+ * Get marketing templates
+ */
+export const getMarketingTemplates = async (language?: string): Promise<MarketingTemplate[]> => {
+  try {
+    let query = supabase
+      .from('marketing_templates')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (language) query = query.eq('language', language);
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    logger.error('Error fetching marketing templates:', error);
+    return [];
+  }
+};
+
+/**
+ * Get outreach history for a prospect
+ */
+export const getProspectOutreach = async (prospectId: string): Promise<MarketingOutreach[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('marketing_outreach')
+      .select('*')
+      .eq('prospect_id', prospectId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    logger.error('Error fetching prospect outreach:', error);
+    return [];
+  }
+};
+
+/**
+ * Create outreach email (draft)
+ */
+export const createOutreachEmail = async (data: {
+  prospect_id: string;
+  campaign_name: string;
+  subject: string;
+  body: string;
+  language: string;
+  ai_generated?: boolean;
+  personalization_data?: any;
+}): Promise<MarketingOutreach | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: outreach, error } = await supabase
+      .from('marketing_outreach')
+      .insert({
+        ...data,
+        created_by: user.id,
+        status: 'draft'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return outreach;
+  } catch (error) {
+    logger.error('Error creating outreach email:', error);
+    return null;
+  }
+};
+
+/**
+ * Update prospect status
+ */
+export const updateProspectStatus = async (
+  prospectId: string,
+  status: MarketingProspect['status'],
+  notes?: string
+): Promise<boolean> => {
+  try {
+    const updateData: any = { status };
+    if (notes) updateData.notes = notes;
+
+    const { error } = await supabase
+      .from('marketing_prospects')
+      .update(updateData)
+      .eq('id', prospectId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    logger.error('Error updating prospect status:', error);
+    return false;
+  }
+};
+
+/**
+ * Get marketing analytics dashboard
+ */
+export const getMarketingAnalytics = async (days: number = 30): Promise<any> => {
+  try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const { data, error } = await supabase
+      .from('marketing_analytics')
+      .select('*')
+      .gte('date', startDate.toISOString().split('T')[0])
+      .order('date', { ascending: true });
+
+    if (error) throw error;
+
+    // Aggregate totals
+    const totals = (data || []).reduce((acc, row) => ({
+      sent: acc.sent + (row.emails_sent || 0),
+      opened: acc.opened + (row.emails_opened || 0),
+      replied: acc.replied + (row.emails_replied || 0),
+      bounced: acc.bounced + (row.emails_bounced || 0),
+      conversions: acc.conversions + (row.conversions || 0)
+    }), { sent: 0, opened: 0, replied: 0, bounced: 0, conversions: 0 });
+
+    return {
+      daily: data || [],
+      totals,
+      openRate: totals.sent > 0 ? ((totals.opened / totals.sent) * 100).toFixed(1) : '0.0',
+      replyRate: totals.sent > 0 ? ((totals.replied / totals.sent) * 100).toFixed(1) : '0.0',
+      conversionRate: totals.sent > 0 ? ((totals.conversions / totals.sent) * 100).toFixed(1) : '0.0'
+    };
+  } catch (error) {
+    logger.error('Error fetching marketing analytics:', error);
+    return { daily: [], totals: { sent: 0, opened: 0, replied: 0, bounced: 0, conversions: 0 }, openRate: '0.0', replyRate: '0.0', conversionRate: '0.0' };
+  }
+};
+
