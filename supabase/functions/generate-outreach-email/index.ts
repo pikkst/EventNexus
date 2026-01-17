@@ -8,7 +8,9 @@ const corsHeaders = {
 
 interface OutreachRequest {
   prospect: {
+    id: string;
     name: string;
+    email: string;
     category: string;
     description?: string;
     website?: string;
@@ -19,6 +21,7 @@ interface OutreachRequest {
     ai_prompt?: string;
   };
   language: string;
+  sendEmail?: boolean; // If true, send email via Resend API
 }
 
 serve(async (req) => {
@@ -188,11 +191,69 @@ ${adminPhone}
 
     console.log('✅ Final email ready');
 
+    // Optional: Send email via Resend API
+    let emailSent = false;
+    let emailId = null;
+    
+    if (req.json && (await req.clone().json()).sendEmail) {
+      console.log('📧 Sending email via Resend...');
+      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+      
+      if (!RESEND_API_KEY) {
+        console.warn('⚠️ RESEND_API_KEY not configured - skipping email send');
+      } else {
+        try {
+          const resendResponse = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${RESEND_API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              from: `${adminName} <${adminEmail}>`,
+              to: prospect.email,
+              reply_to: adminEmail,
+              subject: subject,
+              html: body.replace(/\n/g, '<br>'), // Convert line breaks to HTML
+            })
+          });
+
+          if (resendResponse.ok) {
+            const resendData = await resendResponse.json();
+            emailId = resendData.id;
+            emailSent = true;
+            console.log('✅ Email sent via Resend:', emailId);
+
+            // Save interaction to CRM
+            await supabase.from('crm_interactions').insert({
+              prospect_id: prospect.id,
+              interaction_type: 'email_sent',
+              subject: subject,
+              content: body,
+              sentiment: 'neutral',
+              metadata: {
+                email_id: emailId,
+                sent_via: 'resend',
+                generated_by: 'ai'
+              }
+            });
+          } else {
+            const errorText = await resendResponse.text();
+            console.error('❌ Resend API error:', errorText);
+          }
+        } catch (emailError: any) {
+          console.error('❌ Email send failed:', emailError.message);
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        subject: parsed.subject || template.subject_template,
-        body: parsed.body || template.body_template,
+        subject: subject,
+        body: body,
+        emailSent: emailSent,
+        emailId: emailId,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

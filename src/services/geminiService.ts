@@ -975,7 +975,9 @@ Respond in JSON format with ONLY this structure:
  */
 export const generateOutreachEmail = async (
   prospect: {
+    id: string;
     name: string;
+    email: string;
     category: string;
     description?: string;
     website?: string;
@@ -986,15 +988,17 @@ export const generateOutreachEmail = async (
     ai_prompt?: string;
   },
   language: string = 'en',
-  userId?: string
-): Promise<{ subject: string; body: string } | null> => {
+  userId?: string,
+  sendEmail: boolean = false
+): Promise<{ subject: string; body: string; emailSent?: boolean; emailId?: string } | null> => {
   try {
     // Call Edge Function for server-side generation (more reliable + no CORS issues)
     const { data, error } = await supabase.functions.invoke('generate-outreach-email', {
       body: {
         prospect,
         template,
-        language
+        language,
+        sendEmail // Pass through to backend
       }
     });
 
@@ -1010,7 +1014,9 @@ export const generateOutreachEmail = async (
 
     return {
       subject: data.subject,
-      body: data.body
+      body: data.body,
+      emailSent: data.emailSent || false,
+      emailId: data.emailId || null
     };
   } catch (error) {
     console.error("Outreach email generation failed:", error);
