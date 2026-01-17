@@ -992,21 +992,21 @@ export const generateOutreachEmail = async (
     // Import AI knowledge base functions dynamically to avoid circular dependencies
     const { getAIPlatformContext, getPlatformTrendAnalysis, getUser } = await import('./dbService');
 
-    // Check if user is admin - admins don't use credits
+    // Admin users have Enterprise Lifetime - NO CREDITS EVER! 🚀
     let isAdmin = false;
     if (userId) {
       const user = await getUser(userId);
       isAdmin = user?.role === 'admin';
       
-      // Only check credits for non-admin users
       if (!isAdmin) {
+        // Regular users: Check and deduct 25 credits
         const hasCredits = await checkUserCredits(userId, 25);
         if (!hasCredits) {
           console.error('Insufficient credits for outreach email generation');
           return null;
         }
       } else {
-        console.log('Admin user - bypassing credit check');
+        console.log('🎉 Admin user (Enterprise Lifetime) - unlimited access, no credits required');
       }
     }
 
