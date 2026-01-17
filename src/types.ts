@@ -1009,3 +1009,57 @@ export interface UserSocialStats {
   friends_count: number;
   reviews_count: number;
 }
+
+// ============================================
+// Phase 3: Achievements & Gamification
+// ============================================
+
+export interface Achievement {
+  id: string;
+  key: string;
+  name: string;
+  description?: string;
+  tier: number; // 1=bronze,2=silver,3=gold,4=platinum
+  icon?: string;
+  points: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface UserAchievement {
+  id: string;
+  user_id: string;
+  achievement_id: string;
+  earned_at: string;
+  achievement?: Achievement;
+}
+
+export interface UserStats {
+  user_id: string;
+  xp: number;
+  level: number;
+  streak_days: number;
+  last_activity_at?: string | null;
+  total_events_attended: number;
+  total_checkins: number;
+  total_reviews: number;
+  communities_joined: number;
+  updated_at: string;
+}
+
+export interface PointsLedgerEntry {
+  id: string;
+  user_id: string;
+  points: number;
+  reason: string;
+  source_type?: string | null;
+  source_id?: string | null;
+  created_at: string;
+}
+
+export interface LeaderboardEntry {
+  user_id: string;
+  month: string; // ISO date string representing first day of month
+  points: number;
+  user?: User;
+}

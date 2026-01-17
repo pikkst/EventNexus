@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { EventNexusEvent, User, Notification } from '../types';
+import { EventNexusEvent, User, Notification, Achievement, UserAchievement, UserStats, PointsLedgerEntry, LeaderboardEntry } from '../types';
 import logger from '../utils/logger';
 import { logAuth, logEventAction, logError, logEvent } from './auditService';
 
@@ -512,6 +512,169 @@ export const getUserLikedEvents = async (userId: string): Promise<string[]> => {
     return (data || []).map(like => like.event_id);
   } catch (error) {
     console.error('Error fetching liked events:', error);
+    return [];
+  }
+};
+
+// ============================================
+// Phase 3: Achievements & Gamification
+// ============================================
+
+export const getAchievements = async (): Promise<Achievement[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('achievements')
+      .select('*')
+      .eq('is_active', true)
+      .order('tier', { ascending: true })
+      .order('created_at', { ascending: true });
+    if (error) {
+      logger.error('Error fetching achievements:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    logger.error('Error in getAchievements:', err);
+    return [];
+  }
+};
+
+export const getUserAchievements = async (userId: string): Promise<UserAchievement[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_achievements')
+      .select('*, achievement:achievements(*)')
+      .eq('user_id', userId)
+      .order('earned_at', { ascending: false });
+    if (error) {
+      logger.error('Error fetching user achievements:', error);
+      return [];
+    }
+    // Normalize nested achievement
+    return (data || []).map((ua: any) => ({
+      id: ua.id,
+      user_id: ua.user_id,
+      achievement_id: ua.achievement_id,
+      earned_at: ua.earned_at,
+      achievement: ua.achievement || undefined
+    }));
+  } catch (err) {
+    logger.error('Error in getUserAchievements:', err);
+    return [];
+  }
+};
+
+export const getUserStats = async (userId: string): Promise<UserStats | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_stats')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) {
+      logger.error('Error fetching user stats:', error);
+      return null;
+    }
+    return data || null;
+  } catch (err) {
+    logger.error('Error in getUserStats:', err);
+    return null;
+  }
+};
+
+export const refreshUserStats = async (): Promise<boolean> => {
+  try {
+    const { error } = await supabase.rpc('refresh_user_stats');
+    if (error) {
+      logger.error('Error refreshing user stats:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    logger.error('Error in refreshUserStats:', err);
+    return false;
+  }
+};
+
+export const addPoints = async (userId: string, points: number, reason: string, sourceType?: string, sourceId?: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase.rpc('add_points', {
+      p_user_id: userId,
+      p_points: points,
+      p_reason: reason,
+      p_source_type: sourceType ?? null,
+      p_source_id: sourceId ?? null
+    });
+    if (error) {
+      logger.error('Error adding points:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    logger.error('Error in addPoints:', err);
+    return false;
+  }
+};
+
+export const awardAchievement = async (userId: string, key: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc('award_achievement', {
+      p_user_id: userId,
+      p_key: key
+    });
+    if (error) {
+      logger.error('Error awarding achievement:', error);
+      return false;
+    }
+    // RPC returns boolean; if data is explicitly false, still return false
+    return !!data || data === true;
+  } catch (err) {
+    logger.error('Error in awardAchievement:', err);
+    return false;
+  }
+};
+
+export const getMonthlyLeaderboard = async (monthISO?: string): Promise<LeaderboardEntry[]> => {
+  try {
+    // Default: current month
+    let targetMonth: string;
+    if (monthISO) {
+      const d = new Date(monthISO);
+      d.setDate(1);
+      targetMonth = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString();
+    } else {
+      const now = new Date();
+      const first = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      targetMonth = first.toISOString();
+    }
+
+    const { data, error } = await supabase
+      .from('user_leaderboard_monthly')
+      .select('user_id, month, points')
+      .eq('month', targetMonth)
+      .order('points', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      logger.error('Error fetching leaderboard:', error);
+      return [];
+    }
+
+    const entries = (data || []) as LeaderboardEntry[];
+
+    // Enrich with user display info
+    const userIds = entries.map(e => e.user_id);
+    if (userIds.length > 0) {
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, name, avatar')
+        .in('id', userIds);
+      const byId = new Map((users || []).map(u => [u.id, u]));
+      return entries.map(e => ({ ...e, user: byId.get(e.user_id) }));
+    }
+    return entries;
+  } catch (err) {
+    logger.error('Error in getMonthlyLeaderboard:', err);
     return [];
   }
 };
@@ -4959,6 +5122,15 @@ export const rsvpToEvent = async (
         is_public: visibility !== 'hidden'
       });
 
+    // Award points via Edge Function (non-blocking)
+    try {
+      await supabase.functions.invoke('gamification-award', {
+        body: { userId, action: 'rsvp', eventId }
+      });
+    } catch (e) {
+      logger.warn('Gamification award (RSVP) failed silently:', e);
+    }
+
     return data;
   } catch (error) {
     console.error('Error RSVPing to event:', error);
@@ -5145,6 +5317,15 @@ export const checkInToEvent = async (
         content: { text: postText, mediaUrl, location: { lat, lng } },
         is_public: true
       });
+
+    // Award points via Edge Function (non-blocking)
+    try {
+      await supabase.functions.invoke('gamification-award', {
+        body: { userId, action: 'checkin', eventId }
+      });
+    } catch (e) {
+      logger.warn('Gamification award (checkin) failed silently:', e);
+    }
 
     return data;
   } catch (error) {
@@ -5406,6 +5587,15 @@ export const joinCommunity = async (communityId: string, userId: string): Promis
         .eq('id', communityId);
     }
 
+    // Award points via Edge Function (non-blocking)
+    try {
+      await supabase.functions.invoke('gamification-award', {
+        body: { userId, action: 'community_join', sourceId: communityId }
+      });
+    } catch (e) {
+      logger.warn('Gamification award (community_join) failed silently:', e);
+    }
+
     return true;
   } catch (error) {
     console.error('Error joining community:', error);
@@ -5505,6 +5695,15 @@ export const createEventReview = async (reviewData: {
       .single();
 
     if (error) throw error;
+
+    // Award points via Edge Function (non-blocking)
+    try {
+      await supabase.functions.invoke('gamification-award', {
+        body: { userId: reviewData.user_id, action: 'review', eventId: reviewData.event_id }
+      });
+    } catch (e) {
+      logger.warn('Gamification award (review) failed silently:', e);
+    }
     return data;
   } catch (error) {
     console.error('Error creating review:', error);
