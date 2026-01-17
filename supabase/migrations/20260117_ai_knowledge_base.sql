@@ -175,9 +175,9 @@ BEGIN
   VALUES ('supported_languages', '50+', 'text', true)
   ON CONFLICT (stat_key) DO UPDATE SET stat_value = EXCLUDED.stat_value, last_updated = NOW();
 
-  -- Ticket fee percentage
+  -- Ticket fee percentage (extract text from jsonb and append %)
   INSERT INTO public.ai_platform_stats_cache (stat_key, stat_value, stat_type, is_public)
-  SELECT 'ticket_fee_percentage', value || '%', 'percentage', true 
+  SELECT 'ticket_fee_percentage', (value#>>'{}') || '%', 'percentage', true 
   FROM public.system_config WHERE key = 'global_ticket_fee'
   ON CONFLICT (stat_key) DO UPDATE SET stat_value = EXCLUDED.stat_value, last_updated = NOW();
 END;
