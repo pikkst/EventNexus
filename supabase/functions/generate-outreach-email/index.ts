@@ -128,6 +128,18 @@ Body inspiration: ${template.body_template}
 - Keep subject under 60 characters
 - Keep body under 400 words
 
+**CRITICAL - PRICING & NUMBERS:**
+⚠️ DO NOT mention ANY specific prices, percentages, or numbers for:
+- Platform fees or commissions
+- Free tickets or trial offers
+- Discount percentages
+- Specific monetary amounts
+Instead use phrases like:
+- "Competitive pricing available"
+- "Flexible commission structure"
+- "Pricing to be discussed based on your needs"
+- "Custom pricing packages available"
+
 **Signature Format:**
 Parimate soovidega,
 ${adminName}

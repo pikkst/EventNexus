@@ -345,8 +345,13 @@ EventNexus
   true
 );
 
--- 3. Add more template variables for flexibility
+-- 3. Add pricing and business terms variables
 INSERT INTO public.template_variables (variable_name, variable_value, variable_type, description, category) VALUES
+('platform_fee', 'to be discussed', 'text', 'Platform commission - negotiable per client', 'pricing'),
+('free_trial_period', 'to be discussed', 'text', 'Free trial details - negotiable', 'pricing'),
+('pricing_model', 'Commission-based pricing available', 'text', 'Pricing approach', 'pricing'),
+('onboarding_timeline', '1-4 weeks depending on integration complexity', 'text', 'Setup timeline', 'business'),
+('support_languages', '9 languages (Estonian, English, Finnish, Swedish, Latvian, Lithuanian, Norwegian, Danish, German)', 'text', 'Language support', 'platform'),
 ('calendar_link', 'https://calendly.com/eventnexus/demo', 'url', 'Booking calendar link', 'contact'),
 ('mobile_phone', '+372 5XXX XXXX', 'phone', 'Mobile phone number', 'contact'),
 ('office_address', 'Tallinn, Estonia', 'text', 'Office location', 'company'),
