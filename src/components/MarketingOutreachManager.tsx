@@ -39,6 +39,11 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
   const [isSending, setIsSending] = useState(false);
   const [sendingProspectId, setSendingProspectId] = useState<string | null>(null);
   
+  // Bulk email state
+  const [selectedProspectIds, setSelectedProspectIds] = useState<Set<string>>(new Set());
+  const [isBulkSending, setIsBulkSending] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
+  
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [countryFilter, setCountryFilter] = useState<string>('all');
   const [selectedCountry, setSelectedCountry] = useState<string>('Estonia');
@@ -113,6 +118,85 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
     } finally {
       setIsImporting(false);
     }
+  };
+
+  const handleBulkSend = async () => {
+    if (selectedProspectIds.size === 0 || templates.length === 0) {
+      alert('❌ Please select prospects and ensure templates are loaded');
+      return;
+    }
+
+    const confirmed = confirm(`📧 Send AI-generated emails to ${selectedProspectIds.size} prospects?\n\nEmails will be sent one by one with 2-second delays.`);
+    if (!confirmed) return;
+
+    setIsBulkSending(true);
+    const selectedProspects = prospects.filter(p => selectedProspectIds.has(p.id));
+    const template = templates[0]; // Use first template
+    
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < selectedProspects.length; i++) {
+      const prospect = selectedProspects[i];
+      setBulkProgress({ current: i + 1, total: selectedProspects.length });
+      setSendingProspectId(prospect.id);
+
+      try {
+        const result = await generateOutreachEmail(
+          {
+            id: prospect.id,
+            name: prospect.name,
+            email: prospect.email,
+            category: prospect.category,
+            description: prospect.description || undefined,
+            website: prospect.website || undefined
+          },
+          {
+            subject_template: template.subject_template,
+            body_template: template.body_template,
+            ai_prompt: template.ai_prompt || undefined
+          },
+          prospect.language,
+          user.id,
+          true // Always send immediately in bulk mode
+        );
+
+        if (result?.emailSent) {
+          successCount++;
+          await createOutreachEmail({
+            prospect_id: prospect.id,
+            template_id: template.id,
+            subject: result.subject,
+            body: result.body,
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+            personalization_data: {
+              template_id: template.id,
+              generated_at: new Date().toISOString(),
+              email_id: result.emailId || null
+            }
+          });
+        } else {
+          failCount++;
+        }
+      } catch (error) {
+        logger.error(`Bulk send failed for ${prospect.name}:`, error);
+        failCount++;
+      }
+
+      // Wait 2 seconds between sends (rate limiting)
+      if (i < selectedProspects.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+
+    setIsBulkSending(false);
+    setBulkProgress(null);
+    setSendingProspectId(null);
+    setSelectedProspectIds(new Set());
+    await loadData();
+
+    alert(`✅ Bulk send complete!\n\n• Sent: ${successCount}\n• Failed: ${failCount}`);
   };
 
   const handleGenerateEmail = async (prospect: MarketingProspect, template: MarketingTemplate, sendImmediately: boolean = false) => {
@@ -376,6 +460,73 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
             <h3 className="text-xl font-black tracking-tighter mb-6">
               Prospects ({prospects.length})
             </h3>
+
+            {/* Bulk Send Controls */}
+            {selectedProspectIds.size > 0 && (
+              <div className="mb-6 p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-xl">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Target className="w-5 h-5 text-indigo-400" />
+                      <span className="text-sm font-bold text-white">
+                        {selectedProspectIds.size} prospects selected
+                      </span>
+                    </div>
+                    {bulkProgress && (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                        <span className="text-sm text-slate-400">
+                          Sending {bulkProgress.current}/{bulkProgress.total}...
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        // Select all from specific country
+                        const currentCountry = countryFilter !== 'all' ? countryFilter : null;
+                        if (currentCountry) {
+                          const countryProspects = prospects
+                            .filter(p => p.country === currentCountry)
+                            .map(p => p.id);
+                          setSelectedProspectIds(new Set(countryProspects));
+                        }
+                      }}
+                      disabled={isBulkSending || countryFilter === 'all'}
+                      className="px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 rounded-lg text-xs font-bold text-white transition-all"
+                    >
+                      Select {countryFilter !== 'all' ? countryFilter : 'Country'}
+                    </button>
+                    <button
+                      onClick={() => setSelectedProspectIds(new Set())}
+                      disabled={isBulkSending}
+                      className="px-3 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 rounded-lg text-xs font-bold text-white transition-all"
+                    >
+                      Clear All
+                    </button>
+                    <button
+                      onClick={handleBulkSend}
+                      disabled={isBulkSending || templates.length === 0}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-lg text-sm font-bold text-white transition-all flex items-center gap-2"
+                    >
+                      {isBulkSending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          Send to {selectedProspectIds.size}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {isLoading ? (
               <div className="text-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-400 mb-4" />
@@ -391,8 +542,20 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-slate-800">
-                      <th className="text-left py-4 px-4 text-xs font-black text-slate-500 uppercase">Company</th>
+                    <tr className="border-b border-slate-800">                      <th className="text-center py-4 px-4 text-xs font-black text-slate-500 uppercase w-12">
+                        <input
+                          type="checkbox"
+                          checked={prospects.length > 0 && selectedProspectIds.size === prospects.length}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedProspectIds(new Set(prospects.map(p => p.id)));
+                            } else {
+                              setSelectedProspectIds(new Set());
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </th>                      <th className="text-left py-4 px-4 text-xs font-black text-slate-500 uppercase">Company</th>
                       <th className="text-left py-4 px-4 text-xs font-black text-slate-500 uppercase">Category</th>
                       <th className="text-left py-4 px-4 text-xs font-black text-slate-500 uppercase">Country</th>
                       <th className="text-left py-4 px-4 text-xs font-black text-slate-500 uppercase">Status</th>
@@ -403,6 +566,23 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
                   <tbody>
                     {prospects.map((prospect) => (
                       <tr key={prospect.id} className="border-b border-slate-800/50 hover:bg-slate-800/30">
+                        <td className="py-4 px-4 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedProspectIds.has(prospect.id)}
+                            onChange={(e) => {
+                              const newSet = new Set(selectedProspectIds);
+                              if (e.target.checked) {
+                                newSet.add(prospect.id);
+                              } else {
+                                newSet.delete(prospect.id);
+                              }
+                              setSelectedProspectIds(newSet);
+                            }}
+                            disabled={isBulkSending}
+                            className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-indigo-600 focus:ring-2 focus:ring-indigo-500 disabled:opacity-30"
+                          />
+                        </td>
                         <td className="py-4 px-4">
                           <div>
                             <p className="font-bold text-white">{prospect.name}</p>
