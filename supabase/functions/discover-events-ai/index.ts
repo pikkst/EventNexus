@@ -105,7 +105,7 @@ interface DiscoverEventsRequest {
   city_id?: string
   city_name?: string
   country?: string
-  target_events?: number  // How many events to find (default: 15)
+  target_events?: number  // How many events to find (default: 8 to reduce latency)
 }
 
 interface FreeEvent {
@@ -427,7 +427,7 @@ async function discoverEventsWithAI(
   country: string,
   countryCode: string,
   timezone: string,
-  targetCount: number = 15,
+  targetCount: number = 8,
   cityLat?: number,
   cityLng?: number
 ): Promise<FreeEvent[]> {
@@ -677,12 +677,13 @@ Return ONLY valid JSON array.`
         }
 
         const data = await flashResponse.json()
-        structuredText = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-        
-        if (!structuredText || structuredText.length < 50) {
-          throw new Error('Flash returned empty response')
+        structuredText = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim()
+
+        // Guard: accept empty/[] as a valid "no events" response to avoid endless retries
+        if (!structuredText || structuredText.length < 4) {
+          structuredText = '[]'
         }
-        
+
         structureSuccess = true
         console.log(`[OK] Flash structured ${structuredText.length} chars`)
       }, 3, 2000) // Retry up to 3 times
@@ -730,6 +731,14 @@ Return ONLY valid JSON array.`
       cleanedText = cleanedText.substring(0, finalBracket + 1)
     }
     
+    // Ensure we have an array shape; if model returned nothing, return [] gracefully
+    if (!cleanedText.startsWith('[')) {
+      cleanedText = '[]'
+    }
+    if (!cleanedText.trim()) {
+      cleanedText = '[]'
+    }
+
     // Try to parse
     events = JSON.parse(cleanedText)
     
@@ -857,7 +866,7 @@ serve(async (req) => {
 
     // Parse request
     const body: DiscoverEventsRequest = await req.json()
-    const { city_id, city_name, country, target_events = 15 } = body
+    const { city_id, city_name, country, target_events = 8 } = body
 
     // Get city from database if city_id provided
     let cityData: any = null
