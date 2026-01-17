@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { deductUserCredits, checkUserCredits } from './dbService';
 import { SUPPORTED_LANGUAGES } from './languageService';
+import { retryWithBackoff, CircuitBreaker } from './pipelineRetryService';
 
 // Dynamically import Google GenAI to avoid TDZ issues
 // This prevents minification bugs where 'Ge' (minified class) is accessed before initialization
@@ -21,6 +22,9 @@ const loadGoogleGenAI = async () => {
   }
   return { GoogleGenAI: GoogleGenAIModule, Type: TypeEnum };
 };
+
+// Circuit breaker for Gemini API to prevent cascading failures
+const geminiCircuitBreaker = new CircuitBreaker(5, 2, 30000);
 
 const getAI = (): any => {
   if (!aiInstance) {
@@ -372,57 +376,78 @@ export const generateAdImage = async (
     }
   }
 
+  // Use circuit breaker to prevent cascading failures
   try {
-    const ai = getAI();
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: {
-        parts: [{ text: `Professional marketing flier for EventNexus with clear promotional text overlay: ${prompt}. Include eye-catching headlines and call-to-action text directly on the image. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements, bold typography, 8k. Aspect ratio: ${aspectRatio}` }]
-      }
-    });
-
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) {
-        const base64Data = part.inlineData.data;
-        const inlineDataUrl = `data:image/png;base64,${base64Data}`;
-        
-        // Deduct credits after successful generation (Free tier only)
-        if (userId && userTier === 'free') {
-          await deductUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_IMAGE);
-        }
-
-        // Upload to Supabase Storage when requested; fallback to base64 if upload fails
-        if (saveToStorage) {
-          try {
-            // Use crypto.randomUUID() for secure random IDs
-            const safeUuid = crypto.randomUUID();
-            const fileName = `campaign-images/${safeUuid}.png`;
-            const binary = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-            const { error: uploadError } = await supabase.storage
-              .from('campaign-images')
-              .upload(fileName, binary, {
-                contentType: 'image/png',
-                cacheControl: '31536000',
-                upsert: true
-              });
-
-            if (!uploadError) {
-              const { data: publicData } = supabase.storage
-                .from('campaign-images')
-                .getPublicUrl(fileName);
-              if (publicData?.publicUrl) return publicData.publicUrl;
-            } else {
-              console.error('Storage upload failed:', uploadError);
+    const result = await geminiCircuitBreaker.execute(async () => {
+      // Wrap in retry with exponential backoff
+      const retryResult = await retryWithBackoff(
+        async () => {
+          const ai = getAI();
+          const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+              parts: [{ text: `Professional marketing flier for EventNexus with clear promotional text overlay: ${prompt}. Include eye-catching headlines and call-to-action text directly on the image. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements, bold typography, 8k. Aspect ratio: ${aspectRatio}` }]
             }
-          } catch (storageError) {
-            console.error('Storage upload exception:', storageError);
-          }
-        }
+          });
 
-        return inlineDataUrl;
+          for (const part of response.candidates?.[0]?.content?.parts || []) {
+            if (part.inlineData) {
+              return { inlineData: part.inlineData.data };
+            }
+          }
+          throw new Error('No image data in response');
+        },
+        {
+          maxRetries: 3,
+          initialDelayMs: 1000,
+          timeoutMs: 45000 // Image generation can take 30-45 seconds
+        }
+      );
+
+      if (!retryResult.success) {
+        throw new Error(retryResult.error);
       }
-    }
-    return null;
+
+      const base64Data = retryResult.data!.inlineData;
+      const inlineDataUrl = `data:image/png;base64,${base64Data}`;
+      
+      // Deduct credits after successful generation (Free tier only)
+      if (userId && userTier === 'free') {
+        await deductUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_IMAGE);
+      }
+
+      // Upload to Supabase Storage when requested; fallback to base64 if upload fails
+      if (saveToStorage) {
+        try {
+          // Use crypto.randomUUID() for secure random IDs
+          const safeUuid = crypto.randomUUID();
+          const fileName = `campaign-images/${safeUuid}.png`;
+          const binary = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+          const { error: uploadError } = await supabase.storage
+            .from('campaign-images')
+            .upload(fileName, binary, {
+              contentType: 'image/png',
+              cacheControl: '31536000',
+              upsert: true
+            });
+
+          if (!uploadError) {
+            const { data: publicData } = supabase.storage
+              .from('campaign-images')
+              .getPublicUrl(fileName);
+            if (publicData?.publicUrl) return publicData.publicUrl;
+          } else {
+            console.error('Storage upload failed:', uploadError);
+          }
+        } catch (storageError) {
+          console.error('Storage upload exception:', storageError);
+        }
+      }
+
+      return inlineDataUrl;
+    });
+    
+    return result;
   } catch (error) {
     console.error("Image generation failed:", error);
     return null;
