@@ -989,126 +989,33 @@ export const generateOutreachEmail = async (
   userId?: string
 ): Promise<{ subject: string; body: string } | null> => {
   try {
-    // Marketing outreach is ADMIN-ONLY feature - no credit checks needed
-    // Import AI knowledge base functions dynamically to avoid circular dependencies
-    const { getAIPlatformContext, getPlatformTrendAnalysis } = await import('./dbService');
-
-    // Get REAL platform context (stats, trends, features)
-    const platformContext = await getAIPlatformContext(language);
-    const trendAnalysis = await getPlatformTrendAnalysis();
-
-    // Extract key stats for prompt
-    const totalUsers = platformContext.statistics.find(s => s.stat_key === 'total_users')?.stat_value || 'growing';
-    const totalEvents = platformContext.statistics.find(s => s.stat_key === 'total_events')?.stat_value || 'hundreds';
-    const platformPhase = platformContext.platformPhase || 'Beta Launch';
-    const eventTrend = trendAnalysis.eventCreationTrend || 'growing';
-    const growthRate = trendAnalysis.growthPercentage || 0;
-
-    // Get recent features from changelog
-    const recentFeatures = platformContext.recentChanges
-      .slice(0, 3)
-      .map(ch => `${ch.title} (${ch.version})`)
-      .join(', ');
-
-    const ai = getAI();
-    const model = ai.getGenerativeModel({
-      model: 'gemini-2.5-flash-lite',  // Ultra-fast, cost-efficient, supports thinking
-      generationConfig: {
-        temperature: 0.8,
-        maxOutputTokens: 8192,  // Flash-Lite supports up to 65K
+    // Call Edge Function for server-side generation (more reliable + no CORS issues)
+    const { data, error } = await supabase.functions.invoke('generate-outreach-email', {
+      body: {
+        prospect,
+        template,
+        language
       }
     });
 
-    const languageNames: Record<string, string> = {
-      'en': 'English',
-      'et': 'Estonian',
-      'fi': 'Finnish',
-      'lv': 'Latvian',
-      'lt': 'Lithuanian',
-      'sv': 'Swedish',
-      'no': 'Norwegian',
-      'da': 'Danish'
-    };
-
-    const targetLanguage = languageNames[language] || 'English';
-
-    const prompt = `You are a professional B2B marketing specialist writing a personalized partnership email for EventNexus, an event discovery and ticketing platform.
-
-**REAL PLATFORM DATA (DO NOT INVENT OR MODIFY):**
-- Platform Phase: ${platformPhase}
-- Total Users: ${totalUsers}
-- Total Events: ${totalEvents}
-- Event Creation Trend: ${eventTrend} (${growthRate > 0 ? '+' : ''}${growthRate.toFixed(1)}% last 7 days)
-- Recent Features: ${recentFeatures || 'AI-powered search, multilingual support, advanced analytics'}
-- Last Updated: ${new Date(platformContext.lastUpdated).toLocaleDateString()}
-
-**CRITICAL RULES:**
-1. Use ONLY the real platform data provided above
-2. DO NOT invent statistics, user counts, or revenue numbers
-3. DO NOT mention specific client names or private user data
-4. DO NOT share internal API keys, credentials, or secrets
-5. Focus on platform features, trends, and public information
-6. If you don't have specific data, use general terms like "growing user base" instead of inventing numbers
-
-**Target Company:**
-- Name: ${prospect.name}
-- Category: ${prospect.category}
-${prospect.description ? `- Description: ${prospect.description}` : ''}
-${prospect.website ? `- Website: ${prospect.website}` : ''}
-
-**Template Guidance:**
-${template.ai_prompt || 'Create a professional, enthusiastic, and value-focused partnership proposal.'}
-
-**Email Template (customize and personalize):**
-Subject: ${template.subject_template}
-
-${template.body_template}
-
-**Your Task:**
-1. Personalize the template by:
-   - Replacing {companyName} with "${prospect.name}"
-   - Replacing {category} with "${prospect.category}"
-   - Replacing {contactName} with "there" (we don't have their name yet)
-   - Replacing {senderName} with "EventNexus Team"
-   - Adding 1-2 specific compliments based on their category and description
-   - Tailoring benefits to their specific business type
-   - Incorporating REAL platform stats naturally (e.g., "with our ${eventTrend} platform...")
-
-2. Write in ${targetLanguage} language (maintain professional tone)
-
-3. Keep the structure but make it feel authentic and personalized, not templated
-
-4. Output ONLY valid JSON with this exact structure:
-{
-  "subject": "The personalized email subject line",
-  "body": "The complete personalized email body with proper formatting"
-}
-
-CRITICAL: Your response must be ONLY the JSON object, no markdown, no explanations.`;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // Parse JSON response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('Failed to parse AI response as JSON');
+    if (error) {
+      console.error('Edge Function error:', error);
       return null;
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    // NO CREDIT DEDUCTION - Admin-only marketing feature
-    // Marketing outreach is a platform tool, not a user-facing feature
+    if (!data.success) {
+      console.error('Generation failed:', data.error);
+      return null;
+    }
 
     return {
-      subject: parsed.subject || template.subject_template,
-      body: parsed.body || template.body_template
+      subject: data.subject,
+      body: data.body
     };
   } catch (error) {
     console.error("Outreach email generation failed:", error);
     return null;
   }
 };
+
 
