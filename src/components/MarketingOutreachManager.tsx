@@ -36,6 +36,8 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
   const [isLoading, setIsLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [sendingProspectId, setSendingProspectId] = useState<string | null>(null);
   
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [countryFilter, setCountryFilter] = useState<string>('all');
@@ -113,15 +115,21 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
     }
   };
 
-  const handleGenerateEmail = async (prospect: MarketingProspect, template: MarketingTemplate) => {
+  const handleGenerateEmail = async (prospect: MarketingProspect, template: MarketingTemplate, sendImmediately: boolean = false) => {
     setIsGenerating(true);
+    if (sendImmediately) {
+      setIsSending(true);
+      setSendingProspectId(prospect.id);
+    }
     setSelectedProspect(prospect);
     setSelectedTemplate(template);
     
     try {
       const result = await generateOutreachEmail(
         {
+          id: prospect.id,
           name: prospect.name,
+          email: prospect.email,
           category: prospect.category,
           description: prospect.description || undefined,
           website: prospect.website || undefined
@@ -132,27 +140,35 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
           ai_prompt: template.ai_prompt || undefined
         },
         prospect.language,
-        user.id
+        user.id,
+        sendImmediately
       );
 
       if (result) {
         setGeneratedEmail(result);
         
-        // Save as draft
+        // Save as draft or sent
         await createOutreachEmail({
           prospect_id: prospect.id,
           campaign_name: `${selectedCountry} Outreach - ${new Date().toLocaleDateString()}`,
           subject: result.subject,
           body: result.body,
           language: prospect.language,
+          status: result.emailSent ? 'sent' : 'draft',
+          sent_at: result.emailSent ? new Date().toISOString() : null,
           ai_generated: true,
           personalization_data: {
             template_id: template.id,
-            generated_at: new Date().toISOString()
+            generated_at: new Date().toISOString(),
+            email_id: result.emailId || null
           }
         });
 
-        alert('✅ Email generated and saved as draft!');
+        if (result.emailSent) {
+          alert(`✅ Email generated and sent to ${prospect.email}!`);
+        } else {
+          alert('✅ Email generated and saved as draft!');
+        }
       } else {
         alert('❌ Failed to generate email. AI service may be unavailable. Check console for details.');
       }
@@ -161,6 +177,8 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
       alert('❌ Error generating email');
     } finally {
       setIsGenerating(false);
+      setIsSending(false);
+      setSendingProspectId(null);
     }
   };
 
