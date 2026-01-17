@@ -113,6 +113,44 @@ export const getTrendingEvents = async (limit: number = 6): Promise<EventNexusEv
   }
 };
 
+// Get most recently added upcoming events for landing page freshness
+export const getRecentEvents = async (limit: number = 6): Promise<EventNexusEvent[]> => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('status', 'active')
+      .in('visibility', ['public', 'semi-private'])
+      .is('archived_at', null)
+      .gte('date', today.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      logger.error('Error fetching recent events:', error);
+      // Fallback: show the soonest upcoming events if created_at ordering fails
+      const { data: fallbackData } = await supabase
+        .from('events')
+        .select('*')
+        .eq('status', 'active')
+        .in('visibility', ['public', 'semi-private'])
+        .is('archived_at', null)
+        .gte('date', today.toISOString())
+        .order('date', { ascending: true })
+        .limit(limit);
+      return (fallbackData || []).map(transformEventFromDB);
+    }
+
+    return (data || []).map(transformEventFromDB);
+  } catch (err) {
+    logger.error('Error in getRecentEvents:', err);
+    return [];
+  }
+};
+
 // Get single event by ID (for direct links, ignores visibility)
 export const getEventById = async (eventId: string): Promise<EventNexusEvent | null> => {
   const { data, error } = await supabase
@@ -575,6 +613,12 @@ export const getUser = async (id: string): Promise<User | null> => {
     
     const user = data;
     
+    // Force admin accounts to enterprise tier even if DB data is missing or stale
+    if (user.role === 'admin') {
+      user.subscription_tier = 'enterprise';
+      user.subscription = 'enterprise';
+    }
+
     // Ensure notification_prefs has proper structure
     if (!user.notification_prefs || typeof user.notification_prefs !== 'object') {
       user.notification_prefs = {
@@ -841,15 +885,71 @@ export const getUserBySlug = async (slug: string): Promise<User | null> => {
       return null;
     }
     
-    console.log('✅ getUserBySlug: Found user:', data ? {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      agency_slug: data.agency_slug,
-      subscription_tier: data.subscription_tier
-    } : 'NULL');
+    if (!data) return null;
+
+    // Normalize fields similar to getUser for consistent frontend behavior
+    const user: any = { ...data };
+
+    // Force admin accounts to enterprise tier
+    if (user.role === 'admin') {
+      user.subscription_tier = 'enterprise';
+      user.subscription = 'enterprise';
+    }
+
+    // Default subscription to free if missing
+    if (!user.subscription_tier) {
+      user.subscription_tier = 'free';
+    }
+    if (!user.subscription) {
+      user.subscription = user.subscription_tier;
+    }
+
+    // Normalize notification prefs
+    if (!user.notification_prefs || typeof user.notification_prefs !== 'object') {
+      user.notification_prefs = {
+        pushEnabled: true,
+        emailEnabled: true,
+        proximityAlerts: true,
+        alertRadius: 10,
+        interestedCategories: [],
+        notifyActiveEvents: true,
+        notifyUpcomingEvents: true,
+        upcomingEventWindow: 24,
+        minAvailableTickets: 1
+      };
+    } else {
+      if (!Array.isArray(user.notification_prefs.interestedCategories)) {
+        user.notification_prefs.interestedCategories = [];
+      }
+      if (user.notification_prefs.notifyActiveEvents === undefined) {
+        user.notification_prefs.notifyActiveEvents = true;
+      }
+      if (user.notification_prefs.notifyUpcomingEvents === undefined) {
+        user.notification_prefs.notifyUpcomingEvents = true;
+      }
+      if (!user.notification_prefs.upcomingEventWindow) {
+        user.notification_prefs.upcomingEventWindow = 24;
+      }
+      if (!user.notification_prefs.minAvailableTickets) {
+        user.notification_prefs.minAvailableTickets = 1;
+      }
+    }
+
+    // Normalize followed organizers
+    if (!Array.isArray(user.followed_organizers)) {
+      user.followed_organizers = [];
+    }
+    user.followedOrganizers = user.followed_organizers;
     
-    return data;
+    console.log('✅ getUserBySlug: Found user:', {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      agency_slug: user.agency_slug,
+      subscription_tier: user.subscription_tier
+    });
+    
+    return user;
   } catch (err) {
     console.error('Error in getUserBySlug:', err);
     return null;

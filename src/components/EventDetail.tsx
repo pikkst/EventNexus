@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import logger from '../utils/logger';
 import { useEventSEO } from '../hooks/useSEO';
 import Breadcrumbs from './Breadcrumbs';
@@ -126,6 +126,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   });
   
   const [organizerName, setOrganizerName] = useState<string>('EventNexus User');
+  const [organizerAvatar, setOrganizerAvatar] = useState<string | null>(null);
+  const [organizerProfileSlug, setOrganizerProfileSlug] = useState<string | null>(null);
   const [ticketQuantities, setTicketQuantities] = useState<{ [key: string]: number }>({});
   const [organizerPaymentReady, setOrganizerPaymentReady] = useState(false);
   const [checkingOrganizerStatus, setCheckingOrganizerStatus] = useState(true);
@@ -351,13 +353,15 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           if (organizer) {
             // If organizer is an agency/organization, show company name
             setOrganizerName(organizer.company_name || organizer.name || 'EventNexus User');
+            setOrganizerAvatar(organizer.avatar || null);
+            setOrganizerProfileSlug(organizer.agency_slug || organizer.agencySlug || null);
             
             // Check if organizer has completed Stripe Connect onboarding
             const connectStatus = await checkConnectStatus(foundEvent.organizerId);
             logger.log('Organizer Connect Status from DB:', {
               organizerId: foundEvent.organizerId,
-                            organizerEmail: organizer?.email,
-                            stripe_connect_account_id: organizer?.stripe_connect_account_id,
+              organizerEmail: organizer?.email,
+              stripe_connect_account_id: organizer?.stripe_connect_account_id,
               hasAccount: connectStatus?.hasAccount,
               onboardingComplete: connectStatus?.onboardingComplete,
               chargesEnabled: connectStatus?.chargesEnabled,
@@ -368,8 +372,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
             const isReady = connectStatus?.hasAccount || (connectStatus?.onboardingComplete && connectStatus?.chargesEnabled);
             logger.log('Payment ready status:', { isReady, hasAccount: connectStatus?.hasAccount, onboardingComplete: connectStatus?.onboardingComplete, chargesEnabled: connectStatus?.chargesEnabled });
             setOrganizerPaymentReady(isReady || false);
-                      } else {
-                        logger.warn('Organizer not found for ID:', foundEvent.organizerId);
+            setCheckingOrganizerStatus(false);
+          } else {
+            logger.warn('Organizer not found for ID:', foundEvent.organizerId);
             setCheckingOrganizerStatus(false);
           }
         } catch (err) {
@@ -494,6 +499,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   
   const totalRevenue = currentAttendees * event.price;
   const isFollowing = user?.followedOrganizers?.includes(event.organizerId) ?? false;
+  const organizerProfilePath = organizerProfileSlug ? `/agency/${organizerProfileSlug}` : null;
+  const organizerAvatarUrl = organizerAvatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(organizerName || 'Organizer')}`;
 
   const handleLike = async () => {
     if (!user) {
@@ -1013,16 +1020,39 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-[32px] p-6 flex items-center gap-4 shadow-xl group">
-              <div className="relative">
-                <img src="https://picsum.photos/seed/org/100" className="w-14 h-14 rounded-2xl object-cover" alt="org" />
-                <div className="absolute -bottom-1 -right-1 bg-indigo-600 rounded-full p-1 border-2 border-slate-900">
-                  <ShieldCheck className="w-3 h-3 text-white" />
+              {organizerProfilePath ? (
+                <Link 
+                  to={organizerProfilePath}
+                  className="flex items-center gap-4 flex-1 min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-2xl"
+                  aria-label={`View ${organizerName}'s public profile`}
+                >
+                  <div className="relative">
+                    <img src={organizerAvatarUrl} className="w-14 h-14 rounded-2xl object-cover" alt={`${organizerName} avatar`} />
+                    <div className="absolute -bottom-1 -right-1 bg-indigo-600 rounded-full p-1 border-2 border-slate-900">
+                      <ShieldCheck className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Organized by</p>
+                    <h4 className="font-bold truncate text-slate-100 hover:text-indigo-300 transition-colors">{organizerName}</h4>
+                    <p className="text-xs text-indigo-400 mt-1">View public profile</p>
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="relative">
+                    <img src={organizerAvatarUrl} className="w-14 h-14 rounded-2xl object-cover" alt={`${organizerName} avatar`} />
+                    <div className="absolute -bottom-1 -right-1 bg-indigo-600 rounded-full p-1 border-2 border-slate-900">
+                      <ShieldCheck className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Organized by</p>
+                    <h4 className="font-bold truncate text-slate-100">{organizerName}</h4>
+                    <p className="text-xs text-slate-500 mt-1">Profile link unavailable</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Organized by</p>
-                <h4 className="font-bold truncate text-slate-100">{organizerName}</h4>
-              </div>
+              )}
               <button 
                 onClick={() => {
                   if (!user) {

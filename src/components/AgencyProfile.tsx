@@ -13,7 +13,7 @@ import {
   Facebook, Linkedin
 } from 'lucide-react';
 import { User, EventNexusEvent } from '../types';
-import { getEvents, getUserBySlug, getOrganizerRatings, OrganizerRatingStats } from '../services/dbService';
+import { getOrganizerEvents, getUserBySlug, getOrganizerRatings, OrganizerRatingStats } from '../services/dbService';
 import { supabase } from '../services/supabase';
 import logger from '../utils/logger';
 import Footer from './Footer';
@@ -94,10 +94,10 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
         setRatings(organizerRatings.slice(0, 5)); // Top 5 reviews
         setLoadingRatings(false);
         
-        // Then load all events
-        const allEvents = await getEvents();
-        setEvents(allEvents);
-        logger.log(`AgencyProfile: Loaded ${allEvents.length} events`);
+        // Load only this organizer's events for accuracy and performance
+        const organizerEvents = await getOrganizerEvents(fetchedOrganizer.id);
+        setEvents(organizerEvents);
+        logger.log(`AgencyProfile: Loaded ${organizerEvents.length} events for organizer ${fetchedOrganizer.id}`);
       } catch (error) {
         logger.error('Error loading data:', error);
         setError('Failed to load organizer data');
@@ -113,8 +113,32 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
   
   const agencyEvents = useMemo(() => {
     if (!organizer) return [];
-    return events.filter(e => e.organizerId === organizer.id);
+    return events;
   }, [events, organizer]);
+
+  // Build highlights from real organizer events (prefer upcoming). Fall back to any events if none upcoming.
+  const eventHighlights = useMemo(() => {
+    if (agencyEvents.length === 0) return [];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const upcoming = agencyEvents.filter(e => e.date && new Date(e.date) >= today);
+    const source = upcoming.length > 0 ? upcoming : agencyEvents;
+
+    // Sort by soonest date if available
+    const sorted = [...source].sort((a, b) => {
+      const aDate = a.date ? new Date(a.date).getTime() : Infinity;
+      const bDate = b.date ? new Date(b.date).getTime() : Infinity;
+      return aDate - bDate;
+    });
+
+    return sorted.slice(0, 3);
+  }, [agencyEvents]);
+
+  // Real-time stats from organizer events
+  const totalEventsCount = agencyEvents.length;
+  const totalAttendeesCount = agencyEvents.reduce((sum, e) => sum + (e.attendeesCount || 0), 0);
   
   const isFollowing = useMemo(() => {
     if (!currentUser || !organizer) return false;
@@ -320,24 +344,28 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
            </p>
            
            {/* Enterprise Stats Bar */}
-           {isEnterprise && organizer.branding?.stats && organizer.branding.pageConfig?.showStats !== false && (
+           {isEnterprise && organizer.branding?.pageConfig?.showStats !== false && (
              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto pt-8">
                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6">
-                 <div className="text-4xl font-black text-white">{organizer.branding.stats.totalEvents}+</div>
+                 <div className="text-4xl font-black text-white">{totalEventsCount}</div>
                  <div className="text-xs uppercase tracking-wider text-slate-400 mt-2">Events</div>
                </div>
                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6">
-                 <div className="text-4xl font-black text-white">{(organizer.branding.stats.totalAttendees / 1000).toFixed(0)}K+</div>
+                 <div className="text-4xl font-black text-white">{totalAttendeesCount >= 1000 ? `${(totalAttendeesCount / 1000).toFixed(1)}K` : totalAttendeesCount}</div>
                  <div className="text-xs uppercase tracking-wider text-slate-400 mt-2">Attendees</div>
                </div>
-               <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6">
-                 <div className="text-4xl font-black text-white">{organizer.branding.stats.averageRating}</div>
-                 <div className="text-xs uppercase tracking-wider text-slate-400 mt-2">Rating</div>
-               </div>
-               <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6">
-                 <div className="text-4xl font-black text-white">{organizer.branding.stats.activeYears}+</div>
-                 <div className="text-xs uppercase tracking-wider text-slate-400 mt-2">Years</div>
-               </div>
+               {organizer.branding?.stats?.averageRating && (
+                 <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6">
+                   <div className="text-4xl font-black text-white">{organizer.branding.stats.averageRating}</div>
+                   <div className="text-xs uppercase tracking-wider text-slate-400 mt-2">Rating</div>
+                 </div>
+               )}
+               {organizer.branding?.stats?.activeYears && (
+                 <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6">
+                   <div className="text-4xl font-black text-white">{organizer.branding.stats.activeYears}+</div>
+                   <div className="text-xs uppercase tracking-wider text-slate-400 mt-2">Years</div>
+                 </div>
+               )}
              </div>
            )}
            
@@ -426,50 +454,53 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
         </div>
       </section>
 
-      {/* Enterprise Event Highlights Section */}
-      {isEnterprise && organizer.branding?.eventHighlights && organizer.branding.eventHighlights.length > 0 && organizer.branding.pageConfig?.showEventHighlights !== false && (
+      {/* Event Highlights Section (real events) */}
+      {eventHighlights.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-32">
           <div className="text-center mb-16">
             <h2 className="text-5xl font-black tracking-tighter text-white mb-4">Event Highlights.</h2>
             <p className="text-slate-400 text-xl">Our most memorable experiences</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {organizer.branding.eventHighlights.map(highlight => (
+            {eventHighlights.map(highlight => (
               <div key={highlight.id} className="group relative bg-slate-900 border border-slate-800 rounded-[40px] overflow-hidden hover:border-indigo-500/50 transition-all">
                 <div className="h-64 relative overflow-hidden">
-                  {highlight.videoUrl ? (
-                    <video 
-                      src={highlight.videoUrl} 
+                  {highlight.imageUrl || (highlight as any).image_url ? (
+                    <img 
+                      src={highlight.imageUrl || (highlight as any).image_url || 'https://www.eventnexus.eu/og-image.png'} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      muted
-                      loop
-                      autoPlay
-                      playsInline
+                      alt={highlight.name}
                     />
                   ) : (
-                    <img 
-                      src={highlight.imageUrl} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      alt={highlight.title}
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
-                </div>
-                <div className="p-8 space-y-4">
-                  <h3 className="text-2xl font-black text-white">{highlight.title}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">{highlight.description}</p>
-                  {highlight.stats && (
-                    <div className="flex gap-4 pt-4 border-t border-slate-800">
-                      <div className="flex items-center gap-2 text-slate-400 text-xs">
-                        <Users size={14} />
-                        <span className="font-bold">{highlight.stats.attendance}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-yellow-500 text-xs">
-                        <Star size={14} className="fill-current" />
-                        <span className="font-bold">{highlight.stats.rating}</span>
-                      </div>
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-600">
+                      <Calendar className="w-10 h-10 text-white/40" />
                     </div>
                   )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
+                  <div className="absolute top-4 left-4 bg-white/90 text-slate-900 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                    {highlight.date ? new Date(highlight.date).toLocaleDateString() : 'TBA'}
+                  </div>
+                  {highlight.price !== undefined && (
+                    <div className="absolute top-4 right-4 bg-emerald-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                      {highlight.price === 0 ? 'Free Entry' : `From €${highlight.price}`}
+                    </div>
+                  )}
+                </div>
+                <div className="p-8 space-y-4">
+                  <h3 className="text-2xl font-black text-white line-clamp-2">{highlight.name}</h3>
+                  {highlight.description && (
+                    <p className="text-slate-400 text-sm leading-relaxed line-clamp-3">{highlight.description}</p>
+                  )}
+                  <div className="flex gap-4 pt-4 border-t border-slate-800 text-xs text-slate-400 font-bold">
+                    <div className="flex items-center gap-2">
+                      <MapPin size={14} />
+                      <span className="line-clamp-1">{highlight.location?.city || highlight.location?.address || 'Location TBA'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users size={14} />
+                      <span>{highlight.attendeesCount ?? 0} going</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -599,12 +630,12 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
           </div>
         )}
 
-        {/* Node Grid (Events) */}
+          {/* Events Grid */}
         <div className="space-y-16">
            <div className="flex justify-between items-end">
               <div>
-                 <h2 className="text-6xl font-black tracking-tighter text-white">Active Nodes.</h2>
-                 <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] mt-2">Current Global Tour</p>
+                <h2 className="text-6xl font-black tracking-tighter text-white">Active Events.</h2>
+                <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] mt-2">Live & upcoming experiences</p>
               </div>
               <Link to="/map" className="hidden md:flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white">
                  View All On Nexus Map <Globe2 size={16} />
@@ -615,24 +646,34 @@ const AgencyProfile: React.FC<AgencyProfileProps> = ({ user: currentUser, onTogg
               {agencyEvents.map(event => (
                 <div key={event.id} className="group bg-slate-900 border border-slate-800 rounded-[48px] overflow-hidden hover:border-indigo-500/50 transition-all shadow-2xl flex flex-col">
                   <div className="h-72 relative overflow-hidden">
-                     <img src={event.imageUrl} className="w-full h-full object-cover transition-transform duration-[10s] group-hover:scale-110" alt={event.name} />
+                  <img
+                    src={event.imageUrl || event.image_url || 'https://www.eventnexus.eu/og-image.png'}
+                    className="w-full h-full object-cover transition-transform duration-[10s] group-hover:scale-110"
+                    alt={event.name}
+                  />
                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
-                     <div className="absolute bottom-6 left-8 bg-white text-slate-950 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        Tickets: ${event.price}
-                     </div>
+                  {event.price !== undefined && (
+                    <div className="absolute bottom-6 left-8 bg-white text-slate-950 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
+                      {event.price === 0 ? 'Free entry' : `Tickets from €${event.price}`}
+                    </div>
+                  )}
                   </div>
                   <div className="p-10 flex-1 flex flex-col justify-between space-y-8">
                      <div className="space-y-4">
                         <div className="flex justify-between items-center">
                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">{event.category}</span>
-                           <div className="flex items-center gap-1 text-yellow-500 text-xs font-black">
-                              <Star size={12} className="fill-current" /> 4.9
-                           </div>
+                      <div className="flex items-center gap-1 text-emerald-400 text-xs font-black">
+                        <Users size={12} /> {event.attendeesCount ?? 0} going
+                      </div>
                         </div>
                         <h3 className="text-3xl font-black leading-none tracking-tighter text-white">{event.name}</h3>
                         <div className="flex items-center gap-4 text-slate-500 text-xs font-bold">
-                           <div className="flex items-center gap-1.5"><Calendar size={14} /> {event.date}</div>
-                           <div className="flex items-center gap-1.5"><MapPin size={14} /> {event.location.city}</div>
+                      <div className="flex items-center gap-1.5">
+                        <Calendar size={14} /> {event.date ? new Date(event.date).toLocaleDateString() : 'TBA'}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <MapPin size={14} /> {event.location?.city || event.location?.address || 'Location TBA'}
+                      </div>
                         </div>
                      </div>
                      <Link to={`/event/${event.id}`} className="w-full py-5 rounded-[24px] bg-slate-800 hover:bg-indigo-600 transition-all text-center font-black text-xs uppercase tracking-widest text-white shadow-xl">
