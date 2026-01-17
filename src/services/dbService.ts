@@ -6613,3 +6613,32 @@ export const getPlatformTrendAnalysis = async (): Promise<{
     };
   }
 };
+
+/**
+ * Sync changelog from GitHub commits
+ * Fetches recent commits and updates ai_platform_changelog
+ */
+export const syncGitHubChangelog = async (sinceDays: number = 7): Promise<{
+  success: boolean;
+  message: string;
+  entries?: any[];
+  totalCommits?: number;
+  parsedCommits?: number;
+  error?: string;
+}> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('sync-github-changelog', {
+      body: { sinceDays }
+    });
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    logger.error('Error syncing GitHub changelog:', error);
+    return {
+      success: false,
+      message: 'Failed to sync changelog from GitHub',
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+};
