@@ -129,16 +129,19 @@ Body inspiration: ${template.body_template}
 - Keep body under 400 words
 
 **CRITICAL - PRICING & NUMBERS:**
-⚠️ DO NOT mention ANY specific prices, percentages, or numbers for:
-- Platform fees or commissions
-- Free tickets or trial offers
-- Discount percentages
-- Specific monetary amounts
-Instead use phrases like:
-- "Competitive pricing available"
-- "Flexible commission structure"
-- "Pricing to be discussed based on your needs"
-- "Custom pricing packages available"
+✅ USE REAL PLATFORM FEES from our pricing tiers:
+- Free tier: 5.0% platform fee + 100 welcome credits
+- Pro tier: €19.99/mo + 3.0% platform fee
+- Premium tier: €49.99/mo + 2.5% platform fee  
+- Enterprise tier: €149.99/mo + 1.5% platform fee
+
+⚠️ When mentioning pricing, use these EXACT numbers or phrases like:
+- "Starting at 5% for free tier, down to 1.5% for enterprise"
+- "Tier-based pricing from €0 (free) to €149.99/mo (enterprise)"
+- "100 welcome credits included"
+- "Commission rates: 5%, 3%, 2.5%, or 1.5% based on tier"
+
+DO NOT invent other numbers, percentages, or offers not listed above.
 
 **Signature Format:**
 Parimate soovidega,
