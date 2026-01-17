@@ -409,8 +409,15 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   useEffect(() => {
     if (allEvents.length > 0 && visibleBounds) {
       const visibleEvents = filterEventsByBounds(allEvents, visibleBounds);
-      setEvents(visibleEvents);
-      setVisibleEventCount(visibleEvents.length);
+      // Fallback: if nothing is inside current bounds, show all events so guest users still see AI-imported events
+      if (visibleEvents.length === 0) {
+        console.log('📍 Bounds empty, showing all events (global fallback)');
+        setEvents(allEvents);
+        setVisibleEventCount(allEvents.length);
+      } else {
+        setEvents(visibleEvents);
+        setVisibleEventCount(visibleEvents.length);
+      }
       console.log(`📍 Bounds changed: ${visibleEvents.length}/${allEvents.length} events visible`);
     }
   }, [visibleBounds, allEvents, filterEventsByBounds]);
