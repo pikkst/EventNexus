@@ -964,3 +964,124 @@ Respond in JSON format with ONLY this structure:
     throw error;
   }
 };
+
+/**
+ * Generate personalized B2B outreach email using AI
+ * @param prospect - Target company information
+ * @param template - Base template with variables
+ * @param language - Target language (en, et, fi, etc.)
+ * @param userId - User ID for credit deduction
+ * @returns Personalized email with subject and body
+ */
+export const generateOutreachEmail = async (
+  prospect: {
+    name: string;
+    category: string;
+    description?: string;
+    website?: string;
+  },
+  template: {
+    subject_template: string;
+    body_template: string;
+    ai_prompt?: string;
+  },
+  language: string = 'en',
+  userId?: string
+): Promise<{ subject: string; body: string } | null> => {
+  try {
+    // Check and deduct credits (25 credits for email generation)
+    if (userId) {
+      const hasCredits = await checkUserCredits(userId, 25);
+      if (!hasCredits) {
+        console.error('Insufficient credits for outreach email generation');
+        return null;
+      }
+    }
+
+    const ai = getAI();
+    const model = ai.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 2048,
+      }
+    });
+
+    const languageNames: Record<string, string> = {
+      'en': 'English',
+      'et': 'Estonian',
+      'fi': 'Finnish',
+      'lv': 'Latvian',
+      'lt': 'Lithuanian',
+      'sv': 'Swedish',
+      'no': 'Norwegian',
+      'da': 'Danish'
+    };
+
+    const targetLanguage = languageNames[language] || 'English';
+
+    const prompt = `You are a professional B2B marketing specialist writing a personalized partnership email for EventNexus, an event discovery and ticketing platform.
+
+**Target Company:**
+- Name: ${prospect.name}
+- Category: ${prospect.category}
+${prospect.description ? `- Description: ${prospect.description}` : ''}
+${prospect.website ? `- Website: ${prospect.website}` : ''}
+
+**Template Guidance:**
+${template.ai_prompt || 'Create a professional, enthusiastic, and value-focused partnership proposal.'}
+
+**Email Template (customize and personalize):**
+Subject: ${template.subject_template}
+
+${template.body_template}
+
+**Your Task:**
+1. Personalize the template by:
+   - Replacing {companyName} with "${prospect.name}"
+   - Replacing {category} with "${prospect.category}"
+   - Replacing {contactName} with "there" (we don't have their name yet)
+   - Replacing {senderName} with "EventNexus Team"
+   - Adding 1-2 specific compliments based on their category and description
+   - Tailoring benefits to their specific business type
+
+2. Write in ${targetLanguage} language (maintain professional tone)
+
+3. Keep the structure but make it feel authentic and personalized, not templated
+
+4. Output ONLY valid JSON with this exact structure:
+{
+  "subject": "The personalized email subject line",
+  "body": "The complete personalized email body with proper formatting"
+}
+
+CRITICAL: Your response must be ONLY the JSON object, no markdown, no explanations.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // Parse JSON response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('Failed to parse AI response as JSON');
+      return null;
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    // Deduct credits after successful generation
+    if (userId && parsed.subject && parsed.body) {
+      await deductUserCredits(userId, 25);
+    }
+
+    return {
+      subject: parsed.subject || template.subject_template,
+      body: parsed.body || template.body_template
+    };
+  } catch (error) {
+    console.error("Outreach email generation failed:", error);
+    return null;
+  }
+};
+

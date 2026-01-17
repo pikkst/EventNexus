@@ -35,6 +35,7 @@ import AnalyticsDashboard from './AnalyticsDashboard';
 import AdminContentManager from './AdminContentManager';
 import AdminMediaManager from './AdminMediaManager';
 import AdminEventReports from './AdminEventReports';
+import MarketingOutreachManager from './MarketingOutreachManager';
 import { 
   getEvents, 
   getAllUsers, 
@@ -783,6 +784,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     { id: 'event-reports', label: 'Event Reports', icon: <Flag /> },
     { id: 'inbox', label: 'Email Inbox', icon: <Mail /> },
     { id: 'newsletter', label: 'Newsletter Subscribers', icon: <MailIcon /> },
+    { id: 'outreach', label: 'B2B Outreach', icon: <Globe /> },
     { id: 'ai-agents', label: 'AI Agent System', icon: <Bot /> },
     { id: 'marketing', label: 'Campaign Engine', icon: <Rocket /> },
     { id: 'analytics-campaign', label: 'Campaign Analytics', icon: <Target /> },
@@ -1576,6 +1578,12 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {activeTab === 'outreach' && (
+          <div className="animate-in fade-in duration-500">
+            <MarketingOutreachManager user={user} />
           </div>
         )}
 
