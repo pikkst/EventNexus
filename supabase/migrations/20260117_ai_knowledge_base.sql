@@ -115,14 +115,33 @@ BEGIN
   SELECT 'total_users', COUNT(*)::TEXT, 'count', true FROM public.users
   ON CONFLICT (stat_key) DO UPDATE SET stat_value = EXCLUDED.stat_value, last_updated = NOW();
 
-  -- Total events (public)
+  -- Total events (active events, matching landing page)
   INSERT INTO public.ai_platform_stats_cache (stat_key, stat_value, stat_type, is_public)
-  SELECT 'total_events', COUNT(*)::TEXT, 'count', true FROM public.events WHERE status = 'published'
+  SELECT 'total_events', COUNT(*)::TEXT, 'count', true FROM public.events WHERE status = 'active'
   ON CONFLICT (stat_key) DO UPDATE SET stat_value = EXCLUDED.stat_value, last_updated = NOW();
 
-  -- Active organizers (public)
+  -- Events discovered in last 24 hours (matching landing page "This 24h" metric)
   INSERT INTO public.ai_platform_stats_cache (stat_key, stat_value, stat_type, is_public)
-  SELECT 'active_organizers', COUNT(DISTINCT organizer_id)::TEXT, 'count', true FROM public.events WHERE status = 'published'
+  SELECT 'events_last_24h', COUNT(*)::TEXT, 'count', true 
+  FROM public.events 
+  WHERE created_at >= NOW() - INTERVAL '24 hours'
+  ON CONFLICT (stat_key) DO UPDATE SET stat_value = EXCLUDED.stat_value, last_updated = NOW();
+
+  -- Active organizers (from active events)
+  INSERT INTO public.ai_platform_stats_cache (stat_key, stat_value, stat_type, is_public)
+  SELECT 'active_organizers', COUNT(DISTINCT organizer_id)::TEXT, 'count', true FROM public.events WHERE status = 'active'
+  ON CONFLICT (stat_key) DO UPDATE SET stat_value = EXCLUDED.stat_value, last_updated = NOW();
+
+  -- Active cities (from city_configs, matching landing page)
+  INSERT INTO public.ai_platform_stats_cache (stat_key, stat_value, stat_type, is_public)
+  SELECT 'active_cities', COUNT(*)::TEXT, 'count', true FROM public.city_configs WHERE active = true
+  ON CONFLICT (stat_key) DO UPDATE SET stat_value = EXCLUDED.stat_value, last_updated = NOW();
+
+  -- Free events count (matching landing page "Zero Cost" metric)
+  INSERT INTO public.ai_platform_stats_cache (stat_key, stat_value, stat_type, is_public)
+  SELECT 'free_events_active', COUNT(*)::TEXT, 'count', true 
+  FROM public.events 
+  WHERE price = 0 AND status = 'active'
   ON CONFLICT (stat_key) DO UPDATE SET stat_value = EXCLUDED.stat_value, last_updated = NOW();
 
   -- Total tickets sold (public aggregate, not individual)
@@ -135,22 +154,22 @@ BEGIN
   VALUES ('platform_phase', 'Beta Launch', 'text', true)
   ON CONFLICT (stat_key) DO UPDATE SET stat_value = EXCLUDED.stat_value, last_updated = NOW();
 
-  -- Growth trend (last 7 days vs previous 7 days)
+  -- Growth trend (last 7 days vs previous 7 days, using active events)
   WITH recent_week AS (
     SELECT COUNT(*) as recent_count FROM public.events 
-    WHERE created_at >= NOW() - INTERVAL '7 days' AND status = 'published'
+    WHERE created_at >= NOW() - INTERVAL '7 days' AND status = 'active'
   ),
   previous_week AS (
     SELECT COUNT(*) as prev_count FROM public.events 
     WHERE created_at >= NOW() - INTERVAL '14 days' 
       AND created_at < NOW() - INTERVAL '7 days' 
-      AND status = 'published'
+      AND status = 'active'
   )
   INSERT INTO public.ai_platform_stats_cache (stat_key, stat_value, stat_type, is_public, metadata)
   SELECT 
     'event_creation_trend',
     CASE 
-      WHEN prev_count = 0 THEN 'new_platform'
+      WHEN prev_count = 0 AND recent_count = 0 THEN 'new_platform'
       WHEN recent_count > prev_count THEN 'growing'
       WHEN recent_count < prev_count THEN 'declining'
       ELSE 'stable'
@@ -200,9 +219,10 @@ ON CONFLICT (data_type) DO NOTHING;
 -- Insert initial knowledge base (public facts about EventNexus)
 INSERT INTO public.ai_knowledge_base (category, question, answer, language, is_public, priority) VALUES
 -- Platform Overview
-('platform_overview', 'What is EventNexus?', 'EventNexus is Estonia''s fastest-growing event discovery and ticketing platform. We use AI-powered technology to help event organizers reach audiences in 50+ languages while providing attendees with a seamless experience to discover and book events across the Baltics and beyond.', 'en', true, 10),
-('platform_overview', 'When was EventNexus founded?', 'EventNexus is currently in Beta Launch phase (2025-2026), rapidly growing our user base and feature set based on real feedback from event organizers.', 'en', true, 5),
-('platform_overview', 'Where is EventNexus based?', 'EventNexus is based in Estonia, serving the Baltic region (Estonia, Latvia, Lithuania) and expanding across Northern Europe.', 'en', true, 5),
+('platform_overview', 'What is EventNexus?', 'EventNexus is Estonia''s fastest-growing event discovery and ticketing platform. We use AI-powered technology to help event organizers reach audiences in 50+ languages while providing attendees with a seamless experience to discover and book events across the Baltics and beyond. The platform currently serves over 1,100 active cities worldwide with 700+ new events discovered daily.', 'en', true, 10),
+('platform_overview', 'When was EventNexus founded?', 'EventNexus is currently in Beta Launch phase (2025-2026), rapidly growing our user base and feature set based on real feedback from event organizers. The platform is experiencing strong growth with hundreds of events added daily.', 'en', true, 5),
+('platform_overview', 'Where is EventNexus based?', 'EventNexus is based in Estonia, serving the Baltic region (Estonia, Latvia, Lithuania) and expanding across Northern Europe. The platform has grown to serve over 1,100 active cities worldwide.', 'en', true, 5),
+('platform_overview', 'How many events are on EventNexus?', 'EventNexus currently features hundreds of active events across 1,100+ cities worldwide, with 700+ new events discovered every 24 hours. The platform includes a mix of paid and free events, with over 1,600 free events available at any time.', 'en', true, 9),
 
 -- Features
 ('features', 'What are the main features?', 'EventNexus offers: 1) AI-powered multilingual promotion (50+ languages), 2) Smart QR code ticketing with fraud prevention, 3) Real-time analytics and audience insights, 4) Zero upfront costs (only 2.5% per ticket sold), 5) Integrated payment processing, 6) Social features (communities, achievements, gamification), 7) Mobile apps (iOS & Android), 8) Marketing automation tools.', 'en', true, 10),
