@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { usePageSEO } from '../hooks/useSEO';
 import { 
   Search, SlidersHorizontal, MapPin, Calendar, 
@@ -77,6 +77,7 @@ interface HomeMapProps {
 
 const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events: propEvents }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -110,6 +111,45 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       cleanupSEO();
     };
   }, []);
+
+  // Sync date/sort with URL query params for deep-linking
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const qDate = params.get('date');
+      const qSort = params.get('sort');
+      if (qDate) {
+        // Accept ISO; normalize dd.mm.yyyy
+        const norm = normalizeDate(qDate);
+        if (norm && norm !== selectedDate) {
+          setSelectedDate(norm);
+        }
+      }
+      if (qSort === 'asc' || qSort === 'desc') {
+        if (qSort !== sortOrder) {
+          setSortOrder(qSort as 'asc' | 'desc');
+        }
+      }
+    } catch {}
+  }, [location.search, normalizeDate]);
+
+  useEffect(() => {
+    // Update URL query only when it differs to avoid loops
+    try {
+      const params = new URLSearchParams(location.search);
+      const current = params.toString();
+      if (selectedDate) {
+        params.set('date', selectedDate);
+      } else {
+        params.delete('date');
+      }
+      params.set('sort', sortOrder);
+      const next = params.toString();
+      if (next !== current) {
+        navigate({ pathname: location.pathname, search: next ? `?${next}` : '' }, { replace: true });
+      }
+    } catch {}
+  }, [selectedDate, sortOrder, location.pathname, location.search, navigate]);
   
   // Load saved map position from localStorage, or use geolocation if not available
   // Track zoom level for dynamic marker sizing
