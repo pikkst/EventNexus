@@ -15,6 +15,7 @@ import { getEvents } from '../services/dbService';
 import { filterActiveEvents } from '../utils/eventUtils';
 import { generateMapSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 import { supabase } from '../services/supabase';
+import { RecommendationFeed, TrendingEventsSection } from './RecommendationFeed';
 
 interface MapEffectsProps {
   center: [number, number];
@@ -175,15 +176,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   }, [selectedDate, sortOrder, location.pathname, location.search, navigate]);
   
   // Load saved map position from localStorage, or use geolocation if not available
-  // Track zoom level for dynamic marker sizing
-  const [currentZoom, setCurrentZoom] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('homemap_last_zoom');
-      return saved ? JSON.parse(saved) : 13;
-    } catch {
-      return 13;
-    }
-  });
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const [userLocation, setUserLocation] = useState<[number, number]>(() => {
     // Try to restore from localStorage first
@@ -407,6 +401,22 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       console.log(`📍 Bounds changed: ${visibleEvents.length}/${allEvents.length} events visible`);
     }
   }, [visibleBounds, allEvents, filterEventsByBounds]);
+
+  // Fetch current user ID for recommendations
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+          console.log(`👤 User loaded for recommendations: ${user.id}`);
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    };
+    fetchUserId();
+  }, []);
 
   // Real-time subscription: Listen for new/updated/deleted events
   useEffect(() => {
@@ -1285,6 +1295,61 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           >
             <Maximize2 className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />
           </button>
+        </div>
+      )}
+
+      {/* Recommendations Floating Panel */}
+      {!compactMode && userId && (
+        <div className="absolute right-4 md:right-6 top-20 md:top-24 z-[500] max-w-xs max-h-[calc(100vh-200px)] overflow-hidden">
+          <button
+            onClick={() => setShowRecommendations(!showRecommendations)}
+            className={`w-full inline-flex items-center justify-between gap-2 px-4 py-3 rounded-t-xl md:rounded-t-2xl shadow-xl transition-all border ${
+              showRecommendations
+                ? theme === 'light'
+                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                  : 'bg-indigo-950 text-indigo-300 border-indigo-800'
+                : theme === 'light'
+                  ? 'bg-white text-slate-700 border-slate-200 hover:bg-indigo-50'
+                  : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-indigo-950'
+            }`}
+            title="Show personalized event recommendations"
+            aria-label="Toggle personalized recommendations"
+            aria-pressed={showRecommendations}
+          >
+            <span className="text-sm font-bold flex items-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+              </svg>
+              Smart Picks
+            </span>
+            <X className={`w-4 h-4 transition-transform ${showRecommendations ? 'rotate-90' : ''}`} aria-hidden="true" />
+          </button>
+          
+          {showRecommendations && (
+            <div className={`border-t rounded-b-xl md:rounded-b-2xl overflow-y-auto max-h-[calc(100vh-260px)] ${
+              theme === 'light'
+                ? 'bg-white border-slate-200'
+                : 'bg-slate-900 border-slate-800'
+            }`}>
+              <div className="p-4">
+                {userId ? (
+                  <RecommendationFeed
+                    userId={userId}
+                    userLocation={{ lat: userLocation[0], lng: userLocation[1] }}
+                    limit={5}
+                    onEventClick={(event) => {
+                      navigate(`/event/${event.id}`);
+                      setShowRecommendations(false);
+                    }}
+                  />
+                ) : (
+                  <div className={`p-4 text-center text-sm ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Sign in to see personalized recommendations
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
