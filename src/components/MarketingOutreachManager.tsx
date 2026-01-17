@@ -154,7 +154,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
 
         alert('✅ Email generated and saved as draft!');
       } else {
-        alert('❌ Failed to generate email. Check your credits.');
+        alert('❌ Failed to generate email. AI service may be unavailable. Check console for details.');
       }
     } catch (error) {
       logger.error('Error generating email:', error);

@@ -1011,11 +1011,29 @@ export const generateOutreachEmail = async (
       .join(', ');
 
     const ai = getAI();
+    
+    // Try thinking mode first, fallback to fast mode if unavailable
+    let modelName = 'gemini-2.0-flash-thinking-exp';
+    try {
+      const model = ai.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature: 0.8,
+          maxOutputTokens: 4096,
+        }
+      });
+      // Test if model is available
+      await model.generateContent({ contents: 'test' });
+    } catch (modelError: any) {
+      console.warn('Thinking mode unavailable, using fast mode:', modelError?.message);
+      modelName = 'gemini-2.5-flash';  // Fallback to reliable model
+    }
+    
     const model = ai.getGenerativeModel({
-      model: 'gemini-2.0-flash-thinking-exp',  // Thinking mode for strategic B2B outreach
+      model: modelName,
       generationConfig: {
         temperature: 0.8,
-        maxOutputTokens: 4096,  // Increased for thinking process
+        maxOutputTokens: 4096,
       }
     });
 
@@ -1099,10 +1117,8 @@ CRITICAL: Your response must be ONLY the JSON object, no markdown, no explanatio
 
     const parsed = JSON.parse(jsonMatch[0]);
 
-    // Deduct credits after successful generation
-    if (userId && parsed.subject && parsed.body) {
-      await deductUserCredits(userId, 25);
-    }
+    // NO CREDIT DEDUCTION - Admin-only marketing feature
+    // Marketing outreach is a platform tool, not a user-facing feature
 
     return {
       subject: parsed.subject || template.subject_template,
