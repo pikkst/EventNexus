@@ -45,8 +45,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log('📨 Parsing request body...');
-    const { prospect, template, language }: OutreachRequest = await req.json();
-    console.log('✅ Request parsed:', { prospect: prospect.name, language });
+    const { prospect, template, language, sendEmail }: OutreachRequest = await req.json();
+    console.log('✅ Request parsed:', { prospect: prospect.name, language, sendEmail });
 
     // Get platform context
     console.log('📊 Fetching platform stats...');
@@ -195,7 +195,7 @@ ${adminPhone}
     let emailSent = false;
     let emailId = null;
     
-    if (req.json && (await req.clone().json()).sendEmail) {
+    if (sendEmail) {
       console.log('📧 Sending email via Resend...');
       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
       

@@ -116,10 +116,12 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
   };
 
   const handleGenerateEmail = async (prospect: MarketingProspect, template: MarketingTemplate, sendImmediately: boolean = false) => {
-    setIsGenerating(true);
+    // Set loading states FIRST, before any other operations
     if (sendImmediately) {
       setIsSending(true);
       setSendingProspectId(prospect.id);
+    } else {
+      setIsGenerating(true);
     }
     setSelectedProspect(prospect);
     setSelectedTemplate(template);
@@ -436,14 +438,32 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
                               <Eye className="w-4 h-4" />
                             </button>
                             {templates.length > 0 && (
-                              <button
-                                onClick={() => handleGenerateEmail(prospect, templates[0])}
-                                disabled={isGenerating}
-                                className="p-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg text-white transition-all"
-                                title="Generate AI email"
-                              >
-                                <Sparkles className="w-4 h-4" />
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => handleGenerateEmail(prospect, templates[0], false)}
+                                  disabled={isGenerating || (isSending && sendingProspectId === prospect.id)}
+                                  className="p-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg text-white transition-all"
+                                  title="Generate AI email (draft)"
+                                >
+                                  {isGenerating ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Sparkles className="w-4 h-4" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleGenerateEmail(prospect, templates[0], true)}
+                                  disabled={isGenerating || isSending}
+                                  className="p-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-lg text-white transition-all relative"
+                                  title="Generate & Send email immediately"
+                                >
+                                  {isSending && sendingProspectId === prospect.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Send className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </>
                             )}
                           </div>
                         </td>
