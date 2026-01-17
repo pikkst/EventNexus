@@ -85,6 +85,13 @@ ALTER TABLE public.ai_platform_stats_cache ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_privacy_blacklist ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_conversation_logs ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (for idempotent migration)
+DROP POLICY IF EXISTS "Admin full access to knowledge base" ON public.ai_knowledge_base;
+DROP POLICY IF EXISTS "Admin full access to changelog" ON public.ai_platform_changelog;
+DROP POLICY IF EXISTS "Admin full access to stats cache" ON public.ai_platform_stats_cache;
+DROP POLICY IF EXISTS "Admin full access to privacy blacklist" ON public.ai_privacy_blacklist;
+DROP POLICY IF EXISTS "Admin full access to conversation logs" ON public.ai_conversation_logs;
+
 -- Admin full access
 CREATE POLICY "Admin full access to knowledge base" ON public.ai_knowledge_base FOR ALL USING (
   EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role = 'admin')
