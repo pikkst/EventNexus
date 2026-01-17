@@ -29,7 +29,9 @@ import {
   Mail,
   Gift,
   Coins,
-  Smartphone
+  Smartphone,
+  Users,
+  Heart
 } from 'lucide-react';
 
 // Lightweight components - load immediately
@@ -65,6 +67,10 @@ const OnboardingTutorial = lazy(() => import('./components/OnboardingTutorial'))
 const AdminCreditManager = lazy(() => import('./components/AdminCreditManager'));
 const CodeRedemption = lazy(() => import('./components/CodeRedemption'));
 const PublicEventsBrowse = lazy(() => import('./components/PublicEventsBrowse'));
+const PublicUserProfile = lazy(() => import('./components/PublicUserProfile'));
+const EventFeed = lazy(() => import('./components/EventFeed'));
+const Communities = lazy(() => import('./components/Communities'));
+import ErrorBoundary from './components/ErrorBoundary';
 
 import { User, Notification, EventNexusEvent } from './types';
 import { CATEGORIES } from './constants';
@@ -321,6 +327,7 @@ const App: React.FC = () => {
     return false;
   });
   const sessionRestoreAttempted = useRef(false);
+  const isMountedRef = useRef(true);
   
   // Global session keep-alive: prevents auto-logout during long-running operations
   // Especially critical for admin pages with multi-city batch processing
@@ -350,8 +357,6 @@ const App: React.FC = () => {
   }, []);
   
   useEffect(() => {
-    let mounted = true;
-    
     // Check for successful subscription checkout and reload user data
     const checkSubscriptionSuccess = async () => {
       const params = new URLSearchParams(window.location.hash.split('?')[1]);
@@ -363,7 +368,7 @@ const App: React.FC = () => {
           // Wait a bit for webhook to complete
           await new Promise(resolve => setTimeout(resolve, 2000));
           const updatedUser = await getUser(user.id);
-          if (updatedUser && mounted) {
+          if (updatedUser && isMountedRef.current) {
             setUser(updatedUser);
             cacheUserData(updatedUser);
             console.log('✅ User data reloaded after subscription:', updatedUser.subscription_tier);
@@ -375,39 +380,53 @@ const App: React.FC = () => {
     };
     
     checkSubscriptionSuccess();
-    
-    return () => { mounted = false; };
   }, [user?.id]); // Only run when user ID changes or on mount
 
   useEffect(() => {
-    let mounted = true;
-    
     const loadInitialData = async () => {
       // Prevent multiple restoration attempts
-      if (sessionRestoreAttempted.current) return;
+      if (sessionRestoreAttempted.current) {
+        return;
+      }
       sessionRestoreAttempted.current = true;
+      
+      // Set a timeout - if nothing completes in 15 seconds, force loading to end
+      const hardTimeout = setTimeout(() => {
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
+      }, 15000);
       
       try {
         // Check for existing session FIRST (avoid TDZ on session variable)
         const { data: { session } } = await supabase.auth.getSession();
 
-        // Initialize campaign tracking with known session info
-        const { initializeTracking } = await import('./services/campaignTrackingService');
-        await initializeTracking(session?.user?.id);
+        // Initialize campaign tracking with known session info (with timeout to prevent hanging)
+        try {
+          const { initializeTracking } = await import('./services/campaignTrackingService');
+          const trackingPromise = initializeTracking(session?.user?.id);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Campaign tracking timeout')), 5000)
+          );
+          await Promise.race([trackingPromise, timeoutPromise]);
+        } catch (trackingError) {
+          console.warn('⚠️ Campaign tracking initialization failed (non-blocking):', trackingError?.message || trackingError);
+          // Continue anyway - tracking is not critical for app loading
+        }
         
-        if (session?.user && mounted) {
+        if (session?.user && isMountedRef.current) {
           console.log('🔄 Loading fresh user data from database...');
           try {
             // ALWAYS fetch fresh data from database, don't rely on cache
             const userData = await getUser(session.user.id);
-            if (userData && mounted) {
+            if (userData && isMountedRef.current) {
               setUser(userData);
               cacheUserData(userData);
               setSessionRestored(true);
               console.log('✅ Fresh user data loaded. Credits:', userData.credits);
               
               const userNotifications = await getNotifications(userData.id);
-              if (mounted) {
+              if (isMountedRef.current) {
                 setNotifications(userNotifications);
                 cacheNotifications(userNotifications);
               }
@@ -432,7 +451,7 @@ const App: React.FC = () => {
           const eventsData = session?.user ? await getAllEvents() : await getEvents();
           // Filter out expired events
           const activeEvents = filterActiveEvents(eventsData);
-          if (mounted) {
+          if (isMountedRef.current) {
             setEvents(activeEvents);
             cacheEvents(activeEvents);
           }
@@ -440,7 +459,8 @@ const App: React.FC = () => {
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {
-        if (mounted) {
+        clearTimeout(hardTimeout);
+        if (isMountedRef.current) {
           setIsLoading(false);
         }
       }
@@ -471,14 +491,14 @@ const App: React.FC = () => {
           
           const userData = await getUser(session.user.id);
           
-          if (userData && mounted) {
+          if (userData && isMountedRef.current) {
             setUser(userData);
             cacheUserData(userData);
             setIsLoading(false);
             
             // Load notifications and events in background
             getNotifications(userData.id).then(notifs => {
-              if (mounted) {
+              if (isMountedRef.current) {
                 setNotifications(notifs);
                 cacheNotifications(notifs);
               }
@@ -486,7 +506,7 @@ const App: React.FC = () => {
             
             getAllEvents().then(eventsData => {
               const activeEvents = filterActiveEvents(eventsData);
-              if (mounted) {
+              if (isMountedRef.current) {
                 setEvents(activeEvents);
                 cacheEvents(activeEvents);
               }
@@ -513,25 +533,25 @@ const App: React.FC = () => {
       }
       
       // Handle regular sign-in (non-OAuth)
-      if (event === 'SIGNED_IN' && session?.user && mounted && !user && !hasOAuthParams) {
+      if (event === 'SIGNED_IN' && session?.user && isMountedRef.current && !user && !hasOAuthParams) {
         console.log('User signed in (regular login), loading data...');
         
         try {
           const userData = await getUser(session.user.id);
           
-          if (userData && mounted) {
+          if (userData && isMountedRef.current) {
             setUser(userData);
             cacheUserData(userData);
             
             const userNotifications = await getNotifications(userData.id);
-            if (mounted) {
+            if (isMountedRef.current) {
               setNotifications(userNotifications);
               cacheNotifications(userNotifications);
             }
             
             const eventsData = await getAllEvents();
             const activeEvents = filterActiveEvents(eventsData);
-            if (mounted) {
+            if (isMountedRef.current) {
               setEvents(activeEvents);
               cacheEvents(activeEvents);
             }
@@ -539,9 +559,9 @@ const App: React.FC = () => {
         } catch (userError) {
           console.error('Error loading user data:', userError);
         }
-      } else if (event === 'TOKEN_REFRESHED' && session?.user && mounted) {
+      } else if (event === 'TOKEN_REFRESHED' && session?.user && isMountedRef.current) {
         console.log('✅ Token refreshed successfully');
-      } else if (event === 'SIGNED_OUT' && mounted) {
+      } else if (event === 'SIGNED_OUT' && isMountedRef.current) {
         console.log('User signed out');
         setUser(null);
         setNotifications([]);
@@ -553,14 +573,14 @@ const App: React.FC = () => {
         // Reload only public events for guests
         const eventsData = await getEvents();
         const activeEvents = filterActiveEvents(eventsData);
-        if (mounted) {
+        if (isMountedRef.current) {
           setEvents(activeEvents);
           cacheEvents(activeEvents);
         }
-      } else if (event === 'USER_UPDATED' && session?.user && mounted) {
+      } else if (event === 'USER_UPDATED' && session?.user && isMountedRef.current) {
         console.log('User updated, reloading data...');
         const userData = await getUser(session.user.id);
-        if (userData && mounted) {
+        if (userData && isMountedRef.current) {
           setUser(userData);
           cacheUserData(userData);
         }
@@ -568,7 +588,6 @@ const App: React.FC = () => {
     });
 
     return () => {
-      mounted = false;
       authListener?.subscription.unsubscribe();
     };
   }, []);
@@ -817,8 +836,9 @@ const App: React.FC = () => {
         <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} user={user} />
         
         <main className="pt-16 flex-grow">
-          <Suspense fallback={<DashboardSkeleton />}>
-            <Routes>
+          <ErrorBoundary>
+            <Suspense fallback={<DashboardSkeleton />}>
+              <Routes>
               <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/browse" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/events" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} />} />
@@ -839,6 +859,9 @@ const App: React.FC = () => {
               <Route path="/beta-signup" element={<BetaInvitation />} />
               <Route path="/org/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
               <Route path="/agency/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
+                <Route path="/user/:username" element={<PublicUserProfile currentUser={user} />} />
+                  <Route path="/feed" element={<EventFeed user={user} />} />
+              <Route path="/communities" element={<Communities user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/ai-agents" element={user?.role === 'admin' ? <AIAgentDashboard user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
@@ -850,8 +873,9 @@ const App: React.FC = () => {
               <Route path="/cookies" element={<CookieSettings />} />
               <Route path="/gdpr" element={<GDPRCompliance />} />
               <Route path="/notifications" element={user ? <NotificationSettings user={user} onUpdatePrefs={handleUpdatePrefs} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-            </Routes>
-          </Suspense>
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </main>
 
         <ConditionalFooter />
@@ -1122,6 +1146,10 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
           <SidebarItem icon={<Gift />} label="Redeem Code" to="/redeem" onClick={closeSidebar} />
           <SidebarItem icon={<Smartphone />} label="Mobile Apps" to="/mobile" onClick={closeSidebar} />
           <SidebarItem icon={<Zap />} label="Pricing" to="/pricing" onClick={closeSidebar} />
+          
+          <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">Social</div>
+          <SidebarItem icon={<Users />} label="Social Feed" to="/feed" onClick={closeSidebar} />
+          <SidebarItem icon={<Heart />} label="Find Friends" to="/communities" onClick={closeSidebar} />
           
           <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">User</div>
           <SidebarItem icon={<Settings />} label="Settings" to="/notifications" onClick={closeSidebar} />

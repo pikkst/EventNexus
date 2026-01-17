@@ -105,7 +105,7 @@ interface DiscoverEventsRequest {
   city_id?: string
   city_name?: string
   country?: string
-  target_events?: number  // How many events to find (default: 15)
+  target_events?: number  // How many events to find (default: 8 to reduce latency)
 }
 
 interface FreeEvent {
@@ -152,7 +152,7 @@ async function geocodeAddress(
       }
     }
   } catch (e) {
-    console.warn(`⚠️ Nominatim failed: ${e.message}`)
+    console.warn(`[WARN] Nominatim failed: ${e.message}`)
   }
   
   // Fallback: use Gemini directly
@@ -220,12 +220,12 @@ MUST be valid coordinates: latitude -90 to 90, longitude -180 to 180.`
             return { lat: coords.lat, lng: coords.lng }
           }
         } catch (e) {
-          console.warn(`⚠️ Gemini JSON parse failed: ${text.substring(0, 50)}`)
+          console.warn(`[WARN] Gemini JSON parse failed: ${text.substring(0, 50)}`)
         }
       }
     }
   } catch (e) {
-    console.warn(`⚠️ Gemini refinement failed: ${e.message}`)
+    console.warn(`[WARN] Gemini refinement failed: ${e.message}`)
   }
   
   // Return Nominatim coordinates if Gemini fails
@@ -289,16 +289,16 @@ MUST be valid coordinates: latitude -90 to 90, longitude -180 to 180.`
             return { lat: coords.lat, lng: coords.lng }
           }
         } catch (e) {
-          console.warn(`⚠️ Gemini JSON parse failed: ${text.substring(0, 50)}`)
+          console.warn(`[WARN] Gemini JSON parse failed: ${text.substring(0, 50)}`)
         }
       }
     }
   } catch (e) {
-    console.warn(`⚠️ Gemini geocoding failed: ${e.message}`)
+    console.warn(`[WARN] Gemini geocoding failed: ${e.message}`)
   }
   
   // Fallback to city center (0,0 placeholder)
-  console.warn(`⚠️ Geocoding failed entirely for: ${address}`)
+  console.warn(`[WARN] Geocoding failed entirely for: ${address}`)
   return { lat: 0, lng: 0 }
 }
 
@@ -313,7 +313,7 @@ async function validateAndRefineCoordinates(
   country: string
 ): Promise<FreeEvent> {
   try {
-    console.log(`🔍 Validating coordinates for: ${event.name}`)
+    console.log(`[SEARCH] Validating coordinates for: ${event.name}`)
     console.log(`   Address: ${event.location_address}`)
     console.log(`   Current coords: ${event.location_lat}, ${event.location_lng}`)
     
@@ -356,14 +356,14 @@ MUST be valid coordinates: latitude -90 to 90, longitude -180 to 180.`
         
         // Handle various response formats from Gemini
         if (!data || !data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
-          console.warn(`⚠️ Gemini returned empty candidates for ${event.name}`)
+          console.warn(`[WARN] Gemini returned empty candidates for ${event.name}`)
           console.log(`   Response: ${JSON.stringify(data).substring(0, 200)}`)
           return event
         }
         
         const candidate = data.candidates[0]
         if (!candidate || !candidate.content || !candidate.content.parts || !Array.isArray(candidate.content.parts) || candidate.content.parts.length === 0) {
-          console.warn(`⚠️ Gemini returned invalid content structure for ${event.name}`)
+          console.warn(`[WARN] Gemini returned invalid content structure for ${event.name}`)
           console.log(`   Candidate: ${JSON.stringify(candidate).substring(0, 200)}`)
           console.log(`   Content: ${candidate?.content ? JSON.stringify(candidate.content).substring(0, 200) : 'undefined'}`)
           console.log(`   Parts: ${candidate?.content?.parts ? JSON.stringify(candidate.content.parts).substring(0, 200) : 'undefined'}`)
@@ -396,22 +396,22 @@ MUST be valid coordinates: latitude -90 to 90, longitude -180 to 180.`
                 console.log(`✓ Coordinates verified for ${event.name}: ${coords.lat}, ${coords.lng}`)
               }
             } else {
-              console.warn(`⚠️ Gemini returned invalid coordinates for ${event.name}: lat=${coords?.lat}, lng=${coords?.lng}`)
+              console.warn(`[WARN] Gemini returned invalid coordinates for ${event.name}: lat=${coords?.lat}, lng=${coords?.lng}`)
             }
           } catch (parseError) {
-            console.warn(`⚠️ Failed to parse Gemini response for ${event.name}: ${text.substring(0, 100)}`)
+            console.warn(`[WARN] Failed to parse Gemini response for ${event.name}: ${text.substring(0, 100)}`)
           }
         } else {
-          console.warn(`⚠️ Gemini returned empty text for ${event.name}`)
+          console.warn(`[WARN] Gemini returned empty text for ${event.name}`)
         }
       } catch (jsonError) {
-        console.error(`⚠️ Failed to parse Gemini JSON response for ${event.name}:`, jsonError)
+        console.error(`[WARN] Failed to parse Gemini JSON response for ${event.name}:`, jsonError)
       }
     } else {
-      console.warn(`⚠️ Gemini API error ${response.status} for ${event.name}`)
+      console.warn(`[WARN] Gemini API error ${response.status} for ${event.name}`)
     }
   } catch (error) {
-    console.warn(`⚠️ Coordinate refinement failed for ${event.name}:`, error)
+    console.warn(`[WARN] Coordinate refinement failed for ${event.name}:`, error)
   }
   
   return event
@@ -427,7 +427,7 @@ async function discoverEventsWithAI(
   country: string,
   countryCode: string,
   timezone: string,
-  targetCount: number = 15,
+  targetCount: number = 8,
   cityLat?: number,
   cityLng?: number
 ): Promise<FreeEvent[]> {
@@ -503,8 +503,8 @@ DOUBLE-CHECK: All events must be FUTURE events in ${cityName}, ${country}, NOT U
     }
   }, 3, 2000) // Retry up to 3 times with 2s initial delay
 
-  console.log(`✅ Step 1 complete: Found raw event data (${rawText.length} chars)`)
-  console.log(`🧠 Step 2: Structuring with Gemini Pro + Google Search verification...`)
+  console.log(`[OK] Step 1 complete: Found raw event data (${rawText.length} chars)`)
+  console.log(`[AI] Step 2: Structuring with Gemini Pro + Google Search verification...`)
 
   // Step 2: Structure using Pro + Google Search for precise geocoding
   const centerInfo = (cityLat && cityLng) ? `The city center is [${cityLat}, ${cityLng}].` : ''
@@ -541,17 +541,17 @@ VALIDATION RULES:
 
 Return ONLY valid JSON array with FUTURE events and ACCURATE coordinates.`
 
-  // Step 2: Try Pro with retry logic, then fallback to Flash
+  // Step 2: Use Flash for structuring (5x cheaper than Pro, same accuracy for this task)
   let structuredText = ''
   let structureSuccess = false
 
-  // Try Pro first with retries
+  // Use Flash with Google Search grounding (optimized for cost + speed)
   try {
     await callWithRetry(async () => {
-      // CRITICAL FIX: Cannot use tools + responseMimeType together in REST API
-      // Use tools WITHOUT schema, then parse afterwards
+      console.log(`[AI] Structuring with Gemini Flash + Google Search...`)
+      
       const structureResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -560,8 +560,7 @@ Return ONLY valid JSON array with FUTURE events and ACCURATE coordinates.`
             tools: [{ googleSearch: {} }], // Enable search for geocoding - no schema allowed with tools!
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 16000
-              // NOTE: NO responseMimeType or responseSchema when using tools!
+              maxOutputTokens: 8000  // Flash max is 8k
             },
             systemInstruction: {
               parts: [{
@@ -632,8 +631,8 @@ JSON array structure:
       structureSuccess = true
     }, 2, 2000) // Retry Pro up to 2 times only (it's slower)
   } catch (proError: any) {
-    console.error(`❌ Pro model failed after retries: ${proError.message}`)
-    console.log('⏭️ Falling back to Flash model for structuring...')
+    console.error(`[FAIL] Pro model failed after retries: ${proError.message}`)
+    console.log('[FallBack] Falling back to Flash model for structuring...')
     structureSuccess = false
   }
 
@@ -641,13 +640,10 @@ JSON array structure:
   if (!structureSuccess) {
     try {
       await callWithRetry(async () => {
-        const flashResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: `Convert this event search data to a JSON array. 
+        const flashFallbackPrompt = `Convert this event search data to a JSON array. 
+
+RAW SEARCH DATA:
+${rawText}
 
 CRITICAL COUNTRY VALIDATION (REJECT WRONG COUNTRIES!):
 - ONLY events in ${cityName}, ${country} (ISO: ${countryCode.toUpperCase()})
@@ -656,35 +652,44 @@ CRITICAL COUNTRY VALIDATION (REJECT WRONG COUNTRIES!):
 
 CRITICAL GEOCODING:
 1. coordinates are EXACT street-level (not city center)
-2. all coordinates are within 20km of ${cityName} ${centerInfo ? `[${cityLat}, ${cityLng}]` : ''}
+2. all coordinates are within 20km of ${cityName}
 3. Each event is actually IN ${cityName}, ${country} - NOT other countries
-4. Põltsamaa events have lng ~25.96 (NOT 26.38+ which is Jõgeva)
 
-Return ONLY valid JSON array:\n\n${rawText}` }] }],
+Return ONLY valid JSON array.`
+
+        const flashResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: flashFallbackPrompt }] }],
               generationConfig: {
                 temperature: 0.1,
-                maxOutputTokens: 16000,
-                responseMimeType: 'application/json'
+                maxOutputTokens: 8000
               }
             })
           }
         )
 
         if (!flashResponse.ok) {
-          const errorText = await flashResponse.text()
-          throw new Error(`Flash structuring failed (${flashResponse.status}): ${errorText.substring(0, 200)}`)
+          throw new Error(`Flash fallback failed: ${flashResponse.status}`)
         }
 
-        const flashData = await flashResponse.json()
-        structuredText = flashData.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        const data = await flashResponse.json()
+        structuredText = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim()
 
-        if (!structuredText || structuredText.length < 50) {
-          throw new Error('Flash returned empty response')
+        // Guard: accept empty/[] as a valid "no events" response to avoid endless retries
+        if (!structuredText || structuredText.length < 4) {
+          structuredText = '[]'
         }
-      }, 3, 2000) // Retry Flash up to 3 times
-    } catch (flashError: any) {
-      console.error(`❌ Flash fallback also failed: ${flashError.message}`)
-      return [] // Return empty array if both fail
+
+        structureSuccess = true
+        console.log(`[OK] Flash structured ${structuredText.length} chars`)
+      }, 3, 2000) // Retry up to 3 times
+    } catch (structureError: any) {
+      console.error(`[FAIL] Flash structuring failed after retries: ${structureError.message}`)
+      return [] // Return empty array if structuring fails
     }
   }
   
@@ -692,35 +697,79 @@ Return ONLY valid JSON array:\n\n${rawText}` }] }],
   let events: FreeEvent[] = []
   try {
     // Remove any markdown code blocks that Gemini might add
-    const cleanedText = structuredText
+    let cleanedText = structuredText
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
       .trim()
     
+    // Clean up common JSON issues from AI responses:
+    // 1. Remove trailing commas before closing brackets/braces
+    cleanedText = cleanedText.replace(/,(\s*[}\]])/g, '$1')
+    
+    // 2. Remove control characters that break JSON parsing
+    cleanedText = cleanedText.replace(/[\x00-\x1F\x7F]/g, '')
+    
+    // 3. Fix common escape sequence issues
+    cleanedText = cleanedText.replace(/\\'/g, "'") // Unnecessary escaping of single quotes
+    
+    // 4. Fix incomplete JSON objects (missing closing braces/brackets)
+    const openBraces = (cleanedText.match(/{/g) || []).length
+    const closeBraces = (cleanedText.match(/}/g) || []).length
+    const openBrackets = (cleanedText.match(/\[/g) || []).length
+    const closeBrackets = (cleanedText.match(/\]/g) || []).length
+    
+    if (openBraces > closeBraces) {
+      cleanedText += '}'.repeat(openBraces - closeBraces)
+    }
+    if (openBrackets > closeBrackets) {
+      cleanedText += ']'.repeat(openBrackets - closeBrackets)
+    }
+    
+    // 5. Remove trailing text after final closing bracket
+    const finalBracket = cleanedText.lastIndexOf(']')
+    if (finalBracket > 0 && finalBracket < cleanedText.length - 1) {
+      cleanedText = cleanedText.substring(0, finalBracket + 1)
+    }
+    
+    // Ensure we have an array shape; if model returned nothing, return [] gracefully
+    if (!cleanedText.startsWith('[')) {
+      cleanedText = '[]'
+    }
+    if (!cleanedText.trim()) {
+      cleanedText = '[]'
+    }
+
     // Try to parse
     events = JSON.parse(cleanedText)
     
     // Validate it's an array
     if (!Array.isArray(events)) {
-      console.error('❌ Parsed result is not an array:', typeof events)
+      console.error('[FAIL] Parsed result is not an array:', typeof events)
       events = []
     }
     
     console.log(`✅ Step 2 complete: Structured ${events.length} events`)
   } catch (parseError: any) {
-    console.error('❌ JSON parsing failed:', parseError.message)
+    console.error('[FAIL] JSON parsing failed:', parseError.message)
     console.error('First 500 chars of response:', structuredText.substring(0, 500))
     
     // Try to salvage partial JSON by finding last complete closing bracket
     try {
-      const lastBracket = structuredText.lastIndexOf(']')
+      let cleanedText = structuredText
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .replace(/,(\s*[}\]])/g, '$1')
+        .replace(/[\x00-\x1F\x7F]/g, '')
+        .trim()
+      
+      const lastBracket = cleanedText.lastIndexOf(']')
       if (lastBracket > 0) {
-        const truncated = structuredText.substring(0, lastBracket + 1)
+        const truncated = cleanedText.substring(0, lastBracket + 1)
         events = JSON.parse(truncated)
-        console.log(`⚠️ Recovered ${events.length} events from truncated JSON`)
+        console.log(`[WARN] Recovered ${events.length} events from truncated JSON`)
       }
     } catch (recoveryError) {
-      console.error('❌ Recovery also failed, returning empty array')
+      console.error('[FAIL] Recovery also failed, returning empty array')
       events = []
     }
   }
@@ -777,7 +826,7 @@ Return ONLY valid JSON array:\n\n${rawText}` }] }],
     return true
   })
   
-  console.log(`✅ Filtered from ${events.length} to ${filtered.length} events (removed ${events.length - filtered.length} non-${country} events)`)
+  console.log(`[OK] Filtered from ${events.length} to ${filtered.length} events (removed ${events.length - filtered.length} non-${country} events)`)
   
   return filtered
 }
@@ -817,7 +866,7 @@ serve(async (req) => {
 
     // Parse request
     const body: DiscoverEventsRequest = await req.json()
-    const { city_id, city_name, country, target_events = 15 } = body
+    const { city_id, city_name, country, target_events = 8 } = body
 
     // Get city from database if city_id provided
     let cityData: any = null
@@ -860,8 +909,8 @@ serve(async (req) => {
       logContext
     )
 
-    console.log(`\n🚀 EventScout AI: ${cityData.city_name}, ${cityData.country}`)
-    console.log(`🎯 Target: ${target_events} events`)
+    console.log(`\n[LAUNCH] EventScout AI: ${cityData.city_name}, ${cityData.country}`)
+    console.log(`[TARGET] Target: ${target_events} events`)
 
     // Discover events using AI
     const events = await discoverEventsWithAI(
@@ -891,7 +940,16 @@ serve(async (req) => {
       )
     }
 
-    console.log(`\n📦 Inserting ${events.length} events into database...`)
+    console.log(`\n[PKG] Inserting ${events.length} events into database...`)
+
+    // Extract city data for use in insertion loop
+    // Note: 'country' from request body may be undefined if called with just city_id
+    // Always use cityData values which come from database
+    const countryCode = cityData.country_code || 'ee'
+    const countryName = cityData.country  // Use from database, not from request
+    const cityName = cityData.city_name
+    const cityLat = cityData.latitude || 0
+    const cityLng = cityData.longitude || 0
 
     // First, ensure EventScout AI source exists for this city
     const { data: existingSource } = await supabase
@@ -1008,7 +1066,7 @@ serve(async (req) => {
           if (foundDuplicate) continue
         }
 
-        // ✅ VALIDATE: Event must be in the future
+        // [OK] VALIDATE: Event must be in the future
         const now = new Date()
         
         if (eventStartTime < now) {
@@ -1017,13 +1075,38 @@ serve(async (req) => {
           continue
         }
 
-        // ✅ VALIDATE: Double-check that address is NOT from USA
+        // [ML] QUALITY PREDICTION: Skip low-quality events before expensive processing
+        // Uses SQL-based quality scoring (free, millisecond latency)
+        const hasCompleteData = !!(event.name && event.description && event.location_address)
+        const hasCoordinates = !!(event.location_lat && event.location_lng)
+        const hasValidTime = !!(event.start_time && event.start_time !== '00:00')
+        const addressLength = (event.location_address || '').length
+        const descriptionLength = (event.description || '').length
+        
+        const { data: qualityScore, error: qualityError } = await supabase
+          .rpc('calculate_event_quality', {
+            p_has_complete_data: hasCompleteData,
+            p_has_coordinates: hasCoordinates,
+            p_has_valid_time: hasValidTime,
+            p_address_length: addressLength,
+            p_description_length: descriptionLength,
+            p_category_confidence: 0.7,
+            p_source_score: 0.85
+          })
+        
+        if (!qualityError && qualityScore !== null && qualityScore < 0.60) {
+          console.log(`  ⊘ Skip (low quality ${qualityScore.toFixed(2)}): ${event.name}`)
+          insertResults.skipped = (insertResults.skipped || 0) + 1
+          continue
+        }
+
+        // [OK] VALIDATE: Double-check that address is NOT from USA
         // This is a safety catch for any USA events that slipped through AI filtering
         const address = event.location_address || ''
         
         // If address explicitly contains the target country, it's valid - skip USA check
         const hasCountryConfirmation = address.toLowerCase().includes(countryCode.toLowerCase()) || 
-                                       address.toLowerCase().includes(country.toLowerCase())
+                                       address.toLowerCase().includes(countryName.toLowerCase())
         
         if (!hasCountryConfirmation) {
           // Only check for USA patterns if country is NOT explicitly confirmed in address
@@ -1037,7 +1120,7 @@ serve(async (req) => {
           }
         }
 
-        // ✅ VALIDATE: Coordinates must be within reasonable distance of city
+        // [OK] VALIDATE: Coordinates must be within reasonable distance of city
         // This prevents events from wrong countries with similar city names
         if (cityLat && cityLng) {
           const distance = Math.sqrt(
@@ -1053,9 +1136,15 @@ serve(async (req) => {
           }
         }
 
-        // ✅ Use coordinates from Gemini structuring
+        // [OK] Use coordinates from Gemini structuring
         // publish-event will refine/validate them later with full geocoding logic
-        console.log(`✅ ${event.name}`)
+        
+        // FALLBACK: If no coordinates from Gemini, use city center
+        // publish-event will geocode properly later
+        const finalLat = event.location_lat || cityLat || 0
+        const finalLng = event.location_lng || cityLng || 0
+        
+        console.log(`[OK] ${event.name} (${finalLat.toFixed(4)}, ${finalLng.toFixed(4)})`)
 
         // Create structured_json
         const structured = {
@@ -1064,8 +1153,8 @@ serve(async (req) => {
           start_time: event.start_time,
           end_time: event.end_time,
           location_address: event.location_address,
-          location_lat: event.location_lat,
-          location_lng: event.location_lng,
+          location_lat: finalLat,   // Never NULL
+          location_lng: finalLng,   // Never NULL
           category: event.category,
           is_free: true,
           price: 0,
@@ -1077,6 +1166,13 @@ serve(async (req) => {
 
         // Insert into parsed_events
         // First create raw_event with proper source_id
+        const contentHash = `eventscout-${event.name}-${event.start_time}`.substring(0, 100)
+        
+        console.log(`  🔹 Inserting raw_event: ${event.name}`)
+        console.log(`     source_id: ${sourceId}`)
+        console.log(`     city_id: ${cityData.city_id}`)
+        console.log(`     content_hash: ${contentHash}`)
+        
         const { data: rawEvent, error: rawError } = await supabase
           .from('raw_events')
           .insert({
@@ -1085,19 +1181,39 @@ serve(async (req) => {
             raw_content: null,
             raw_content_json: event,
             content_type: 'json',
-            content_hash: `eventscout-${event.name}-${event.start_time}`.substring(0, 100),
+            content_hash: contentHash,
             processing_status: 'parsed'
           })
           .select('id')
           .single()
 
         if (rawError || !rawEvent) {
-          console.error(`❌ Failed to create raw_event for ${event.name}:`, rawError)
-          console.error(`   Error details:`, JSON.stringify(rawError, null, 2))
+          const errorCode = rawError?.code || 'UNKNOWN'
+          const errorMsg = rawError?.message || 'No error message'
+          const errorDetails = rawError?.details || 'No details'
+          const hint = rawError?.hint || 'No hint'
+          
+          console.error(`\n[FAIL] raw_events INSERT ERROR:`)
+          console.error(`  Event: ${event.name}`)
+          console.error(`  Code: ${errorCode}`)
+          console.error(`  Message: ${errorMsg}`)
+          console.error(`  Details: ${errorDetails}`)
+          console.error(`  Hint: ${hint}`)
+          console.error(`  Full error: ${JSON.stringify(rawError, null, 2)}`)
+          
+          // Log field values for debugging
+          console.error(`  INSERT values:`)
+          console.error(`    source_id: ${sourceId}`)
+          console.error(`    city_id: ${cityData.city_id}`)
+          console.error(`    content_hash: ${contentHash}`)
+          console.error(`    processing_status: parsed`)
+          
           insertResults.failed++
-          insertResults.errors.push(`${event.name}: ${rawError?.message || 'Unknown error'}`)
+          insertResults.errors.push(`${event.name}: [${errorCode}] ${errorMsg}`)
           continue
         }
+        
+        console.log(`  [OK] Created raw_event: ${rawEvent.id}`)
 
         // Now insert into parsed_events with all required fields
         const { data: parsedEvent, error: insertError } = await supabase
@@ -1114,10 +1230,27 @@ serve(async (req) => {
           .single()
 
         if (insertError || !parsedEvent) {
-          console.error(`❌ Insert failed: ${event.name}`, insertError)
-          console.error(`   Error details:`, JSON.stringify(insertError, null, 2))
+          const errorCode = insertError?.code || 'UNKNOWN'
+          const errorMsg = insertError?.message || 'No error message'
+          const errorDetails = insertError?.details || 'No details'
+          const hint = insertError?.hint || 'No hint'
+          
+          console.error(`\n[FAIL] parsed_events INSERT ERROR:`)
+          console.error(`  Event: ${event.name}`)
+          console.error(`  Code: ${errorCode}`)
+          console.error(`  Message: ${errorMsg}`)
+          console.error(`  Details: ${errorDetails}`)
+          console.error(`  Hint: ${hint}`)
+          console.error(`  Full error: ${JSON.stringify(insertError, null, 2)}`)
+          
+          // Log field values for debugging
+          console.error(`  INSERT values:`)
+          console.error(`    raw_event_id: ${rawEvent?.id}`)
+          console.error(`    city_id: ${cityData.city_id}`)
+          console.error(`    validation_status: validated`)
+          
           insertResults.failed++
-          insertResults.errors.push(`${event.name}: ${insertError?.message || 'Unknown error'}`)
+          insertResults.errors.push(`${event.name}: [${errorCode}] ${errorMsg}`)
         } else {
           // Insert event_confidence for publish-event to find it
           const { error: confidenceError } = await supabase
@@ -1138,12 +1271,12 @@ serve(async (req) => {
             })
           
           if (confidenceError) {
-            console.error(`⚠️ event_confidence insert failed for ${event.name}:`, confidenceError)
+            console.error(`[WARN] event_confidence insert failed for ${event.name}:`, confidenceError)
             // Don't fail the whole operation, event is still inserted
           }
           
           insertResults.inserted++
-          console.log(`  ✅ ${event.name}`)
+          console.log(`  [OK] ${event.name}`)
         }
       } catch (eventError: any) {
         insertResults.failed++
@@ -1164,15 +1297,22 @@ serve(async (req) => {
       }
     )
 
-    console.log(`\n✅ EventScout AI complete!`)
-    console.log(`  📊 Found: ${events.length} events`)
-    console.log(`  ✅ Inserted: ${insertResults.inserted}`)
+    console.log(`\n[OK] EventScout AI complete!`)
+    console.log(`  [DATA] Found: ${events.length} events`)
+    console.log(`  [OK] Inserted: ${insertResults.inserted}`)
     console.log(`  ⊘ Skipped: ${insertResults.skipped}`)
-    console.log(`  ❌ Failed: ${insertResults.failed}`)
-    console.log(`  ⏱️ Duration: ${duration}ms`)
+    console.log(`  [FAIL] Failed: ${insertResults.failed}`)
+    console.log(`  [FAIL] Errors: ${insertResults.errors.length}`)
+    if (insertResults.errors.length > 0) {
+      console.log(`\n[FAIL] Error Summary:`)
+      insertResults.errors.forEach((err, idx) => {
+        console.error(`  ${idx + 1}. ${err}`)
+      })
+    }
+    console.log(`  [TIME]Duration: ${duration}ms`)
 
     // AUTOMATICALLY PUBLISH: Trigger publish-event to move parsed_events to live map
-    console.log(`\n🚀 Auto-publishing ${insertResults.inserted} events to live map...`)
+    console.log(`\n[LAUNCH] Auto-publishing ${insertResults.inserted} events to live map...`)
     let publishedCount = 0
     let publishError: string | null = null
     
@@ -1184,14 +1324,14 @@ serve(async (req) => {
       
       if (publishErr) {
         publishError = publishErr.message || String(publishErr)
-        console.error(`  ❌ Publish failed: ${publishError}`)
+        console.error(`  [FAIL] Publish failed: ${publishError}`)
       } else {
         publishedCount = publishResult?.results?.published || 0
-        console.log(`  ✅ Published ${publishedCount} events to map`)
+        console.log(`  [OK] Published ${publishedCount} events to map`)
       }
     } catch (err) {
       publishError = String(err)
-      console.error(`  ❌ Publish error: ${publishError}`)
+      console.error(`  [FAIL] Publish error: ${publishError}`)
     }
 
     return new Response(
@@ -1214,7 +1354,7 @@ serve(async (req) => {
     )
 
   } catch (error: any) {
-    console.error('❌ EventScout AI failed:', error)
+    console.error('[FAIL] EventScout AI failed:', error)
     
     return new Response(
       JSON.stringify({

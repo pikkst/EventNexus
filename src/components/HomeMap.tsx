@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { usePageSEO } from '../hooks/useSEO';
 import { 
   Search, SlidersHorizontal, MapPin, Calendar, 
   Star, Navigation2, LocateFixed, Compass, Route, X,
-  Clock, ArrowRight, Radar, Sun, Moon
+  Clock, ArrowRight, Radar, Sun, Moon, Minimize2, Maximize2
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline } from 'react-leaflet';
 import L from 'leaflet';
@@ -15,15 +15,17 @@ import { getEvents } from '../services/dbService';
 import { filterActiveEvents } from '../utils/eventUtils';
 import { generateMapSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 import { supabase } from '../services/supabase';
+import { RecommendationFeed, TrendingEventsSection } from './RecommendationFeed';
 
 interface MapEffectsProps {
   center: [number, number];
   isFollowing: boolean;
   onMapMove?: (center: [number, number], zoom: number) => void;
+  onBoundsChange?: (bounds: L.LatLngBounds) => void;
   mapRef?: React.MutableRefObject<any>;
 }
 
-const MapEffects = ({ center, isFollowing, onMapMove, mapRef }: MapEffectsProps) => {
+const MapEffects = ({ center, isFollowing, onMapMove, onBoundsChange, mapRef }: MapEffectsProps) => {
   // SEO optimization for AI crawlers
   usePageSEO({
     path: '/map',
@@ -49,22 +51,20 @@ const MapEffects = ({ center, isFollowing, onMapMove, mapRef }: MapEffectsProps)
     if (isFollowing) { map.setView(center, map.getZoom(), { animate: true }); }
   }, [center, isFollowing, map]);
   
-  // Save map position whenever it changes
+  // Save map position and bounds whenever it changes
   useEffect(() => {
     const handleMapMove = () => {
       const center = map.getCenter();
       const zoom = map.getZoom();
+      const bounds = map.getBounds();
+      
       onMapMove?.([center.lat, center.lng], zoom);
+      onBoundsChange?.(bounds); // Notify parent of bounds change
     };
 
     map.on('moveend', handleMapMove);
-    map.on('zoomend', handleMapMove);
-
-    return () => {
-      map.off('moveend', handleMapMove);
-      map.off('zoomend', handleMapMove);
-    };
-  }, [map, onMapMove]);
+    return () => map.off('moveend', handleMapMove);
+  }, [map, onMapMove, onBoundsChange]);
   
   return null;
 };
@@ -77,10 +77,53 @@ interface HomeMapProps {
 
 const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events: propEvents }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchRadius, setSearchRadius] = useState(1); // 1km radius for urban proximity notifications
+  // Date filter and sorting state for map events
+  const [selectedDate, setSelectedDate] = useState<string>(''); // ISO format yyyy-mm-dd
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Normalize event date strings to ISO yyyy-mm-dd (supports dd.mm.yyyy and ISO)
+  const normalizeDate = useCallback((dateStr: string): string => {
+    if (!dateStr || typeof dateStr !== 'string') return '';
+    // If already ISO-like (yyyy-mm-dd), return first 10 chars
+    const isoMatch = /^\d{4}-\d{2}-\d{2}/.test(dateStr);
+    if (isoMatch) return dateStr.substring(0, 10);
+    // Support Estonian style: dd.mm.yyyy
+    const dotMatch = dateStr.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+    if (dotMatch) {
+      const [, dd, mm, yyyy] = dotMatch;
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    // Fallback: try Date.parse then format
+    const ms = Date.parse(dateStr);
+    if (Number.isFinite(ms)) {
+      const d = new Date(ms);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    return '';
+  }, []);
+
+  // Guest language preference - for unregistered visitors
+  const [guestLanguage, setGuestLanguage] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('guest_language');
+      return saved || 'en';
+    } catch {
+      return 'en';
+    }
+  });
+
+  const handleGuestLanguageChange = (lang: string) => {
+    setGuestLanguage(lang);
+    localStorage.setItem('guest_language', lang);
+  };
 
   // Update SEO meta tags on mount
   useEffect(() => {
@@ -92,8 +135,60 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       cleanupSEO();
     };
   }, []);
+
+  // Sync date/sort with URL query params for deep-linking
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const qDate = params.get('date');
+      const qSort = params.get('sort');
+      if (qDate) {
+        // Accept ISO; normalize dd.mm.yyyy
+        const norm = normalizeDate(qDate);
+        if (norm && norm !== selectedDate) {
+          setSelectedDate(norm);
+        }
+      }
+      if (qSort === 'asc' || qSort === 'desc') {
+        if (qSort !== sortOrder) {
+          setSortOrder(qSort as 'asc' | 'desc');
+        }
+      }
+    } catch {}
+  }, [location.search, normalizeDate]);
+
+  useEffect(() => {
+    // Update URL query only when it differs to avoid loops
+    try {
+      const params = new URLSearchParams(location.search);
+      const current = params.toString();
+      if (selectedDate) {
+        params.set('date', selectedDate);
+      } else {
+        params.delete('date');
+      }
+      params.set('sort', sortOrder);
+      const next = params.toString();
+      if (next !== current) {
+        navigate({ pathname: location.pathname, search: next ? `?${next}` : '' }, { replace: true });
+      }
+    } catch {}
+  }, [selectedDate, sortOrder, location.pathname, location.search, navigate]);
   
   // Load saved map position from localStorage, or use geolocation if not available
+  // Track zoom level for dynamic marker sizing
+  const [currentZoom, setCurrentZoom] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('homemap_last_zoom');
+      return saved ? parseInt(saved, 10) : 13;
+    } catch {
+      return 13;
+    }
+  });
+
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
   const [userLocation, setUserLocation] = useState<[number, number]>(() => {
     // Try to restore from localStorage first
     try {
@@ -154,6 +249,39 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const [nearbyNewEvents, setNearbyNewEvents] = useState<EventNexusEvent[]>([]);
   const mapRef = useRef<any>(null);
   
+  // Compact UI mode: hide overlays to free viewport (mobile-friendly)
+  const [compactMode, setCompactMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('homemap_compact_mode');
+      return saved !== null ? JSON.parse(saved) : false; // Default: expanded
+    } catch {
+      return false;
+    }
+  });
+  
+  const toggleCompactMode = useCallback(() => {
+    const next = !compactMode;
+    setCompactMode(next);
+    try { localStorage.setItem('homemap_compact_mode', JSON.stringify(next)); } catch {}
+  }, [compactMode]);
+
+  // Map bounds filtering: track visible region and show only events in bounds
+  const [allEvents, setAllEvents] = useState<EventNexusEvent[]>([]); // Cache all events
+  const [visibleBounds, setVisibleBounds] = useState<L.LatLngBounds | null>(null); // Current map bounds
+  const [visibleEventCount, setVisibleEventCount] = useState(0); // How many events are in bounds
+  
+  // Filter events based on map bounds
+  const filterEventsByBounds = useCallback((evts: EventNexusEvent[], bounds: L.LatLngBounds | null): EventNexusEvent[] => {
+    if (!bounds) return evts; // No bounds, show all
+    return evts.filter(evt => {
+      // Check both location object and direct properties for compatibility
+      const lat = evt.location?.lat ?? evt.latitude;
+      const lng = evt.location?.lng ?? evt.longitude;
+      if (!lat || !lng) return false;
+      return bounds.contains([lat, lng]);
+    });
+  }, []);
+  
   // Play notification sound
   const playNotificationSound = useCallback(() => {
     if (!soundEnabled) return;
@@ -210,6 +338,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     try {
       localStorage.setItem('homemap_last_center', JSON.stringify(center));
       localStorage.setItem('homemap_last_zoom', JSON.stringify(zoom));
+      setCurrentZoom(zoom); // Update zoom state for dynamic marker sizing
     } catch (error) {
       console.error('Failed to save map position:', error);
     }
@@ -223,7 +352,9 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     if (propEvents) {
       console.log(`📍 Using ${propEvents.length} events from parent (real-time mode)`);
       const activeEvents = filterActiveEvents(propEvents);
-      setEvents(activeEvents);
+      setAllEvents(activeEvents); // Store in allEvents cache
+      setEvents(filterEventsByBounds(activeEvents, visibleBounds)); // Show only visible
+      setVisibleEventCount(events.length);
       setIsLoading(false);
       return;
     }
@@ -242,21 +373,28 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         
         if (activeEvents.length > BATCH_SIZE) {
           console.log(`📍 Loading ${activeEvents.length} events in batches of ${BATCH_SIZE}...`);
+          setAllEvents(activeEvents); // Store all events in cache
           setEvents([]); // Clear first
           
-          for (let i = 0; i < activeEvents.length; i += BATCH_SIZE) {
-            const batch = activeEvents.slice(i, i + BATCH_SIZE);
+          // Load only visible events in batches
+          const visibleEvents = filterEventsByBounds(activeEvents, visibleBounds);
+          for (let i = 0; i < visibleEvents.length; i += BATCH_SIZE) {
+            const batch = visibleEvents.slice(i, i + BATCH_SIZE);
             setEvents(prev => [...prev, ...batch]);
             
             // Wait before next batch (except for last batch)
-            if (i + BATCH_SIZE < activeEvents.length) {
+            if (i + BATCH_SIZE < visibleEvents.length) {
               await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
             }
           }
-          console.log(`✅ All ${activeEvents.length} events loaded`);
+          setVisibleEventCount(visibleEvents.length);
+          console.log(`✅ All ${activeEvents.length} events loaded (${visibleEvents.length} visible in bounds)`);
         } else {
           // Small number of events, load directly
-          setEvents(activeEvents);
+          setAllEvents(activeEvents);
+          const visibleEvents = filterEventsByBounds(activeEvents, visibleBounds);
+          setEvents(visibleEvents);
+          setVisibleEventCount(visibleEvents.length);
         }
       } catch (error) {
         console.error('Error loading events:', error);
@@ -265,7 +403,59 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       }
     };
     loadEvents();
-  }, [propEvents]);
+  }, [propEvents, visibleBounds, filterEventsByBounds]);
+
+  // When bounds change and we have all events cached, re-filter display events
+  useEffect(() => {
+    if (allEvents.length > 0 && visibleBounds) {
+      const visibleEvents = filterEventsByBounds(allEvents, visibleBounds);
+      
+      // Keep recently-added new events visible regardless of bounds (for 10 seconds)
+      const now = Date.now();
+      const recentNewEvents = allEvents.filter(evt => {
+        // Only include events added in the last 10 seconds
+        const createdAtMs = new Date(evt.created_at || 0).getTime();
+        return (now - createdAtMs) < 10000;
+      });
+      
+      // Combine: visible by bounds + recently added new events (deduplicated)
+      const visibleEventIds = new Set(visibleEvents.map(e => e.id));
+      const combinedEvents = [
+        ...visibleEvents,
+        ...recentNewEvents.filter(e => !visibleEventIds.has(e.id))
+      ];
+      
+      // Fallback: if nothing is visible AND no recent new events, show all events
+      if (combinedEvents.length === 0) {
+        console.log('📍 Bounds empty and no new events, showing all events (global fallback)');
+        setEvents(allEvents);
+        setVisibleEventCount(allEvents.length);
+      } else {
+        setEvents(combinedEvents);
+        setVisibleEventCount(combinedEvents.length);
+        if (recentNewEvents.length > 0) {
+          console.log(`📍 Bounds: ${visibleEvents.length} visible + ${recentNewEvents.length} recent new = ${combinedEvents.length} total`);
+        }
+      }
+    }
+  }, [visibleBounds, allEvents, filterEventsByBounds]);
+
+
+  // Fetch current user ID for recommendations
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+          console.log(`👤 User loaded for recommendations: ${user.id}`);
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    };
+    fetchUserId();
+  }, []);
 
   // Real-time subscription: Listen for new/updated/deleted events
   useEffect(() => {
@@ -295,7 +485,14 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               
               // Only add if active and has valid location (check for lat/lng, not coordinates)
               if (newEvent.location && newEvent.location.lat && newEvent.location.lng) {
-                setEvents(prev => [...prev, newEvent]);
+                setAllEvents(prev => {
+                  const exists = prev.some(e => e.id === newEvent.id);
+                  return exists ? prev.map(e => e.id === newEvent.id ? newEvent : e) : [...prev, newEvent];
+                });
+                setEvents(prev => {
+                  const exists = prev.some(e => e.id === newEvent.id);
+                  return exists ? prev.map(e => e.id === newEvent.id ? newEvent : e) : [...prev, newEvent];
+                });
                 setNewEventIds(prev => new Set(prev).add(newEvent.id));
                 setLiveUpdateCount(c => c + 1);
                 
@@ -345,6 +542,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               console.log('🔄 REALTIME: Event updated:', payload.new);
               const updatedEvent = payload.new as EventNexusEvent;
               
+              setAllEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
               setEvents(prev => prev.map(e => 
                 e.id === updatedEvent.id ? updatedEvent : e
               ));
@@ -362,6 +560,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               console.log('🗑️ REALTIME: Event deleted:', payload.old);
               const deletedId = (payload.old as any).id;
               
+              setAllEvents(prev => prev.filter(e => e.id !== deletedId));
               setEvents(prev => prev.filter(e => e.id !== deletedId));
               setLiveUpdateCount(c => c + 1);
             }
@@ -433,6 +632,10 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           
           if (!currentEventIds.has(newEvent.id)) {
             console.log('📡 POLL: Found new event:', newEvent.name);
+            setAllEvents(prev => {
+              const exists = prev.some(e => e.id === newEvent.id);
+              return exists ? prev.map(e => e.id === newEvent.id ? newEvent as EventNexusEvent : e) : [...prev, newEvent as EventNexusEvent];
+            });
             setEvents(prev => [...prev, newEvent as EventNexusEvent]);
             setNewEventIds(prev => new Set(prev).add(newEvent.id));
             setLiveUpdateCount(c => c + 1);
@@ -514,6 +717,14 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         return false;
       }
       
+      // Date filter: match events occurring on selectedDate (if set)
+      if (selectedDate) {
+        const evISO = normalizeDate(event.date || '');
+        if (!evISO || evISO !== selectedDate) {
+          return false;
+        }
+      }
+
       if (!activeCategory || event.category === activeCategory) {
         console.log(`✅ Event passes filter: ${event.name} at [${event.location.lat}, ${event.location.lng}]`);
         return true;
@@ -524,15 +735,20 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     
     console.log(`📍 HomeMap: ${filtered.length} events will be displayed on map`);
     return filtered;
-  }, [events, activeCategory]);
+  }, [events, activeCategory, selectedDate, normalizeDate]);
 
   // Group events that share (roughly) the same location so one marker opens a stack
   const groupedEvents = useMemo(() => {
     const groups = new Map<string, { lat: number; lng: number; address: string; events: EventNexusEvent[] }>();
-    const round = (n: number) => Number(n.toFixed(5)); // ~1m precision
+    // Round to 4 decimal places (~11m precision) - good for grouping by building/venue
+    // Events at exactly same coordinates will be grouped even if addresses differ slightly
+    const round = (n: number) => Number(n.toFixed(4));
 
     filteredEvents.forEach((ev) => {
-      const key = `${ev.location.address.toLowerCase().trim()}|${round(ev.location.lat)},${round(ev.location.lng)}`;
+      // Key by coordinates ONLY - ignore address differences
+      // This ensures all events in same building are grouped even if address format varies
+      const key = `${round(ev.location.lat)},${round(ev.location.lng)}`;
+      
       if (!groups.has(key)) {
         groups.set(key, {
           lat: ev.location.lat,
@@ -550,11 +766,28 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       return Number.isFinite(ms) ? ms : Number.MAX_SAFE_INTEGER;
     };
 
+    // Sort events within each group by date (earliest first)
     return Array.from(groups.values()).map((group) => ({
       ...group,
       events: group.events.sort((a, b) => getStartMs(a) - getStartMs(b)),
     }));
   }, [filteredEvents]);
+
+  // Sort groups by primary event date according to sortOrder
+  const sortedGroupedEvents = useMemo(() => {
+    const getStartMs = (ev: EventNexusEvent) => {
+      const ts = `${ev.date}T${ev.time || '00:00'}`;
+      const ms = Date.parse(ts);
+      return Number.isFinite(ms) ? ms : Number.MAX_SAFE_INTEGER;
+    };
+    const groupsCopy = [...groupedEvents];
+    groupsCopy.sort((a, b) => {
+      const aMs = a.events.length ? getStartMs(a.events[0]) : Number.MAX_SAFE_INTEGER;
+      const bMs = b.events.length ? getStartMs(b.events[0]) : Number.MAX_SAFE_INTEGER;
+      return sortOrder === 'asc' ? aMs - bMs : bMs - aMs;
+    });
+    return groupsCopy;
+  }, [groupedEvents, sortOrder]);
 
   // Auto-translate selected event title/description based on viewer locale
   useEffect(() => {
@@ -663,22 +896,44 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     const priceDisplay = price === 0 ? 'FREE' : `FROM €${price}`;
     const newMarkerClass = isNew ? 'new-event-marker' : '';
     
+    // Dynamic scaling based on zoom level
+    // Zoom 5-10: 0.5x (small cities view)
+    // Zoom 11-13: 0.75x (city view) 
+    // Zoom 14-15: 1.0x (neighborhood view)
+    // Zoom 16+: 1.25x (street view)
+    const getScale = () => {
+      if (currentZoom <= 10) return 0.5;
+      if (currentZoom <= 12) return 0.65;
+      if (currentZoom <= 13) return 0.8;
+      if (currentZoom <= 15) return 1.0;
+      return 1.2;
+    };
+    
+    const scale = getScale();
+    const iconSize = Math.round(20 * scale); // SVG icon size
+    const padding = Math.round(2.5 * scale); // Padding
+    const fontSize = Math.round(9 * scale); // Price text size
+    const badgeSize = Math.round(10 * scale); // Star badge size
+    const newBadgeFontSize = Math.round(8 * scale); // NEW badge font
+    const containerWidth = Math.round(40 * scale);
+    const containerHeight = Math.round(50 * scale);
+    
     return L.divIcon({
       className: 'custom-marker',
       html: `
-        <div class="flex flex-col items-center gap-1 ${newMarkerClass}">
-          <div class="p-2.5 rounded-2xl ${isFeatured ? 'bg-gradient-to-br from-yellow-400 to-orange-500 animate-pulse' : 'bg-indigo-600'} border-2 border-white text-white shadow-2xl relative">
-            ${isFeatured ? '<div class="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-1"><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>' : ''}
-            ${isNew ? '<div class="absolute -top-2 -right-2 bg-green-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-white">NEW</div>' : ''}
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div class="flex flex-col items-center gap-1 ${newMarkerClass}" style="transform: scale(${scale}); transform-origin: bottom center;">
+          <div style="padding: ${padding}px;" class="rounded-2xl ${isFeatured ? 'bg-gradient-to-br from-yellow-400 to-orange-500 animate-pulse' : 'bg-indigo-600'} border-2 border-white text-white shadow-2xl relative">
+            ${isFeatured ? `<div class="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-1"><svg width="${badgeSize}" height="${badgeSize}" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>` : ''}
+            ${isNew ? `<div class="absolute -top-2 -right-2 bg-green-500 text-white font-black px-1.5 py-0.5 rounded-full shadow-lg border border-white" style="font-size: ${newBadgeFontSize}px;">NEW</div>` : ''}
+            <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
           </div>
-          <div class="${isFeatured ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white' : 'bg-white text-indigo-600'} text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full shadow-lg border ${isFeatured ? 'border-yellow-200' : 'border-indigo-100'}">
+          <div class="${isFeatured ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white' : 'bg-white text-indigo-600'} font-black uppercase tracking-widest px-2 py-0.5 rounded-full shadow-lg border ${isFeatured ? 'border-yellow-200' : 'border-indigo-100'}" style="font-size: ${fontSize}px;">
             ${isFeatured ? '⭐ ' : ''}${priceDisplay}
           </div>
         </div>
       `,
-      iconSize: [40, 50],
-      iconAnchor: [20, 50]
+      iconSize: [containerWidth, containerHeight],
+      iconAnchor: [containerWidth / 2, containerHeight]
     });
   };
 
@@ -715,64 +970,75 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
             center={userLocation} 
             isFollowing={isFollowingUser}
             onMapMove={saveMapPosition}
+            onBoundsChange={setVisibleBounds}
             mapRef={mapRef}
           />
           <Circle center={userLocation} radius={searchRadius * 1000} pathOptions={{ fillColor: '#6366f1', fillOpacity: 0.03, color: '#6366f1', weight: 1, dashArray: '8, 12' }} />
           <Marker position={userLocation} icon={userIcon} />
-          {groupedEvents.map((group, idx) => {
+          {sortedGroupedEvents.map((group, idx) => {
             const primary = group.events[0]; // soonest event at this location
-            const moreCount = group.events.length - 1;
+            const totalCount = group.events.length;
+            const isMultipleEvents = totalCount > 1;
             const isNewEvent = newEventIds.has(primary.id);
 
             return (
               <Marker
-                key={`${group.address}-${idx}`}
+                key={`${group.lat}-${group.lng}-${idx}`}
                 position={[group.lat, group.lng]}
                 icon={eventIcon(primary.price, primary.isFeatured || false, isNewEvent)}
-                eventHandlers={{ click: () => { setSelectedEvent(primary); setIsFollowingUser(false); setEventCardExpanded(true); } }}
+                eventHandlers={{ click: () => { setSelectedEvent(primary); setIsFollowingUser(false); } }}
               >
-                <Popup minWidth={260} className="rounded-xl">
+                <Popup minWidth={isMultipleEvents ? 280 : 260} className="rounded-xl">
                   <div className="space-y-3 text-sm">
-                    <div className="font-black text-base text-slate-900 dark:text-white leading-tight">{primary.name}</div>
-                    <div className="text-xs text-slate-500 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>{primary.date} {primary.time}</span>
-                    </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      <span>{group.address}</span>
-                    </div>
-
-                    {moreCount > 0 && (
-                      <div className="border-t border-slate-200 dark:border-slate-800 pt-2">
-                        <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                          {moreCount} more event{moreCount > 1 ? 's' : ''} here:
+                    {/* If multiple events at same location, show table of all events */}
+                    {isMultipleEvents ? (
+                      <>
+                        <div className="font-black text-base text-slate-900 dark:text-white leading-tight">
+                          {totalCount} Events at this location
                         </div>
-                        <div className="flex flex-col gap-1 max-h-40 overflow-auto pr-1">
-                          {group.events.slice(0, 6).map((ev, i) => (
-                            <button
-                              key={ev.id}
-                              onClick={() => { setSelectedEvent(ev); setIsFollowingUser(false); setEventCardExpanded(true); }}
-                              className="text-left text-[11px] bg-slate-100 dark:bg-slate-800/70 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-lg px-2 py-1 transition"
-                            >
-                              <span className="font-semibold text-slate-800 dark:text-slate-100">{ev.name}</span>
-                              <span className="block text-[10px] text-slate-500">{ev.date} {ev.time}</span>
-                            </button>
-                          ))}
-                          {moreCount > 6 && (
-                            <div className="text-[10px] text-slate-500">...and {moreCount - 6} more</div>
-                          )}
+                        <div className="text-xs text-slate-500 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>{group.address}</span>
                         </div>
-                      </div>
+                        <div className="border-t border-slate-200 dark:border-slate-800 pt-2">
+                          <div className="flex flex-col gap-1 max-h-64 overflow-auto pr-1">
+                            {group.events.map((ev, i) => (
+                              <button
+                                key={ev.id}
+                                onClick={() => { setSelectedEvent(ev); setIsFollowingUser(false); navigate(`/event/${ev.id}`); }}
+                                className="text-left text-[11px] bg-slate-100 dark:bg-slate-800/70 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-lg px-2 py-1.5 transition"
+                              >
+                                <span className="font-semibold text-slate-800 dark:text-slate-100 block">{ev.name}</span>
+                                <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                                  <Calendar className="w-3 h-3" />
+                                  {ev.date} {ev.time}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      /* Single event - show normal popup */
+                      <>
+                        <div className="font-black text-base text-slate-900 dark:text-white leading-tight">{primary.name}</div>
+                        <div className="text-xs text-slate-500 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>{primary.date} {primary.time}</span>
+                        </div>
+                        <div className="text-xs text-slate-500 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>{group.address}</span>
+                        </div>
+                        <button
+                          onClick={() => navigate(`/event/${primary.id}`)}
+                          className="w-full inline-flex items-center justify-center gap-2 text-xs font-semibold bg-indigo-600 text-white rounded-lg py-2 hover:bg-indigo-500 transition"
+                        >
+                          View details
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      </>
                     )}
-
-                    <button
-                      onClick={() => navigate(`/event/${primary.id}`)}
-                      className="w-full inline-flex items-center justify-center gap-2 text-xs font-semibold bg-indigo-600 text-white rounded-lg py-2 hover:bg-indigo-500 transition"
-                    >
-                      View details
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
                   </div>
                 </Popup>
               </Marker>
@@ -784,10 +1050,10 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       </div>
 
       {/* Vibe Radar - Mobile Floating Navigator */}
-      {nearestEvent && !selectedEvent && (
+      {!compactMode && nearestEvent && !selectedEvent && (
         <div className="absolute left-4 md:left-6 bottom-6 md:bottom-10 z-[500] animate-in slide-in-from-left duration-700">
            <button 
-             onClick={() => { setSelectedEvent(nearestEvent); setEventCardExpanded(true); }}
+             onClick={() => { setSelectedEvent(nearestEvent); }}
              className={`${
                theme === 'light'
                  ? 'bg-white border-slate-200 hover:border-indigo-400'
@@ -814,7 +1080,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       )}
 
       {/* Live Update Toast Notification */}
-      {liveUpdateCount > 0 && (
+      {!compactMode && liveUpdateCount > 0 && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[500] live-update-toast">
           <div className={`${
             theme === 'light'
@@ -830,7 +1096,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       )}
       
       {/* Nearby New Events Counter Badge */}
-      {nearbyNewEventsCount > 0 && (
+      {!compactMode && nearbyNewEventsCount > 0 && (
         <div className="absolute top-32 left-1/2 -translate-x-1/2 z-[500]">
           <button
             onClick={() => {
@@ -840,7 +1106,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                   duration: 1.5
                 });
                 setSelectedEvent(latest);
-                setEventCardExpanded(true);
+
               }
             }}
             className={`${
@@ -859,8 +1125,9 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       )}
 
       {/* Overlays */}
+      {!compactMode && (
       <div className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-2 sm:px-4 z-[400] space-y-3">
-        <div className={`${
+        <div className={`$
           theme === 'light'
             ? 'bg-white/95 border-slate-200'
             : 'bg-slate-900/90 border-slate-800'
@@ -881,6 +1148,37 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
             />
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto">
+            {/* Date filter */}
+            <div className={`relative flex items-center ${theme === 'light' ? 'bg-white' : 'bg-slate-800/60'} border ${theme === 'light' ? 'border-slate-200' : 'border-slate-700'} rounded-xl px-3 py-2`}>
+              <Calendar className={`w-4 h-4 mr-2 ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`} />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className={`text-sm ${theme === 'light' ? 'bg-white text-slate-900' : 'bg-transparent text-white'} focus:outline-none`}
+                aria-label="Filter events by date"
+              />
+              {selectedDate && (
+                <button
+                  onClick={() => setSelectedDate('')}
+                  className={`ml-2 p-1 rounded ${theme === 'light' ? 'hover:bg-slate-100' : 'hover:bg-slate-700'}`}
+                  aria-label="Clear date filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+            {/* Sort toggle */}
+            <button
+              onClick={() => setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))}
+              className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border ${
+                theme === 'light' ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' : 'bg-slate-800/60 border-slate-700 text-white hover:bg-slate-700'
+              }`}
+              aria-label={`Sort events by date ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
+            >
+              <Clock className="w-4 h-4" />
+              <span className="text-xs font-semibold">{sortOrder === 'asc' ? 'Earliest First' : 'Latest First'}</span>
+            </button>
             <div className="px-6 py-3 bg-indigo-600 rounded-xl font-black text-[10px] uppercase tracking-widest text-white shadow-lg shadow-indigo-600/30">
               {filteredEvents.length} Events Found
             </div>
@@ -907,9 +1205,53 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
             </button>
           ))}
         </div>
-      </div>
 
+        {/* Guest Language Selector - Mobile Friendly */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide justify-start md:justify-center">
+          {[
+            { code: 'en', label: '🇬🇧 English' },
+            { code: 'et', label: '🇪🇪 Eesti' },
+            { code: 'ru', label: '🇷🇺 Русский' },
+            { code: 'es', label: '🇪🇸 Español' },
+            { code: 'pt', label: '🇵🇹 Português' }
+          ].map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => handleGuestLanguageChange(lang.code)}
+              className={`px-3 md:px-4 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border shrink-0 ${
+                guestLanguage === lang.code
+                  ? theme === 'light'
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
+                    : 'bg-white border-white text-slate-950 shadow-lg'
+                  : theme === 'light'
+                    ? 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300'
+                    : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-600'
+              }`}
+              aria-label={`Select ${lang.label} language`}
+              aria-pressed={guestLanguage === lang.code}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      )}
+
+      {!compactMode && (
       <div className="absolute right-4 md:right-6 bottom-6 md:bottom-10 flex flex-col gap-2 md:gap-3 z-[600]">
+        {/* Compact mode toggle */}
+        <button
+          onClick={toggleCompactMode}
+          className={`${
+            theme === 'light' 
+              ? 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50' 
+              : 'bg-slate-900 text-slate-100 border-slate-800 hover:bg-slate-800'
+          } p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border inline-flex items-center gap-2`}
+          title="Hide UI overlays"
+          aria-label="Hide UI overlays"
+        >
+          <Minimize2 className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />
+        </button>
         <button 
           onClick={onToggleTheme || (() => {})} 
           className={`p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border ${
@@ -989,89 +1331,80 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           />
         </div>
       </div>
+      )}
 
-      {selectedEvent && (
-        <div className="absolute bottom-4 md:bottom-10 left-1/2 -translate-x-1/2 w-full max-w-lg px-2 sm:px-4 z-[400] animate-in slide-in-from-bottom-10 duration-500">
-          {/* Collapsed/Minimized View - Mobile Only */}
-          {!eventCardExpanded && (
-            <button 
-              onClick={() => setEventCardExpanded(true)}
-              className={`w-full ${
-                theme === 'light'
-                  ? 'bg-white border-slate-200 hover:bg-slate-50'
-                  : 'bg-slate-900 border-slate-800 hover:bg-slate-800'
-              } border rounded-3xl shadow-2xl p-3 md:p-4 flex items-center justify-between transition-all`}
-              aria-label={`Expand event details for ${selectedEvent.name}`}
-            >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <img src={selectedEvent.imageUrl} className="w-10 h-10 rounded-2xl object-cover flex-shrink-0" alt={selectedEvent.name} />
-                <div className="text-left min-w-0">
-                  <p className={`text-sm font-bold truncate ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>
-                    {selectedEvent.name}
-                  </p>
-                  <p className={`text-xs ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {selectedEvent.location.city}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <MapPin className="w-4 h-4 text-indigo-600" />
-              </div>
-            </button>
-          )}
+      {compactMode && (
+        <div className="absolute right-4 md:right-6 bottom-6 md:bottom-10 z-[600]">
+          <button
+            onClick={toggleCompactMode}
+            className={`${
+              theme === 'light' 
+                ? 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50' 
+                : 'bg-slate-900 text-slate-100 border-slate-800 hover:bg-slate-800'
+            } p-3 md:p-4 rounded-xl md:rounded-2xl shadow-2xl transition-all border inline-flex items-center gap-2`}
+            title="Show UI overlays"
+            aria-label="Show UI overlays"
+          >
+            <Maximize2 className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
-          {/* Expanded View */}
-          {eventCardExpanded && (
-            <div className={`${
+      {/* Recommendations Floating Panel */}
+      {!compactMode && userId && (
+        <div className="absolute right-4 md:right-6 top-20 md:top-24 z-[500] max-w-xs max-h-[calc(100vh-200px)] overflow-hidden">
+          <button
+            onClick={() => setShowRecommendations(!showRecommendations)}
+            className={`w-full inline-flex items-center justify-between gap-2 px-4 py-3 rounded-t-xl md:rounded-t-2xl shadow-xl transition-all border ${
+              showRecommendations
+                ? theme === 'light'
+                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                  : 'bg-indigo-950 text-indigo-300 border-indigo-800'
+                : theme === 'light'
+                  ? 'bg-white text-slate-700 border-slate-200 hover:bg-indigo-50'
+                  : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-indigo-950'
+            }`}
+            title="Show personalized event recommendations"
+            aria-label="Toggle personalized recommendations"
+            aria-pressed={showRecommendations}
+          >
+            <span className="text-sm font-bold flex items-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+              </svg>
+              Smart Picks
+            </span>
+            <X className={`w-4 h-4 transition-transform ${showRecommendations ? 'rotate-90' : ''}`} aria-hidden="true" />
+          </button>
+          
+          {showRecommendations && (
+            <div className={`border-t rounded-b-xl md:rounded-b-2xl overflow-y-auto max-h-[calc(100vh-260px)] ${
               theme === 'light'
                 ? 'bg-white border-slate-200'
                 : 'bg-slate-900 border-slate-800'
-            } border rounded-3xl md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col sm:flex-row p-2 gap-2`}>
-              <div className="w-full sm:w-1/3 h-32 sm:h-auto relative shrink-0">
-                <img src={selectedEvent.imageUrl} className="w-full h-full object-cover rounded-[32px]" alt={selectedEvent.name} />
-              </div>
-              <div className="p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 className={`font-black text-lg leading-tight tracking-tighter ${
-                    theme === 'light' ? 'text-slate-900' : 'text-white'
-                  }`}>{translatedTitle || selectedEvent.name}</h3>
-                  <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">{selectedEvent.location.city} • {selectedEvent.date}</p>
-                  {translatedDesc && (
-                    <p className={`${theme === 'light' ? 'text-slate-600' : 'text-slate-300'} text-xs mt-2 line-clamp-2`}>{translatedDesc}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 pt-4">
-                  <button onClick={() => navigate(`/event/${selectedEvent.id}`)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95" aria-label={`View and book ${selectedEvent.name}`}>Book Access</button>
-                  {/* Minimize button for mobile, close for desktop */}
-                  <button 
-                    onClick={() => {
-                      if (window.innerWidth < 768) {
-                        setEventCardExpanded(false);
-                      } else {
-                        setSelectedEvent(null);
-                      }
+            }`}>
+              <div className="p-4">
+                {userId ? (
+                  <RecommendationFeed
+                    userId={userId}
+                    userLocation={{ lat: userLocation[0], lng: userLocation[1] }}
+                    limit={5}
+                    onEventClick={(event) => {
+                      navigate(`/event/${event.id}`);
+                      setShowRecommendations(false);
                     }}
-                    className={`p-3 rounded-2xl ${
-                      theme === 'light'
-                        ? 'bg-slate-100 hover:bg-slate-200 text-slate-500'
-                        : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
-                    }`} 
-                    aria-label={window.innerWidth < 768 ? "Minimize event details" : "Close event details"}
-                  >
-                    {window.innerWidth < 768 ? (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                      </svg>
-                    ) : (
-                      <X size={20} aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
+                  />
+                ) : (
+                  <div className={`p-4 text-center text-sm ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Sign in to see personalized recommendations
+                  </div>
+                )}
               </div>
             </div>
           )}
         </div>
       )}
+
       <style dangerouslySetInnerHTML={{ __html: `
         .vertical-range { -webkit-appearance: slider-vertical; width: 8px; height: 120px; }
         .custom-marker { background: transparent; border: none; }

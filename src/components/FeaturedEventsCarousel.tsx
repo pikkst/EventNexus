@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Calendar, MapPin, Sparkles, Users, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, MapPin, Sparkles, Users } from 'lucide-react';
 import { EventNexusEvent } from '../types';
-import { getTrendingEvents } from '../services/dbService';
+import { getRecentEvents } from '../services/dbService';
 import { trackCTAClick } from '../utils/conversionTracking';
 import { logger } from '../utils/logger';
 
@@ -22,8 +22,8 @@ export const FeaturedEventsCarousel: React.FC<FeaturedEventsCarouselProps> = ({ 
     const loadEvents = async () => {
       try {
         setIsLoading(true);
-        const trendingEvents = await getTrendingEvents(6);
-        setEvents(trendingEvents);
+        const recentEvents = await getRecentEvents(6);
+        setEvents(recentEvents);
       } catch (err) {
         logger.error('Error loading featured events:', err);
         setEvents([]);
@@ -87,8 +87,8 @@ export const FeaturedEventsCarousel: React.FC<FeaturedEventsCarouselProps> = ({ 
               <Sparkles className="w-5 md:w-6 h-5 md:h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl md:text-4xl font-black text-white">Trending Now</h2>
-              <p className="text-slate-400 text-xs md:text-sm mt-0.5 md:mt-1">Events gaining momentum</p>
+              <h2 className="text-2xl md:text-4xl font-black text-white">New This Week</h2>
+              <p className="text-slate-400 text-xs md:text-sm mt-0.5 md:mt-1">Freshly added events and launches</p>
             </div>
           </div>
           <Link
@@ -134,7 +134,7 @@ export const FeaturedEventsCarousel: React.FC<FeaturedEventsCarouselProps> = ({ 
                     )}
                     {/* Badge */}
                     <div className="absolute top-4 right-4 bg-orange-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
-                      <TrendingUp className="w-3 h-3" /> Trending
+                      <Sparkles className="w-3 h-3" /> New
                     </div>
                   </div>
 
@@ -272,7 +272,7 @@ export const FeaturedEventsCarousel: React.FC<FeaturedEventsCarouselProps> = ({ 
           <div className="mt-8 p-4 bg-indigo-600/10 border border-indigo-500/30 rounded-2xl">
             <p className="text-sm text-slate-300 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-indigo-400" />
-              These events are trending based on attendee interest and engagement
+              These events were just published and start soon—grab a spot while they are fresh
             </p>
           </div>
         </div>

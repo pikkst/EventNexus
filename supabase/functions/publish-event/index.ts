@@ -22,6 +22,65 @@ let currentModelIndex = 0
 // Ensures same venue always gets same coordinates within a single batch publish
 const addressCache = new Map<string, {lat: number, lng: number}>()
 
+// 💾 Persistent geocode cache using Supabase
+// Checks database first before calling geocoding APIs
+async function getGeocodeFromPersistentCache(
+  supabaseClient: any,
+  address: string,
+  country: string
+): Promise<{lat: number, lng: number} | null> {
+  try {
+    const cacheKey = getAddressCacheKey(address, country)
+    
+    // Check database cache (valid for 30 days)
+    const { data, error } = await supabaseClient
+      .from('geocode_cache')
+      .select('latitude, longitude, cached_at')
+      .eq('address_hash', cacheKey)
+      .gte('cached_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .single()
+    
+    if (!error && data) {
+      console.log(`💾 DB cache hit: "${address}" → ${data.latitude}, ${data.longitude}`)
+      return { lat: data.latitude, lng: data.longitude }
+    }
+  } catch (e) {
+    // Cache miss or error - not critical
+  }
+  return null
+}
+
+// 💾 Save geocode result to persistent cache
+async function saveGeocodeToPersistentCache(
+  supabaseClient: any,
+  address: string,
+  country: string,
+  lat: number,
+  lng: number
+): Promise<void> {
+  try {
+    const cacheKey = getAddressCacheKey(address, country)
+    
+    await supabaseClient
+      .from('geocode_cache')
+      .upsert({
+        address_hash: cacheKey,
+        address: address.substring(0, 500), // Store original for reference
+        country,
+        latitude: lat,
+        longitude: lng,
+        cached_at: new Date().toISOString()
+      }, {
+        onConflict: 'address_hash'
+      })
+    
+    console.log(`💾 Cached: "${address}" → ${lat}, ${lng}`)
+  } catch (e) {
+    // Cache save failure is not critical
+    console.warn(`⚠️ Failed to save geocode cache:`, e)
+  }
+}
+
 // Generate cache key from address (normalize for consistency)
 function getAddressCacheKey(address: string, country: string): string {
   return `${address.toLowerCase().trim()}|${country.toLowerCase().trim()}`
@@ -218,15 +277,26 @@ async function geocodeAddress(
   countryCode: string, 
   cityName?: string,
   cityLat?: number,
-  cityLng?: number
+  cityLng?: number,
+  supabaseClient?: any
 ): Promise<{lat: number, lng: number} | null> {
   try {
-    // 📍 CHECK CACHE FIRST
+    // 📍 CHECK CACHE FIRST (in-memory)
     const cacheKey = getAddressCacheKey(address, country)
     if (addressCache.has(cacheKey)) {
       const cached = addressCache.get(cacheKey)!
-      console.log(`💾 Cache hit for "${address}" → ${cached.lat.toFixed(6)}, ${cached.lng.toFixed(6)}`)
+      console.log(`💾 Memory cache hit: "${address}" → ${cached.lat.toFixed(6)}, ${cached.lng.toFixed(6)}`)
       return cached
+    }
+    
+    // 💾 CHECK PERSISTENT CACHE (database)
+    if (supabaseClient) {
+      const dbCached = await getGeocodeFromPersistentCache(supabaseClient, address, country)
+      if (dbCached) {
+        // Store in memory cache too for this execution
+        addressCache.set(cacheKey, dbCached)
+        return dbCached
+      }
     }
     
     // 🔧 ENHANCED: Prepare MANY search variations (8+ strategies)
@@ -345,8 +415,11 @@ async function geocodeAddress(
 
           console.log(`✓ Geocoded via Nominatim: "${address}" → ${result.lat.toFixed(6)}, ${result.lng.toFixed(6)} (variation: "${searchAddress}")`)
           
-          // 📍 CACHE THE RESULT
+          // 📍 CACHE THE RESULT (memory + database)
           addressCache.set(cacheKey, result)
+          if (supabaseClient) {
+            await saveGeocodeToPersistentCache(supabaseClient, address, country, result.lat, result.lng)
+          }
           
           return result
         }
@@ -368,8 +441,11 @@ async function geocodeAddress(
     const geminiCoords = await geocodeWithGemini(address, country, cityName, cityLat, cityLng)
     if (geminiCoords) {
       console.log(`✓ Geocoded via Gemini fallback: "${address}" → ${geminiCoords.lat.toFixed(6)}, ${geminiCoords.lng.toFixed(6)}`)
-      // 📍 CACHE THE RESULT
+      // 📍 CACHE THE RESULT (memory + database)
       addressCache.set(cacheKey, geminiCoords)
+      if (supabaseClient) {
+        await saveGeocodeToPersistentCache(supabaseClient, address, country, geminiCoords.lat, geminiCoords.lng)
+      }
       return geminiCoords
     }
     
@@ -487,18 +563,25 @@ serve(async (req) => {
     // EventScout AI auto-validates with 93% confidence
     console.log('Fetching validated parsed events for publishing...')
     
-    // Use LEFT JOIN to avoid missing events if event_confidence doesn't exist yet
-    const { data: parsedEventsRaw, error: parsedError } = await supabaseClient
+    // Build query with optional city_id filter
+    let query = supabaseClient
       .from('parsed_events')
       .select('*')
-      .limit(100) // Get more events, will filter below
+    
+    // Filter by city_id if provided
+    if (cityId) {
+      console.log(`🎯 Filtering parsed_events for city: ${cityId}`)
+      query = query.eq('city_id', cityId)
+    }
+    
+    const { data: parsedEventsRaw, error: parsedError } = await query.limit(100)
 
     if (parsedError) {
       console.error('Query error:', parsedError)
       throw parsedError
     }
 
-    console.log(`Found ${parsedEventsRaw?.length || 0} parsed events`)
+    console.log(`Found ${parsedEventsRaw?.length || 0} parsed events${cityId ? ` for city ${cityId}` : ''}`)
     
     // Get list of already-published parsed_events to avoid re-publishing
     const { data: publishedConfidence } = await supabaseClient
@@ -511,7 +594,7 @@ serve(async (req) => {
     console.log(`Already published: ${publishedIds.size} events`)
     
     // Filter events that are ready for publishing (have not been published yet)
-    let parsedEvents = (parsedEventsRaw || [])
+    let filteredEvents = (parsedEventsRaw || [])
       .filter(event => {
         // Only include events with structured data
         if (!event.structured_json) return false
@@ -521,16 +604,7 @@ serve(async (req) => {
       })
       .slice(0, 20) // Limit to 20 per batch
     
-    console.log(`Filtered to ${parsedEvents.length} events ready for publishing (${parsedEventsRaw?.length || 0} total, ${publishedIds.size} already published)`)
-    
-    // Filter by city_id if provided (from structured_json)
-    let filteredEvents = parsedEvents || []
-    if (cityId) {
-      console.log(`🎯 Filtering events for city: ${cityId}`)
-      // EventScout AI stores city_id in raw_events -> event_sources
-      // For now, we get city_id from the event creation context
-      // All events in this batch belong to the requested city
-    }
+    console.log(`Filtered to ${filteredEvents.length} events ready for publishing (${parsedEventsRaw?.length || 0} total, ${publishedIds.size} already published)`)
     
     console.log(`📊 Found ${filteredEvents.length} validated events ready for publishing`)
 
@@ -645,27 +719,8 @@ serve(async (req) => {
 
         console.log(`Publishing event for ${cityConfig.city_name}, ${cityConfig.country}`)
 
-        // FILTER OUT USA ADDRESSES - only if city is NOT in USA (prevents wrong "Amsterdam" mixing)
+        // Get address for validation
         const address = eventData.location_address || ''
-        const US_STATE_CODES = /\b(AL|AK|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b/
-        const US_ZIP_CODES = /\b\d{5}(-\d{4})?\b/
-        
-        // Only block USA addresses if the city itself is NOT in USA
-        const cityIsInUSA = cityConfig.country === 'United States' || cityConfig.country === 'USA' || cityConfig.country_code === 'us'
-        
-        // CRITICAL: Don't confuse country codes with US states!
-        // AZ = Arizona vs Azerbaijan (country code)
-        // AR = Arkansas vs Argentina/Andorra (country code)
-        // Check for USA context: zip codes, "USA" keyword, or city/state combinations
-        const hasUSAContext = address.match(/\bUSA\b/i) || address.match(/United States/i) || 
-                              (US_STATE_CODES.test(address) && US_ZIP_CODES.test(address))
-        
-        if (!cityIsInUSA && hasUSAContext) {
-          console.log(`⊘ Skipping USA event: ${eventData.name} (address: ${address})`)
-          await log(supabaseClient, 'publish-event', 'info', 'Skipped USA event', { event: eventData.name, address }, { city_id: eventCityId })
-          results.skipped++
-          continue
-        }
 
         // SKIP PLACEHOLDER ADDRESSES - Gemini sometimes generates fake addresses
         const PLACEHOLDER_PATTERNS = /\b(Venue Name|Street Address|City Name|TBD|To Be Determined|Various [Ll]ocations)\b/i
@@ -793,7 +848,8 @@ serve(async (req) => {
             cityConfig.country_code || 'ee',
             cityConfig.city_name, // Pass city name for better geocoding
             cityConfig.latitude,
-            cityConfig.longitude
+            cityConfig.longitude,
+            supabaseClient  // Pass supabase client for persistent cache
           )
           
           if (geocoded) {

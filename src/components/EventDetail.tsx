@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import logger from '../utils/logger';
 import { useEventSEO } from '../hooks/useSEO';
+import Breadcrumbs from './Breadcrumbs';
 import { 
   MapPin, 
   Calendar, 
@@ -25,6 +26,10 @@ import {
   Flag
 } from 'lucide-react';
 import { getEvents, getEventById, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates } from '../services/dbService';
+import EventAttendeesList from './EventAttendeesList';
+import EventCheckIn from './EventCheckIn';
+import EventReviews from './EventReviews';
+import BuddyMatching from './BuddyMatching';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
 import { isEventExpired } from '../utils/eventUtils';
@@ -108,17 +113,25 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   
-  // Initialize selected language from user preference or browser locale
+  // Initialize selected language: use user preference if logged in, otherwise guest language preference from localStorage
   const [selectedLanguage, setSelectedLanguage] = useState(() => {
-    if (user?.preferred_language && user.preferred_language !== 'en') {
+    // Registered users: use their preference
+    if (user?.preferred_language) {
       return user.preferred_language;
     }
-    // Fallback to browser language or English
-    const browserLang = navigator.language?.split('-')[0] || 'en';
-    return browserLang;
+    
+    // Guests: use their stored preference (saved from map language selector) or English
+    try {
+      const saved = localStorage.getItem('guest_language');
+      return saved || 'en';
+    } catch {
+      return 'en';
+    }
   });
   
   const [organizerName, setOrganizerName] = useState<string>('EventNexus User');
+  const [organizerAvatar, setOrganizerAvatar] = useState<string | null>(null);
+  const [organizerProfileSlug, setOrganizerProfileSlug] = useState<string | null>(null);
   const [ticketQuantities, setTicketQuantities] = useState<{ [key: string]: number }>({});
   const [organizerPaymentReady, setOrganizerPaymentReady] = useState(false);
   const [checkingOrganizerStatus, setCheckingOrganizerStatus] = useState(true);
@@ -217,10 +230,23 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
 
   // Sync selected language with user preference when user loads or preference changes
   useEffect(() => {
-    if (user?.preferred_language && user.preferred_language !== 'en') {
+    // Registered users: always use their preference
+    if (user?.preferred_language) {
       setSelectedLanguage(user.preferred_language);
+      return;
     }
-  }, [user?.preferred_language]);
+    
+    // Guests: use localStorage guest_language (saved from map)
+    if (!user) {
+      try {
+        const saved = localStorage.getItem('guest_language');
+        setSelectedLanguage(saved || 'en');
+      } catch {
+        setSelectedLanguage('en');
+      }
+      return;
+    }
+  }, [user?.preferred_language, user]);
 
   // Auto-translate event name and about text when language changes
   useEffect(() => {
@@ -331,13 +357,15 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           if (organizer) {
             // If organizer is an agency/organization, show company name
             setOrganizerName(organizer.company_name || organizer.name || 'EventNexus User');
+            setOrganizerAvatar(organizer.avatar || null);
+            setOrganizerProfileSlug(organizer.agency_slug || organizer.agencySlug || null);
             
             // Check if organizer has completed Stripe Connect onboarding
             const connectStatus = await checkConnectStatus(foundEvent.organizerId);
             logger.log('Organizer Connect Status from DB:', {
               organizerId: foundEvent.organizerId,
-                            organizerEmail: organizer?.email,
-                            stripe_connect_account_id: organizer?.stripe_connect_account_id,
+              organizerEmail: organizer?.email,
+              stripe_connect_account_id: organizer?.stripe_connect_account_id,
               hasAccount: connectStatus?.hasAccount,
               onboardingComplete: connectStatus?.onboardingComplete,
               chargesEnabled: connectStatus?.chargesEnabled,
@@ -348,8 +376,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
             const isReady = connectStatus?.hasAccount || (connectStatus?.onboardingComplete && connectStatus?.chargesEnabled);
             logger.log('Payment ready status:', { isReady, hasAccount: connectStatus?.hasAccount, onboardingComplete: connectStatus?.onboardingComplete, chargesEnabled: connectStatus?.chargesEnabled });
             setOrganizerPaymentReady(isReady || false);
-                      } else {
-                        logger.warn('Organizer not found for ID:', foundEvent.organizerId);
+            setCheckingOrganizerStatus(false);
+          } else {
+            logger.warn('Organizer not found for ID:', foundEvent.organizerId);
             setCheckingOrganizerStatus(false);
           }
         } catch (err) {
@@ -474,6 +503,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   
   const totalRevenue = currentAttendees * event.price;
   const isFollowing = user?.followedOrganizers?.includes(event.organizerId) ?? false;
+  const organizerProfilePath = organizerProfileSlug ? `/agency/${organizerProfileSlug}` : null;
+  const organizerAvatarUrl = organizerAvatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(organizerName || 'Organizer')}`;
 
   const handleLike = async () => {
     if (!user) {
@@ -619,16 +650,15 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
 
   return (
     <div className="min-h-screen bg-slate-950 text-white pb-32">
-      {/* Back Button - Always visible */}
-      <button
-        onClick={() => navigate('/map')}
-        className="fixed top-4 left-4 z-20 p-3 bg-slate-900/80 hover:bg-slate-800 border border-slate-700 rounded-xl transition-all shadow-xl flex items-center gap-2 text-white backdrop-blur-sm md:absolute md:top-4 md:left-4"
-        title="Back to event map"
-        aria-label="Back to event map"
-      >
-        <ArrowLeft className="w-5 h-5" aria-hidden="true" />
-        <span className="hidden sm:inline text-sm font-semibold">Back</span>
-      </button>
+      {/* Breadcrumbs */}
+      <div className="max-w-6xl mx-auto px-4 pt-4">
+        <Breadcrumbs 
+          items={[
+            { label: 'Events', path: '/map' },
+            { label: event?.name || 'Event Detail' }
+          ]}
+        />
+      </div>
 
       {/* Hero Image Section */}
       {event.imageUrl && (
@@ -765,6 +795,12 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                   </pre>
                 </div>
               )}
+
+                {/* Attendees Section - Phase 1 Social Feature */}
+                <div className="mt-8 pt-8 border-t border-slate-800">
+                  <h3 className="text-lg sm:text-xl font-bold mb-4">Who's Attending</h3>
+                  <EventAttendeesList eventId={event.id} currentUserId={user?.id} />
+                </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-slate-800">
                 <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50 flex items-center gap-4">
@@ -991,19 +1027,82 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                   </p>
                 </div>
               )}
+
+                {/* Event Check-in Section - Phase 1 Social Feature */}
+                {user && (
+                  <div className="mt-8">
+                    <h3 className="text-lg sm:text-xl font-bold mb-4">Share Your Experience</h3>
+                    <EventCheckIn 
+                      eventId={event.id}
+                      userId={user.id}
+                      eventName={event.name}
+                      onCheckInSuccess={() => {
+                        // Optionally refresh attendees list or show confirmation
+                        logger.log('Check-in successful for event:', event.id);
+                      }}
+                    />
+                  </div>
+                )}
+
+              {/* Event Reviews Section - Phase 2 Social Feature */}
+              <div className="mt-8">
+                <h3 className="text-lg sm:text-xl font-bold mb-4">Reviews & Ratings</h3>
+                <EventReviews 
+                  eventId={event.id}
+                  eventName={event.name}
+                  user={user}
+                  onOpenAuth={() => onOpenAuth?.()}
+                />
+              </div>
+
+              {/* Buddy Matching Section - Phase 2 Social Feature */}
+              {user && (
+                <div className="mt-8">
+                  <h3 className="text-lg sm:text-xl font-bold mb-4">Find Event Friends</h3>
+                  <BuddyMatching 
+                    user={user}
+                    onUpdate={() => {
+                      logger.log('Buddy list updated');
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-[32px] p-6 flex items-center gap-4 shadow-xl group">
-              <div className="relative">
-                <img src="https://picsum.photos/seed/org/100" className="w-14 h-14 rounded-2xl object-cover" alt="org" />
-                <div className="absolute -bottom-1 -right-1 bg-indigo-600 rounded-full p-1 border-2 border-slate-900">
-                  <ShieldCheck className="w-3 h-3 text-white" />
+              {organizerProfilePath ? (
+                <Link 
+                  to={organizerProfilePath}
+                  className="flex items-center gap-4 flex-1 min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-2xl"
+                  aria-label={`View ${organizerName}'s public profile`}
+                >
+                  <div className="relative">
+                    <img src={organizerAvatarUrl} className="w-14 h-14 rounded-2xl object-cover" alt={`${organizerName} avatar`} />
+                    <div className="absolute -bottom-1 -right-1 bg-indigo-600 rounded-full p-1 border-2 border-slate-900">
+                      <ShieldCheck className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Organized by</p>
+                    <h4 className="font-bold truncate text-slate-100 hover:text-indigo-300 transition-colors">{organizerName}</h4>
+                    <p className="text-xs text-indigo-400 mt-1">View public profile</p>
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="relative">
+                    <img src={organizerAvatarUrl} className="w-14 h-14 rounded-2xl object-cover" alt={`${organizerName} avatar`} />
+                    <div className="absolute -bottom-1 -right-1 bg-indigo-600 rounded-full p-1 border-2 border-slate-900">
+                      <ShieldCheck className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Organized by</p>
+                    <h4 className="font-bold truncate text-slate-100">{organizerName}</h4>
+                    <p className="text-xs text-slate-500 mt-1">Profile link unavailable</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Organized by</p>
-                <h4 className="font-bold truncate text-slate-100">{organizerName}</h4>
-              </div>
+              )}
               <button 
                 onClick={() => {
                   if (!user) {
