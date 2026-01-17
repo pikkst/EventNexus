@@ -404,6 +404,31 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     }
   };
 
+  const handleSyncGitHub = async () => {
+    setIsRefreshing(true);
+    try {
+      const { syncGitHubChangelog } = await import('../services/dbService');
+      const result = await syncGitHubChangelog(7); // Last 7 days
+      
+      if (result.success) {
+        alert(`✅ GitHub Sync Successful!\n\n` +
+              `📝 Total commits: ${result.totalCommits || 0}\n` +
+              `✨ Parsed commits: ${result.parsedCommits || 0}\n` +
+              `📦 Changelog entries: ${result.entries?.length || 0}\n\n` +
+              `AI knowledge base updated with latest platform changes.`);
+        logger.log('GitHub changelog synced successfully', result);
+      } else {
+        alert(`❌ GitHub Sync Failed\n\n${result.message || 'Unknown error'}`);
+        logger.error('GitHub sync failed:', result);
+      }
+    } catch (error) {
+      logger.error('Error syncing GitHub changelog:', error);
+      alert('❌ Error: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
+
   const handleTransitionToProduction = async () => {
     if (transitionConfirmation !== 'TRANSITION_TO_PRODUCTION') {
       alert('⚠️ Please type the exact confirmation message');
@@ -890,6 +915,15 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
            >
               <RefreshCw className={isRefreshing ? 'animate-spin' : ''} size={14} aria-hidden="true" /> 
               {isRefreshing ? 'Syncing...' : 'Sync Cluster'}
+           </button>
+           <button 
+             onClick={handleSyncGitHub}
+             disabled={isRefreshing}
+             className="w-full py-3 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 text-orange-400 border border-slate-800 transition-all"
+             aria-label={isRefreshing ? "Syncing from GitHub" : "Sync from GitHub"}
+           >
+              <Github className={isRefreshing ? 'animate-spin' : ''} size={14} aria-hidden="true" /> 
+              {isRefreshing ? 'Syncing...' : 'Sync GitHub'}
            </button>
            <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
               <div className="flex items-center justify-between">
