@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Breadcrumbs from './Breadcrumbs';
+import { MapLocationPicker } from './MapLocationPicker';
 import { 
   ChevronRight, 
   ChevronLeft, 
@@ -27,6 +28,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { createEvent, getEvents, getUser, deductUserCredits, uploadEventImage } from '../services/dbService';
+import { geocodeAddress as geocodeAddressService } from '../services/geocodingService';
 import { createScannerCode } from '../services/scannerCodeService';
 import { trackEventCreation } from '../services/analyticsService';
 import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
@@ -347,34 +349,23 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     }
   };
 
-  // Geocode address using Nominatim (OpenStreetMap)
+  // Geocode address using improved service with caching and retry logic
   const geocodeAddress = async (address: string) => {
     if (!address || address.trim().length < 3) return;
     
     setIsGeocoding(true);
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=ee&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': 'EventNexus/1.0'
-          }
-        }
-      );
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        const result = data[0];
-        setFormData(prev => ({
-          ...prev,
-          locationLat: parseFloat(result.lat),
-          locationLng: parseFloat(result.lon),
-          locationAddress: result.display_name,
-          locationCity: result.address?.city || result.address?.town || result.address?.village || 'Estonia'
-        }));
-      }
+      const result = await geocodeAddressService(address);
+      setFormData(prev => ({
+        ...prev,
+        locationLat: result.lat,
+        locationLng: result.lng,
+        locationAddress: result.address || result.displayName,
+        locationCity: result.city || 'Estonia'
+      }));
     } catch (error) {
       logger.error('Geocoding error:', error);
+      alert(`Could not find location: ${address}. Please try again or use the map picker.`);
     } finally {
       setIsGeocoding(false);
     }
@@ -1124,38 +1115,27 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               </div>
             </div>
             
-            {/* Interactive Map */}
-            <div className="relative rounded-2xl border border-slate-800 overflow-hidden h-64">
-              <MapContainer 
-                center={[formData.locationLat, formData.locationLng]} 
-                zoom={formData.locationAddress ? 15 : 7}
-                style={{ height: '100%', width: '100%' }}
-                key={`${formData.locationLat}-${formData.locationLng}`}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url={mapTheme === 'light' 
-                    ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                  }
-                />
-                {formData.locationAddress && (
-                  <Marker position={[formData.locationLat, formData.locationLng]}>
-                    <Popup>
-                      <div className="text-sm">
-                        <p className="font-semibold">{formData.name || 'Event Location'}</p>
-                        <p className="text-xs text-slate-600 mt-1">{formData.locationCity}</p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                )}
-              </MapContainer>
-              {!formData.locationAddress && (
-                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-                  <p className="text-sm font-medium flex items-center gap-2 text-slate-400">
-                    <MapPin className="w-4 h-4" /> Enter address and click Search to preview location
-                  </p>
-                </div>
+            {/* Interactive Map Location Picker */}
+            <div>
+              <label className="block text-sm font-medium mb-2 text-slate-200">Drag pin or click on map to select location</label>
+              <MapLocationPicker
+                initialLat={formData.locationLat}
+                initialLng={formData.locationLng}
+                onLocationSelect={(lat, lng, address) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    locationLat: lat,
+                    locationLng: lng,
+                    locationAddress: address || prev.locationAddress,
+                    locationCity: prev.locationCity
+                  }));
+                }}
+                isLoading={isGeocoding}
+              />
+              {formData.locationAddress && (
+                <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                  📍 {formData.locationAddress}
+                </p>
               )}
             </div>
           </div>
