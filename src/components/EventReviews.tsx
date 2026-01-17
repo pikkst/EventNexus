@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Loader, Star, ThumbsUp, User as UserIcon, MessageSquare, AlertCircle } from 'lucide-react';
 import { User, EventReview, EventRatingSummary } from '../types';
-import { getEventReviews, getEventRatingSummary, createEventReview } from '../services/dbService';
+import { getEventReviews, getEventRatingSummary, createEventReview, refreshUserStats } from '../services/dbService';
 import logger from '../utils/logger';
 
 interface EventReviewsProps {
@@ -9,6 +9,7 @@ interface EventReviewsProps {
   eventName: string;
   user: User | null;
   onOpenAuth?: () => void;
+  onShowXPToast?: (xp: number) => void;
 }
 
 /**
@@ -16,7 +17,7 @@ interface EventReviewsProps {
  * Phase 2 Social Feature - Event Reviews & Ratings
  * Users can rate and review events they attended
  */
-const EventReviews: React.FC<EventReviewsProps> = ({ eventId, eventName, user, onOpenAuth }) => {
+const EventReviews: React.FC<EventReviewsProps> = ({ eventId, eventName, user, onOpenAuth, onShowXPToast }) => {
   // State management
   const [reviews, setReviews] = useState<any[]>([]);
   const [ratingSummary, setRatingSummary] = useState<EventRatingSummary | null>(null);
@@ -99,6 +100,14 @@ const EventReviews: React.FC<EventReviewsProps> = ({ eventId, eventName, user, o
         // Reload summary
         const summary = await getEventRatingSummary(eventId);
         setRatingSummary(summary);
+        // Award 10 XP for review and show toast
+        onShowXPToast?.(10);
+        // Refresh stats silently in background
+        try {
+          await refreshUserStats();
+        } catch (e) {
+          // Silent fail
+        }
       }
     } catch (err) {
       logger.error('Failed to submit review:', err);

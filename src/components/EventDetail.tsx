@@ -141,6 +141,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [translatedAboutText, setTranslatedAboutText] = useState<string | null>(null);
   const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [xpToast, setXpToast] = useState<number | null>(null);
   const translationCache = useRef<Map<string, { name: string; aboutText: string; description: string }>>(new Map());
 
   const LANGUAGE_LABELS: Record<string, string> = {
@@ -1040,6 +1041,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                         // Optionally refresh attendees list or show confirmation
                         logger.log('Check-in successful for event:', event.id);
                       }}
+                      onShowXPToast={(xp) => setXpToast(xp)}
                     />
                   </div>
                 )}
@@ -1052,6 +1054,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                   eventName={event.name}
                   user={user}
                   onOpenAuth={() => onOpenAuth?.()}
+                  onShowXPToast={(xp) => setXpToast(xp)}
                 />
               </div>
 
@@ -1142,6 +1145,14 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
             // Optionally show a confirmation toast
           }}
         />
+      )}
+
+      {/* XP Toast Notification - Phase 3 Gamification */}
+      {xpToast !== null && (
+        <div className="fixed bottom-4 right-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-pulse z-50">
+          <span className="text-lg font-bold">+{xpToast} XP</span>
+          <span className="text-sm">Earned!</span>
+        </div>
       )}
     </div>
   </div>

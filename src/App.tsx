@@ -31,7 +31,8 @@ import {
   Coins,
   Smartphone,
   Users,
-  Heart
+  Heart,
+  Trophy
 } from 'lucide-react';
 
 // Lightweight components - load immediately
@@ -70,6 +71,7 @@ const PublicEventsBrowse = lazy(() => import('./components/PublicEventsBrowse'))
 const PublicUserProfile = lazy(() => import('./components/PublicUserProfile'));
 const EventFeed = lazy(() => import('./components/EventFeed'));
 const Communities = lazy(() => import('./components/Communities'));
+const Achievements = lazy(() => import('./components/Achievements'));
 import ErrorBoundary from './components/ErrorBoundary';
 
 import { User, Notification, EventNexusEvent } from './types';
@@ -862,6 +864,7 @@ const App: React.FC = () => {
                 <Route path="/user/:username" element={<PublicUserProfile currentUser={user} />} />
                   <Route path="/feed" element={<EventFeed user={user} />} />
               <Route path="/communities" element={<Communities user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/achievements" element={user ? <Achievements user={user} onOpenAuth={() => setIsAuthModalOpen(true)} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/ai-agents" element={user?.role === 'admin' ? <AIAgentDashboard user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
@@ -1150,6 +1153,7 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
           <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">Social</div>
           <SidebarItem icon={<Users />} label="Social Feed" to="/feed" onClick={closeSidebar} />
           <SidebarItem icon={<Heart />} label="Find Friends" to="/communities" onClick={closeSidebar} />
+          <SidebarItem icon={<Trophy />} label="Achievements" to="/achievements" onClick={closeSidebar} />
           
           <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">User</div>
           <SidebarItem icon={<Settings />} label="Settings" to="/notifications" onClick={closeSidebar} />

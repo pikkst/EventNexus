@@ -12,20 +12,22 @@
 
 import React, { useState } from 'react';
 import { MapPin, Camera, Share2, Loader } from 'lucide-react';
-import { checkInToEvent } from '../services/dbService';
+import { checkInToEvent, refreshUserStats } from '../services/dbService';
 
 interface EventCheckInProps {
   eventId: string;
   userId: string;
   eventName: string;
   onCheckInSuccess?: () => void;
+  onShowXPToast?: (xp: number) => void;
 }
 
 export const EventCheckIn: React.FC<EventCheckInProps> = ({
   eventId,
   userId,
   eventName,
-  onCheckInSuccess
+  onCheckInSuccess,
+  onShowXPToast
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [postText, setPostText] = useState('');
@@ -75,6 +77,13 @@ export const EventCheckIn: React.FC<EventCheckInProps> = ({
         setLocationReady(false);
         setIsOpen(false);
         onCheckInSuccess?.();
+        onShowXPToast?.(15); // Award 15 XP for check-in
+        // Refresh stats silently in background
+        try {
+          await refreshUserStats();
+        } catch (e) {
+          // Silent fail
+        }
       } else {
         alert('Failed to check in. Please try again.');
       }
