@@ -86,7 +86,7 @@ export const generateSocialMediaPosts = async (
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-thinking-exp',  // Thinking mode for strategic campaign analysis
+      model: 'gemini-2.5-flash-lite',  // Ultra-fast, cost-efficient
       contents: `You are a social media marketing expert for EventNexus.
       Campaign: ${campaignTitle}
       Copy: ${campaignCopy}
@@ -273,7 +273,7 @@ export const generatePlatformGrowthCampaign = async (
       : platformFeatures.for_attendees;
     
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-thinking-exp',  // Thinking mode for growth strategy analysis
+      model: 'gemini-2.5-flash-lite',  // Ultra-fast, cost-efficient
       contents: `You are an expert growth marketing strategist for EventNexus, a premium map-first event discovery WEB PLATFORM.
       
       CRITICAL PLATFORM INFO:
@@ -1011,29 +1011,11 @@ export const generateOutreachEmail = async (
       .join(', ');
 
     const ai = getAI();
-    
-    // Try thinking mode first, fallback to fast mode if unavailable
-    let modelName = 'gemini-2.0-flash-thinking-exp';
-    try {
-      const model = ai.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 4096,
-        }
-      });
-      // Test if model is available
-      await model.generateContent({ contents: 'test' });
-    } catch (modelError: any) {
-      console.warn('Thinking mode unavailable, using fast mode:', modelError?.message);
-      modelName = 'gemini-2.5-flash';  // Fallback to reliable model
-    }
-    
     const model = ai.getGenerativeModel({
-      model: modelName,
+      model: 'gemini-2.5-flash-lite',  // Ultra-fast, cost-efficient, supports thinking
       generationConfig: {
         temperature: 0.8,
-        maxOutputTokens: 4096,
+        maxOutputTokens: 8192,  // Flash-Lite supports up to 65K
       }
     });
 
