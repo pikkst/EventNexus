@@ -176,6 +176,16 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   }, [selectedDate, sortOrder, location.pathname, location.search, navigate]);
   
   // Load saved map position from localStorage, or use geolocation if not available
+  // Track zoom level for dynamic marker sizing
+  const [currentZoom, setCurrentZoom] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('homemap_last_zoom');
+      return saved ? parseInt(saved, 10) : 13;
+    } catch {
+      return 13;
+    }
+  });
+
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
