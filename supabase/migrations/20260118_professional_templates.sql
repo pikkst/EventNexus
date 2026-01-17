@@ -345,11 +345,14 @@ EventNexus
   true
 );
 
--- 3. Add pricing and business terms variables
+-- 3. Add pricing and business terms variables (from real pricing page)
 INSERT INTO public.template_variables (variable_name, variable_value, variable_type, description, category) VALUES
-('platform_fee', 'to be discussed', 'text', 'Platform commission - negotiable per client', 'pricing'),
-('free_trial_period', 'to be discussed', 'text', 'Free trial details - negotiable', 'pricing'),
-('pricing_model', 'Commission-based pricing available', 'text', 'Pricing approach', 'pricing'),
+('platform_fee_free', '5.0% platform fee', 'text', 'Free tier commission', 'pricing'),
+('platform_fee_pro', '3.0% platform fee (Pro: €19.99/mo)', 'text', 'Pro tier commission', 'pricing'),
+('platform_fee_premium', '2.5% platform fee (Premium: €49.99/mo)', 'text', 'Premium tier commission', 'pricing'),
+('platform_fee_enterprise', '1.5% platform fee (Enterprise: €149.99/mo)', 'text', 'Enterprise tier commission', 'pricing'),
+('welcome_credits', '100 welcome credits', 'text', 'Free tier welcome bonus', 'pricing'),
+('pricing_model', 'Flexible tier-based pricing: Free (5%), Pro (3%), Premium (2.5%), Enterprise (1.5%)', 'text', 'Pricing approach', 'pricing'),
 ('onboarding_timeline', '1-4 weeks depending on integration complexity', 'text', 'Setup timeline', 'business'),
 ('support_languages', '9 languages (Estonian, English, Finnish, Swedish, Latvian, Lithuanian, Norwegian, Danish, German)', 'text', 'Language support', 'platform'),
 ('calendar_link', 'https://calendly.com/eventnexus/demo', 'url', 'Booking calendar link', 'contact'),

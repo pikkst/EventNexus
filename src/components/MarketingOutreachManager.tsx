@@ -831,7 +831,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
       )}
 
       {/* Analytics Tab */}
-      {activeTab === 'analytics' && analytics && (
+      {activeTab === 'analytics' && analytics && analytics.emailStats && (
         <div className="space-y-6">
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -847,7 +847,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               <div className="flex items-center justify-between mb-2">
                 <Send className="w-8 h-8 text-white/80" />
               </div>
-              <p className="text-3xl font-black text-white">{analytics.emailStats.sent}</p>
+              <p className="text-3xl font-black text-white">{analytics.emailStats?.sent || 0}</p>
               <p className="text-sm text-white/80 font-medium">Emails Sent</p>
             </div>
 
@@ -927,27 +927,27 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
                   <span className="text-sm font-bold text-slate-400">Total Emails</span>
-                  <span className="text-lg font-black text-white">{analytics.emailStats.total}</span>
+                  <span className="text-lg font-black text-white">{analytics.emailStats?.total || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
                   <span className="text-sm font-bold text-slate-400">Sent</span>
-                  <span className="text-lg font-black text-green-400">{analytics.emailStats.sent}</span>
+                  <span className="text-lg font-black text-green-400">{analytics.emailStats?.sent || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
                   <span className="text-sm font-bold text-slate-400">Opened</span>
-                  <span className="text-lg font-black text-blue-400">{analytics.emailStats.opened}</span>
+                  <span className="text-lg font-black text-blue-400">{analytics.emailStats?.opened || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
                   <span className="text-sm font-bold text-slate-400">Replied</span>
-                  <span className="text-lg font-black text-purple-400">{analytics.emailStats.replied}</span>
+                  <span className="text-lg font-black text-purple-400">{analytics.emailStats?.replied || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
                   <span className="text-sm font-bold text-slate-400">Drafts</span>
-                  <span className="text-lg font-black text-yellow-400">{analytics.emailStats.draft}</span>
+                  <span className="text-lg font-black text-yellow-400">{analytics.emailStats?.draft || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl">
                   <span className="text-sm font-bold text-slate-400">Bounced</span>
-                  <span className="text-lg font-black text-red-400">{analytics.emailStats.bounced}</span>
+                  <span className="text-lg font-black text-red-400">{analytics.emailStats?.bounced || 0}</span>
                 </div>
               </div>
             </div>
