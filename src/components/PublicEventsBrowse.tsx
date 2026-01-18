@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Users, ExternalLink, Search, Filter, Loader, Globe, X, Sparkles, Compass, ChevronDown } from 'lucide-react';
 import { EventNexusEvent } from '../types';
 import { trackPageView } from '../services/analyticsService';
+import { generateEventListStructuredData, injectStructuredData, removeStructuredData } from '../utils/structuredData';
 
 interface PublicEventsBrowseProps {
   onOpenAuth?: () => void;
@@ -25,6 +26,22 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
   useEffect(() => {
     trackPageView(null, '/browse', document.referrer);
   }, []);
+
+  // Inject structured data for Google Rich Results
+  useEffect(() => {
+    if (events.length > 0) {
+      // Generate ItemList structured data with full Event objects
+      const structuredData = generateEventListStructuredData(events);
+      injectStructuredData(structuredData);
+
+      console.log(`✅ Injected structured data for ${events.length} events on /browse`);
+
+      // Cleanup on unmount
+      return () => {
+        removeStructuredData();
+      };
+    }
+  }, [events]);
 
   useEffect(() => {
     loadPublicEvents();
