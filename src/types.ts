@@ -801,7 +801,8 @@ export interface AIAgentStats {
   active_sources: number;
   events_discovered_24h: number;
   events_published_24h: number;
-  free_events_active: number; // ⭐ NEW - Total active free events across all cities
+  free_events_active: number; // ⭐ Total FUTURE free events (not archived/past)
+  archived_events?: number; // ⭐ Total archived/past events
   pending_review: number;
   avg_confidence: number;
   total_tokens_used_7d: number;

@@ -309,14 +309,16 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   async function loadStats(): Promise<AIAgentStats> {
     // Get aggregated stats from multiple sources
     const now = new Date();
+    const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const [citiesData, sourcesData, eventsData, freeEventsData, reviewData, confidenceData, usageData] = await Promise.all([
+    const [citiesData, sourcesData, eventsData, freeEventsData, archivedEventsData, reviewData, confidenceData, usageData] = await Promise.all([
       supabase.from('city_configs').select('*', { count: 'exact' }).eq('active', true),
       supabase.from('event_sources').select('*', { count: 'exact' }).eq('active', true),
-      supabase.from('events').select('*', { count: 'exact' }).gte('created_at', yesterday.toISOString()),
-      supabase.from('events').select('*', { count: 'exact' }).eq('price', 0).eq('status', 'active'),
+      supabase.from('events').select('*', { count: 'exact' }).gte('created_at', yesterday.toISOString()).is('archived_at', null).gte('date', today),
+      supabase.from('events').select('*', { count: 'exact' }).eq('price', 0).eq('status', 'active').is('archived_at', null).gte('date', today),
+      supabase.from('events').select('*', { count: 'exact' }).not('archived_at', 'is', null),
       supabase.from('review_queue').select('*', { count: 'exact' }).eq('status', 'pending'),
       supabase.from('event_confidence').select('final_score'),
       supabase.from('ai_usage_log').select('tokens_used, cost_estimate').gte('created_at', weekAgo.toISOString()),
@@ -334,7 +336,8 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       active_sources: sourcesData.count || 0,
       events_discovered_24h: eventsData.count || 0,
       events_published_24h: eventsData.count || 0,
-      free_events_active: freeEventsData.count || 0, // ⭐ NEW
+      free_events_active: freeEventsData.count || 0, // ⭐ Only future free events
+      archived_events: archivedEventsData.count || 0, // ⭐ Archived/past events count
       pending_review: reviewData.count || 0,
       avg_confidence: Math.round(avgConfidence * 100) / 100,
       total_tokens_used_7d: totalTokens,
@@ -2435,9 +2438,25 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
               <p className="text-sm text-emerald-400 mt-2 font-bold">
                 {stats.total_cities > 0 
                   ? `${Math.round((stats.free_events_active || 0) / stats.total_cities * 10) / 10} per city avg`
-                  : 'Across all cities'}
+                  : 'Future active events'}
               </p>
             </div>
+
+            {/* ⭐ NEW: Archived Events Card */}
+            {stats.archived_events !== undefined && stats.archived_events > 0 && (
+              <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-sm border border-slate-600/30 rounded-2xl shadow-xl p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400 font-bold">Archived Events</p>
+                    <p className="text-3xl font-bold text-slate-300">{stats.archived_events || 0}</p>
+                  </div>
+                  <Database className="w-10 h-10 text-slate-500" />
+                </div>
+                <p className="text-sm text-slate-500 mt-2">
+                  Past events (hidden from public)
+                </p>
+              </div>
+            )}
 
             <div className="bg-gradient-to-br from-orange-900/40 to-amber-900/40 backdrop-blur-sm border border-orange-500/30 rounded-2xl shadow-xl p-6">
               <div className="flex items-center justify-between">

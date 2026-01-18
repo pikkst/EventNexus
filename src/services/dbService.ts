@@ -1462,19 +1462,24 @@ export const getPlatformStats = async () => {
   try {
     // Get better stats by counting events from different sources
     const now = new Date();
+    const today = now.toISOString().split('T')[0]; // YYYY-MM-DD format
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    // Get events discovered in last 24h
+    // Get events discovered in last 24h (published + active + future)
     const { count: eventsLast24h } = await supabase
       .from('events')
       .select('*', { count: 'exact' })
-      .gte('created_at', yesterday.toISOString());
+      .gte('created_at', yesterday.toISOString())
+      .is('archived_at', null)
+      .gte('date', today);
 
-    // Get all active events (better metric than created events)
+    // Get all active FUTURE events (exclude archived and past events)
     const { count: totalActiveEvents } = await supabase
       .from('events')
       .select('*', { count: 'exact' })
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .is('archived_at', null)
+      .gte('date', today);
 
     // Get all users
     const { count: totalUsers } = await supabase
@@ -1485,7 +1490,8 @@ export const getPlatformStats = async () => {
     const { count: totalTickets, data: ticketsData } = await supabase
       .from('tickets')
       .select('price', { count: 'exact' })
-      .in('status', ['valid', 'used']);
+      .in('status', ['valid', 'used'])
+      .is('archived_at', null);
 
     // Get unique cities (better metric)
     const { count: totalCities } = await supabase
@@ -1493,28 +1499,37 @@ export const getPlatformStats = async () => {
       .select('*', { count: 'exact' })
       .eq('active', true);
 
-    // Get free events count
+    // Get free FUTURE events count (exclude archived and past)
     const { count: freeEventsCount } = await supabase
       .from('events')
       .select('*', { count: 'exact' })
       .eq('price', 0)
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .is('archived_at', null)
+      .gte('date', today);
+    
+    // Get archived events count for admin stats
+    const { count: archivedEventsCount } = await supabase
+      .from('events')
+      .select('*', { count: 'exact' })
+      .not('archived_at', 'is', null);
 
     // Calculate revenue
     const totalRevenue = ticketsData?.reduce((sum: number, ticket: any) => sum + (ticket.price || 0), 0) || 0;
 
     return {
-      // Updated metrics - more realistic from AI monitoring
-      totalEvents: totalActiveEvents || 592, // Active events right now
-      totalUsers: totalUsers || 4,
+      // Updated metrics - only ACTIVE FUTURE events (not archived/past)
+      totalEvents: totalActiveEvents || 0, // Active future events
+      totalUsers: totalUsers || 0,
       totalTickets: totalTickets || 0,
       totalOrganizers: totalUsers ? Math.max(1, Math.floor((totalUsers || 1) / 5)) : 1, // Estimate from users
       totalRevenue: totalRevenue || 0,
       
       // Additional metrics for better landing page
-      eventsLast24h: eventsLast24h || 531, // Events discovered in 24h - shows activity
-      totalCities: totalCities || 1169, // Active cities - shows global reach
-      freeEventsActive: freeEventsCount || 592, // Free events - conversion driver
+      eventsLast24h: eventsLast24h || 0, // Events discovered in 24h - shows activity
+      totalCities: totalCities || 0, // Active cities - shows global reach
+      freeEventsActive: freeEventsCount || 0, // Free FUTURE events - conversion driver
+      archivedEvents: archivedEventsCount || 0, // Archived/past events count for admin
       
       monthlyGPV: totalRevenue > 0 ? `€${(totalRevenue / 1000).toFixed(0)}k` : '€0k',
       platformConversion: totalUsers && totalTickets ? ((totalTickets / totalUsers) * 100).toFixed(1) : '0.0',
@@ -1525,16 +1540,17 @@ export const getPlatformStats = async () => {
     };
   } catch (error) {
     console.error('Error fetching platform stats:', error);
-    // Return fallback data with impressive numbers for landing
+    // Return fallback data
     return {
-      totalEvents: 592,
-      totalUsers: 4,
+      totalEvents: 0,
+      totalUsers: 0,
       totalTickets: 0,
-      totalOrganizers: 1,
+      totalOrganizers: 0,
       totalRevenue: 0,
-      eventsLast24h: 531,
-      totalCities: 1169,
-      freeEventsActive: 592,
+      eventsLast24h: 0,
+      totalCities: 0,
+      freeEventsActive: 0,
+      archivedEvents: 0,
       monthlyGPV: '€0k',
       platformConversion: '0.0',
       creditPool: '0M',
