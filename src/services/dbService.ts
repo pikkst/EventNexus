@@ -6434,7 +6434,7 @@ export const updateProspectStatus = async (
 /**
  * Get marketing analytics dashboard
  */
-export const getMarketingAnalytics = async (days: number = 30): Promise<any> => {
+export const getMarketingAnalytics = async (days: number = 365): Promise<any> => {
   try {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
@@ -6446,11 +6446,10 @@ export const getMarketingAnalytics = async (days: number = 30): Promise<any> => 
 
     if (prospectsError) throw prospectsError;
 
-    // Get all outreach emails
+    // Get all outreach emails (no time filter - show all historical data)
     const { data: outreach, error: outreachError } = await supabase
       .from('marketing_outreach')
-      .select('*')
-      .gte('created_at', startDate.toISOString());
+      .select('*');
 
     if (outreachError) throw outreachError;
 
