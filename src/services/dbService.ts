@@ -6184,16 +6184,26 @@ export const importMarketingProspects = async (csvContent: string, country: stri
       }
 
       // Check if email already exists
-      const { data: existing } = await supabase
-        .from('marketing_prospects')
-        .select('id')
-        .eq('email', email.toLowerCase())
-        .single();
+      try {
+        const { data: existing, error: checkError } = await supabase
+          .from('marketing_prospects')
+          .select('id')
+          .eq('email', email.toLowerCase())
+          .maybeSingle(); // Use maybeSingle() instead of single() to avoid 406 error
 
-      if (existing) {
-        results.errors.push(`Row ${i + 2}: Email already exists (${email})`);
-        results.failed++;
-        continue;
+        // If there's an error OTHER than "not found", log it but continue
+        if (checkError && checkError.code !== 'PGRST116') {
+          logger.warn(`Row ${i + 2}: Could not check duplicate for ${email}:`, checkError.message);
+        }
+
+        if (existing) {
+          results.errors.push(`Row ${i + 2}: Email already exists (${email})`);
+          results.failed++;
+          continue;
+        }
+      } catch (dupCheckError) {
+        // If duplicate check fails, log but continue with insert (database unique constraint will catch it)
+        logger.warn(`Row ${i + 2}: Duplicate check failed for ${email}, attempting insert anyway`);
       }
 
       // Detect language from country (expanded for worldwide coverage)
