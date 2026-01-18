@@ -227,6 +227,9 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
   const [liveUpdateCount, setLiveUpdateCount] = useState(0); // Track how many live updates received
   
+  // Track timeout IDs for cleanup on unmount (prevents stale state updates)
+  const newEventTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  
   // New features: Sound, auto-pan, nearby counter
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     try {
@@ -507,14 +510,18 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                   });
                 }
                 
-                // Remove animation flag after 30 seconds (matches visibility logic)
-                setTimeout(() => {
+                // Remove animation flag after 30 seconds - store timeout ID for cleanup
+                const timeoutId = setTimeout(() => {
                   setNewEventIds(prev => {
                     const next = new Set(prev);
                     next.delete(newEvent.id);
                     return next;
                   });
+                  newEventTimeoutsRef.current.delete(newEvent.id);
                 }, 30000);
+                
+                // Store timeout ID for cleanup
+                newEventTimeoutsRef.current.set(newEvent.id, timeoutId);
               }
             }
           )
@@ -580,6 +587,11 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     return () => {
       isSubscribed = false;
       cleanup?.();
+      
+      // Clear all pending new event timeouts to prevent stale state updates
+      console.log(`🧹 Clearing ${newEventTimeoutsRef.current.size} pending event timeout(s)`);
+      newEventTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+      newEventTimeoutsRef.current.clear();
     };
   }, [playNotificationSound, calculateDistance, userLocation, searchRadius, autoPanEnabled]);
 
@@ -630,14 +642,18 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
             // Play sound for polled events too
             playNotificationSound();
             
-            // Remove animation after 30 seconds (matches visibility logic)
-            setTimeout(() => {
+            // Remove animation after 30 seconds - store timeout ID for cleanup
+            const timeoutId = setTimeout(() => {
               setNewEventIds(prev => {
                 const next = new Set(prev);
                 next.delete(newEvent.id);
                 return next;
               });
+              newEventTimeoutsRef.current.delete(newEvent.id);
             }, 30000);
+            
+            // Store timeout ID for cleanup
+            newEventTimeoutsRef.current.set(newEvent.id, timeoutId);
           }
         });
 
