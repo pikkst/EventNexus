@@ -6150,15 +6150,40 @@ export const importMarketingProspects = async (csvContent: string, country: stri
         continue;
       }
 
-      // Detect language from country
+      // Detect language from country (expanded for worldwide coverage)
       const languageMap: Record<string, string> = {
-        'Estonia': 'et',
-        'Finland': 'fi',
-        'Latvia': 'lv',
-        'Lithuania': 'lt',
-        'Sweden': 'sv',
-        'Norway': 'no',
-        'Denmark': 'da'
+        // Nordic & Baltic countries
+        'Estonia': 'et', 'Finland': 'fi', 'Latvia': 'lv', 'Lithuania': 'lt', 'Sweden': 'sv', 'Norway': 'no', 'Denmark': 'da', 'Iceland': 'is',
+        // Western Europe
+        'Germany': 'de', 'Austria': 'de', 'Switzerland': 'de', 'Netherlands': 'nl', 'Belgium': 'nl', 'Luxembourg': 'fr',
+        'France': 'fr', 'Monaco': 'fr', 'Andorra': 'ca',
+        'Spain': 'es', 'Portugal': 'pt',
+        'Italy': 'it', 'Vatican City': 'it', 'San Marino': 'it',
+        // Central & Eastern Europe
+        'Poland': 'pl', 'Czech Republic': 'cs', 'Slovakia': 'sk', 'Hungary': 'hu', 'Romania': 'ro',
+        'Bulgaria': 'bg', 'Serbia': 'sr', 'Croatia': 'hr', 'Slovenia': 'sl', 'Bosnia and Herzegovina': 'bs',
+        'Montenegro': 'sr', 'North Macedonia': 'mk', 'Albania': 'sq', 'Kosovo': 'sq',
+        'Ukraine': 'uk', 'Belarus': 'be', 'Moldova': 'ro', 'Russia': 'ru',
+        // Mediterranean & Middle East
+        'Greece': 'el', 'Cyprus': 'el', 'Turkey': 'tr',
+        'Israel': 'he', 'Palestine': 'ar', 'Lebanon': 'ar', 'Jordan': 'ar', 'Syria': 'ar', 'Iraq': 'ar',
+        'Saudi Arabia': 'ar', 'United Arab Emirates': 'ar', 'Kuwait': 'ar', 'Qatar': 'ar', 'Bahrain': 'ar', 'Oman': 'ar', 'Yemen': 'ar',
+        'Iran': 'fa', 'Afghanistan': 'fa',
+        // Asia
+        'China': 'zh', 'Taiwan': 'zh', 'Japan': 'ja', 'South Korea': 'ko', 'North Korea': 'ko',
+        'Thailand': 'th', 'Vietnam': 'vi', 'Indonesia': 'id', 'Malaysia': 'ms', 'Philippines': 'tl',
+        'Singapore': 'en', 'Myanmar': 'my', 'Cambodia': 'km', 'Laos': 'lo',
+        'India': 'hi', 'Pakistan': 'ur', 'Bangladesh': 'bn', 'Sri Lanka': 'si', 'Nepal': 'ne',
+        // Americas
+        'United States': 'en', 'Canada': 'en', 'United Kingdom': 'en', 'Ireland': 'en', 'Australia': 'en', 'New Zealand': 'en',
+        'Mexico': 'es', 'Brazil': 'pt', 'Argentina': 'es', 'Chile': 'es', 'Colombia': 'es', 'Peru': 'es', 'Venezuela': 'es',
+        'Ecuador': 'es', 'Bolivia': 'es', 'Paraguay': 'es', 'Uruguay': 'es',
+        'Guatemala': 'es', 'Honduras': 'es', 'El Salvador': 'es', 'Nicaragua': 'es', 'Costa Rica': 'es', 'Panama': 'es',
+        'Cuba': 'es', 'Dominican Republic': 'es', 'Puerto Rico': 'es',
+        // Africa (major languages)
+        'South Africa': 'en', 'Nigeria': 'en', 'Kenya': 'sw', 'Ghana': 'en', 'Ethiopia': 'am', 'Egypt': 'ar',
+        'Morocco': 'ar', 'Algeria': 'ar', 'Tunisia': 'ar', 'Libya': 'ar', 'Sudan': 'ar',
+        'Senegal': 'fr', 'Ivory Coast': 'fr', 'Cameroon': 'fr', 'Madagascar': 'fr'
       };
       const language = languageMap[country] || 'en';
 
