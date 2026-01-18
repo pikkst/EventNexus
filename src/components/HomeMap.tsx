@@ -528,11 +528,9 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               
               // Only add if active and has valid location (check for lat/lng, not coordinates)
               if (newEvent.location && newEvent.location.lat && newEvent.location.lng) {
+                // Update allEvents ONLY - bounds useEffect will update events state
+                // This prevents race condition where autopan changes bounds before state updates
                 setAllEvents(prev => {
-                  const exists = prev.some(e => e.id === newEvent.id);
-                  return exists ? prev.map(e => e.id === newEvent.id ? newEvent : e) : [...prev, newEvent];
-                });
-                setEvents(prev => {
                   const exists = prev.some(e => e.id === newEvent.id);
                   return exists ? prev.map(e => e.id === newEvent.id ? newEvent : e) : [...prev, newEvent];
                 });
@@ -562,14 +560,14 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                   });
                 }
                 
-                // Remove animation flag after 5 seconds
+                // Remove animation flag after 30 seconds (matches visibility logic)
                 setTimeout(() => {
                   setNewEventIds(prev => {
                     const next = new Set(prev);
                     next.delete(newEvent.id);
                     return next;
                   });
-                }, 5000);
+                }, 30000);
               }
             }
           )
@@ -585,10 +583,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               console.log('🔄 REALTIME: Event updated:', payload.new);
               const updatedEvent = payload.new as EventNexusEvent;
               
+              // Update allEvents ONLY - bounds useEffect will update events state
               setAllEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
-              setEvents(prev => prev.map(e => 
-                e.id === updatedEvent.id ? updatedEvent : e
-              ));
             }
           )
           .on(
@@ -603,8 +599,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               console.log('🗑️ REALTIME: Event deleted:', payload.old);
               const deletedId = (payload.old as any).id;
               
+              // Update allEvents ONLY - bounds useEffect will update events state
               setAllEvents(prev => prev.filter(e => e.id !== deletedId));
-              setEvents(prev => prev.filter(e => e.id !== deletedId));
               setLiveUpdateCount(c => c + 1);
             }
           )
@@ -675,11 +671,11 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           
           if (!currentEventIds.has(newEvent.id)) {
             console.log('📡 POLL: Found new event:', newEvent.name);
+            // Update allEvents ONLY - bounds useEffect will update events state
             setAllEvents(prev => {
               const exists = prev.some(e => e.id === newEvent.id);
               return exists ? prev.map(e => e.id === newEvent.id ? newEvent as EventNexusEvent : e) : [...prev, newEvent as EventNexusEvent];
             });
-            setEvents(prev => [...prev, newEvent as EventNexusEvent]);
             setNewEventIds(prev => new Set(prev).add(newEvent.id));
             setLiveUpdateCount(c => c + 1);
             addedCount++;
@@ -687,14 +683,14 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
             // Play sound for polled events too
             playNotificationSound();
             
-            // Remove animation after 5 seconds
+            // Remove animation after 30 seconds (matches visibility logic)
             setTimeout(() => {
               setNewEventIds(prev => {
                 const next = new Set(prev);
                 next.delete(newEvent.id);
                 return next;
               });
-            }, 5000);
+            }, 30000);
           }
         });
 
