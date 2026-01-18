@@ -363,40 +363,16 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     // Otherwise, load from database (initial load)
     const loadEvents = async () => {
       try {
+        console.log('📍 Loading events from database...');
         const eventsData = await getEvents();
         // Filter out expired events automatically
         const activeEvents = filterActiveEvents(eventsData);
         
-        // Throttled loading: Add events in batches of 10 every 500ms
-        // This prevents map renderer from crashing when 100+ events load at once
-        const BATCH_SIZE = 10;
-        const BATCH_DELAY = 500; // ms
+        console.log(`📍 Loaded ${activeEvents.length} active events`);
+        // Load all events at once - no batching needed
+        setAllEvents(activeEvents);
+        // The second useEffect will set events from allEvents
         
-        if (activeEvents.length > BATCH_SIZE) {
-          console.log(`📍 Loading ${activeEvents.length} events in batches of ${BATCH_SIZE}...`);
-          setAllEvents(activeEvents); // Store all events in cache
-          setEvents([]); // Clear first
-          
-          // Load only visible events in batches
-          const visibleEvents = filterEventsByBounds(activeEvents, visibleBounds);
-          for (let i = 0; i < visibleEvents.length; i += BATCH_SIZE) {
-            const batch = visibleEvents.slice(i, i + BATCH_SIZE);
-            setEvents(prev => [...prev, ...batch]);
-            
-            // Wait before next batch (except for last batch)
-            if (i + BATCH_SIZE < visibleEvents.length) {
-              await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
-            }
-          }
-          setVisibleEventCount(visibleEvents.length);
-          console.log(`✅ All ${activeEvents.length} events loaded (${visibleEvents.length} visible in bounds)`);
-        } else {
-          // Small number of events, load directly
-          setAllEvents(activeEvents);
-          const visibleEvents = filterEventsByBounds(activeEvents, visibleBounds);
-          setEvents(visibleEvents);
-          setVisibleEventCount(visibleEvents.length);
-        }
       } catch (error) {
         console.error('Error loading events:', error);
       } finally {
@@ -404,7 +380,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       }
     };
     loadEvents();
-  }, [propEvents, visibleBounds, filterEventsByBounds]);
+  }, [propEvents]);
 
   // Show ALL events without bounds filtering (simplified for stability)
   // Bounds filtering removed to prevent race conditions with autopan and state updates
