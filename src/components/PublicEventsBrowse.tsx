@@ -520,37 +520,7 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
         )}
       </div>
 
-      {/* SEO Structured Data - Include ALL events for AI crawlers */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "ItemList",
-          "itemListElement": filteredEvents.map((event, index) => ({
-            "@type": "ListItem",
-            "position": index + 1,
-            "item": {
-              "@type": "Event",
-              "name": event.name,
-              "description": event.description,
-              "startDate": event.date,
-              "location": {
-                "@type": "Place",
-                "name": typeof event.location === 'string' 
-                  ? event.location 
-                  : event.location?.address || `${event.location?.city || ''}, ${event.location?.country || ''}`,
-                "address": typeof event.location === 'string'
-                  ? event.location
-                  : event.location?.address
-              },
-              "organizer": {
-                "@type": "Organization",
-                "name": event.organizer_name || "EventNexus"
-              },
-              "url": `https://www.eventnexus.eu/events/${event.id}`
-            }
-          }))
-        })}
-      </script>
+      {/* SEO Structured Data injected via useEffect hook above - no hardcoded script needed */}
     </div>
   );
 };
