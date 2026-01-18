@@ -100,6 +100,13 @@ export function useEventSEO(event: {
   category?: string;
   latitude?: number;
   longitude?: number;
+  price?: number;
+  max_capacity?: number;
+  location?: { address?: string; lat?: number; lng?: number; city?: string };
+  organizer_name?: string;
+  organizer_id?: string;
+  time?: string;
+  end_date?: string;
 } | null) {
   const { setSEO } = useSEO();
 
@@ -109,6 +116,55 @@ export function useEventSEO(event: {
     const eventUrl = `https://www.eventnexus.eu/event/${event.id}`;
     const eventDate = event.event_date ? new Date(event.event_date).toLocaleDateString() : '';
 
+    // Generate Schema.org Event structured data
+    const eventSchema: StructuredData = {
+      '@context': 'https://schema.org',
+      '@type': 'Event',
+      name: event.name,
+      description: event.description,
+      startDate: event.event_date || new Date().toISOString(),
+      endDate: event.end_date || event.event_date || new Date().toISOString(),
+      eventStatus: 'https://schema.org/EventScheduled',
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      location: {
+        '@type': 'Place',
+        name: event.city || 'TBD',
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: event.city || 'TBD',
+          addressCountry: 'EE'
+        },
+        ...(event.latitude && event.longitude ? {
+          geo: {
+            '@type': 'GeoCoordinates',
+            latitude: event.latitude,
+            longitude: event.longitude
+          }
+        } : {})
+      },
+      image: event.image_url || 'https://www.eventnexus.eu/og-image.png',
+      ...(event.organizer_name ? {
+        organizer: {
+          '@type': 'Organization',
+          name: event.organizer_name,
+          url: `https://www.eventnexus.eu/organizer/${event.organizer_id}`
+        }
+      } : {}),
+      ...(event.price !== undefined ? {
+        offers: {
+          '@type': 'Offer',
+          price: event.price,
+          priceCurrency: 'EUR',
+          availability: 'https://schema.org/InStock',
+          url: eventUrl
+        }
+      } : {}),
+      performer: {
+        '@type': 'Organization',
+        name: event.organizer_name || 'EventNexus'
+      }
+    };
+
     setSEO({
       title: `${event.name} - EventNexus`,
       description: event.description || `Join ${event.name} on EventNexus. ${event.category} event in ${event.city}`,
@@ -116,7 +172,13 @@ export function useEventSEO(event: {
       url: eventUrl,
       type: 'event',
       keywords: `${event.category}, ${event.city}, events, ${event.name}`,
+      structuredData: eventSchema
     });
+
+    // Cleanup structured data on unmount
+    return () => {
+      // Schema injection is handled by setSEO, but we can add cleanup if needed
+    };
   }, [event?.id]);
 
   return { setSEO };

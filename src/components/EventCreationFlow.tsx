@@ -35,6 +35,7 @@ import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
 import { FEATURE_UNLOCK_COSTS } from '../services/featureUnlockService';
 import { User, EventNexusEvent } from '../types';
 import { generateCreateEventSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
+import { validateAndOptimizeEvent, meetsMinimumSEO, getSEORecommendations } from '../utils/eventValidation';
 import CreditsPricingModal from './CreditsPricingModal';
 
 // Simple logger for debugging
@@ -159,6 +160,12 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     { name: 'General Admission', type: 'general', price: 0, quantity: 100 }
   ]);
 
+  // SEO validation state
+  const [seoScore, setSeoScore] = useState<number>(0);
+  const [qualityScore, setQualityScore] = useState<number>(0);
+  const [seoRecommendations, setSeoRecommendations] = useState<string[]>([]);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
   const navigate = useNavigate();
 
   // Update SEO meta tags on mount
@@ -188,6 +195,86 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
 
     return () => clearInterval(timer);
   }, [formData]);
+
+  // Real-time SEO validation - runs whenever form data changes
+  useEffect(() => {
+    // Only validate if user has started filling required fields
+    if (!formData.name && !formData.description) {
+      setSeoScore(0);
+      setQualityScore(0);
+      setSeoRecommendations([]);
+      setValidationErrors([]);
+      return;
+    }
+
+    // Debounce validation to avoid excessive re-renders
+    const timer = setTimeout(() => {
+      try {
+        // Build event object for validation
+        const eventForValidation: Partial<EventNexusEvent> = {
+          name: formData.name,
+          category: formData.category,
+          description: formData.description,
+          aboutText: formData.aboutText,
+          date: formData.date,
+          time: formData.time,
+          end_date: formData.end_date || undefined,
+          end_time: formData.end_time || undefined,
+          location: {
+            lat: formData.locationLat,
+            lng: formData.locationLng,
+            address: formData.locationAddress || formData.location,
+            city: formData.locationCity
+          },
+          price: formData.price,
+          visibility: formData.visibility as any,
+          imageUrl: imagePreview || undefined,
+          maxAttendees: formData.max_capacity
+        };
+
+        // Run validation
+        const { validation, seo } = validateAndOptimizeEvent(eventForValidation);
+
+        // Update state
+        setSeoScore(validation.seoScore);
+        setQualityScore(validation.qualityScore);
+        setValidationErrors(validation.errors);
+
+        // Get recommendations
+        const recommendations = getSEORecommendations(validation, seo);
+        setSeoRecommendations(recommendations);
+
+        logger.log('SEO Validation:', {
+          seoScore: validation.seoScore,
+          qualityScore: validation.qualityScore,
+          errors: validation.errors.length,
+          warnings: validation.warnings.length
+        });
+      } catch (error) {
+        logger.error('SEO validation error:', error);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [
+    formData.name,
+    formData.category,
+    formData.description,
+    formData.aboutText,
+    formData.date,
+    formData.time,
+    formData.end_date,
+    formData.end_time,
+    formData.location,
+    formData.locationLat,
+    formData.locationLng,
+    formData.locationAddress,
+    formData.locationCity,
+    formData.price,
+    formData.visibility,
+    formData.max_capacity,
+    imagePreview
+  ]);
 
   // Image handling functions
   const compressImage = async (file: File): Promise<File> => {
@@ -680,6 +767,62 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       });
       alert('Please fill in all required fields');
       return;
+    }
+
+    // SEO VALIDATION - ensure event meets minimum quality standards
+    logger.log('Running final SEO validation before creation...');
+    try {
+      const eventForValidation: Partial<EventNexusEvent> = {
+        name: formData.name,
+        category: formData.category,
+        description: formData.description,
+        aboutText: formData.aboutText,
+        date: formData.date,
+        time: formData.time,
+        end_date: formData.end_date || undefined,
+        end_time: formData.end_time || undefined,
+        location: {
+          lat: formData.locationLat,
+          lng: formData.locationLng,
+          address: formData.locationAddress || formData.location,
+          city: formData.locationCity
+        },
+        price: formData.price,
+        visibility: formData.visibility as any,
+        imageUrl: imagePreview || undefined,
+        maxAttendees: formData.max_capacity
+      };
+
+      const { validation, seo } = validateAndOptimizeEvent(eventForValidation, { autoFix: true });
+
+      // Check if validation passed
+      if (!validation.isValid) {
+        logger.error('Event validation failed:', validation.errors);
+        const errorMessage = `Event validation failed:\n\n${validation.errors.join('\n')}`;
+        alert(errorMessage);
+        return;
+      }
+
+      // Warn if SEO score is low but allow creation
+      if (!meetsMinimumSEO(validation)) {
+        logger.warn('Event SEO score is below recommended:', validation.seoScore);
+        const confirmed = window.confirm(
+          `⚠️ SEO Score: ${validation.seoScore}/100\n\n` +
+          `Your event is valid but may not perform well in search results.\n\n` +
+          `Recommendations:\n${getSEORecommendations(validation, seo).join('\n')}\n\n` +
+          `Do you want to publish anyway?`
+        );
+        
+        if (!confirmed) {
+          logger.log('User chose to improve SEO before publishing');
+          return;
+        }
+      } else {
+        logger.log(`✅ Event SEO validated: ${validation.seoScore}/100`);
+      }
+    } catch (validationError) {
+      logger.error('SEO validation error:', validationError);
+      // Continue with creation even if validation fails (fail-safe)
     }
 
     logger.log('Validation passed, creating event...');
@@ -1578,6 +1721,87 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   : 'AI auto-translation is available for Pro tier and above. Upgrade to reach global audiences.'}
               </p>
             </div>
+
+            {/* SEO Quality Score Indicator */}
+            {(seoScore > 0 || qualityScore > 0) && (
+              <div className={`p-4 rounded-xl border ${
+                seoScore >= 80 ? 'bg-green-500/10 border-green-500/20' :
+                seoScore >= 60 ? 'bg-yellow-500/10 border-yellow-500/20' :
+                'bg-orange-500/10 border-orange-500/20'
+              }`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className={`w-4 h-4 ${
+                      seoScore >= 80 ? 'text-green-500' :
+                      seoScore >= 60 ? 'text-yellow-500' :
+                      'text-orange-500'
+                    }`} />
+                    <span className="font-bold text-sm">SEO & Quality Score</span>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500">SEO</p>
+                      <p className={`font-bold text-lg ${
+                        seoScore >= 80 ? 'text-green-400' :
+                        seoScore >= 60 ? 'text-yellow-400' :
+                        'text-orange-400'
+                      }`}>{seoScore}/100</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500">Quality</p>
+                      <p className={`font-bold text-lg ${
+                        qualityScore >= 80 ? 'text-green-400' :
+                        qualityScore >= 60 ? 'text-yellow-400' :
+                        'text-orange-400'
+                      }`}>{qualityScore}/100</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress Bars */}
+                <div className="space-y-2 mb-3">
+                  <div className="relative h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div 
+                      className={`absolute left-0 top-0 h-full transition-all duration-500 ${
+                        seoScore >= 80 ? 'bg-green-500' :
+                        seoScore >= 60 ? 'bg-yellow-500' :
+                        'bg-orange-500'
+                      }`}
+                      style={{ width: `${seoScore}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Validation Errors */}
+                {validationErrors.length > 0 && (
+                  <div className="space-y-1 mb-3">
+                    {validationErrors.map((error, i) => (
+                      <p key={i} className="text-xs text-red-400 flex items-center gap-2">
+                        <AlertTriangle className="w-3 h-3" />
+                        {error}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {/* SEO Recommendations */}
+                {seoRecommendations.length > 0 && (
+                  <div className="space-y-1">
+                    {seoRecommendations.map((rec, i) => (
+                      <p key={i} className="text-xs text-slate-400 leading-relaxed">
+                        {rec}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {seoScore >= 80 && (
+                  <p className="text-xs text-green-400 font-medium mt-2">
+                    ✅ Your event is optimized for Google and AI search engines!
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Publish Button */}
             <button 
