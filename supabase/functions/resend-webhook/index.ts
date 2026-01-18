@@ -133,12 +133,12 @@ serve(async (req) => {
     }
 
     // Find the outreach email by Resend email_id stored in personalization_data
-    // Use JSON path operator to search in JSONB column
+    // Use ->> operator to extract text value from JSONB (-> returns JSON, ->> returns text)
     console.log('🔍 Searching for email_id in database...');
     const { data: outreachEmails, error: findError } = await supabase
       .from('marketing_outreach')
       .select('*, marketing_prospects(*)')
-      .eq('personalization_data->email_id', emailId);
+      .eq('personalization_data->>email_id', emailId);
 
     if (findError) {
       console.error('❌ Error finding outreach email:', findError);
