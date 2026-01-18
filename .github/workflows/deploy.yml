@@ -81,6 +81,27 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: npm run build
 
+      - name: Setup SPA routing for GitHub Pages
+        run: |
+          # Create index.html copies for all sitemap routes
+          # This ensures Google crawler gets 200 instead of 404
+          cd dist
+          mkdir -p map browse events pricing beta help privacy terms cookies gdpr mobile
+          cp index.html map/index.html
+          cp index.html browse/index.html
+          cp index.html events/index.html
+          cp index.html pricing/index.html
+          cp index.html beta/index.html
+          cp index.html help/index.html
+          cp index.html privacy/index.html
+          cp index.html terms/index.html
+          cp index.html cookies/index.html
+          cp index.html gdpr/index.html
+          cp index.html mobile/index.html
+          echo "✅ Created index.html for all routes"
+          ls -la */index.html 2>/dev/null | wc -l
+          cd ..
+
       - name: Verify APKs in dist
         run: |
           echo "Contents of dist/downloads:"
