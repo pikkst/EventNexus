@@ -1,8 +1,11 @@
 -- Public Events View for AI Search Engines
 -- Purpose: Make events discoverable by ChatGPT, Claude, Perplexity without authentication
 -- Created: 2026-01-15
+-- Updated: 2026-01-19 - Fixed to show all events (not filter by date)
 
 -- Create public view for active, published events (bypasses RLS)
+-- NOTE: Includes ALL events regardless of date (for accurate count)
+-- Date filtering should be done in application layer or Edge Function
 CREATE OR REPLACE VIEW public_events AS
 SELECT 
   id,
@@ -22,8 +25,8 @@ SELECT
   status,
   tags
 FROM events
-WHERE status IN ('active', 'published')
-  AND date >= NOW();
+WHERE status IN ('active', 'published');
+-- REMOVED: AND date >= NOW() to show all events
 
 -- Grant public access to the view
 GRANT SELECT ON public_events TO anon, authenticated;

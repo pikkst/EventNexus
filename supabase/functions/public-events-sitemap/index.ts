@@ -109,6 +109,7 @@ Deno.serve(async (req) => {
     }
 
     // Fetch public events directly from view (bypasses type issues)
+    // Filter for upcoming events only (date >= today) for AI crawlers
     const { data: events, error } = await supabase
       .from('public_events')
       .select(`
@@ -125,6 +126,7 @@ Deno.serve(async (req) => {
         tags,
         organizer_id
       `)
+      .gte('date', new Date().toISOString()) // Only upcoming events for AI
       .order('date', { ascending: true })
       .range(offset, offset + limit - 1); // Use range instead of limit for pagination
 
