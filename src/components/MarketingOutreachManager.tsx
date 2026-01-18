@@ -352,6 +352,13 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-2">
+              <Users className="w-4 h-4 text-indigo-400" />
+              <p className="text-xs font-black text-slate-500 uppercase">Prospects</p>
+            </div>
+            <p className="text-3xl font-black text-white">{analytics.totalProspects || prospects.length || 0}</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-2">
               <Mail className="w-4 h-4 text-indigo-400" />
               <p className="text-xs font-black text-slate-500 uppercase">Sent</p>
             </div>
@@ -363,6 +370,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               <p className="text-xs font-black text-slate-500 uppercase">Open Rate</p>
             </div>
             <p className="text-3xl font-black text-emerald-400">{analytics.openRate}%</p>
+            <p className="text-xs text-emerald-300 mt-1">{analytics.emailStats?.opened || 0} opened</p>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-2">
@@ -370,13 +378,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               <p className="text-xs font-black text-slate-500 uppercase">Reply Rate</p>
             </div>
             <p className="text-3xl font-black text-purple-400">{analytics.replyRate}%</p>
-          </div>
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="w-4 h-4 text-green-400" />
-              <p className="text-xs font-black text-slate-500 uppercase">Conversions</p>
-            </div>
-            <p className="text-3xl font-black text-green-400">{analytics.conversionFunnel?.converted || 0}</p>
+            <p className="text-xs text-purple-300 mt-1">{analytics.emailStats?.replied || 0} replied</p>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-2">
@@ -384,6 +386,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               <p className="text-xs font-black text-slate-500 uppercase">Conv. Rate</p>
             </div>
             <p className="text-3xl font-black text-orange-400">{analytics.conversionRate}%</p>
+            <p className="text-xs text-orange-300 mt-1">{analytics.conversionFunnel?.converted || 0} converted</p>
           </div>
         </div>
       )}
