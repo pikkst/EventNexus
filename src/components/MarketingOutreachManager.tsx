@@ -330,7 +330,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               <Mail className="w-4 h-4 text-indigo-400" />
               <p className="text-xs font-black text-slate-500 uppercase">Sent</p>
             </div>
-            <p className="text-3xl font-black text-white">{analytics.totals.sent}</p>
+            <p className="text-3xl font-black text-white">{analytics.emailStats?.sent || 0}</p>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-2">
@@ -351,7 +351,7 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               <CheckCircle2 className="w-4 h-4 text-green-400" />
               <p className="text-xs font-black text-slate-500 uppercase">Conversions</p>
             </div>
-            <p className="text-3xl font-black text-green-400">{analytics.totals.conversions}</p>
+            <p className="text-3xl font-black text-green-400">{analytics.conversionFunnel?.converted || 0}</p>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-2">
