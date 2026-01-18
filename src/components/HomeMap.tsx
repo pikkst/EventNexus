@@ -521,6 +521,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
               if (!isSubscribed) return;
               console.log('🆕 REALTIME: New event added:', payload.new);
               const newEvent = payload.new as EventNexusEvent;
+              console.log(`🆕 Event category: "${newEvent.category}", active category filter: "${activeCategory || 'all'}"`);
               
               // Only add if active and has valid location (check for lat/lng, not coordinates)
               if (newEvent.location && newEvent.location.lat && newEvent.location.lng) {
@@ -735,9 +736,9 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     }
   }, []);
 
-  // Show ALL events on map (only filter by category, not distance)
+  // Show ALL events on map (TEMP: removed category filter for debugging)
   const filteredEvents = useMemo(() => {
-    console.log(`📍 HomeMap: Filtering ${events.length} events (category: ${activeCategory || 'all'})`);
+    console.log(`📍 HomeMap: Filtering ${events.length} events (category filter DISABLED for debugging)`);
     
     const filtered = events.filter(event => {
       // CRITICAL: Filter out events with null/invalid coordinates to prevent map crashes
@@ -760,12 +761,15 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         }
       }
 
-      if (!activeCategory || event.category === activeCategory) {
-        console.log(`✅ Event passes filter: ${event.name} at [${event.location.lat}, ${event.location.lng}]`);
-        return true;
-      }
+      // TEMP: Category filter disabled for debugging
+      // if (!activeCategory || event.category === activeCategory) {
+      //   console.log(`✅ Event passes filter: ${event.name} at [${event.location.lat}, ${event.location.lng}]`);
+      //   return true;
+      // }
+      // return false;
       
-      return false;
+      console.log(`✅ Event passes filter: ${event.name} at [${event.location.lat}, ${event.location.lng}] (category: ${event.category})`);
+      return true;
     });
     
     console.log(`📍 HomeMap: ${filtered.length} events will be displayed on map`);
