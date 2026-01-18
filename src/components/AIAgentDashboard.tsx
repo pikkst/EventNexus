@@ -2674,12 +2674,21 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                       </span>
                       <button
                         onClick={() => {
-                          const allCityIds = new Set(cityMetrics.map(m => m.id));
+                          const allCityIds = new Set(cityMetrics.map(m => m.city_id));
                           setSelectedCities(allCityIds);
                         }}
                         className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
                       >
                         Select All
+                      </button>
+                      <button
+                        onClick={() => {
+                          const filteredCityIds = new Set(filteredCities.map(m => m.city_id));
+                          setSelectedCities(filteredCityIds);
+                        }}
+                        className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      >
+                        Select Filtered
                       </button>
                       <button
                         onClick={() => setSelectedCities(new Set())}
@@ -2871,13 +2880,13 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                           <div className="flex items-center gap-3">
                             <input
                               type="checkbox"
-                              checked={selectedCities.has(metric.id)}
+                              checked={selectedCities.has(metric.city_id)}
                               onChange={(e) => {
                                 const newSelected = new Set(selectedCities);
                                 if (e.target.checked) {
-                                  newSelected.add(metric.id);
+                                  newSelected.add(metric.city_id);
                                 } else {
-                                  newSelected.delete(metric.id);
+                                  newSelected.delete(metric.city_id);
                                 }
                                 setSelectedCities(newSelected);
                               }}
@@ -3020,13 +3029,13 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                             <div className="flex items-center gap-3">
                               <input
                                 type="checkbox"
-                                checked={selectedCities.has(metric.id)}
+                                checked={selectedCities.has(metric.city_id)}
                                 onChange={(e) => {
                                   const newSelected = new Set(selectedCities);
                                   if (e.target.checked) {
-                                    newSelected.add(metric.id);
+                                    newSelected.add(metric.city_id);
                                   } else {
-                                    newSelected.delete(metric.id);
+                                    newSelected.delete(metric.city_id);
                                   }
                                   setSelectedCities(newSelected);
                                 }}
