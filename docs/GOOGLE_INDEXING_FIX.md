@@ -161,16 +161,50 @@ curl -I https://eventnexus.eu/org/test
    - `https://eventnexus.eu/pricing`
    - `https://eventnexus.eu/help`
 
+**✅ COMPLETED (Jan 19, 2026 - 12:31 AM):**
+- ✅ `/pricing` - **Can be indexed** (tested & verified)
+- ✅ `/map` - **Can be indexed** (tested & verified)
+- ✅ `/browse` - **Can be indexed** (tested & verified)
+  - 🎉 **999 valid Event items detected!**
+  - Structured data working perfectly
+  - Events eligible for Google Search rich results
+
 **Monitor (7 days):**
 6. Check **Coverage Report** daily
 7. Fix any new errors immediately
 8. Monitor **Indexed pages** count increasing
 
+**⚠️ Event Schema Improvements Needed:**
+Non-critical issues detected in Event structured data:
+- Missing optional field: `performer`
+- Missing optional field: `eventStatus` 
+- Missing optional field: `image`
+- Missing optional field: `offers` (price info)
+- Missing optional field: `endDate`
+- Missing organizer `url` field
+
+**Action items:**
+- [ ] Add `eventStatus` field (e.g., "EventScheduled", "EventCancelled")
+- [ ] Add `image` field with event poster URLs
+- [ ] Add `offers` field with ticket pricing info
+- [ ] Add `endDate` field (calculate from startDate + duration)
+- [ ] Add `performer` field for concerts/shows
+- [ ] Fix organizer `url` to point to org profile
+
 **Week 2:**
 9. Once stable indexing confirmed, implement dynamic sitemap
 10. Add published events to sitemap via `/api/sitemap.ts`
+11. Enhance Event schema with missing optional fields
 
 ## Expected Results
+
+### ✅ Immediate Success (Jan 19, 2026)
+**ACHIEVED IN 1 DAY!**
+- ✅ `/pricing`, `/map`, `/browse` all indexable
+- ✅ 999 Event items detected by Google
+- ✅ Events eligible for rich results
+- ✅ Zero critical errors
+- ⚠️ Only non-critical optional field warnings
 
 ### Week 1 (Jan 18-25)
 - ✅ 404 errors should drop from 13 → 0
@@ -182,6 +216,7 @@ curl -I https://eventnexus.eu/org/test
 - ✅ All 12 sitemap pages indexed
 - ✅ Impressions should increase significantly
 - ✅ Ready to add dynamic event URLs
+- 🎯 Enhance Event schema with optional fields
 
 ## Monitoring Checklist
 
@@ -199,7 +234,62 @@ curl -I https://eventnexus.eu/org/test
 
 ## Future Improvements (Phase 2)
 
-### Dynamic Content Indexing
+### Priority 1: Event Schema Enhancements (Week 2)
+**Current Status:** 999 events detected, but missing optional fields
+
+**Files to update:**
+- `src/components/PublicEventsBrowse.tsx` - Add JSON-LD structured data
+- `src/components/EventDetail.tsx` - Individual event pages
+
+**Required additions to Event schema:**
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": "Event Name",
+  "startDate": "2026-01-31T10:00:00",
+  "endDate": "2026-01-31T12:00:00",  // ADD THIS
+  "eventStatus": "https://schema.org/EventScheduled",  // ADD THIS
+  "image": "https://eventnexus.eu/event-image.jpg",  // ADD THIS
+  "description": "Event description",
+  "location": {
+    "@type": "Place",
+    "name": "Location Name",
+    "address": {
+      "@type": "PostalAddress",
+      "name": "Address"
+    }
+  },
+  "organizer": {
+    "@type": "Organization",
+    "name": "Organizer Name",
+    "url": "https://eventnexus.eu/org/slug"  // ADD THIS
+  },
+  "offers": {  // ADD THIS BLOCK
+    "@type": "Offer",
+    "price": "10.00",
+    "priceCurrency": "EUR",
+    "availability": "https://schema.org/InStock",
+    "url": "https://eventnexus.eu/event/123"
+  },
+  "performer": {  // ADD THIS for concerts/shows
+    "@type": "Person",
+    "name": "Performer Name"
+  }
+}
+```
+
+**Implementation checklist:**
+- [ ] Add `endDate` calculation (startDate + event duration)
+- [ ] Add `eventStatus` field (scheduled/postponed/cancelled)
+- [ ] Add `image` field from event.imageUrl
+- [ ] Add `offers` block with price and availability
+- [ ] Add organizer profile URL
+- [ ] Add `performer` for relevant event types (concerts, shows)
+- [ ] Test in Rich Results Test tool
+- [ ] Verify in Google Search Console
+
+### Priority 2: Dynamic Content Indexing
 1. **Event Pages** (`/event/:id`)
    - Generate sitemap entries for all published events
    - Update lastmod based on event updates
@@ -245,11 +335,19 @@ git push origin main
 
 ## Success Metrics
 
+**✅ Day 1 Achievement (Jan 19, 2026):**
+- ✅ Indexed pages: 1 → 3+ (and counting!)
+- ✅ Event items detected: 0 → 999 🎉
+- ✅ Zero critical errors
+- ✅ All tested pages indexable
+- ✅ Rich results eligible
+
 **Target (30 days):**
 - Indexed pages: 1 → 50+ (including dynamic pages)
 - Daily impressions: 1-16 → 100+
 - Average position: < 50
 - Zero 404/redirect/robots.txt errors
+- Event rich results appearing in search
 
 ## Notes
 
@@ -264,6 +362,7 @@ git push origin main
 Issues/questions: huntersest@gmail.com
 
 ---
-**Status:** Ready for deployment ✅  
-**Last updated:** 2026-01-18  
+**Status:** ✅ WORKING! 999 events detected by Google  
+**Last updated:** 2026-01-19 12:32 AM  
+**Next action:** Enhance Event schema with optional fields  
 **Next review:** 2026-01-25
