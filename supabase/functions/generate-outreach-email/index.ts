@@ -351,6 +351,33 @@ ${adminPhone}
             emailSent = true;
             console.log('✅ Email sent via Resend:', emailId);
 
+            // CRITICAL: Save to marketing_outreach IMMEDIATELY so webhook can find it
+            console.log('💾 Saving to marketing_outreach...');
+            const { error: outreachError } = await supabase
+              .from('marketing_outreach')
+              .insert({
+                prospect_id: prospect.id,
+                campaign_name: `AI Generated - ${new Date().toLocaleDateString()}`,
+                subject: subject,
+                body: body,
+                language: language,
+                status: 'sent',
+                sent_at: new Date().toISOString(),
+                ai_generated: true,
+                personalization_data: {
+                  email_id: emailId,
+                  generated_at: new Date().toISOString(),
+                  sent_via: 'edge_function'
+                },
+                created_by: '00000000-0000-0000-0000-000000000000' // System user
+              });
+
+            if (outreachError) {
+              console.error('⚠️ Failed to save outreach record:', outreachError);
+            } else {
+              console.log('✅ Outreach record saved with email_id:', emailId);
+            }
+
             // Save interaction to CRM
             await supabase.from('crm_interactions').insert({
               prospect_id: prospect.id,
