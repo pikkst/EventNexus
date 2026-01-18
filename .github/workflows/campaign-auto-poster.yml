@@ -1,11 +1,12 @@
-name: Campaign Auto-Poster
+name: Campaign Auto-Poster (DISABLED)
 
 on:
-  schedule:
-    # Run every 5 minutes
-    - cron: '*/5 * * * *'
+  # DISABLED: Too expensive, not working properly
+  # schedule:
+  #   # Run every 5 minutes
+  #   - cron: '*/5 * * * *'
   
-  # Allow manual trigger
+  # Allow manual trigger only
   workflow_dispatch:
 
 permissions:
