@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const format = url.searchParams.get('format') || 'json'; // json, xml, html
-    const limit = parseInt(url.searchParams.get('limit') || '1000'); // Default 1000 for full sitemap
+    const limit = parseInt(url.searchParams.get('limit') || '10000'); // Default 10000 for full sitemap (was 1000)
     const offset = parseInt(url.searchParams.get('offset') || '0'); // For pagination
 
     // Create Supabase client (no auth needed for public view)
@@ -110,33 +110,69 @@ Deno.serve(async (req) => {
 
     // Fetch public events directly from view (bypasses type issues)
     // Filter for upcoming events only (date >= today) for AI crawlers
-    const { data: events, error } = await supabase
-      .from('public_events')
-      .select(`
-        id,
-        name,
-        description,
-        category,
-        date,
-        location,
-        price,
-        image,
-        attendees_count,
-        max_capacity,
-        tags,
-        organizer_id
-      `)
-      .gte('date', new Date().toISOString()) // Only upcoming events for AI
-      .order('date', { ascending: true })
-      .range(offset, offset + limit - 1); // Use range instead of limit for pagination
+    // NOTE: Supabase limit() maxes at 1000, so we fetch in batches
+    const BATCH_SIZE = 1000;
+    const allEvents: any[] = [];
+    let batch = 0;
+    let hasMore = true;
 
-    if (error) {
-      console.error('Error fetching events:', error);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch events', details: error.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    console.log(`📥 Fetching events (limit: ${limit})...`);
+
+    while (hasMore && allEvents.length < limit) {
+      const batchOffset = batch * BATCH_SIZE;
+      const batchLimit = Math.min(BATCH_SIZE, limit - allEvents.length);
+
+      const { data: batchEvents, error: batchError } = await supabase
+        .from('public_events')
+        .select(`
+          id,
+          name,
+          description,
+          category,
+          date,
+          location,
+          price,
+          image,
+          attendees_count,
+          max_capacity,
+          tags,
+          organizer_id
+        `)
+        .gte('date', new Date().toISOString()) // Only upcoming events for AI
+        .order('date', { ascending: true })
+        .range(batchOffset, batchOffset + batchLimit - 1);
+
+      if (batchError) {
+        console.error(`Error fetching batch ${batch}:`, batchError);
+        // If first batch fails, return error
+        if (batch === 0) {
+          return new Response(
+            JSON.stringify({ error: 'Failed to fetch events', details: batchError.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        // Otherwise, break and return what we have
+        break;
+      }
+
+      if (!batchEvents || batchEvents.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      allEvents.push(...batchEvents);
+      batch++;
+
+      console.log(`  ✓ Batch ${batch}: fetched ${batchEvents.length} events (total: ${allEvents.length})`);
+
+      // If we got fewer than expected, we've reached the end
+      if (batchEvents.length < batchLimit) {
+        hasMore = false;
+      }
     }
+
+    const events = allEvents;
+    console.log(`✅ Total events fetched: ${events.length}`);
 
     // Fetch organizer names separately
     const organizerIds = [...new Set(events?.map(e => e.organizer_id).filter(Boolean))];
