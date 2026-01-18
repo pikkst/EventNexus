@@ -753,6 +753,55 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
       {/* Email Campaigns Tab */}
       {activeTab === 'outreach' && (
         <div className="space-y-6">
+          {/* Real-time Campaign Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Send className="w-4 h-4 text-green-400" />
+                <p className="text-xs font-black text-slate-500 uppercase">Sent</p>
+              </div>
+              <p className="text-3xl font-black text-white">
+                {allOutreach.filter(e => ['sent', 'delivered', 'opened', 'clicked', 'replied'].includes(e.status)).length}
+              </p>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Eye className="w-4 h-4 text-blue-400" />
+                <p className="text-xs font-black text-slate-500 uppercase">Opened</p>
+              </div>
+              <p className="text-3xl font-black text-blue-400">
+                {allOutreach.filter(e => e.opened_at).length}
+              </p>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-purple-400" />
+                <p className="text-xs font-black text-slate-500 uppercase">Clicked</p>
+              </div>
+              <p className="text-3xl font-black text-purple-400">
+                {allOutreach.filter(e => (e.personalization_data as any)?.clicked_at).length}
+              </p>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <MessageSquare className="w-4 h-4 text-emerald-400" />
+                <p className="text-xs font-black text-slate-500 uppercase">Replied</p>
+              </div>
+              <p className="text-3xl font-black text-emerald-400">
+                {allOutreach.filter(e => e.replied_at).length}
+              </p>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <XCircle className="w-4 h-4 text-red-400" />
+                <p className="text-xs font-black text-slate-500 uppercase">Bounced</p>
+              </div>
+              <p className="text-3xl font-black text-red-400">
+                {allOutreach.filter(e => e.status === 'bounced').length}
+              </p>
+            </div>
+          </div>
+
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-black tracking-tighter">Email Campaigns</h3>
@@ -769,7 +818,9 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
                   <option value="all">All Status</option>
                   <option value="sent">Sent</option>
                   <option value="draft">Draft</option>
+                  <option value="delivered">Delivered</option>
                   <option value="opened">Opened</option>
+                  <option value="clicked">Clicked</option>
                   <option value="replied">Replied</option>
                   <option value="bounced">Bounced</option>
                 </select>
@@ -790,65 +841,121 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
               </div>
             ) : (
               <div className="space-y-4">
-                {allOutreach.map((email) => (
-                  <div key={email.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-6 hover:border-indigo-500/30 transition-all">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h4 className="font-black text-white">{email.subject}</h4>
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            email.status === 'sent' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                            email.status === 'opened' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                            email.status === 'replied' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
-                            email.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                            email.status === 'bounced' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                            'bg-slate-500/20 text-slate-400 border border-slate-500/30'
-                          }`}>
-                            {email.status.toUpperCase()}
-                          </span>
+                {allOutreach.map((email) => {
+                  const webhookEvents = (email.personalization_data as any)?.webhook_events || [];
+                  const clickedAt = (email.personalization_data as any)?.clicked_at;
+                  
+                  return (
+                    <div key={email.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-6 hover:border-indigo-500/30 transition-all">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h4 className="font-black text-white">{email.subject}</h4>
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              email.status === 'sent' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                              email.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                              email.status === 'opened' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                              email.status === 'clicked' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
+                              email.status === 'replied' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' :
+                              email.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                              email.status === 'bounced' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                              'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                            }`}>
+                              {email.status.toUpperCase()}
+                            </span>
+                            {email.ai_generated && (
+                              <span className="px-2 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1">
+                                <Sparkles className="w-3 h-3" />
+                                AI
+                              </span>
+                            )}
+                          </div>
+                          {email.prospect && (
+                            <div className="flex items-center gap-4 text-sm text-slate-400 flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <Users className="w-4 h-4" />
+                                {email.prospect.name}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-4 h-4" />
+                                {email.prospect.email}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Globe className="w-4 h-4" />
+                                {email.prospect.country}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                        {email.prospect && (
-                          <div className="flex items-center gap-4 text-sm text-slate-400">
-                            <span className="flex items-center gap-1">
-                              <Users className="w-4 h-4" />
-                              {email.prospect.name}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Mail className="w-4 h-4" />
-                              {email.prospect.email}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Globe className="w-4 h-4" />
-                              {email.prospect.country}
-                            </span>
-                          </div>
-                        )}
+                        <div className="text-right text-xs text-slate-500 space-y-1">
+                          {email.sent_at && (
+                            <div className="flex items-center gap-1 justify-end">
+                              <CheckCircle2 className="w-4 h-4 text-green-400" />
+                              <span>Sent {new Date(email.sent_at).toLocaleString()}</span>
+                            </div>
+                          )}
+                          {email.opened_at && (
+                            <div className="flex items-center gap-1 justify-end">
+                              <Eye className="w-4 h-4 text-blue-400" />
+                              <span>Opened {new Date(email.opened_at).toLocaleString()}</span>
+                            </div>
+                          )}
+                          {clickedAt && (
+                            <div className="flex items-center gap-1 justify-end">
+                              <Target className="w-4 h-4 text-purple-400" />
+                              <span>Clicked {new Date(clickedAt).toLocaleString()}</span>
+                            </div>
+                          )}
+                          {!email.sent_at && (
+                            <div className="flex items-center gap-1 justify-end">
+                              <Clock className="w-4 h-4 text-yellow-400" />
+                              <span>Created {new Date(email.created_at).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-right text-xs text-slate-500">
-                        {email.sent_at ? (
-                          <div className="flex items-center gap-1">
-                            <CheckCircle2 className="w-4 h-4 text-green-400" />
-                            Sent {new Date(email.sent_at).toLocaleDateString()}
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-4 h-4 text-yellow-400" />
-                            Created {new Date(email.created_at).toLocaleDateString()}
-                          </div>
-                        )}
+                      
+                      <div className="bg-slate-900/50 rounded-lg p-4 mb-3">
+                        <p className="text-sm text-slate-300 line-clamp-3">{email.body}</p>
                       </div>
+
+                      {/* Engagement Timeline */}
+                      {webhookEvents.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-slate-800">
+                          <p className="text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
+                            <TrendingUp className="w-3 h-3" />
+                            Engagement Timeline ({webhookEvents.length} events)
+                          </p>
+                          <div className="flex gap-2 flex-wrap">
+                            {webhookEvents.slice(0, 5).map((event: any, idx: number) => (
+                              <span key={idx} className="text-xs px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-slate-400">
+                                {event.type?.replace('email.', '')} • {new Date(event.timestamp).toLocaleTimeString()}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Bounce/Failure Info */}
+                      {(email as any).bounce_reason && (
+                        <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                          <p className="text-xs font-bold text-red-400 flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" />
+                            Bounce: {(email as any).bounce_reason}
+                          </p>
+                        </div>
+                      )}
+                      {(email as any).failed_reason && (
+                        <div className="mt-3 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                          <p className="text-xs font-bold text-orange-400 flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" />
+                            Failed: {(email as any).failed_reason}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    <div className="bg-slate-900/50 rounded-lg p-4">
-                      <p className="text-sm text-slate-300 line-clamp-3">{email.body}</p>
-                    </div>
-                    {email.ai_generated && (
-                      <div className="mt-3 flex items-center gap-2 text-xs text-indigo-400">
-                        <Sparkles className="w-3 h-3" />
-                        AI-Generated
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -859,72 +966,188 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
       {activeTab === 'analytics' && analytics && analytics.emailStats && analytics.conversionFunnel && (
         <div className="space-y-6">
           {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-3xl p-6">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <Users className="w-8 h-8 text-white/80" />
+                <Users className="w-6 h-6 text-white/80" />
               </div>
               <p className="text-3xl font-black text-white">{analytics?.totalProspects || 0}</p>
-              <p className="text-sm text-white/80 font-medium">Total Prospects</p>
+              <p className="text-xs text-white/80 font-medium">Prospects</p>
             </div>
 
-            <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-3xl p-6">
+            <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <Send className="w-8 h-8 text-white/80" />
+                <Send className="w-6 h-6 text-white/80" />
               </div>
               <p className="text-3xl font-black text-white">{analytics.emailStats?.sent || 0}</p>
-              <p className="text-sm text-white/80 font-medium">Emails Sent</p>
+              <p className="text-xs text-white/80 font-medium">Sent</p>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-3xl p-6">
+            <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <Eye className="w-8 h-8 text-white/80" />
+                <Eye className="w-6 h-6 text-white/80" />
               </div>
               <p className="text-3xl font-black text-white">{analytics?.openRate || '0.0'}%</p>
-              <p className="text-sm text-white/80 font-medium">Open Rate</p>
+              <p className="text-xs text-white/80 font-medium">Open Rate</p>
+              <p className="text-xs text-white/60 mt-1">{analytics.emailStats?.opened || 0} opened</p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-3xl p-6">
+            <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <TrendingUp className="w-8 h-8 text-white/80" />
+                <Target className="w-6 h-6 text-white/80" />
+              </div>
+              <p className="text-3xl font-black text-white">
+                {analytics.emailStats?.sent > 0 
+                  ? ((((analytics.emailStats?.clicked || 0) / analytics.emailStats.sent) * 100).toFixed(1))
+                  : '0.0'}%
+              </p>
+              <p className="text-xs text-white/80 font-medium">Click Rate</p>
+              <p className="text-xs text-white/60 mt-1">{analytics.emailStats?.clicked || 0} clicks</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-600 to-teal-600 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <MessageSquare className="w-6 h-6 text-white/80" />
+              </div>
+              <p className="text-3xl font-black text-white">{analytics?.replyRate || '0.0'}%</p>
+              <p className="text-xs text-white/80 font-medium">Reply Rate</p>
+              <p className="text-xs text-white/60 mt-1">{analytics.emailStats?.replied || 0} replies</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-600 to-red-600 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-2">
+                <TrendingUp className="w-6 h-6 text-white/80" />
               </div>
               <p className="text-3xl font-black text-white">{analytics?.conversionRate || '0.0'}%</p>
-              <p className="text-sm text-white/80 font-medium">Conversion Rate</p>
+              <p className="text-xs text-white/80 font-medium">Conversion</p>
+              <p className="text-xs text-white/60 mt-1">{analytics.conversionFunnel?.converted || 0} converted</p>
             </div>
           </div>
 
-          {/* Conversion Funnel */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8">
-            <h3 className="text-xl font-black tracking-tighter mb-6">Conversion Funnel</h3>
-            <div className="space-y-4">
-              {[
-                { label: 'New', count: analytics?.conversionFunnel?.new || 0, color: 'bg-blue-500' },
-                { label: 'Contacted', count: analytics?.conversionFunnel?.contacted || 0, color: 'bg-yellow-500' },
-                { label: 'Responded', count: analytics?.conversionFunnel?.responded || 0, color: 'bg-purple-500' },
-                { label: 'Interested', count: analytics?.conversionFunnel?.interested || 0, color: 'bg-emerald-500' },
-                { label: 'Converted', count: analytics?.conversionFunnel?.converted || 0, color: 'bg-green-600' },
-                { label: 'Not Interested', count: analytics?.conversionFunnel?.not_interested || 0, color: 'bg-orange-500' },
-              ].map((stage) => {
-                const percentage = (analytics?.totalProspects || 0) > 0 
-                  ? ((stage.count / (analytics?.totalProspects || 1)) * 100).toFixed(1)
-                  : '0.0';
-                return (
-                  <div key={stage.label}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-bold text-white">{stage.label}</span>
-                      <span className="text-sm text-slate-400">{stage.count} ({percentage}%)</span>
+          {/* Email Performance Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8">
+              <h3 className="text-xl font-black tracking-tighter mb-6 flex items-center gap-2">
+                <Mail className="w-5 h-5 text-indigo-400" />
+                Email Performance
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-slate-950 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                      <Send className="w-5 h-5 text-green-400" />
                     </div>
-                    <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
-                      <div 
-                        className={`h-full ${stage.color} transition-all duration-500`}
-                        style={{ width: `${percentage}%` }}
-                      />
+                    <div>
+                      <p className="text-sm font-bold text-white">Sent</p>
+                      <p className="text-xs text-slate-400">Successfully delivered</p>
                     </div>
                   </div>
+                  <p className="text-2xl font-black text-white">{analytics.emailStats?.sent || 0}</p>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-slate-950 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                      <Eye className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">Opened</p>
+                      <p className="text-xs text-slate-400">Recipients viewed email</p>
+                    </div>
+                  </div>
+                  <p className="text-2xl font-black text-blue-400">{analytics.emailStats?.opened || 0}</p>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-slate-950 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                      <Target className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">Clicked</p>
+                      <p className="text-xs text-slate-400">Links clicked</p>
+                    </div>
+                  </div>
+                  <p className="text-2xl font-black text-purple-400">{analytics.emailStats?.clicked || 0}</p>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-slate-950 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                      <MessageSquare className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">Replied</p>
+                      <p className="text-xs text-slate-400">Got responses</p>
+                    </div>
+                  </div>
+                  <p className="text-2xl font-black text-emerald-400">{analytics.emailStats?.replied || 0}</p>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-slate-950 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                      <XCircle className="w-5 h-5 text-red-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">Bounced</p>
+                      <p className="text-xs text-slate-400">Failed delivery</p>
+                    </div>
+                  </div>
+                  <p className="text-2xl font-black text-red-400">{analytics.emailStats?.bounced || 0}</p>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-slate-950 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-yellow-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">Draft</p>
+                      <p className="text-xs text-slate-400">Not yet sent</p>
+                    </div>
+                  </div>
+                  <p className="text-2xl font-black text-yellow-400">{analytics.emailStats?.draft || 0}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Conversion Funnel */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8">
+              <h3 className="text-xl font-black tracking-tighter mb-6 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-orange-400" />
+                Conversion Funnel
+              </h3>
+              <div className="space-y-4">
+                {[
+                  { label: 'New', count: analytics?.conversionFunnel?.new || 0, color: 'bg-blue-500' },
+                  { label: 'Contacted', count: analytics?.conversionFunnel?.contacted || 0, color: 'bg-yellow-500' },
+                  { label: 'Responded', count: analytics?.conversionFunnel?.responded || 0, color: 'bg-purple-500' },
+                  { label: 'Interested', count: analytics?.conversionFunnel?.interested || 0, color: 'bg-emerald-500' },
+                  { label: 'Converted', count: analytics?.conversionFunnel?.converted || 0, color: 'bg-green-600' },
+                  { label: 'Not Interested', count: analytics?.conversionFunnel?.not_interested || 0, color: 'bg-orange-500' },
+                ].map((stage) => {
+                  const percentage = (analytics?.totalProspects || 0) > 0 
+                    ? ((stage.count / (analytics?.totalProspects || 1)) * 100).toFixed(1)
+                    : '0.0';
+                  return (
+                    <div key={stage.label}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-bold text-white">{stage.label}</span>
+                        <span className="text-sm text-slate-400">{stage.count} ({percentage}%)</span>
+                      </div>
+                      <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
+                        <div 
+                          className={`h-full ${stage.color} transition-all duration-500`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
                 );
               })}
             </div>
           </div>
+        </div>
 
           {/* Countries & Email Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
