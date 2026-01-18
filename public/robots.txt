@@ -1,21 +1,28 @@
 # EventNexus - Comprehensive robots.txt for all search engines and AI crawlers
-# Updated: 2026-01-15
+# Updated: 2026-01-18
+# Purpose: Allow all public pages for Google, Bing, AI agents (Gemini, Claude, GPT, etc.)
 
-# Default rules for all crawlers
+# ============================================================================
+# DEFAULT RULES FOR ALL CRAWLERS
+# ============================================================================
 User-agent: *
 Allow: /
 Allow: /map
+Allow: /browse
+Allow: /events
 Allow: /pricing
 Allow: /mobile
 Allow: /beta
+Allow: /beta-signup
 Allow: /org/
 Allow: /agency/
+Allow: /user/
 Allow: /event/
-Allow: /events/
 Allow: /help
 Allow: /terms
 Allow: /privacy
 Allow: /cookies
+Allow: /gdpr
 
 # Block admin and user-specific private pages
 Disallow: /admin
@@ -27,14 +34,39 @@ Disallow: /create-event
 Disallow: /scanner
 Disallow: /ticket
 Disallow: /ticket/*
+Disallow: /notifications
+Disallow: /redeem
 
-# Crawl optimization
+# Crawl optimization - be respectful
 Crawl-delay: 1
 Request-rate: 30/1m
 
-# Google-specific optimizations
+# ============================================================================
+# GOOGLE (Search, News, Images, Mobile)
+# ============================================================================
 User-agent: Googlebot
+User-agent: Googlebot-Image
+User-agent: Googlebot-News
+User-agent: Googlebot-Mobile
 Allow: /
+Allow: /api/sitemap
+Allow: /api/feed
+Allow: /map
+Allow: /browse
+Allow: /events
+Allow: /pricing
+Allow: /mobile
+Allow: /beta
+Allow: /beta-signup
+Allow: /org/
+Allow: /agency/
+Allow: /user/
+Allow: /event/
+Allow: /help
+Allow: /terms
+Allow: /privacy
+Allow: /cookies
+Allow: /gdpr
 Disallow: /admin
 Disallow: /admin/*
 Disallow: /dashboard
@@ -44,8 +76,165 @@ Disallow: /create-event
 Disallow: /scanner
 Disallow: /ticket
 Disallow: /ticket/*
+Disallow: /notifications
+Disallow: /redeem
 Crawl-delay: 0
 Request-rate: 100/1m
+
+# ============================================================================
+# BING
+# ============================================================================
+User-agent: Bingbot
+User-agent: BingPreview
+Allow: /
+Allow: /api/sitemap
+Allow: /api/feed
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /create
+Disallow: /create-event
+Disallow: /scanner
+Disallow: /ticket
+Disallow: /ticket/*
+Disallow: /notifications
+Disallow: /redeem
+Crawl-delay: 0.5
+Request-rate: 60/1m
+
+# ============================================================================
+# AI AGENTS - GOOGLE GEMINI
+# ============================================================================
+User-agent: Google-Extended
+User-agent: GoogleOther
+Allow: /
+Allow: /api/sitemap
+Allow: /api/feed
+Allow: /event/
+Allow: /events
+Allow: /browse
+Allow: /map
+Allow: /org/
+Allow: /agency/
+Allow: /help
+Allow: /pricing
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+Crawl-delay: 1
+
+# ============================================================================
+# AI AGENTS - OPENAI (ChatGPT, GPT-4)
+# ============================================================================
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: OAI-SearchBot
+Allow: /
+Allow: /api/sitemap
+Allow: /api/feed
+Allow: /event/
+Allow: /events
+Allow: /browse
+Allow: /map
+Allow: /org/
+Allow: /agency/
+Allow: /help
+Allow: /pricing
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+Crawl-delay: 1
+
+# ============================================================================
+# AI AGENTS - ANTHROPIC (Claude)
+# ============================================================================
+User-agent: Claude-Web
+User-agent: anthropic-ai
+Allow: /
+Allow: /api/sitemap
+Allow: /api/feed
+Allow: /event/
+Allow: /events
+Allow: /browse
+Allow: /map
+Allow: /org/
+Allow: /agency/
+Allow: /help
+Allow: /pricing
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+Crawl-delay: 1
+
+# ============================================================================
+# AI AGENTS - PERPLEXITY
+# ============================================================================
+User-agent: PerplexityBot
+Allow: /
+Allow: /api/sitemap
+Allow: /api/feed
+Allow: /event/
+Allow: /events
+Allow: /browse
+Allow: /map
+Allow: /org/
+Allow: /agency/
+Allow: /help
+Allow: /pricing
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+Crawl-delay: 1
+
+# ============================================================================
+# AI AGENTS - COMMON CRAWLERS
+# ============================================================================
+User-agent: CCBot
+User-agent: FacebookBot
+User-agent: facebookexternalhit
+User-agent: Twitterbot
+User-agent: LinkedInBot
+Allow: /
+Allow: /event/
+Allow: /events
+Allow: /browse
+Allow: /map
+Allow: /org/
+Allow: /agency/
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+
+# ============================================================================
+# YANDEX
+# ============================================================================
+User-agent: YandexBot
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+Crawl-delay: 1
+
+# ============================================================================
+# BAIDU
+# ============================================================================
+User-agent: Baiduspider
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+Crawl-delay: 1
+
+# ============================================================================
+# SITEMAPS AND FEEDS
+# ============================================================================
+Sitemap: https://eventnexus.eu/sitemap.xml
+Sitemap: https://eventnexus.eu/api/sitemap
+
+# RSS/Atom Feeds for AI aggregators
+# RSS: https://eventnexus.eu/api/feed
+# Atom: https://eventnexus.eu/api/feed?format=atom
 
 # Bingbot optimizations
 User-agent: Bingbot

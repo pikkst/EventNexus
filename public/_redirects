@@ -1,0 +1,13 @@
+# Netlify/Vercel SPA fallback configuration for EventNexus
+# This ensures clean URLs work for React Router BrowserRouter
+
+# Static files should be served directly
+/assets/*  /assets/:splat  200
+/favicon.svg  /favicon.svg  200
+/apple-touch-icon.svg  /apple-touch-icon.svg  200
+/robots.txt  /robots.txt  200
+/sitemap.xml  /sitemap.xml  200
+/404.html  /404.html  200
+
+# All other routes should go to index.html (SPA)
+/*  /index.html  200
