@@ -406,45 +406,41 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     loadEvents();
   }, [propEvents, visibleBounds, filterEventsByBounds]);
 
+  // TEMPORARILY DISABLED: Show ALL events without bounds filtering for debugging
   // When bounds change and we have all events cached, re-filter display events
   useEffect(() => {
-    if (allEvents.length > 0 && visibleBounds) {
-      const visibleEvents = filterEventsByBounds(allEvents, visibleBounds);
-      
-      // Keep recently-added new events visible regardless of bounds (for 30 seconds)
-      // This prevents events from disappearing when autopan changes bounds
-      const now = Date.now();
-      const recentNewEvents = allEvents.filter(evt => {
-        // Check if event is in newEventIds set (real-time detected)
-        // OR if it was created in the last 30 seconds (fallback for AI pipeline events)
-        const isRealtimeNew = newEventIds.has(evt.id);
-        const createdAtMs = new Date(evt.created_at || 0).getTime();
-        const isRecentlyCreated = (now - createdAtMs) < 30000; // 30 seconds
-        
-        return isRealtimeNew || isRecentlyCreated;
-      });
-      
-      // Combine: visible by bounds + recently added new events (deduplicated)
-      const visibleEventIds = new Set(visibleEvents.map(e => e.id));
-      const combinedEvents = [
-        ...visibleEvents,
-        ...recentNewEvents.filter(e => !visibleEventIds.has(e.id))
-      ];
-      
-      // Fallback: if nothing is visible AND no recent new events, show all events
-      if (combinedEvents.length === 0) {
-        console.log('📍 Bounds empty and no new events, showing all events (global fallback)');
-        setEvents(allEvents);
-        setVisibleEventCount(allEvents.length);
-      } else {
-        setEvents(combinedEvents);
-        setVisibleEventCount(combinedEvents.length);
-        if (recentNewEvents.length > 0) {
-          console.log(`📍 Bounds: ${visibleEvents.length} visible + ${recentNewEvents.length} recent new = ${combinedEvents.length} total`);
-        }
-      }
+    if (allEvents.length > 0) {
+      console.log(`📍 TEMP DEBUG: Showing ALL ${allEvents.length} events (bounds filtering disabled)`);
+      setEvents(allEvents);
+      setVisibleEventCount(allEvents.length);
     }
-  }, [visibleBounds, allEvents, filterEventsByBounds, newEventIds]);
+  }, [allEvents]);
+  
+  // ORIGINAL BOUNDS FILTERING CODE (commented out for debugging):
+  // useEffect(() => {
+  //   if (allEvents.length > 0 && visibleBounds) {
+  //     const visibleEvents = filterEventsByBounds(allEvents, visibleBounds);
+  //     const now = Date.now();
+  //     const recentNewEvents = allEvents.filter(evt => {
+  //       const isRealtimeNew = newEventIds.has(evt.id);
+  //       const createdAtMs = new Date(evt.created_at || 0).getTime();
+  //       const isRecentlyCreated = (now - createdAtMs) < 30000;
+  //       return isRealtimeNew || isRecentlyCreated;
+  //     });
+  //     const visibleEventIds = new Set(visibleEvents.map(e => e.id));
+  //     const combinedEvents = [
+  //       ...visibleEvents,
+  //       ...recentNewEvents.filter(e => !visibleEventIds.has(e.id))
+  //     ];
+  //     if (combinedEvents.length === 0) {
+  //       setEvents(allEvents);
+  //       setVisibleEventCount(allEvents.length);
+  //     } else {
+  //       setEvents(combinedEvents);
+  //       setVisibleEventCount(combinedEvents.length);
+  //     }
+  //   }
+  // }, [visibleBounds, allEvents, filterEventsByBounds, newEventIds]);
 
 
   // Fetch current user ID for recommendations + IP geolocation for guests
