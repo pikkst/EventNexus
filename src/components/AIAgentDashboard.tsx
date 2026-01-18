@@ -1179,27 +1179,35 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
     };
 
     try {
-      // Load active cities
-      const { data: activeCities, error: citiesError } = await supabase
+      // Load ALL cities (including inactive ones if explicitly selected by user)
+      const { data: allCities, error: citiesError } = await supabase
         .from('city_configs')
-        .select('city_id, city_name, country, country_code')
-        .eq('active', true)
+        .select('city_id, city_name, country, country_code, active')
         .order('city_name');
 
       if (citiesError) throw new Error(`Failed to load cities: ${citiesError.message}`);
-      if (!activeCities || activeCities.length === 0) {
-        alert('⚠️ No active cities found. Please add and activate cities first.');
+      if (!allCities || allCities.length === 0) {
+        alert('⚠️ No cities found. Please add cities first.');
         return;
       }
       
       // Filter by selected cities if any are selected
       const citiesToProcess = selectedCities.size > 0
-        ? activeCities.filter(city => selectedCities.has(city.city_id))
-        : activeCities;
+        ? allCities.filter(city => selectedCities.has(city.city_id))
+        : allCities.filter(city => city.active); // If no selection, default to active cities only
       
       if (citiesToProcess.length === 0) {
         alert('⚠️ No cities selected. Please select at least one city to run the pipeline.');
         return;
+      }
+      
+      // Warn about inactive cities
+      const inactiveCities = citiesToProcess.filter(city => !city.active);
+      if (inactiveCities.length > 0) {
+        const names = inactiveCities.map(c => c.city_name).join(', ');
+        console.warn(`⚠️ Warning: ${inactiveCities.length} inactive cities selected: ${names}`);
+        const proceed = confirm(`⚠️ Warning: ${inactiveCities.length} selected cities are inactive:\n${names}\n\nInactive cities may have limited event sources. Continue anyway?`);
+        if (!proceed) return;
       }
 
       // 🔄 FORCE REFRESH: Clear all cached data for selected cities
