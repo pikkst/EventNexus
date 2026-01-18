@@ -840,7 +840,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               
               {/* Event Image Background in Card */}
               {event.imageUrl && (
-                <div className="absolute top-0 right-0 bottom-0 w-40 opacity-10 overflow-hidden rounded-[40px]">
+                <div className="absolute top-0 right-0 bottom-0 w-40 opacity-10 overflow-hidden rounded-[40px] -z-10 pointer-events-none">
                   <img 
                     src={event.imageUrl} 
                     alt={event.name}
@@ -1072,63 +1072,68 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
               )}
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-[32px] p-6 flex items-center gap-4 shadow-xl group">
-              {organizerProfilePath ? (
-                <Link 
-                  to={organizerProfilePath}
-                  className="flex items-center gap-4 flex-1 min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-2xl"
-                  aria-label={`View ${organizerName}'s public profile`}
-                >
-                  <div className="relative">
-                    <img src={organizerAvatarUrl} className="w-14 h-14 rounded-2xl object-cover" alt={`${organizerName} avatar`} />
-                    <div className="absolute -bottom-1 -right-1 bg-indigo-600 rounded-full p-1 border-2 border-slate-900">
-                      <ShieldCheck className="w-3 h-3 text-white" />
+            <div className="bg-slate-900 border border-slate-800 rounded-[32px] p-4 lg:p-6 shadow-xl">
+              <div className="flex flex-col gap-4">
+                {organizerProfilePath ? (
+                  <Link 
+                    to={organizerProfilePath}
+                    className="flex items-center gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-2xl"
+                    aria-label={`View ${organizerName}'s public profile`}
+                  >
+                    <div className="relative flex-shrink-0">
+                      <img src={organizerAvatarUrl} className="w-12 h-12 lg:w-16 lg:h-16 rounded-2xl object-cover" alt={`${organizerName} avatar`} />
+                      <div className="absolute -bottom-1 -right-1 bg-indigo-600 rounded-full p-1 border-2 border-slate-900">
+                        <ShieldCheck className="w-3 h-3 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Organized by</p>
+                      <h4 className="font-bold text-base lg:text-lg text-slate-100 hover:text-indigo-300 transition-colors">{organizerName}</h4>
+                      <p className="text-xs text-indigo-400 mt-1">View public profile</p>
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <div className="relative flex-shrink-0">
+                      <img src={organizerAvatarUrl} className="w-12 h-12 lg:w-16 lg:h-16 rounded-2xl object-cover" alt={`${organizerName} avatar`} />
+                      <div className="absolute -bottom-1 -right-1 bg-indigo-600 rounded-full p-1 border-2 border-slate-900">
+                        <ShieldCheck className="w-3 h-3 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Organized by</p>
+                      <h4 className="font-bold text-base lg:text-lg text-slate-100">{organizerName}</h4>
+                      <p className="text-xs text-slate-500 mt-1">Profile link unavailable</p>
                     </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Organized by</p>
-                    <h4 className="font-bold truncate text-slate-100 hover:text-indigo-300 transition-colors">{organizerName}</h4>
-                    <p className="text-xs text-indigo-400 mt-1">View public profile</p>
-                  </div>
-                </Link>
-              ) : (
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="relative">
-                    <img src={organizerAvatarUrl} className="w-14 h-14 rounded-2xl object-cover" alt={`${organizerName} avatar`} />
-                    <div className="absolute -bottom-1 -right-1 bg-indigo-600 rounded-full p-1 border-2 border-slate-900">
-                      <ShieldCheck className="w-3 h-3 text-white" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Organized by</p>
-                    <h4 className="font-bold truncate text-slate-100">{organizerName}</h4>
-                    <p className="text-xs text-slate-500 mt-1">Profile link unavailable</p>
-                  </div>
+                )}
+                
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button 
+                    onClick={() => {
+                      if (!user) {
+                        onOpenAuth?.();
+                        return;
+                      }
+                      onToggleFollow?.(event.organizerId);
+                    }}
+                    className={`flex-1 min-w-[120px] px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                      isFollowing ? 'bg-slate-800 text-slate-400' : 'bg-indigo-600 text-white'
+                    }`}
+                    aria-label={isFollowing ? `Unfollow ${organizerName}` : `Follow ${organizerName}`}
+                  >
+                    {isFollowing ? <><UserMinus className="w-4 h-4" aria-hidden="true" /> Following</> : <><UserPlus className="w-4 h-4" aria-hidden="true" /> Follow</>}
+                  </button>
+                  <button
+                    onClick={() => setIsReportModalOpen(true)}
+                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400"
+                    title="Report this event for issues"
+                  >
+                    <Flag className="w-4 h-4" aria-hidden="true" />
+                    Report
+                  </button>
                 </div>
-              )}
-              <button 
-                onClick={() => {
-                  if (!user) {
-                    onOpenAuth?.();
-                    return;
-                  }
-                  onToggleFollow?.(event.organizerId);
-                }}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-                  isFollowing ? 'bg-slate-800 text-slate-400' : 'bg-indigo-600 text-white'
-                }`}
-                aria-label={isFollowing ? `Unfollow ${organizerName}` : `Follow ${organizerName}`}
-              >
-                {isFollowing ? <><UserMinus className="w-4 h-4" aria-hidden="true" /> Following</> : <><UserPlus className="w-4 h-4" aria-hidden="true" /> Follow</>}
-              </button>
-              <button
-                onClick={() => setIsReportModalOpen(true)}
-                className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400"
-                title="Report this event for issues"
-              >
-                <Flag className="w-4 h-4" aria-hidden="true" />
-                Report
-              </button>
+              </div>
             </div>
           </div>
         </div>
