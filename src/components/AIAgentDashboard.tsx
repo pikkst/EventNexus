@@ -2663,7 +2663,11 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
               </div>
             )}
 
-            {activeTab === 'cities' && (
+            {activeTab === 'cities' && (() => {
+              // Calculate filtered cities first so buttons can use it
+              const filteredCitiesForButtons = getFilteredAndSortedCities();
+              
+              return (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">City Health & Pipeline Status</h3>
@@ -2683,7 +2687,7 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                       </button>
                       <button
                         onClick={() => {
-                          const filteredCityIds = new Set(filteredCities.map(m => m.city_id));
+                          const filteredCityIds = new Set(filteredCitiesForButtons.map(m => m.city_id));
                           setSelectedCities(filteredCityIds);
                         }}
                         className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
@@ -3160,7 +3164,8 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                   );
                 })()}
               </div>
-            )}
+              );
+            })()}
 
             {activeTab === 'manage-cities' && (
               <div className="space-y-6">
