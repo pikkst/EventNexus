@@ -6422,9 +6422,10 @@ export const getMarketingAnalytics = async (days: number = 30): Promise<any> => 
 
     const emailStats = {
       total: outreach?.length || 0,
-      sent: outreach?.filter(e => e.status === 'sent' || e.status === 'opened' || e.status === 'replied').length || 0,
-      opened: outreach?.filter(e => e.status === 'opened' || e.status === 'replied').length || 0,
-      replied: outreach?.filter(e => e.status === 'replied').length || 0,
+      sent: outreach?.filter(e => e.status === 'sent' || e.status === 'delivered' || e.status === 'opened' || e.status === 'clicked' || e.status === 'replied').length || 0,
+      opened: outreach?.filter(e => e.opened_at).length || 0,
+      clicked: outreach?.filter(e => (e.personalization_data as any)?.clicked_at).length || 0,
+      replied: outreach?.filter(e => e.status === 'replied' || e.replied_at).length || 0,
       bounced: outreach?.filter(e => e.status === 'bounced').length || 0,
       draft: outreach?.filter(e => e.status === 'draft').length || 0,
     };
