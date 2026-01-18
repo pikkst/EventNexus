@@ -4,6 +4,7 @@
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { log } from '../_shared/logger.ts';
+import { validateAIEvent, meetsMinimumSEO, getSEORecommendations } from '../_shared/eventValidation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1000,6 +1001,66 @@ serve(async (req) => {
           }
         }
         */
+
+        // ✅ SEO VALIDATION - Ensure AI-generated events meet quality standards
+        console.log(`🔍 Validating SEO quality for: "${eventData.name}"`);
+        const validation = validateAIEvent({
+          name: eventData.name,
+          description: eventData.description,
+          category: eventData.category,
+          location_address: eventData.location_address,
+          location_lat: eventData.location_lat,
+          location_lng: eventData.location_lng,
+          start_time: startTime.toISOString(),
+          price: 0, // AI events are always free
+          source_url: eventData.source_url
+        });
+
+        // Log validation results
+        console.log(`📊 SEO Score: ${validation.seoScore}/100, Quality Score: ${validation.qualityScore}/100`);
+        
+        if (validation.errors.length > 0) {
+          console.error(`❌ Validation errors for "${eventData.name}":`, validation.errors);
+          await log(supabaseClient, 'publish-event', 'error', 'Event validation failed', {
+            event: eventData.name,
+            errors: validation.errors,
+            seoScore: validation.seoScore,
+            qualityScore: validation.qualityScore
+          }, { city_id: eventCityId });
+          
+          // Skip events that don't pass validation
+          results.failed = (results.failed || 0) + 1;
+          results.failedEvents?.push(eventData.name || 'Unknown');
+          continue; // Skip to next event
+        }
+
+        if (validation.warnings.length > 0) {
+          console.warn(`⚠️ Validation warnings for "${eventData.name}":`, validation.warnings);
+        }
+
+        // Check if event meets minimum SEO standards
+        if (!meetsMinimumSEO(validation)) {
+          console.warn(`⚠️ Event below minimum SEO threshold (${validation.seoScore}/100): "${eventData.name}"`);
+          await log(supabaseClient, 'publish-event', 'warning', 'Event below SEO threshold', {
+            event: eventData.name,
+            seoScore: validation.seoScore,
+            qualityScore: validation.qualityScore,
+            recommendations: getSEORecommendations(validation)
+          }, { city_id: eventCityId });
+          
+          // Log but continue - allow low-quality events with warning
+          // In production, you might want to skip these: continue;
+        } else {
+          console.log(`✅ Event meets quality standards (SEO: ${validation.seoScore}, Quality: ${validation.qualityScore})`);
+        }
+
+        // Store validation scores for analytics
+        const eventMetadata = {
+          seo_score: validation.seoScore,
+          quality_score: validation.qualityScore,
+          validation_warnings: validation.warnings.length,
+          ai_generated: true
+        };
 
         // Build description with better formatting
         let finalDescription = eventData.description || 'Event details to be announced.';
