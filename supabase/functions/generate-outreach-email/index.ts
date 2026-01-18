@@ -86,6 +86,108 @@ serve(async (req) => {
     console.log('🤖 Calling Gemini API...');
     const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     
+    // Map language codes to full language names for AI prompt
+    const languageNames: Record<string, string> = {
+      'et': 'Estonian',
+      'en': 'English',
+      'fi': 'Finnish',
+      'lv': 'Latvian',
+      'lt': 'Lithuanian',
+      'sv': 'Swedish',
+      'no': 'Norwegian',
+      'da': 'Danish',
+      'de': 'German',
+      'fr': 'French',
+      'es': 'Spanish',
+      'it': 'Italian',
+      'pt': 'Portuguese',
+      'nl': 'Dutch',
+      'pl': 'Polish',
+      'ru': 'Russian',
+      'uk': 'Ukrainian',
+      'cs': 'Czech',
+      'sk': 'Slovak',
+      'hu': 'Hungarian',
+      'ro': 'Romanian',
+      'bg': 'Bulgarian',
+      'hr': 'Croatian',
+      'el': 'Greek',
+      'tr': 'Turkish',
+      'ar': 'Arabic',
+      'he': 'Hebrew',
+      'ja': 'Japanese',
+      'ko': 'Korean',
+      'zh': 'Chinese',
+      'th': 'Thai',
+      'vi': 'Vietnamese',
+      'id': 'Indonesian'
+    };
+    
+    const languageName = languageNames[language] || 'English';
+    const isEnglish = language === 'en';
+    
+    // Get appropriate greeting for language
+    const greetings: Record<string, string> = {
+      'et': 'Tere',
+      'fi': 'Hei',
+      'lv': 'Sveiki',
+      'lt': 'Sveiki',
+      'sv': 'Hej',
+      'no': 'Hei',
+      'da': 'Hej',
+      'de': 'Guten Tag',
+      'fr': 'Bonjour',
+      'es': 'Hola',
+      'it': 'Buongiorno',
+      'pt': 'Olá',
+      'nl': 'Hallo',
+      'pl': 'Dzień dobry',
+      'ru': 'Здравствуйте',
+      'uk': 'Доброго дня',
+      'cs': 'Dobrý den',
+      'sk': 'Dobrý deň',
+      'hu': 'Jó napot',
+      'ro': 'Bună ziua',
+      'bg': 'Здравейте',
+      'hr': 'Dobar dan',
+      'el': 'Γεια σας',
+      'tr': 'Merhaba',
+      'en': 'Hello'
+    };
+    
+    const greeting = greetings[language] || 'Hello';
+    
+    // Signature closing for language
+    const closings: Record<string, string> = {
+      'et': 'Parimate soovidega',
+      'fi': 'Ystävällisin terveisin',
+      'lv': 'Ar cieņu',
+      'lt': 'Pagarbiai',
+      'sv': 'Med vänlig hälsning',
+      'no': 'Med vennlig hilsen',
+      'da': 'Med venlig hilsen',
+      'de': 'Mit freundlichen Grüßen',
+      'fr': 'Cordialement',
+      'es': 'Atentamente',
+      'it': 'Cordiali saluti',
+      'pt': 'Atenciosamente',
+      'nl': 'Met vriendelijke groet',
+      'pl': 'Z poważaniem',
+      'ru': 'С уважением',
+      'uk': 'З повагою',
+      'cs': 'S pozdravem',
+      'sk': 'S pozdravom',
+      'hu': 'Tisztelettel',
+      'ro': 'Cu stimă',
+      'bg': 'С уважение',
+      'hr': 'S poštovanjem',
+      'el': 'Με εκτίμηση',
+      'tr': 'Saygılarımla',
+      'en': 'Best regards'
+    };
+    
+    const closing = closings[language] || 'Best regards';
+    
     const prompt = `You are a professional B2B partnership manager writing a personalized email for EventNexus.
 
 **About EventNexus:**
@@ -112,39 +214,37 @@ Subject inspiration: ${template.subject_template}
 Body inspiration: ${template.body_template}
 
 **CRITICAL - Language & Grammar:**
-1. Write ENTIRELY in ${language === 'et' ? 'ESTONIAN language' : 'ENGLISH language'}
-2. Use PERFECT grammar and spelling for ${language === 'et' ? 'Estonian' : 'English'}
-3. Check all word forms, conjugations, and declensions carefully
-4. Use proper professional ${language === 'et' ? 'Estonian' : 'English'} business language
+⚠️ MANDATORY: Write ENTIRELY in ${languageName.toUpperCase()} language!
+1. The ENTIRE email must be in ${languageName} - subject, body, all content
+2. Use PERFECT ${languageName} grammar, spelling, and professional business language
+3. NO English words or phrases allowed (except company names, product names, and email addresses)
+4. Use native ${languageName} expressions and idioms naturally
+5. Translate all technical terms to ${languageName}
+6. Use appropriate ${languageName} formal business tone
 
 **Content Requirements:**
+- Start with "${greeting}," as greeting
 - Use company name "${prospect.name}" directly in text
-- Use sender name "${adminName}" directly  
-- Start with "Tere," (simple greeting)
-- Include platform benefits with proper formatting (bullets OK)
-- Use REAL stats: ${totalUsers} users, ${totalEvents} events
+- Include platform benefits (use bullet points if natural in ${languageName})
+- Mention stats: ${totalUsers} users, ${totalEvents} events
 - Professional tone - enthusiastic but not pushy
-- Clear call-to-action
+- Clear call-to-action in ${languageName}
 - Keep subject under 60 characters
 - Keep body under 400 words
 
 **CRITICAL - PRICING & NUMBERS:**
-✅ USE REAL PLATFORM FEES from our pricing tiers:
+✅ USE REAL PLATFORM FEES (translate descriptions to ${languageName}):
 - Free tier: 5.0% platform fee + 100 welcome credits
 - Pro tier: €19.99/mo + 3.0% platform fee
 - Premium tier: €49.99/mo + 2.5% platform fee  
 - Enterprise tier: €149.99/mo + 1.5% platform fee
 
-⚠️ When mentioning pricing, use these EXACT numbers or phrases like:
-- "Starting at 5% for free tier, down to 1.5% for enterprise"
-- "Tier-based pricing from €0 (free) to €149.99/mo (enterprise)"
-- "100 welcome credits included"
-- "Commission rates: 5%, 3%, 2.5%, or 1.5% based on tier"
-
-DO NOT invent other numbers, percentages, or offers not listed above.
+Example phrases in ${languageName}:
+- Commission rates: 5%, 3%, 2.5%, or 1.5% based on tier
+- 100 welcome credits included
 
 **Signature Format:**
-Parimate soovidega,
+${closing},
 ${adminName}
 Partnership Manager | EventNexus
 ${adminEmail}
@@ -152,8 +252,8 @@ ${adminPhone}
 
 **Output JSON only:**
 {
-  "subject": "Professional subject line in ${language === 'et' ? 'Estonian' : 'English'}",
-  "body": "Complete email with perfect ${language === 'et' ? 'Estonian' : 'English'} grammar"
+  "subject": "Professional subject line ENTIRELY in ${languageName}",
+  "body": "Complete email ENTIRELY in ${languageName} with perfect grammar"
 }`;
 
     const geminiResponse = await fetch(`${geminiUrl}?key=${GEMINI_API_KEY}`, {
