@@ -406,41 +406,15 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     loadEvents();
   }, [propEvents, visibleBounds, filterEventsByBounds]);
 
-  // TEMPORARILY DISABLED: Show ALL events without bounds filtering for debugging
-  // When bounds change and we have all events cached, re-filter display events
+  // Show ALL events without bounds filtering (simplified for stability)
+  // Bounds filtering removed to prevent race conditions with autopan and state updates
   useEffect(() => {
     if (allEvents.length > 0) {
-      console.log(`📍 TEMP DEBUG: Showing ALL ${allEvents.length} events (bounds filtering disabled)`);
+      console.log(`📍 Showing ALL ${allEvents.length} events (bounds filtering disabled for stability)`);
       setEvents(allEvents);
       setVisibleEventCount(allEvents.length);
     }
-  }, [allEvents]);
-  
-  // ORIGINAL BOUNDS FILTERING CODE (commented out for debugging):
-  // useEffect(() => {
-  //   if (allEvents.length > 0 && visibleBounds) {
-  //     const visibleEvents = filterEventsByBounds(allEvents, visibleBounds);
-  //     const now = Date.now();
-  //     const recentNewEvents = allEvents.filter(evt => {
-  //       const isRealtimeNew = newEventIds.has(evt.id);
-  //       const createdAtMs = new Date(evt.created_at || 0).getTime();
-  //       const isRecentlyCreated = (now - createdAtMs) < 30000;
-  //       return isRealtimeNew || isRecentlyCreated;
-  //     });
-  //     const visibleEventIds = new Set(visibleEvents.map(e => e.id));
-  //     const combinedEvents = [
-  //       ...visibleEvents,
-  //       ...recentNewEvents.filter(e => !visibleEventIds.has(e.id))
-  //     ];
-  //     if (combinedEvents.length === 0) {
-  //       setEvents(allEvents);
-  //       setVisibleEventCount(allEvents.length);
-  //     } else {
-  //       setEvents(combinedEvents);
-  //       setVisibleEventCount(combinedEvents.length);
-  //     }
-  //   }
-  // }, [visibleBounds, allEvents, filterEventsByBounds, newEventIds]);
+  }, [allEvents]); // Only depend on allEvents, not newEventIds or bounds
 
 
   // Fetch current user ID for recommendations + IP geolocation for guests
@@ -736,9 +710,9 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     }
   }, []);
 
-  // Show ALL events on map (TEMP: removed category filter for debugging)
+  // Show ALL events on map (only filter by category and date, not distance or bounds)
   const filteredEvents = useMemo(() => {
-    console.log(`📍 HomeMap: Filtering ${events.length} events (category filter DISABLED for debugging)`);
+    console.log(`📍 HomeMap: Filtering ${events.length} events (category: ${activeCategory || 'all'})`);
     
     const filtered = events.filter(event => {
       // CRITICAL: Filter out events with null/invalid coordinates to prevent map crashes
@@ -761,15 +735,12 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         }
       }
 
-      // TEMP: Category filter disabled for debugging
-      // if (!activeCategory || event.category === activeCategory) {
-      //   console.log(`✅ Event passes filter: ${event.name} at [${event.location.lat}, ${event.location.lng}]`);
-      //   return true;
-      // }
-      // return false;
+      // Category filter: show all if no category selected, otherwise match category
+      if (!activeCategory || event.category === activeCategory) {
+        return true;
+      }
       
-      console.log(`✅ Event passes filter: ${event.name} at [${event.location.lat}, ${event.location.lng}] (category: ${event.category})`);
-      return true;
+      return false;
     });
     
     console.log(`📍 HomeMap: ${filtered.length} events will be displayed on map`);
