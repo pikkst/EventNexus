@@ -352,8 +352,9 @@ ${adminPhone}
             console.log('✅ Email sent via Resend:', emailId);
 
             // CRITICAL: Save to marketing_outreach IMMEDIATELY so webhook can find it
-            console.log('💾 Saving to marketing_outreach...');
-            const { error: outreachError } = await supabase
+            // Using SERVICE_ROLE_KEY client to bypass RLS
+            console.log('💾 Saving to marketing_outreach (bypass RLS)...');
+            const { data: outreachData, error: outreachError } = await supabase
               .from('marketing_outreach')
               .insert({
                 prospect_id: prospect.id,
@@ -368,14 +369,17 @@ ${adminPhone}
                   email_id: emailId,
                   generated_at: new Date().toISOString(),
                   sent_via: 'edge_function'
-                },
-                created_by: '00000000-0000-0000-0000-000000000000' // System user
-              });
+                }
+                // No created_by - let it be NULL (edge function doesn't have user context)
+              })
+              .select()
+              .single();
 
             if (outreachError) {
               console.error('⚠️ Failed to save outreach record:', outreachError);
+              console.error('Details:', { prospect_id: prospect.id, emailId });
             } else {
-              console.log('✅ Outreach record saved with email_id:', emailId);
+              console.log('✅ Outreach record saved:', outreachData?.id, 'email_id:', emailId);
             }
 
             // Save interaction to CRM
