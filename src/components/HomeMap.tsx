@@ -411,12 +411,17 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     if (allEvents.length > 0 && visibleBounds) {
       const visibleEvents = filterEventsByBounds(allEvents, visibleBounds);
       
-      // Keep recently-added new events visible regardless of bounds (for 10 seconds)
+      // Keep recently-added new events visible regardless of bounds (for 30 seconds)
+      // This prevents events from disappearing when autopan changes bounds
       const now = Date.now();
       const recentNewEvents = allEvents.filter(evt => {
-        // Only include events added in the last 10 seconds
+        // Check if event is in newEventIds set (real-time detected)
+        // OR if it was created in the last 30 seconds (fallback for AI pipeline events)
+        const isRealtimeNew = newEventIds.has(evt.id);
         const createdAtMs = new Date(evt.created_at || 0).getTime();
-        return (now - createdAtMs) < 10000;
+        const isRecentlyCreated = (now - createdAtMs) < 30000; // 30 seconds
+        
+        return isRealtimeNew || isRecentlyCreated;
       });
       
       // Combine: visible by bounds + recently added new events (deduplicated)
@@ -439,7 +444,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         }
       }
     }
-  }, [visibleBounds, allEvents, filterEventsByBounds]);
+  }, [visibleBounds, allEvents, filterEventsByBounds, newEventIds]);
 
 
   // Fetch current user ID for recommendations + IP geolocation for guests
