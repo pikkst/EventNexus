@@ -6115,20 +6115,66 @@ export const importMarketingProspects = async (csvContent: string, country: stri
     const dataRows = lines.slice(1); // Skip header
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+    // Detect CSV format from header
+    const header = lines[0].toLowerCase();
+    const hasWebsiteColumn = header.includes('website');
+    
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i].trim();
       if (!row) continue;
 
-      // Parse CSV with quotes support
-      const parts = row.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g)?.map(p => p.replace(/^"|"$/g, '').trim()) || [];
+      // Parse CSV with quotes support - handles quoted fields with commas inside
+      const parts: string[] = [];
+      let current = '';
+      let inQuotes = false;
       
-      if (parts.length < 4) {
+      for (let j = 0; j < row.length; j++) {
+        const char = row[j];
+        const nextChar = row[j + 1];
+        
+        if (char === '"' && (j === 0 || row[j - 1] === ',')) {
+          inQuotes = true;
+          continue;
+        }
+        
+        if (char === '"' && (nextChar === ',' || nextChar === undefined)) {
+          inQuotes = false;
+          continue;
+        }
+        
+        if (char === ',' && !inQuotes) {
+          parts.push(current.trim());
+          current = '';
+          continue;
+        }
+        
+        current += char;
+      }
+      
+      if (current) {
+        parts.push(current.trim());
+      }
+      
+      if (parts.length < 3) {
         results.errors.push(`Row ${i + 2}: Invalid format (missing required fields)`);
         results.failed++;
         continue;
       }
 
-      const [name, website, category, email, description, sourceUrl] = parts;
+      // Support multiple CSV formats:
+      // Format 1 (old): Name, Website, Category, Email, Description, SourceUrl
+      // Format 2 (new): Name, Category, Email, Description
+      let name: string, website: string | null, category: string, email: string, description: string | null, sourceUrl: string | null;
+      
+      if (hasWebsiteColumn && parts.length >= 4) {
+        // Format 1: Name, Website, Category, Email, Description, SourceUrl
+        [name, website, category, email, description = null, sourceUrl = null] = parts;
+      } else {
+        // Format 2: Name, Category, Email, Description
+        [name, category, email, description = null] = parts;
+        website = null;
+        sourceUrl = null;
+      }
 
       // Validate email
       if (!emailRegex.test(email.toLowerCase())) {
