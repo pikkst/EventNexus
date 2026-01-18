@@ -29,13 +29,82 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // Handle GET requests (for testing webhook endpoint)
+  if (req.method === 'GET') {
+    console.log('ℹ️ GET request received - webhook is active');
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Resend webhook endpoint is active',
+      info: 'Configure this URL in Resend dashboard: https://resend.com/settings/webhooks',
+      events: ['email.sent', 'email.delivered', 'email.opened', 'email.clicked', 'email.bounced', 'email.complained']
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Only accept POST requests for actual webhook events
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const webhookSecret = Deno.env.get('RESEND_WEBHOOK_SECRET');
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get raw body first (needed for signature verification)
+    const body = await req.text();
+
+    // Verify Svix signature (Resend uses Svix for webhook signatures)
+    if (webhookSecret) {
+      const svixId = req.headers.get('svix-id');
+      const svixTimestamp = req.headers.get('svix-timestamp');
+      const svixSignature = req.headers.get('svix-signature');
+
+      if (!svixId || !svixTimestamp || !svixSignature) {
+        console.error('❌ Missing Svix headers');
+        return new Response(JSON.stringify({ error: 'Missing signature headers' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const signedContent = `${svixId}.${svixTimestamp}.${body}`;
+      
+      // Verify signature using HMAC SHA256
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(webhookSecret.replace('whsec_', '')),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      
+      const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(signedContent));
+      const expectedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)));
+      const receivedSignatures = svixSignature.split(' ').map(sig => sig.split(',')[1]);
+      
+      if (!receivedSignatures.includes(expectedSignature)) {
+        console.error('❌ Invalid signature');
+        return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      console.log('✅ Signature verified');
+    } else {
+      console.warn('⚠️ RESEND_WEBHOOK_SECRET not configured - skipping signature verification');
+    }
+
     // Parse webhook payload
-    const payload = await req.json();
+    const payload = JSON.parse(body);
     console.log('📦 Webhook event:', payload.type);
     console.log('📧 Email ID:', payload.data?.email_id);
 
