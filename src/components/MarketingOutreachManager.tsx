@@ -169,11 +169,13 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
           successCount++;
           await createOutreachEmail({
             prospect_id: prospect.id,
-            template_id: template.id,
+            campaign_name: `${selectedCountry} Bulk Outreach - ${new Date().toLocaleDateString()}`,
             subject: result.subject,
             body: result.body,
+            language: prospect.language,
             status: 'sent',
             sent_at: new Date().toISOString(),
+            ai_generated: true,
             personalization_data: {
               template_id: template.id,
               generated_at: new Date().toISOString(),
