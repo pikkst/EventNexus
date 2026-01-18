@@ -188,66 +188,78 @@ serve(async (req) => {
     
     const closing = closings[language] || 'Best regards';
     
-    const prompt = `You are a professional B2B partnership manager writing a personalized email for EventNexus.
+    const prompt = `You are Villu Künnap, founder of EventNexus, writing a personalized B2B partnership email.
 
-**About EventNexus:**
-- Platform Phase: ${platformPhase}
-- Total Users: ${totalUsers}
-- Total Events: ${totalEvents}
-- Recent Features: ${recentFeatures}
+**About EventNexus (Key Facts):**
+- Revolutionary AI-powered event platform
+- Platform fees: 1.5% - 5% (vs industry standard 10-15%)
+- Cost savings: Up to 80% compared to traditional ticketing platforms
+- Global reach: 1,169+ cities mapped worldwide
+- AI features: Gemini 3.0 translation (50+ languages), Imagen 3 poster generation
+- Technology: React 19, PostGIS mapping, QR ticketing, automated payouts
+- Current phase: Global expansion (Indiegogo campaign)
+- Stats: ${totalUsers} users, ${totalEvents} events
+- Recent features: ${recentFeatures}
 
 **Target Company:**
 - Name: ${prospect.name}
 - Category: ${prospect.category}
 - Description: ${prospect.description || 'N/A'}
 - Website: ${prospect.website || 'N/A'}
+- Country: ${prospect.country || 'N/A'}
 
-**Your Info:**
-- Name: ${adminName}
+**Your Contact Info:**
+- Name: ${adminName} (Founder, EventNexus)
 - Email: ${adminEmail}
 - Phone: ${adminPhone}
+- Website: www.eventnexus.eu
 
-**Template Guidance:**
+**Template Strategy:**
 ${template.ai_prompt || 'Create a professional, value-focused partnership proposal'}
 
-Subject inspiration: ${template.subject_template}
-Body inspiration: ${template.body_template}
+**Subject Template (adapt to context):**
+${template.subject_template}
+
+**Body Template (adapt and personalize):**
+${template.body_template}
 
 **CRITICAL - Language & Grammar:**
 ⚠️ MANDATORY: Write ENTIRELY in ${languageName.toUpperCase()} language!
 1. The ENTIRE email must be in ${languageName} - subject, body, all content
 2. Use PERFECT ${languageName} grammar, spelling, and professional business language
-3. NO English words or phrases allowed (except company names, product names, and email addresses)
+3. NO English words or phrases (except: company names, EventNexus, product names, email addresses, URLs)
 4. Use native ${languageName} expressions and idioms naturally
-5. Translate all technical terms to ${languageName}
+5. Translate ALL technical terms and benefits to ${languageName}
 6. Use appropriate ${languageName} formal business tone
 
-**Content Requirements:**
-- Start with "${greeting}," as greeting
-- Use company name "${prospect.name}" directly in text
-- Include platform benefits (use bullet points if natural in ${languageName})
-- Mention stats: ${totalUsers} users, ${totalEvents} events
-- Professional tone - enthusiastic but not pushy
-- Clear call-to-action in ${languageName}
+**Content Rules:**
+- Start with "${greeting}," (or appropriate ${languageName} greeting)
+- Personalize with "${prospect.name}" and their specific "${prospect.category}" work
+- Show you researched them (mention their country/work)
+- Lead with VALUE PROPOSITION not features:
+  * If large venue/festival → emphasize 80% cost savings (1.5%-5% vs 10-15%)
+  * If tourism/international → emphasize global reach and 50+ language translation
+  * If agency/corporate → emphasize AI marketing automation and time savings
+- Use concrete numbers: "1.5%-5% fees vs 10-15% industry standard", "1,169 cities", "50+ languages"
+- Include 2-3 key benefits maximum (not a feature dump)
+- Low-pressure call-to-action: "5-minute chat", "quick demo", "moment this week"
+- Professional but warm tone (founder reaching out personally)
 - Keep subject under 60 characters
-- Keep body under 400 words
+- Keep body under 350 words (brevity = respect for their time)
 
-**CRITICAL - PRICING & NUMBERS:**
-✅ USE REAL PLATFORM FEES (translate descriptions to ${languageName}):
-- Free tier: 5.0% platform fee + 100 welcome credits
-- Pro tier: €19.99/mo + 3.0% platform fee
-- Premium tier: €49.99/mo + 2.5% platform fee  
-- Enterprise tier: €149.99/mo + 1.5% platform fee
-
-Example phrases in ${languageName}:
-- Commission rates: 5%, 3%, 2.5%, or 1.5% based on tier
-- 100 welcome credits included
+**Pricing Communication (translate to ${languageName}):**
+- Primary message: "Platform fees 1.5% - 5% (industry standard is 10-15%)"
+- Secondary: "Up to 80% savings on ticketing fees"
+- Tertiary: "Transparent pricing, no hidden costs"
+DO NOT list all tier prices unless specifically relevant to template strategy.
 
 **Signature Format:**
 ${closing},
 ${adminName}
-Partnership Manager | EventNexus
+Founder, EventNexus
 ${adminEmail}
+${adminPhone}
+www.eventnexus.eu
 ${adminPhone}
 
 **Output JSON only:**

@@ -112,31 +112,42 @@ function scoreEvent(
   // Category match (0-30 points)
   if (preferences.preferredCategories.includes(event.category)) {
     score += 25;
-    reasons.push(`Matches your interest in ${event.category}`);
+    reasons.push(`${event.category} events`);
   }
 
-  // Distance bonus (0-20 points)
+  // Distance bonus (0-25 points) - prioritize nearby events
   if (event.latitude && event.longitude) {
     const distance = calculateDistance(userLat, userLon, event.latitude, event.longitude);
-    if (distance < preferences.preferredDistance) {
-      const distanceScore = Math.max(0, 20 * (1 - distance / preferences.preferredDistance));
+    
+    // Stronger proximity scoring
+    if (distance <= 5) {
+      score += 25;
+      reasons.push(`📍 ${distance.toFixed(1)}km away`);
+    } else if (distance <= 20) {
+      score += 20;
+      reasons.push(`📍 ${distance.toFixed(0)}km away`);
+    } else if (distance < preferences.preferredDistance) {
+      const distanceScore = Math.max(0, 15 * (1 - distance / preferences.preferredDistance));
       score += distanceScore;
-      reasons.push(`Only ${distance.toFixed(1)}km away`);
     }
   }
 
   // Price match (0-15 points)
   const eventPrice = event.price || 0;
-  if (eventPrice >= preferences.priceRange.min && eventPrice <= preferences.priceRange.max) {
+  if (eventPrice === 0) {
     score += 15;
-    reasons.push(`Price fits your range €${preferences.priceRange.min}-${preferences.priceRange.max}`);
+    reasons.push('💸 Free event');
+  } else if (eventPrice >= preferences.priceRange.min && eventPrice <= preferences.priceRange.max) {
+    score += 12;
   }
 
-  // Trending bonus (0-15 points)
+  // Trending bonus (0-15 points) - popular events
   if (event.attendeesCount && event.attendeesCount > 50) {
     const trendScore = Math.min(15, event.attendeesCount / 10);
     score += trendScore;
-    reasons.push(`Popular with ${event.attendeesCount} attendees`);
+    reasons.push(`🔥 ${event.attendeesCount}+ going`);
+  } else if (event.attendeesCount && event.attendeesCount > 10) {
+    score += 8;
   }
 
   // Time preference bonus (0-10 points)
@@ -150,22 +161,31 @@ function scoreEvent(
 
     if (timeMatch) {
       score += 10;
-      reasons.push(`Matches your ${preferences.timePreference} preference`);
+      reasons.push(`⏰ ${preferences.timePreference}`);
     }
   }
 
   // Avoid already viewed/attended events
   if (viewedEventIds.has(event.id) || userAttendedEventIds.has(event.id)) {
     score *= 0.3; // Heavily penalize seen events
-    reasons.push('Already viewed or attended');
   }
 
-  // Recency bonus (0-5 points) - upcoming events are better
+  // Recency bonus (0-10 points) - happening soon is better
   const eventDate = new Date(event.date);
   const daysUntil = Math.floor((eventDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  if (daysUntil > 0 && daysUntil <= 30) {
+  
+  if (daysUntil >= 0 && daysUntil <= 7) {
+    score += 10;
+    reasons.push(`📅 This week`);
+  } else if (daysUntil > 7 && daysUntil <= 30) {
     score += 5;
-    reasons.push(`Happening soon (${daysUntil} days away)`);
+    reasons.push(`📅 ${daysUntil}d away`);
+  }
+
+  // Featured event boost (0-5 points)
+  if ((event as any).is_featured) {
+    score += 5;
+    reasons.push('⭐ Featured');
   }
 
   // Cap score at 100
@@ -196,7 +216,7 @@ export async function getEventRecommendations(
     }
 
     // Transform to EventNexusEvent
-    const events: EventNexusEvent[] = allEvents.map((e: any) => ({
+    const allEventsTransformed: EventNexusEvent[] = allEvents.map((e: any) => ({
       id: e.id,
       name: e.name,
       description: e.description,
@@ -217,6 +237,45 @@ export async function getEventRecommendations(
       status: e.status
     }));
 
+    // CRITICAL: Pre-filter by distance to avoid showing events on another continent
+    // Maximum radius: 150km for local recommendations
+    const MAX_DISTANCE_KM = 150;
+    
+    const eventsWithDistance = allEventsTransformed
+      .filter(e => e.latitude && e.longitude)
+      .map(e => ({
+        event: e,
+        distance: calculateDistance(userLocation.lat, userLocation.lng, e.latitude!, e.longitude!)
+      }))
+      .filter(item => item.distance <= MAX_DISTANCE_KM)
+      .sort((a, b) => a.distance - b.distance);
+
+    console.log(`📍 Location filter: ${eventsWithDistance.length} events within ${MAX_DISTANCE_KM}km of [${userLocation.lat.toFixed(2)}, ${userLocation.lng.toFixed(2)}]`);
+
+    // If no nearby events found, try wider radius (500km for rural areas)
+    let events: EventNexusEvent[];
+    if (eventsWithDistance.length === 0) {
+      const widerEvents = allEventsTransformed
+        .filter(e => e.latitude && e.longitude)
+        .map(e => ({
+          event: e,
+          distance: calculateDistance(userLocation.lat, userLocation.lng, e.latitude!, e.longitude!)
+        }))
+        .filter(item => item.distance <= 500)
+        .sort((a, b) => a.distance - b.distance);
+      
+      console.log(`📍 Wider search: ${widerEvents.length} events within 500km`);
+      events = widerEvents.slice(0, 50).map(item => item.event);
+    } else {
+      // Use nearby events (already sorted by distance)
+      events = eventsWithDistance.slice(0, 100).map(item => item.event);
+    }
+
+    if (events.length === 0) {
+      console.warn('⚠️ No events found within reasonable distance');
+      return [];
+    }
+
     // Get user preferences
     const preferences = await getUserEventPreferences(userId);
 
@@ -236,11 +295,46 @@ export async function getEventRecommendations(
     const viewedSet = new Set(viewedEvents?.map(e => e.event_id) || []);
     const attendedSet = new Set(attendedEvents?.map(e => e.event_id) || []);
 
-    // Score all events
+    // Get user's friends/buddies and their attended events for social recommendations
+    const { data: buddies } = await supabase
+      .from('user_buddies')
+      .select('user_id_1, user_id_2')
+      .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+      .eq('status', 'accepted')
+      .limit(50);
+
+    // Extract buddy IDs
+    const buddyIds = new Set<string>();
+    buddies?.forEach(b => {
+      if (b.user_id_1 === userId) buddyIds.add(b.user_id_2);
+      if (b.user_id_2 === userId) buddyIds.add(b.user_id_1);
+    });
+
+    // Get events buddies are attending
+    const buddyEventIds = new Set<string>();
+    if (buddyIds.size > 0) {
+      const { data: buddyTickets } = await supabase
+        .from('tickets')
+        .select('event_id')
+        .in('user_id', Array.from(buddyIds))
+        .limit(100);
+      
+      buddyTickets?.forEach(t => buddyEventIds.add(t.event_id));
+    }
+
+    // Score all events (pass buddy events for boosting)
     const scores = events
-      .map(event =>
-        scoreEvent(event, preferences, userLocation.lat, userLocation.lng, viewedSet, attendedSet)
-      )
+      .map(event => {
+        const baseScore = scoreEvent(event, preferences, userLocation.lat, userLocation.lng, viewedSet, attendedSet);
+        
+        // SOCIAL BOOST: If friends are attending, add 20 points + show who
+        if (buddyEventIds.has(event.id) && buddyIds.size > 0) {
+          baseScore.score += 20;
+          baseScore.reasons.unshift('🎉 Friends attending');
+        }
+        
+        return baseScore;
+      })
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
 

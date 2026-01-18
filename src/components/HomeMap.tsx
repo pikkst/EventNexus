@@ -188,6 +188,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
 
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [guestIpLocation, setGuestIpLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const [userLocation, setUserLocation] = useState<[number, number]>(() => {
     // Try to restore from localStorage first
@@ -441,20 +442,57 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   }, [visibleBounds, allEvents, filterEventsByBounds]);
 
 
-  // Fetch current user ID for recommendations
+  // Fetch current user ID for recommendations + IP geolocation for guests
   useEffect(() => {
-    const fetchUserId = async () => {
+    const fetchUserAndLocation = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setUserId(user.id);
           console.log(`👤 User loaded for recommendations: ${user.id}`);
+          
+          // For authenticated users, try to get their saved location from profile
+          try {
+            const { data: profile } = await supabase
+              .from('users')
+              .select('home_location')
+              .eq('id', user.id)
+              .single();
+            
+            if (profile?.home_location?.lat && profile?.home_location?.lng) {
+              setUserLocation([profile.home_location.lat, profile.home_location.lng]);
+              console.log(`📍 Using saved location from profile: [${profile.home_location.lat}, ${profile.home_location.lng}]`);
+            }
+          } catch (profileErr) {
+            console.warn('Could not load profile location:', profileErr);
+          }
+        } else {
+          // Guest user: get location from IP
+          try {
+            console.log('🌍 Fetching IP geolocation for guest...');
+            const ipResp = await fetch('https://ipapi.co/json/');
+            if (ipResp.ok) {
+              const ipData = await ipResp.json();
+              console.log('📍 IP Location data:', ipData);
+              
+              if (ipData.latitude && ipData.longitude) {
+                const guestLoc = { lat: ipData.latitude, lng: ipData.longitude };
+                setGuestIpLocation(guestLoc);
+                setUserLocation([ipData.latitude, ipData.longitude]);
+                console.log(`📍 Guest IP location detected: ${ipData.city}, ${ipData.country_name} [${ipData.latitude}, ${ipData.longitude}]`);
+              }
+            } else {
+              console.warn('IP geolocation request failed:', ipResp.status);
+            }
+          } catch (ipError) {
+            console.warn('IP geolocation failed for guest:', ipError);
+          }
         }
       } catch (error) {
         console.error('Error fetching user:', error);
       }
     };
-    fetchUserId();
+    fetchUserAndLocation();
   }, []);
 
   // Real-time subscription: Listen for new/updated/deleted events
@@ -1351,8 +1389,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       )}
 
       {/* Recommendations Floating Panel */}
-      {!compactMode && userId && (
-        <div className="absolute right-4 md:right-6 top-20 md:top-24 z-[500] max-w-xs max-h-[calc(100vh-200px)] overflow-hidden">
+      {!compactMode && (userId || guestIpLocation) && (
+        <div className="absolute right-4 md:right-6 top-20 md:top-24 z-[500] max-w-xs md:max-w-sm max-h-[calc(100vh-200px)] overflow-hidden shadow-2xl">
           <button
             onClick={() => setShowRecommendations(!showRecommendations)}
             className={`w-full inline-flex items-center justify-between gap-2 px-4 py-3 rounded-t-xl md:rounded-t-2xl shadow-xl transition-all border ${
@@ -1383,12 +1421,18 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                 ? 'bg-white border-slate-200'
                 : 'bg-slate-900 border-slate-800'
             }`}>
-              <div className="p-4">
-                {userId ? (
+              <div className="p-3 md:p-4">
+                {userId || guestIpLocation ? (
                   <RecommendationFeed
-                    userId={userId}
-                    userLocation={{ lat: userLocation[0], lng: userLocation[1] }}
+                    userId={userId || 'guest'}
+                    userLocation={
+                      guestIpLocation 
+                        ? guestIpLocation 
+                        : { lat: userLocation[0], lng: userLocation[1] }
+                    }
                     limit={5}
+                    isGuest={!userId}
+                    theme={theme}
                     onEventClick={(event) => {
                       navigate(`/event/${event.id}`);
                       setShowRecommendations(false);
@@ -1396,7 +1440,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                   />
                 ) : (
                   <div className={`p-4 text-center text-sm ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>
-                    Sign in to see personalized recommendations
+                    Detecting location...
                   </div>
                 )}
               </div>
