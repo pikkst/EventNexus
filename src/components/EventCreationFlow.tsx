@@ -422,8 +422,13 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       const prompt = `Professional event poster for "${formData.name}". ${descriptionText}. Category: ${formData.category}. Modern, vibrant, eye-catching design suitable for social media and marketing.`;
       logger.log('Calling generateAdImage with prompt:', prompt.substring(0, 100) + '...');
       
-      // Import service dynamically
-      const { generateAdImage } = await import('../services/geminiService');
+      // Import and initialize Gemini service
+      const { initializeGemini, generateAdImage } = await import('../services/geminiService');
+      
+      // Ensure Gemini is initialized before generating
+      logger.log('Initializing Gemini...');
+      await initializeGemini();
+      logger.log('Gemini initialized successfully');
       
       // Generate image (now throws errors instead of returning null)
       logger.log('Calling generateAdImage...');
