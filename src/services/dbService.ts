@@ -6817,3 +6817,192 @@ export const syncGitHubChangelog = async (sinceDays: number = 7): Promise<{
     };
   }
 };
+
+// ============================================================================
+// VENUE LAYOUT FUNCTIONS
+// ============================================================================
+
+/**
+ * Create or update venue layout for an event
+ */
+export const saveVenueLayout = async (eventId: string, layout: Omit<any, 'id' | 'event_id' | 'created_at' | 'updated_at'>): Promise<any | null> => {
+  try {
+    // Check if layout already exists
+    const { data: existing } = await supabase
+      .from('venue_layouts')
+      .select('id')
+      .eq('event_id', eventId)
+      .single();
+
+    const layoutData = {
+      event_id: eventId,
+      name: layout.name || 'Venue Layout',
+      canvas_width: layout.canvasWidth,
+      canvas_height: layout.canvasHeight,
+      background_image: layout.backgroundImage,
+      items: layout.items
+    };
+
+    let result;
+    if (existing) {
+      // Update existing
+      const { data, error } = await supabase
+        .from('venue_layouts')
+        .update(layoutData)
+        .eq('id', existing.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      result = data;
+    } else {
+      // Insert new
+      const { data, error } = await supabase
+        .from('venue_layouts')
+        .insert([layoutData])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      result = data;
+    }
+
+    // Update event to mark it has seating
+    await supabase
+      .from('events')
+      .update({ 
+        has_seating: true,
+        venue_layout_id: result.id
+      })
+      .eq('id', eventId);
+
+    return result;
+  } catch (error) {
+    logger.error('Error saving venue layout:', error);
+    return null;
+  }
+};
+
+/**
+ * Get venue layout for an event
+ */
+export const getVenueLayout = async (eventId: string): Promise<any | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('venue_layouts')
+      .select('*')
+      .eq('event_id', eventId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // No layout found
+      throw error;
+    }
+
+    // Transform snake_case to camelCase for frontend
+    return {
+      id: data.id,
+      event_id: data.event_id,
+      name: data.name,
+      canvasWidth: data.canvas_width,
+      canvasHeight: data.canvas_height,
+      backgroundImage: data.background_image,
+      items: data.items,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    };
+  } catch (error) {
+    logger.error('Error fetching venue layout:', error);
+    return null;
+  }
+};
+
+/**
+ * Delete venue layout for an event
+ */
+export const deleteVenueLayout = async (eventId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('venue_layouts')
+      .delete()
+      .eq('event_id', eventId);
+
+    if (error) throw error;
+
+    // Update event to mark it has no seating
+    await supabase
+      .from('events')
+      .update({ 
+        has_seating: false,
+        venue_layout_id: null
+      })
+      .eq('id', eventId);
+
+    return true;
+  } catch (error) {
+    logger.error('Error deleting venue layout:', error);
+    return false;
+  }
+};
+
+/**
+ * Check availability of a venue item (seat/zone)
+ */
+export const checkVenueItemAvailability = async (
+  eventId: string, 
+  venueItemId: string
+): Promise<{
+  isAvailable: boolean;
+  bookedCount: number;
+  capacity: number;
+}> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('check_venue_item_availability', {
+        p_event_id: eventId,
+        p_venue_item_id: venueItemId
+      });
+
+    if (error) throw error;
+
+    return {
+      isAvailable: data[0].is_available,
+      bookedCount: data[0].booked_count,
+      capacity: data[0].capacity
+    };
+  } catch (error) {
+    logger.error('Error checking venue item availability:', error);
+    return {
+      isAvailable: false,
+      bookedCount: 0,
+      capacity: 0
+    };
+  }
+};
+
+/**
+ * Get booked seats/zones for an event (for displaying on customer-facing venue map)
+ */
+export const getBookedVenueItems = async (eventId: string): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('tickets')
+      .select('metadata')
+      .eq('event_id', eventId)
+      .in('status', ['valid', 'used'])
+      .not('metadata->seat_id', 'is', null);
+
+    if (error) throw error;
+
+    // Extract seat_ids from metadata
+    const bookedIds = data
+      .map((ticket: any) => ticket.metadata?.seat_id)
+      .filter((id: string) => id);
+
+    return Array.from(new Set(bookedIds)); // Remove duplicates
+  } catch (error) {
+    logger.error('Error fetching booked venue items:', error);
+    return [];
+  }
+};
+

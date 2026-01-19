@@ -25,11 +25,12 @@ import {
   ArrowLeft,
   Flag
 } from 'lucide-react';
-import { getEvents, getEventById, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates } from '../services/dbService';
+import { getEvents, getEventById, likeEvent, unlikeEvent, checkIfUserLikedEvent, getTicketTemplates, getVenueLayout } from '../services/dbService';
 import EventAttendeesList from './EventAttendeesList';
 import EventCheckIn from './EventCheckIn';
 import EventReviews from './EventReviews';
 import BuddyMatching from './BuddyMatching';
+import VenueSeatSelector from './VenueSeatSelector';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
 import { isEventExpired } from '../utils/eventUtils';
@@ -142,6 +143,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [xpToast, setXpToast] = useState<number | null>(null);
+  const [showSeatSelector, setShowSeatSelector] = useState(false);
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+  const [pendingTicketTemplate, setPendingTicketTemplate] = useState<TicketTemplate | null>(null);
   const translationCache = useRef<Map<string, { name: string; aboutText: string; description: string }>>(new Map());
 
   const LANGUAGE_LABELS: Record<string, string> = {
@@ -562,22 +566,41 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       return;
     }
 
+    // If event has seating, show seat selector first
+    if (event?.has_seating) {
+      setPendingTicketTemplate(template);
+      setShowSeatSelector(true);
+      return;
+    }
+
+    // Otherwise, proceed directly to checkout
+    await completeTicketPurchase(template, []);
+  };
+
+  const completeTicketPurchase = async (template: TicketTemplate, seatIds: string[]) => {
+    if (!event) return;
+
+    const quantity = ticketQuantities[template.id] || 0;
     setIsPurchasing(true);
     
     try {
       // Create Stripe checkout session for this specific ticket type
       const checkoutUrl = await createTicketCheckout(
-        user.id,
-        event!.id,
+        user!.id,
+        event.id,
         quantity,
         template.price,
-        `${event!.name} - ${template.name}`,
+        `${event.name} - ${template.name}`,
         template.id,
         template.type,
-        template.name
+        template.name,
+        seatIds.length > 0 ? seatIds : undefined
       );
 
       if (checkoutUrl) {
+        // Clear selected seats after checkout
+        setSelectedSeats([]);
+        setPendingTicketTemplate(null);
         // Redirect to Stripe checkout
         window.location.href = checkoutUrl;
       } else {
@@ -585,12 +608,20 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       }
     } catch (error) {
       console.error('Purchase failed:', error);
-      alert('Failed to start checkout. If the organizer’s payout setup is incomplete, Stripe may block payment. Please try again later or contact the organizer.');
+      alert('Failed to start checkout. If the organizer's payout setup is incomplete, Stripe may block payment. Please try again later or contact the organizer.');
       setIsPurchasing(false);
     }
   };
 
-  const handlePurchase = async () => {
+  const handleSeatSelect = (seat: any) => {
+    setSelectedSeats(prev => [...prev, seat.id]);
+  };
+
+  const handleSeatDeselect = (seatId: string) => {
+    setSelectedSeats(prev => prev.filter(id => id !== seatId));
+  };
+
+    const handlePurchase = async () => {
     // Require authentication before purchase with clear message
     if (!user) {
       alert('Please sign in to purchase tickets. It only takes a moment!');
@@ -1148,6 +1179,24 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           onClose={() => setIsReportModalOpen(false)}
           onReportSubmitted={() => {
             // Optionally show a confirmation toast
+          }}
+        />
+      )}
+
+      {/* Venue Seat Selector Modal */}
+      {showSeatSelector && event?.venue_layout_id && pendingTicketTemplate && (
+        <VenueSeatSelector
+          eventId={event.id}
+          venueLayoutId={event.venue_layout_id}
+          ticketPrice={pendingTicketTemplate.price}
+          maxSeats={ticketQuantities[pendingTicketTemplate.id] || 1}
+          onSelectSeats={async (seats) => {
+            await completeTicketPurchase(pendingTicketTemplate, seats.map(s => s.id));
+            setShowSeatSelector(false);
+          }}
+          onClose={() => {
+            setShowSeatSelector(false);
+            setPendingTicketTemplate(null);
           }}
         />
       )}

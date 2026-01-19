@@ -22,21 +22,25 @@ import {
   Upload,
   Crown,
   X,
-  Ticket as TicketIcon
+  Ticket as TicketIcon,
+  Plus,
+  Edit2
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { createEvent, getEvents, getUser, deductUserCredits, uploadEventImage } from '../services/dbService';
+import { createEvent, getEvents, getUser, deductUserCredits, uploadEventImage, saveVenueLayout } from '../services/dbService';
 import { geocodeAddress as geocodeAddressService } from '../services/geocodingService';
 import { createScannerCode } from '../services/scannerCodeService';
 import { trackEventCreation } from '../services/analyticsService';
 import { CATEGORIES, SUBSCRIPTION_TIERS } from '../constants';
 import { FEATURE_UNLOCK_COSTS } from '../services/featureUnlockService';
-import { User, EventNexusEvent } from '../types';
+import { User, EventNexusEvent, VenueLayout } from '../types';
 import { generateCreateEventSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 import { validateAndOptimizeEvent, meetsMinimumSEO, getSEORecommendations } from '../utils/eventValidation';
 import CreditsPricingModal from './CreditsPricingModal';
+import VenueDesignerModal from './VenueDesigner/VenueDesignerModal';
+import LayoutItem from './VenueDesigner/LayoutItem';
 
 // Simple logger for debugging
 const logger = {
@@ -150,7 +154,13 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     } catch {
       return false;
     }
-  });  const [ticketTemplates, setTicketTemplates] = useState<Array<{
+  });
+
+  // Venue designer state
+  const [venueLayout, setVenueLayout] = useState<VenueLayout | null>(null);
+  const [showVenueDesigner, setShowVenueDesigner] = useState(false);
+
+  const [ticketTemplates, setTicketTemplates] = useState<Array<{
     name: string;
     type: 'general' | 'vip' | 'early_bird' | 'day_pass' | 'multi_day' | 'backstage' | 'student' | 'group';
     price: number;
@@ -745,7 +755,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     logger.log('Form data at step change:', formData);
     logger.log('Image preview exists:', !!imagePreview);
     logger.log('Image file exists:', !!imageFile);
-    setStep(s => Math.min(s + 1, 5));
+    setStep(s => Math.min(s + 1, 6));
   };
   
   const prevStep = () => {
@@ -1038,6 +1048,18 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           // Don't fail event creation if scanner code fails
         } finally {
           setIsCreatingScannerCode(false);
+        }
+
+        // Save venue layout if created
+        if (venueLayout && created.id) {
+          logger.log('Saving venue layout for event...');
+          try {
+            await saveVenueLayout(created.id, venueLayout);
+            logger.log('Venue layout saved successfully!');
+          } catch (venueError) {
+            logger.error('Failed to save venue layout:', venueError);
+            // Don't fail the whole event creation if venue layout fails
+          }
         }
         
         logger.log('Navigating to dashboard...');
@@ -1378,6 +1400,85 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       case 4:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <h2 className="text-2xl font-bold">Venue Seating Layout (Optional)</h2>
+            <p className="text-sm text-slate-400">
+              Design your venue layout with seats, zones, and stages. Customers can select specific seats when purchasing tickets.
+            </p>
+
+            {venueLayout ? (
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold">{venueLayout.name}</h3>
+                    <p className="text-xs text-slate-400">
+                      {venueLayout.items.length} items • 
+                      {venueLayout.items.filter(i => i.type === 'seat').length} seats • 
+                      {venueLayout.items.filter(i => i.type === 'zone').length} zones
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowVenueDesigner(true)}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Edit Layout
+                  </button>
+                </div>
+                
+                {/* Preview */}
+                <div className="relative bg-white rounded-lg overflow-hidden" style={{ height: '300px' }}>
+                  <svg width="100%" height="300" viewBox={`0 0 ${venueLayout.canvasWidth} ${venueLayout.canvasHeight}`} preserveAspectRatio="xMidYMid meet">
+                    {venueLayout.backgroundImage && (
+                      <image 
+                        href={venueLayout.backgroundImage} 
+                        width={venueLayout.canvasWidth} 
+                        height={venueLayout.canvasHeight} 
+                        preserveAspectRatio="xMidYMid slice"
+                        style={{ opacity: 0.3 }}
+                      />
+                    )}
+                    {venueLayout.items.map(item => (
+                      <LayoutItem key={item.id} item={item} onSelect={() => {}} />
+                    ))}
+                  </svg>
+                </div>
+
+                <button
+                  onClick={() => setVenueLayout(null)}
+                  className="text-sm text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  Remove venue layout
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowVenueDesigner(true)}
+                className="w-full py-8 border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl transition-all group"
+              >
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-16 h-16 bg-slate-800 group-hover:bg-indigo-600/20 rounded-2xl flex items-center justify-center transition-colors">
+                    <Plus className="w-8 h-8 text-slate-400 group-hover:text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-200">Design Venue Layout</p>
+                    <p className="text-xs text-slate-500">Add seats, zones, and stages for ticket selection</p>
+                  </div>
+                </div>
+              </button>
+            )}
+
+            {/* Info box */}
+            <div className="p-4 bg-indigo-950/20 border border-indigo-900/50 rounded-2xl">
+              <p className="text-xs text-slate-400">
+                💡 <span className="font-bold">Tip:</span> Venue layouts are perfect for concerts, theaters, conferences, and any event with assigned seating. Customers will see an interactive map and select their preferred seats during checkout.
+              </p>
+            </div>
+          </div>
+        );
+      case 5:
+        return (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <h2 className="text-2xl font-bold">Tickets & Pricing</h2>
             <p className="text-sm text-slate-400">Create different ticket types for your event</p>
             
@@ -1623,7 +1724,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             </div>
           </div>
         );
-      case 5:
+      case 6:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <h2 className="text-2xl font-bold">Review & Publish</h2>
@@ -1829,6 +1930,17 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         userTier={user.subscription_tier || 'free'}
       />
 
+      {/* Venue Designer Modal */}
+      <VenueDesignerModal
+        isOpen={showVenueDesigner}
+        onClose={() => setShowVenueDesigner(false)}
+        onSave={(layout) => {
+          setVenueLayout(layout);
+          setShowVenueDesigner(false);
+        }}
+        initialLayout={venueLayout || undefined}
+      />
+
       {/* Breadcrumbs */}
       <Breadcrumbs 
         items={[
@@ -1845,7 +1957,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             </div>
             <div>
               <h1 className="text-xl font-bold">Create New Event</h1>
-              <p className="text-xs text-slate-400">Step {step} of 5</p>
+              <p className="text-xs text-slate-400">Step {step} of 6</p>
             </div>
           </div>
         </div>
@@ -1854,7 +1966,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
           <div 
             className="h-full bg-indigo-500 transition-all duration-500 ease-out"
-            style={{ width: `${(step / 5) * 100}%` }}
+            style={{ width: `${(step / 6) * 100}%` }}
           />
         </div>
       </div>
@@ -1870,7 +1982,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           >
             <ChevronLeft className="w-5 h-5" /> Back
           </button>
-          {step < 5 && (
+          {step < 6 && (
             <button 
               onClick={nextStep}
               className="bg-slate-100 text-slate-950 px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-white transition-all"
