@@ -205,15 +205,30 @@ export function removeStructuredData(): void {
  * Generate ItemList schema for event listings with full Event details
  * https://schema.org/ItemList
  * Includes offers and aggregateRating for Google Rich Results
+ * Returns array of ItemLists (max 999 items each) for pagination
  */
 export function generateEventListStructuredData(events: EventNexusEvent[]) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    'name': 'Upcoming Events on EventNexus',
-    'description': 'Browse upcoming events, concerts, conferences, and workshops',
-    'numberOfItems': events.length,
-    'itemListElement': events.slice(0, 100).map((event, index) => {
+  // Google handles max ~1000 items per ItemList well
+  const ITEMS_PER_LIST = 999;
+  const itemLists: any[] = [];
+  
+  // Split events into chunks of 999
+  for (let page = 0; page * ITEMS_PER_LIST < events.length; page++) {
+    const start = page * ITEMS_PER_LIST;
+    const end = Math.min(start + ITEMS_PER_LIST, events.length);
+    const pageEvents = events.slice(start, end);
+    
+    const itemList = {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      'name': page === 0 
+        ? 'Upcoming Events on EventNexus'
+        : `Upcoming Events on EventNexus - Page ${page + 1}`,
+      'description': page === 0
+        ? 'Browse upcoming events, concerts, conferences, and workshops'
+        : `Browse more upcoming events (${start + 1}-${end} of ${events.length})`,
+      'numberOfItems': pageEvents.length,
+      'itemListElement': pageEvents.map((event, index) => {
       const eventUrl = `https://eventnexus.eu/event/${event.id}`;
       const startDateTime = `${event.date}T${event.time || '00:00'}`;
       const endDateTime = event.end_date && event.end_time
@@ -295,9 +310,15 @@ export function generateEventListStructuredData(events: EventNexusEvent[]) {
 
       return {
         '@type': 'ListItem',
-        'position': index + 1,
+        'position': start + index + 1, // Global position across all pages
         'item': eventSchema,
       };
     }),
-  };
+    };
+    
+    itemLists.push(itemList);
+  }
+  
+  // Return array of ItemLists (Google will index all of them)
+  return itemLists;
 }
