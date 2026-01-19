@@ -7075,3 +7075,184 @@ export const deleteVenueTemplate = async (templateId: string): Promise<boolean> 
   }
 };
 
+// ==================== TRANSLATION CACHE ====================
+
+/**
+ * Get cached translation from database
+ * Used by languageService to check if translation exists
+ */
+export const getCachedTranslation = async (
+  eventId: string,
+  languageCode: string
+): Promise<{ name: string; description: string; about_text?: string } | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_translations')
+      .select('name, description, about_text')
+      .eq('event_id', eventId)
+      .eq('language_code', languageCode)
+      .single();
+
+    if (error) {
+      if (error.code !== 'PGRST116') { // Not found error
+        logger.warn('Error fetching cached translation:', error);
+      }
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    logger.error('Error fetching cached translation:', error);
+    return null;
+  }
+};
+
+/**
+ * Store translation in database cache
+ * Used by languageService after AI translation
+ */
+export const storeCachedTranslation = async (
+  eventId: string,
+  languageCode: string,
+  name: string,
+  description: string,
+  aboutText?: string
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('event_translations')
+      .upsert({
+        event_id: eventId,
+        language_code: languageCode,
+        name,
+        description,
+        about_text: aboutText || null,
+      }, {
+        onConflict: 'event_id,language_code',
+      });
+
+    if (error) {
+      logger.warn('Error storing translation in cache:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    logger.error('Error storing translation in cache:', error);
+    return false;
+  }
+};
+
+/**
+ * Batch get cached translations for multiple events
+ * Optimized for high-traffic scenarios (e.g., home page with 50+ events)
+ */
+export const batchGetCachedTranslations = async (
+  eventIds: string[],
+  languageCode: string
+): Promise<Map<string, { name: string; description: string; about_text?: string }>> => {
+  const result = new Map();
+
+  if (eventIds.length === 0) {
+    return result;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('event_translations')
+      .select('event_id, name, description, about_text')
+      .in('event_id', eventIds)
+      .eq('language_code', languageCode);
+
+    if (error) {
+      logger.warn('Error batch fetching cached translations:', error);
+      return result;
+    }
+
+    data?.forEach(item => {
+      result.set(item.event_id, {
+        name: item.name,
+        description: item.description || '',
+        about_text: item.about_text || undefined,
+      });
+    });
+
+    logger.info(`Batch fetched ${data?.length || 0}/${eventIds.length} translations from cache`);
+  } catch (error) {
+    logger.error('Error batch fetching cached translations:', error);
+  }
+
+  return result;
+};
+
+/**
+ * Get user's preferred language from profile
+ */
+export const getUserPreferredLanguage = async (userId: string): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('preferred_language')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return data.preferred_language || null;
+  } catch (error) {
+    logger.error('Error fetching user preferred language:', error);
+    return null;
+  }
+};
+
+/**
+ * Update user's preferred language
+ */
+export const updateUserPreferredLanguage = async (
+  userId: string,
+  languageCode: string
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ preferred_language: languageCode })
+      .eq('id', userId);
+
+    if (error) {
+      logger.error('Error updating user preferred language:', error);
+      return false;
+    }
+
+    logger.info(`Updated user ${userId} preferred language to ${languageCode}`);
+    return true;
+  } catch (error) {
+    logger.error('Error updating user preferred language:', error);
+    return false;
+  }
+};
+
+/**
+ * Cleanup old unused translations (run periodically)
+ * Removes translations not accessed in 90 days with low usage
+ */
+export const cleanupUnusedTranslations = async (): Promise<number> => {
+  try {
+    const { data, error } = await supabase.rpc('cleanup_unused_translations');
+
+    if (error) {
+      logger.error('Error cleaning up translations:', error);
+      return 0;
+    }
+
+    const deletedCount = data || 0;
+    logger.info(`Cleaned up ${deletedCount} unused translations`);
+    return deletedCount;
+  } catch (error) {
+    logger.error('Error cleaning up translations:', error);
+    return 0;
+  }
+};
+
+
