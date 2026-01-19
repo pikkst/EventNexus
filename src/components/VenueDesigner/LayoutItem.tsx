@@ -63,8 +63,8 @@ const LayoutItem: React.FC<LayoutItemProps> = ({
   const commonProps = {
     onClick: handleClick,
     'data-item-id': item.id,
-    className: `transition-all duration-150 ${isStage && isAttendeeMode ? 'cursor-default' : 'cursor-move'} ${isSelected ? 'filter drop-shadow-md' : ''}`,
-    style: { pointerEvents: 'all' } as React.CSSProperties
+    className: `transition-all duration-150 ${isStage && isAttendeeMode ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'} ${isSelected ? 'filter drop-shadow-md' : ''}`,
+    style: { pointerEvents: 'all' as const, userSelect: 'none' as const }
   };
 
   if (isSeat) {

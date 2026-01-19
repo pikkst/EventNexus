@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { X, Undo, Redo, Plus } from 'lucide-react';
+import { X, Undo, Redo, Plus, Save, FolderOpen } from 'lucide-react';
 import { VenueItem, VenueLayout } from './types';
 import LayoutItem from './LayoutItem';
 import EditorSidebar from './EditorSidebar';
+import { saveVenueTemplate, getUserVenueTemplates, deleteVenueTemplate } from '../../services/dbService';
 
 const SNAP_GRID = 20;
 const DEFAULT_WIDTH = 800;
@@ -13,13 +14,15 @@ interface VenueDesignerModalProps {
   onClose: () => void;
   onSave: (layout: VenueLayout) => void;
   initialLayout?: VenueLayout;
+  userId: string; // User ID for template management
 }
 
 const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({ 
   isOpen, 
   onClose, 
   onSave,
-  initialLayout 
+  initialLayout,
+  userId
 }) => {
   const [items, setItems] = useState<VenueItem[]>(initialLayout?.items || []);
   const [canvasSize, setCanvasSize] = useState({ 
@@ -27,6 +30,12 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
     height: initialLayout?.canvasHeight || DEFAULT_HEIGHT 
   });
   const [backgroundImage, setBackgroundImage] = useState<string | null>(initialLayout?.backgroundImage || null);
+  
+  // Template management state
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [templateName, setTemplateName] = useState('');
   
   // History state for Undo/Redo
   const [past, setPast] = useState<VenueItem[][]>([]);
@@ -41,6 +50,63 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
   const [selectionBox, setSelectionBox] = useState<{ x1: number, y1: number, x2: number, y2: number } | null>(null);
   
   const canvasRef = useRef<SVGSVGElement>(null);
+
+  // Load user templates on mount
+  useEffect(() => {
+    if (isOpen && userId) {
+      loadTemplates();
+    }
+  }, [isOpen, userId]);
+
+  const loadTemplates = async () => {
+    const userTemplates = await getUserVenueTemplates(userId);
+    setTemplates(userTemplates);
+  };
+
+  const handleSaveAsTemplate = async () => {
+    if (!templateName.trim()) {
+      alert('Please enter a template name');
+      return;
+    }
+
+    const result = await saveVenueTemplate(userId, templateName, {
+      canvasWidth: canvasSize.width,
+      canvasHeight: canvasSize.height,
+      items,
+      backgroundImage: backgroundImage || undefined
+    });
+
+    if (result) {
+      alert('Template saved successfully!');
+      setTemplateName('');
+      setShowSaveTemplateModal(false);
+      loadTemplates();
+    } else {
+      alert('Failed to save template');
+    }
+  };
+
+  const handleLoadTemplate = (template: any) => {
+    setItems(template.items || []);
+    setCanvasSize({
+      width: template.canvas_width || DEFAULT_WIDTH,
+      height: template.canvas_height || DEFAULT_HEIGHT
+    });
+    setBackgroundImage(template.background_image || null);
+    setShowTemplateModal(false);
+    commitToHistory(template.items || []);
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (!confirm('Are you sure you want to delete this template?')) return;
+    
+    const success = await deleteVenueTemplate(templateId);
+    if (success) {
+      loadTemplates();
+    } else {
+      alert('Failed to delete template');
+    }
+  };
 
   // Helper to commit current state to history
   const commitToHistory = useCallback((newItems: VenueItem[]) => {
@@ -313,6 +379,23 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
 
           <div className="flex items-center gap-3">
             <button 
+              onClick={() => setShowTemplateModal(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-700 font-medium text-sm"
+              title="Load Template"
+            >
+              <FolderOpen className="h-4 w-4" />
+              Load Template
+            </button>
+            <button 
+              onClick={() => setShowSaveTemplateModal(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-700 font-medium text-sm"
+              title="Save as Template"
+            >
+              <Save className="h-4 w-4" />
+              Save as Template
+            </button>
+            <div className="h-6 w-px bg-slate-300" />
+            <button 
               onClick={undo}
               disabled={past.length === 0}
               className="p-2 hover:bg-slate-100 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-slate-600"
@@ -388,13 +471,21 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
               >
+                {/* Grid Lines */}
+                <defs>
+                  <pattern id="grid" width={SNAP_GRID} height={SNAP_GRID} patternUnits="userSpaceOnUse">
+                    <path d={`M ${SNAP_GRID} 0 L 0 0 0 ${SNAP_GRID}`} fill="none" stroke="#e2e8f0" strokeWidth="0.5"/>
+                  </pattern>
+                </defs>
+                <rect width={canvasSize.width} height={canvasSize.height} fill="url(#grid)" />
+                
                 {backgroundImage && (
                   <image 
                     href={backgroundImage} 
                     width={canvasSize.width} 
                     height={canvasSize.height} 
                     preserveAspectRatio="xMidYMid slice"
-                    style={{ opacity: 0.5 }}
+                    style={{ opacity: 0.5, pointerEvents: 'none' }}
                   />
                 )}
 
@@ -482,6 +573,97 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Load Template Modal */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-xl font-bold text-slate-900">Load Template</h3>
+              <button onClick={() => setShowTemplateModal(false)} className="text-slate-500 hover:text-slate-700">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              {templates.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                  <FolderOpen className="h-16 w-16 mx-auto mb-4 text-slate-300" />
+                  <p className="text-lg font-medium mb-2">No templates yet</p>
+                  <p className="text-sm">Create your first template by clicking "Save as Template"</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {templates.map(template => (
+                    <div key={template.id} className="border border-slate-200 rounded-lg p-4 hover:border-indigo-400 transition-colors">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-bold text-slate-900">{template.template_name}</h4>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {template.canvas_width}x{template.canvas_height}px • {template.items?.length || 0} items
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteTemplate(template.id)}
+                          className="text-red-500 hover:text-red-700 p-1"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => handleLoadTemplate(template)}
+                        className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                      >
+                        Load Template
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Template Modal */}
+      {showSaveTemplateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-xl font-bold text-slate-900">Save as Template</h3>
+              <button onClick={() => setShowSaveTemplateModal(false)} className="text-slate-500 hover:text-slate-700">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm font-medium text-slate-900 mb-2">Template Name</label>
+              <input
+                type="text"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="e.g., Theater Layout, Concert Hall, Conference Room"
+                className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900"
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                This template will be saved and available for future events
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 p-6 border-t bg-slate-50">
+              <button
+                onClick={() => setShowSaveTemplateModal(false)}
+                className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveAsTemplate}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              >
+                Save Template
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1939,6 +1939,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           setShowVenueDesigner(false);
         }}
         initialLayout={venueLayout || undefined}
+        userId={user?.id || ''}
       />
 
       {/* Breadcrumbs */}

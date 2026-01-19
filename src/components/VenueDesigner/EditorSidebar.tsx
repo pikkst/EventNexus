@@ -29,37 +29,37 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
   hasBg
 }) => {
   return (
-    <div className="w-80 border-l bg-white p-6 shadow-xl flex flex-col overflow-y-auto">
-      <h3 className="text-lg font-bold mb-6 text-slate-800">Venue Designer</h3>
+    <div className="w-80 border-l bg-slate-50 p-6 shadow-xl flex flex-col overflow-y-auto">
+      <h3 className="text-lg font-bold mb-6 text-slate-900">Venue Designer</h3>
       
       {selectedCount === 0 ? (
         <div className="space-y-6">
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Canvas Settings</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-4">Canvas Settings</label>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-[10px] text-slate-500 uppercase font-bold">Width (px)</label>
+                <label className="text-[10px] text-slate-700 uppercase font-bold">Width (px)</label>
                 <input
                   type="number"
                   value={canvasSize.width}
                   onChange={(e) => onCanvasSizeChange(Number(e.target.value), canvasSize.height)}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                  className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-slate-900 bg-white"
                 />
               </div>
               <div>
-                <label className="text-[10px] text-slate-500 uppercase font-bold">Height (px)</label>
+                <label className="text-[10px] text-slate-700 uppercase font-bold">Height (px)</label>
                 <input
                   type="number"
                   value={canvasSize.height}
                   onChange={(e) => onCanvasSizeChange(canvasSize.width, Number(e.target.value))}
-                  className="w-full border rounded-lg px-2 py-1.5 text-sm"
+                  className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-slate-900 bg-white"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Floor Plan Background</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-4">Floor Plan Background</label>
             <div className="flex flex-col gap-2">
               <input
                 type="file"
@@ -79,9 +79,9 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
             </div>
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-slate-500 text-sm">
-            <h4 className="font-bold mb-1 text-slate-700">Quick Tips</h4>
-            <ul className="list-disc list-inside space-y-1 text-xs">
+          <div className="p-4 bg-white rounded-xl border border-slate-200 text-slate-700 text-sm">
+            <h4 className="font-bold mb-1 text-slate-900">Quick Tips</h4>
+            <ul className="list-disc list-inside space-y-1 text-xs text-slate-700">
               <li>Drag background to select multiple</li>
               <li>Hold Shift to multi-select items</li>
               <li>Use arrow keys to nudge selection</li>
@@ -102,25 +102,25 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
           {selectedCount === 1 && selectedItem && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+              <label className="block text-sm font-medium text-slate-900 mb-1">Name</label>
               <input
                 type="text"
                 value={selectedItem.name}
                 onChange={(e) => onUpdate({ name: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 bg-white"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-slate-900 mb-1">
               Ticket Price ($) {selectedCount > 1 && '(apply to all)'}
             </label>
             <input
               type="number"
               value={selectedItem?.price ?? 0}
               onChange={(e) => onUpdate({ price: Number(e.target.value) })}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 bg-white"
             />
           </div>
 
@@ -166,12 +166,12 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
           {selectedCount === 1 && selectedItem && selectedItem.type === 'seat' && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Seat Number</label>
+              <label className="block text-sm font-medium text-slate-900 mb-1">Seat Number</label>
               <input
                 type="number"
                 value={selectedItem.seatNumber || 0}
                 onChange={(e) => onUpdate({ seatNumber: Number(e.target.value) })}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 bg-white"
               />
             </div>
           )}
@@ -180,23 +180,23 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
             <>
               {selectedItem.type === 'zone' && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Capacity</label>
+                  <label className="block text-sm font-medium text-slate-900 mb-1">Capacity</label>
                   <input
                     type="number"
                     value={selectedItem.capacity || 0}
                     onChange={(e) => onUpdate({ capacity: Number(e.target.value) })}
-                    className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 bg-white"
                   />
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Width</label>
+                  <label className="block text-sm font-medium text-slate-900 mb-1">Width</label>
                   <input
                     type="number"
                     value={selectedItem.width}
                     onChange={(e) => onUpdate({ width: Number(e.target.value) })}
-                    className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 bg-white"
                   />
                 </div>
                 <div>

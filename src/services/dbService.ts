@@ -7006,3 +7006,72 @@ export const getBookedVenueItems = async (eventId: string): Promise<string[]> =>
   }
 };
 
+/**
+ * Save venue layout as reusable template (for organizers to reuse on multiple events)
+ */
+export const saveVenueTemplate = async (
+  userId: string, 
+  templateName: string,
+  layout: { canvasWidth: number; canvasHeight: number; items: any[]; backgroundImage?: string }
+): Promise<any | null> => {
+  try {
+    const templateData = {
+      user_id: userId,
+      template_name: templateName,
+      canvas_width: layout.canvasWidth,
+      canvas_height: layout.canvasHeight,
+      items: layout.items,
+      background_image: layout.backgroundImage || null
+    };
+
+    const { data, error } = await supabase
+      .from('venue_templates')
+      .insert([templateData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    logger.error('Error saving venue template:', error);
+    return null;
+  }
+};
+
+/**
+ * Get user's saved venue templates
+ */
+export const getUserVenueTemplates = async (userId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('venue_templates')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    logger.error('Error fetching venue templates:', error);
+    return [];
+  }
+};
+
+/**
+ * Delete a venue template
+ */
+export const deleteVenueTemplate = async (templateId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('venue_templates')
+      .delete()
+      .eq('id', templateId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    logger.error('Error deleting venue template:', error);
+    return false;
+  }
+};
+
