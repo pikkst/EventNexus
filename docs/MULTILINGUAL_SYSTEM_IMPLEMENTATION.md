@@ -95,17 +95,62 @@
 
 ## 📊 Supported Languages / Toetatud Keeled
 
-| Code | Language   | Native Name | Coverage     |
-|------|------------|-------------|--------------|
-| en   | English    | English     | ✅ 100% (default) |
-| et   | Estonian   | Eesti       | ✅ 100%      |
-| fi   | Finnish    | Suomi       | ✅ 100%      |
-| sv   | Swedish    | Svenska     | ✅ 100%      |
-| de   | German     | Deutsch     | ✅ 100%      |
-| fr   | French     | Français    | ✅ 100%      |
-| es   | Spanish    | Español     | ✅ 100%      |
-| ru   | Russian    | Русский     | ✅ 100%      |
-| pl   | Polish     | Polski      | ✅ 100%      |
+### UI Languages (Platform Interface) - 9 Languages
+
+Limited set for navigation, buttons, labels, and platform interface:
+
+| Code | Language   | Native Name | Coverage |
+|------|------------|-------------|----------|
+| en   | English    | English     | ✅ 100%  |
+| et   | Estonian   | Eesti       | ✅ 100%  |
+| fi   | Finnish    | Suomi       | ✅ 100%  |
+| sv   | Swedish    | Svenska     | ✅ 100%  |
+| de   | German     | Deutsch     | ✅ 100%  |
+| fr   | French     | Français    | ✅ 100%  |
+| es   | Spanish    | Español     | ✅ 100%  |
+| ru   | Russian    | Русский     | ✅ 100%  |
+| pl   | Polish     | Polski      | ✅ 100%  |
+
+### Content Languages (Event Translations) - 100+ Languages
+
+**Registered users can select ANY language** for event content translation, including:
+
+#### Major Global Languages
+- 🇬🇧 English | 🇨🇳 Chinese | 🇮🇳 Hindi | 🇪🇸 Spanish | 🇸🇦 Arabic | 🇧🇩 Bengali
+- 🇵🇹 Portuguese | 🇷🇺 Russian | 🇯🇵 Japanese | 🇩🇪 German | 🇫🇷 French
+
+#### European Languages (40+)
+- 🇮🇹 Italian | 🇳🇱 Dutch | 🇵🇱 Polish | 🇺🇦 Ukrainian | 🇷🇴 Romanian | 🇨🇿 Czech
+- 🇬🇷 Greek | 🇸🇪 Swedish | 🇭🇺 **Hungarian** | 🇫🇮 Finnish | 🇳🇴 Norwegian | 🇩🇰 Danish
+- 🇧🇬 Bulgarian | 🇸🇰 Slovak | 🇭🇷 Croatian | 🇷🇸 Serbian | 🇱🇹 Lithuanian | 🇱🇻 Latvian
+- 🇪🇪 Estonian | 🇸🇮 Slovenian | 🇮🇸 Icelandic | And more...
+
+#### Asian Languages (30+)
+- 🇰🇷 Korean | 🇻🇳 Vietnamese | 🇹🇭 Thai | 🇮🇩 Indonesian | 🇲🇾 Malay | 🇵🇭 Filipino
+- 🇵🇰 Urdu | 🇮🇳 Tamil, Telugu, Marathi, Punjabi, Gujarati, Kannada, Malayalam
+- 🇱🇰 Sinhala | 🇲🇲 Burmese | 🇰🇭 Khmer | 🇱🇦 Lao | 🇳🇵 Nepali
+
+#### Middle Eastern Languages
+- 🇮🇷 Persian | 🇹🇷 Turkish | 🇮🇱 Hebrew | 🇸🇦 Arabic
+
+#### African Languages
+- 🇰🇪 Swahili | 🇪🇹 Amharic | 🇿🇦 Zulu, Xhosa, Afrikaans | 🇳🇬 Yoruba, Igbo, Hausa
+
+#### Other Languages
+- 🏴󐁧󐁢󐁷󐁬󐁳󐁿 Welsh | 🇮🇪 Irish | 🇲🇹 Maltese | 🇦🇱 Albanian | 🇲🇰 Macedonian | 🇬🇪 Georgian
+- 🇦🇲 Armenian | 🇦🇿 Azerbaijani | 🇰🇿 Kazakh | 🇺🇿 Uzbek | 🇲🇳 Mongolian
+
+**Total: 100+ languages** supported for content translation via Gemini AI.
+
+### Key Differences
+
+| Feature | Guest Users | Registered Users |
+|---------|-------------|------------------|
+| UI Language | 9 languages | 9 languages |
+| Event Content Translation | Limited to UI languages | **100+ languages** |
+| Profile Language Setting | No (localStorage only) | ✅ Yes (database) |
+| Language Selection | Dropdown | Full searchable selector |
+| Examples | Can't select Hungarian | ✅ Can select Hungarian, Hindi, Chinese, etc. |
 
 ## 🚀 Implementation Steps / Paigaldamise Sammud
 
@@ -407,6 +452,149 @@ SELECT cleanup_unused_translations();
 
 ## 📱 User Language Preference / Kasutaja Keele Eelistus
 
+### Registered Users - Full Language Selection (100+ languages)
+
+```tsx
+import { LanguageSelector } from '../components/LanguageSelector';
+
+const UserProfileSettings = ({ user }) => {
+  const [userLanguage, setUserLanguage] = useState(user?.preferred_language || 'en');
+
+  const handleLanguageChange = (newLang: string) => {
+    setUserLanguage(newLang);
+    setUILanguage(newLang); // Update UI if supported
+    // Reload events with new language
+    loadEventsInLanguage(newLang);
+  };
+
+  return (
+    <div className="profile-settings">
+      <h3>Content Language Preference</h3>
+      <p>Select the language you want to see events in. We support 100+ languages!</p>
+      
+      <LanguageSelector
+        userId={user.id}
+        currentLanguage={userLanguage}
+        onLanguageChange={handleLanguageChange}
+        theme="dark"
+      />
+      
+      <div className="examples">
+        <p>✅ English, Estonian, Finnish, Swedish...</p>
+        <p>✅ Hungarian (Magyar), Hindi (हिन्दी), Chinese (中文)</p>
+        <p>✅ Bengali, Urdu, Tamil, Telugu, Korean...</p>
+        <p>✅ Any language supported by Gemini AI!</p>
+      </div>
+    </div>
+  );
+};
+```
+
+### Guest Users - Limited Selection (9 UI languages)
+
+```tsx
+const GuestLanguageSelector = () => {
+  const [guestLanguage, setGuestLanguage] = useState('en');
+
+  return (
+    <LanguageSelector
+      userId={undefined} // No userId = guest mode
+      currentLanguage={guestLanguage}
+      onLanguageChange={(lang) => {
+        setGuestLanguage(lang);
+        localStorage.setItem('guest_language', lang);
+      }}
+      theme="dark"
+    />
+  );
+};
+```
+
+### Profile Settings UI
+
+```tsx
+<div className="language-settings">
+  <h3>🌍 Language Preferences</h3>
+  
+  {/* Content Language (100+ languages for registered users) */}
+  <div className="setting-row">
+    <label>Event Content Language</label>
+    <select 
+      value={userLanguage}
+      onChange={(e) => handleLanguageChange(e.target.value)}
+    >
+      {/* Grouped by region */}
+      <optgroup label="Major Languages">
+        <option value="en">🇬🇧 English</option>
+        <option value="zh">🇨🇳 Chinese (中文)</option>
+        <option value="hi">🇮🇳 Hindi (हिन्दी)</option>
+        <option value="es">🇪🇸 Spanish (Español)</option>
+      </optgroup>
+      
+      <optgroup label="European Languages">
+        <option value="et">🇪🇪 Estonian (Eesti)</option>
+        <option value="fi">🇫🇮 Finnish (Suomi)</option>
+        <option value="sv">🇸🇪 Swedish (Svenska)</option>
+        <option value="de">🇩🇪 German (Deutsch)</option>
+        <option value="fr">🇫🇷 French (Français)</option>
+        <option value="hu">🇭🇺 Hungarian (Magyar)</option>
+        <option value="pl">🇵🇱 Polish (Polski)</option>
+        <option value="it">🇮🇹 Italian (Italiano)</option>
+        {/* ... more languages ... */}
+      </optgroup>
+      
+      <optgroup label="Asian Languages">
+        <option value="ja">🇯🇵 Japanese (日本語)</option>
+        <option value="ko">🇰🇷 Korean (한국어)</option>
+        <option value="vi">🇻🇳 Vietnamese (Tiếng Việt)</option>
+        <option value="th">🇹🇭 Thai (ไทย)</option>
+        <option value="id">🇮🇩 Indonesian (Bahasa Indonesia)</option>
+        {/* ... more languages ... */}
+      </optgroup>
+      
+      <optgroup label="Middle Eastern Languages">
+        <option value="ar">🇸🇦 Arabic (العربية)</option>
+        <option value="fa">🇮🇷 Persian (فارسی)</option>
+        <option value="tr">🇹🇷 Turkish (Türkçe)</option>
+        <option value="he">🇮🇱 Hebrew (עברית)</option>
+      </optgroup>
+      
+      <optgroup label="African Languages">
+        <option value="sw">🇰🇪 Swahili (Kiswahili)</option>
+        <option value="am">🇪🇹 Amharic (አማርኛ)</option>
+        <option value="af">🇿🇦 Afrikaans</option>
+        {/* ... more languages ... */}
+      </optgroup>
+    </select>
+    <p className="help-text">
+      All events will be automatically translated to your selected language.
+    </p>
+  </div>
+  
+  {/* UI Language (9 languages only) */}
+  <div className="setting-row">
+    <label>Platform Interface Language</label>
+    <select 
+      value={uiLanguage}
+      onChange={(e) => setUILanguage(e.target.value)}
+    >
+      <option value="en">🇬🇧 English</option>
+      <option value="et">🇪🇪 Eesti</option>
+      <option value="fi">🇫🇮 Suomi</option>
+      <option value="sv">🇸🇪 Svenska</option>
+      <option value="de">🇩🇪 Deutsch</option>
+      <option value="fr">🇫🇷 Français</option>
+      <option value="es">🇪🇸 Español</option>
+      <option value="ru">🇷🇺 Русский</option>
+      <option value="pl">🇵🇱 Polski</option>
+    </select>
+    <p className="help-text">
+      Language for menus, buttons, and platform interface.
+    </p>
+  </div>
+</div>
+```
+
 ### Save User Preference
 
 ```typescript
@@ -416,30 +604,11 @@ import { updateUserPreferredLanguage } from '../services/dbService';
 const handleLanguageChange = async (newLang: string) => {
   const success = await updateUserPreferredLanguage(user.id, newLang);
   if (success) {
-    setUILanguage(newLang);
+    setUserLanguage(newLang);
     // Reload events with new language
     loadEvents();
   }
 };
-```
-
-### Profile Settings UI
-
-```tsx
-<select 
-  value={userLanguage}
-  onChange={(e) => handleLanguageChange(e.target.value)}
->
-  <option value="en">🇬🇧 English</option>
-  <option value="et">🇪🇪 Eesti</option>
-  <option value="fi">🇫🇮 Suomi</option>
-  <option value="sv">🇸🇪 Svenska</option>
-  <option value="de">🇩🇪 Deutsch</option>
-  <option value="fr">🇫🇷 Français</option>
-  <option value="es">🇪🇸 Español</option>
-  <option value="ru">🇷🇺 Русский</option>
-  <option value="pl">🇵🇱 Polski</option>
-</select>
 ```
 
 ## 🎨 UI Translation Usage / UI Tõlgete Kasutamine
