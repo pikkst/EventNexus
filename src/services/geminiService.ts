@@ -384,17 +384,16 @@ export const generateAdImage = async (
         async () => {
           const ai = getAI();
           
-          console.log('[Gemini] Generating image with model: gemini-2.5-flash-image');
+          console.log('[Gemini] Generating image with model: gemini-2.5-flash-image (Nano Banana)');
           console.log('[Gemini] Prompt:', prompt.substring(0, 100) + '...');
           console.log('[Gemini] Aspect ratio:', aspectRatio);
           
+          // Nano Banana (gemini-2.5-flash-image) expects simple string prompt
+          const imagePrompt = `Create a professional event marketing poster for "${prompt}". Style: modern, vibrant, eye-catching with bold typography. High-quality ${aspectRatio} aspect ratio image suitable for both digital and print. Premium tech aesthetics, cinematic lighting, ultra-modern design elements.`;
+          
           const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
-            contents: {
-              parts: [{ 
-                text: `Professional marketing flier for EventNexus with clear promotional text overlay: ${prompt}. Include eye-catching headlines and call-to-action text directly on the image. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements, bold typography, 8k. Aspect ratio: ${aspectRatio}` 
-              }]
-            }
+            contents: imagePrompt, // Simple string, not complex object
           });
 
           console.log('[Gemini] Response received, parsing candidates...');
