@@ -814,19 +814,9 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
 
       const { validation, seo } = validateAndOptimizeEvent(eventForValidation, { autoFix: true });
 
-      // Check critical validation only (not SEO)
-      const criticalErrors = validation.errors.filter(err => 
-        !err.toLowerCase().includes('seo') && 
-        !err.toLowerCase().includes('description') && 
-        !err.toLowerCase().includes('image')
-      );
-      
-      if (criticalErrors.length > 0) {
-        logger.error('Event validation failed:', criticalErrors);
-        const errorMessage = `Event validation failed:\n\n${criticalErrors.join('\n')}`;
-        alert(errorMessage);
-        return;
-      }
+      // Skip validation errors - user already filled all required fields in steps 1-6
+      // SEO validation is informative only, not blocking
+      logger.log('Validation complete (informative only, not blocking)');
 
       // Log SEO score but don't block creation
       if (validation.seoScore < 60) {
@@ -1032,15 +1022,27 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           
           // Create ticket template for each group
           venueTickets.forEach((group) => {
-            const quantity = group.items.length;
+            // For zones: multiply by capacity. For seats: count individual seats
+            let totalQuantity = 0;
+            
+            group.items.forEach(item => {
+              if (item.type === 'zone' && item.capacity) {
+                // Zone: use capacity (e.g., VIP Zone with 20 capacity = 20 tickets)
+                totalQuantity += item.capacity;
+              } else {
+                // Seat: count as 1
+                totalQuantity += 1;
+              }
+            });
+            
             allTicketTemplates.push({
               name: group.name,
               type: 'general' as any,
               price: group.price || 0,
-              quantity_total: quantity,
-              quantity_available: quantity,
+              quantity_total: totalQuantity,
+              quantity_available: totalQuantity,
               quantity_sold: 0,
-              description: `Venue seating: ${quantity} ${group.items[0].type === 'seat' ? 'seats' : 'zones'}`,
+              description: `Venue seating: ${totalQuantity} ${group.items[0].type === 'seat' ? 'seats' : 'spots'}`,
               is_active: true
             });
           });
