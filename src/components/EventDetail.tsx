@@ -608,7 +608,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       }
     } catch (error) {
       console.error('Purchase failed:', error);
-      alert('Failed to start checkout. If the organizer's payout setup is incomplete, Stripe may block payment. Please try again later or contact the organizer.');
+      alert(`Failed to start checkout. If the organizer's payout setup is incomplete, Stripe may block payment. Please try again later or contact the organizer.`);
       setIsPurchasing(false);
     }
   };
