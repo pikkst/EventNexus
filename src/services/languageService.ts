@@ -1,7 +1,11 @@
 /**
  * Language Detection and Management Service
  * Handles automatic language detection, user preferences, and browser locale
+ * With intelligent caching to minimize API costs for high traffic
  */
+
+import { supabase } from './supabase';
+import { translateDescription, translateDescriptionBatch } from './geminiService';
 
 export interface LanguageOption {
   code: string;
@@ -9,6 +13,22 @@ export interface LanguageOption {
   nativeName: string;
   flag: string;
 }
+
+export interface EventTranslation {
+  name: string;
+  description: string;
+  about_text?: string;
+}
+
+// In-memory cache for translations (session-level)
+// Reduces database queries for frequently viewed events
+const translationCache = new Map<string, EventTranslation>();
+const CACHE_KEY_SEPARATOR = '::';
+
+// Generate cache key
+const getCacheKey = (eventId: string, languageCode: string): string => {
+  return `${eventId}${CACHE_KEY_SEPARATOR}${languageCode}`;
+};
 
 export const SUPPORTED_LANGUAGES: LanguageOption[] = [
   { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧' },
@@ -301,4 +321,290 @@ export const getAutoTranslationLanguages = (
 
   // Premium/Enterprise: All languages
   return SUPPORTED_LANGUAGES.map(lang => lang.code);
+};
+
+/**
+ * Get cached translation from database
+ * Returns null if not found in cache
+ */
+export const getCachedTranslation = async (
+  eventId: string,
+  languageCode: string
+): Promise<EventTranslation | null> => {
+  // Check in-memory cache first (fastest)
+  const cacheKey = getCacheKey(eventId, languageCode);
+  const cached = translationCache.get(cacheKey);
+  if (cached) {
+    console.log(`⚡ Translation from memory cache: ${eventId} -> ${languageCode}`);
+    return cached;
+  }
+
+  // Check database cache
+  try {
+    const { data, error } = await supabase
+      .from('event_translations')
+      .select('name, description, about_text')
+      .eq('event_id', eventId)
+      .eq('language_code', languageCode)
+      .single();
+
+    if (error) {
+      if (error.code !== 'PGRST116') { // Not found error
+        console.warn('Error fetching cached translation:', error);
+      }
+      return null;
+    }
+
+    if (data) {
+      const translation: EventTranslation = {
+        name: data.name,
+        description: data.description || '',
+        about_text: data.about_text || undefined,
+      };
+      
+      // Store in memory cache for next time
+      translationCache.set(cacheKey, translation);
+      console.log(`💾 Translation from DB cache: ${eventId} -> ${languageCode}`);
+      
+      return translation;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching cached translation:', error);
+    return null;
+  }
+};
+
+/**
+ * Store translation in cache (both memory and database)
+ */
+export const storeCachedTranslation = async (
+  eventId: string,
+  languageCode: string,
+  translation: EventTranslation
+): Promise<void> => {
+  // Store in memory cache immediately
+  const cacheKey = getCacheKey(eventId, languageCode);
+  translationCache.set(cacheKey, translation);
+
+  // Store in database cache asynchronously (don't block)
+  try {
+    const { error } = await supabase
+      .from('event_translations')
+      .upsert({
+        event_id: eventId,
+        language_code: languageCode,
+        name: translation.name,
+        description: translation.description,
+        about_text: translation.about_text || null,
+      }, {
+        onConflict: 'event_id,language_code',
+      });
+
+    if (error) {
+      console.warn('Error storing translation in DB cache:', error);
+    } else {
+      console.log(`✅ Translation cached: ${eventId} -> ${languageCode}`);
+    }
+  } catch (error) {
+    console.error('Error storing translation in DB cache:', error);
+  }
+};
+
+/**
+ * Batch get cached translations for multiple events
+ * Optimized for high-traffic scenarios (e.g., home page with 50+ events)
+ */
+export const batchGetCachedTranslations = async (
+  eventIds: string[],
+  languageCode: string
+): Promise<Map<string, EventTranslation>> => {
+  const result = new Map<string, EventTranslation>();
+  const uncachedIds: string[] = [];
+
+  // Check memory cache first for all events
+  eventIds.forEach(eventId => {
+    const cacheKey = getCacheKey(eventId, languageCode);
+    const cached = translationCache.get(cacheKey);
+    if (cached) {
+      result.set(eventId, cached);
+    } else {
+      uncachedIds.push(eventId);
+    }
+  });
+
+  if (uncachedIds.length === 0) {
+    console.log(`⚡ All ${eventIds.length} translations from memory cache`);
+    return result;
+  }
+
+  // Fetch uncached translations from database in one query
+  try {
+    const { data, error } = await supabase
+      .from('event_translations')
+      .select('event_id, name, description, about_text')
+      .in('event_id', uncachedIds)
+      .eq('language_code', languageCode);
+
+    if (error) {
+      console.warn('Error batch fetching cached translations:', error);
+      return result;
+    }
+
+    // Store in both result and memory cache
+    data?.forEach(item => {
+      const translation: EventTranslation = {
+        name: item.name,
+        description: item.description || '',
+        about_text: item.about_text || undefined,
+      };
+      result.set(item.event_id, translation);
+      
+      const cacheKey = getCacheKey(item.event_id, languageCode);
+      translationCache.set(cacheKey, translation);
+    });
+
+    console.log(
+      `💾 Batch fetched ${data?.length || 0}/${uncachedIds.length} translations from DB cache (${result.size}/${eventIds.length} total)`
+    );
+  } catch (error) {
+    console.error('Error batch fetching cached translations:', error);
+  }
+
+  return result;
+};
+
+/**
+ * Translate event with intelligent caching
+ * 1. Check cache first
+ * 2. If not cached, translate using AI
+ * 3. Store in cache for future use
+ */
+export const translateEvent = async (
+  event: {
+    id: string;
+    name: string;
+    description: string;
+    aboutText?: string;
+  },
+  targetLanguage: string,
+  userId?: string,
+  userTier?: string
+): Promise<EventTranslation> => {
+  // Check cache first
+  const cached = await getCachedTranslation(event.id, targetLanguage);
+  if (cached) {
+    return cached;
+  }
+
+  // Not cached - translate using AI
+  console.log(`🤖 Translating event ${event.id} to ${targetLanguage}...`);
+  
+  try {
+    const texts: Record<string, string> = {
+      name: event.name,
+      description: event.description,
+    };
+
+    if (event.aboutText) {
+      texts.aboutText = event.aboutText;
+    }
+
+    // Use batch translation for better efficiency
+    const translated = await translateDescriptionBatch(texts, targetLanguage, userId, userTier);
+
+    const translation: EventTranslation = {
+      name: translated.name || event.name,
+      description: translated.description || event.description,
+      about_text: translated.aboutText,
+    };
+
+    // Store in cache for next time
+    await storeCachedTranslation(event.id, targetLanguage, translation);
+
+    return translation;
+  } catch (error) {
+    console.error('Error translating event:', error);
+    
+    // Return original text as fallback
+    return {
+      name: event.name,
+      description: event.description,
+      about_text: event.aboutText,
+    };
+  }
+};
+
+/**
+ * Batch translate multiple events (optimized for home page)
+ * Only translates events that aren't already cached
+ */
+export const batchTranslateEvents = async (
+  events: Array<{
+    id: string;
+    name: string;
+    description: string;
+    aboutText?: string;
+  }>,
+  targetLanguage: string,
+  userId?: string,
+  userTier?: string
+): Promise<Map<string, EventTranslation>> => {
+  if (events.length === 0) {
+    return new Map();
+  }
+
+  // Get all cached translations first
+  const eventIds = events.map(e => e.id);
+  const cached = await batchGetCachedTranslations(eventIds, targetLanguage);
+
+  // Find events that need translation
+  const needsTranslation = events.filter(e => !cached.has(e.id));
+
+  if (needsTranslation.length === 0) {
+    console.log(`✅ All ${events.length} events already cached in ${targetLanguage}`);
+    return cached;
+  }
+
+  console.log(
+    `🤖 Translating ${needsTranslation.length}/${events.length} uncached events to ${targetLanguage}...`
+  );
+
+  // Translate uncached events in parallel (but limit concurrency to 5)
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < needsTranslation.length; i += BATCH_SIZE) {
+    const batch = needsTranslation.slice(i, i + BATCH_SIZE);
+    const promises = batch.map(event => 
+      translateEvent(event, targetLanguage, userId, userTier)
+        .then(translation => {
+          cached.set(event.id, translation);
+          return translation;
+        })
+        .catch(error => {
+          console.error(`Failed to translate event ${event.id}:`, error);
+          // Use original text as fallback
+          const fallback: EventTranslation = {
+            name: event.name,
+            description: event.description,
+            about_text: event.aboutText,
+          };
+          cached.set(event.id, fallback);
+          return fallback;
+        })
+    );
+
+    await Promise.all(promises);
+  }
+
+  console.log(`✅ Batch translation complete: ${cached.size}/${events.length} events`);
+  return cached;
+};
+
+/**
+ * Clear translation cache (useful for testing or memory management)
+ */
+export const clearTranslationCache = (): void => {
+  translationCache.clear();
+  console.log('🗑️ Translation cache cleared');
 };
