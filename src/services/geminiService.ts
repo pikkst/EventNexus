@@ -472,8 +472,26 @@ export const generateAdImage = async (
     
     return result;
   } catch (error) {
-    console.error("Image generation failed:", error);
-    return null;
+    console.error('[Gemini] ❌ Image generation failed:', error);
+    
+    // Provide detailed error message to user
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Check for common issues
+    if (errorMessage.includes('quota') || errorMessage.includes('rate limit')) {
+      throw new Error('⚠️ Gemini API rate limit reached. Please wait a moment and try again.');
+    }
+    
+    if (errorMessage.includes('API key')) {
+      throw new Error('⚠️ API key issue. Please contact support.');
+    }
+    
+    if (errorMessage.includes('model')) {
+      throw new Error('⚠️ Image model temporarily unavailable. Try uploading an image manually.');
+    }
+    
+    // Generic error with details
+    throw new Error(`AI image generation failed: ${errorMessage}. Please try again or upload manually.`);
   }
 };
 

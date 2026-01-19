@@ -425,20 +425,9 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       // Import service dynamically
       const { generateAdImage } = await import('../services/geminiService');
       
-      // Try to generate image with retry logic
-      let imageData = null;
-      let retryCount = 0;
-      const maxRetries = 2;
-      
-      while (!imageData && retryCount <= maxRetries) {
-        if (retryCount > 0) {
-          logger.log(`Retry attempt ${retryCount}/${maxRetries}...`);
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s between retries
-        }
-        
-        imageData = await generateAdImage(prompt, '16:9', false);
-        retryCount++;
-      }
+      // Generate image (now throws errors instead of returning null)
+      logger.log('Calling generateAdImage...');
+      const imageData = await generateAdImage(prompt, '16:9', false);
       
       logger.log('Image data received:', imageData ? `${imageData.substring(0, 50)}... (${imageData.length} chars)` : 'null');
       
@@ -449,8 +438,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         logger.log('✅ AI image generation complete!');
         alert('✅ AI image generated successfully!');
       } else {
-        logger.error('No valid image data returned');
-        alert('⚠️ AI image generation did not return a valid image. Please try again or upload manually.');
+        logger.error('Invalid image data format');
+        alert('⚠️ AI image generation returned invalid data. Please try again or upload manually.');
       }
     } catch (error) {
       logger.error('Error generating AI image:', error);
