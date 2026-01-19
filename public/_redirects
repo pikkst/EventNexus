@@ -9,5 +9,8 @@
 /sitemap.xml  /sitemap.xml  200
 /404.html  /404.html  200
 
+# Redirect API sitemap to static sitemap (for backwards compatibility)
+/api/sitemap  /sitemap.xml  301
+
 # All other routes should go to index.html (SPA)
 /*  /index.html  200
