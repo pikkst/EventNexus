@@ -383,32 +383,104 @@ export const generateAdImage = async (
       const retryResult = await retryWithBackoff(
         async () => {
           const ai = getAI();
-          const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-              parts: [{ text: `Professional marketing flier for EventNexus with clear promotional text overlay: ${prompt}. Include eye-catching headlines and call-to-action text directly on the image. Premium tech aesthetics, cinematic lighting, ultra-modern UI elements, bold typography, 8k. Aspect ratio: ${aspectRatio}` }]
-            }
-          });
+          
+          // Enhanced prompt for better image generation
+          const enhancedPrompt = `Create a professional, vibrant event poster for "${prompt}". Style: modern, eye-catching, colorful, high-quality photography or digital art. Include visual elements that represent the event theme. Resolution: high quality, aspect ratio ${aspectRatio}.`;
+          
+          console.log('[Gemini] Generating image with prompt:', enhancedPrompt.substring(0, 100) + '...');
+          
+          // Try imagen-3.0-generate-001 (Google's dedicated image generation model)
+          try {
+            const response = await ai.models.generateImages({
+              model: 'imagen-3.0-generate-001',
+              prompt: enhancedPrompt,
+              number: 1,
+              aspectRatio: aspectRatio.replace(':', '_') as any // Convert "16:9" to "16_9"
+            });
 
-          for (const part of response.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData) {
-              return { inlineData: part.inlineData.data };
+            console.log('[Gemini] Image generation response received');
+            
+            // Extract image data from response
+            if (response?.images && response.images.length > 0) {
+              const imageData = response.images[0];
+              
+              // Check if image has base64 data
+              if (imageData.image) {
+                console.log('[Gemini] Image data found (base64)');
+                return { inlineData: imageData.image };
+              }
+              
+              // Check if image has URL
+              if (imageData.imageUrl) {
+                console.log('[Gemini] Image URL found, fetching...');
+                const imageResponse = await fetch(imageData.imageUrl);
+                const blob = await imageResponse.blob();
+                const base64 = await new Promise<string>((resolve) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+                  reader.readAsDataURL(blob);
+                });
+                return { inlineData: base64 };
+              }
             }
+            
+            console.error('[Gemini] No image data in imagen response:', response);
+            throw new Error('No image data in imagen response');
+            
+          } catch (imagenError) {
+            console.warn('[Gemini] Imagen failed, trying fallback model:', imagenError);
+            
+            // Fallback: Try gemini-2.0-flash-exp with inline image generation
+            const fallbackResponse = await ai.models.generateContent({
+              model: 'gemini-2.0-flash-exp',
+              contents: [{
+                role: 'user',
+                parts: [{ text: enhancedPrompt }]
+              }],
+              generationConfig: {
+                temperature: 0.9,
+                topK: 40,
+                topP: 0.95,
+              }
+            });
+
+            console.log('[Gemini] Fallback response received');
+
+            // Check for inline image data in response parts
+            for (const candidate of fallbackResponse.candidates || []) {
+              for (const part of candidate.content?.parts || []) {
+                if (part.inlineData?.data) {
+                  console.log('[Gemini] Found inline image in fallback response');
+                  return { inlineData: part.inlineData.data };
+                }
+              }
+            }
+            
+            console.error('[Gemini] No image in fallback response');
+            throw new Error('No image data in fallback response');
           }
-          throw new Error('No image data in response');
         },
         {
-          maxRetries: 3,
-          initialDelayMs: 1000,
-          timeoutMs: 45000 // Image generation can take 30-45 seconds
+          maxRetries: 2, // Reduced retries since we have fallback
+          initialDelayMs: 2000,
+          timeoutMs: 60000 // Increased timeout for image generation
         }
       );
 
       if (!retryResult.success) {
+        console.error('[Gemini] All retry attempts failed:', retryResult.error);
         throw new Error(retryResult.error);
       }
 
       const base64Data = retryResult.data!.inlineData;
+      
+      // Validate base64 data
+      if (!base64Data || base64Data.length < 100) {
+        console.error('[Gemini] Invalid base64 data length:', base64Data?.length);
+        throw new Error('Invalid image data received');
+      }
+      
+      console.log('[Gemini] Image data validated, length:', base64Data.length);
       const inlineDataUrl = `data:image/png;base64,${base64Data}`;
       
       // Deduct credits after successful generation (Free tier only)
