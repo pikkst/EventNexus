@@ -1,4 +1,17 @@
--- Add venue_templates table for reusable venue layouts
+/**
+ * Venue Templates Table
+ * 
+ * Stores reusable venue seating layouts for event organizers.
+ * Allows organizers to design a venue layout once and reuse it across multiple events,
+ * improving efficiency and maintaining consistent venue configurations.
+ * 
+ * Features:
+ * - User ownership (cascade delete on user removal)
+ * - Canvas dimensions (customizable stage size)
+ * - Items as JSONB (flexible storage of seats, tables, decorations)
+ * - Optional background image for venue visualization
+ * - Automatic timestamps for audit trail
+ */
 CREATE TABLE IF NOT EXISTS venue_templates (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -11,14 +24,18 @@ CREATE TABLE IF NOT EXISTS venue_templates (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Add indexes
+-- Performance indexes for common queries
+-- Lookup templates by user (fast filtering)
 CREATE INDEX idx_venue_templates_user ON venue_templates(user_id);
+-- Recent templates first (reverse chronological)
 CREATE INDEX idx_venue_templates_created ON venue_templates(created_at DESC);
 
--- Enable RLS
+-- Enable Row Level Security for privacy and access control
+-- Each organizer only sees and manages their own templates
 ALTER TABLE venue_templates ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for venue_templates
+-- RLS Policies: Enforce user isolation at database level
+-- Users can only access, create, modify, and delete their own venue templates
 CREATE POLICY "Users can view their own templates"
   ON venue_templates FOR SELECT
   USING (auth.uid() = user_id);
@@ -36,7 +53,8 @@ CREATE POLICY "Users can delete their own templates"
   ON venue_templates FOR DELETE
   USING (auth.uid() = user_id);
 
--- Updated_at trigger
+-- Automatic timestamp management: updates updated_at when record changes
+-- Maintains accurate audit trail and enables sorting by modification time
 CREATE OR REPLACE FUNCTION update_venue_templates_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -45,6 +63,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Trigger: automatically update updated_at timestamp on any record modification
 CREATE TRIGGER set_venue_templates_updated_at
   BEFORE UPDATE ON venue_templates
   FOR EACH ROW
