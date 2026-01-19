@@ -7,6 +7,43 @@ export interface EventTranslation {
   aboutText?: string;
 }
 
+// Venue Designer Types
+export type VenueItemType = 'seat' | 'zone' | 'stage';
+export type VenueItemShape = 'rect' | 'circle';
+
+export interface VenueItem {
+  id: string;
+  type: VenueItemType;
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  shape?: VenueItemShape;
+  name: string;
+  price: number;
+  isBooked?: boolean;
+  rowLabel?: string;
+  seatNumber?: number;
+  capacity?: number;
+  bookedCount?: number;
+  color?: string;
+}
+
+export interface VenueLayout {
+  id?: string;
+  event_id?: string;
+  name: string;
+  items: VenueItem[];
+  canvasWidth: number;
+  canvasHeight: number;
+  backgroundImage?: string;
+  canvas_width?: number; // Database column naming
+  canvas_height?: number; // Database column naming
+  background_image?: string; // Database column naming
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface EventNexusEvent {
   id: string;
   name: string;
@@ -46,6 +83,9 @@ export interface EventNexusEvent {
   };
   archived_at?: string; // When the event was archived by organizer
   archived_by?: string; // User ID who archived the event
+  has_seating?: boolean; // Whether event uses venue seating/zone designer
+  venue_layout_id?: string; // Reference to venue_layouts table
+  venueLayout?: VenueLayout; // Populated venue layout data
 }
 
 export interface PlatformCampaign {
@@ -275,6 +315,8 @@ export interface TicketTemplate {
   is_active: boolean;
   created_at: string;
   updated_at?: string;
+  venue_item_id?: string; // References a VenueItem.id from venue_layouts.items
+  venue_item_type?: VenueItemType; // Type of venue item: 'seat', 'zone', or 'stage'
 }
 
 export interface Ticket {
@@ -301,6 +343,15 @@ export interface Ticket {
   archived_at?: string; // When the ticket was archived by the user
   archived_by?: string; // User ID who archived the ticket
   metadata?: {
+    // Venue seating metadata
+    seat_id?: string; // ID of the VenueItem (seat/zone)
+    seat_name?: string; // Display name (e.g., "VIP Row A Seat 12")
+    seat_type?: VenueItemType; // Type: 'seat', 'zone', or 'stage'
+    zone_name?: string; // Zone name if seat is in a zone
+    row_label?: string; // Row label if applicable
+    seat_number?: number; // Seat number within row/zone
+    zone_capacity?: number; // Total capacity of zone if zone ticket
+    // Legacy metadata
     seat_number?: string;
     table_number?: string;
     group_id?: string;
