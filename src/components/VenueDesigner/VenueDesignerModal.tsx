@@ -335,6 +335,15 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       try {
+        // Check if it's a PDF
+        if (file.type === 'application/pdf') {
+          // For PDFs, we need to convert to image first
+          // Using canvas to render PDF (requires pdf.js)
+          alert('PDF floor plans: Please convert your PDF to PNG/JPG first using an online converter (e.g., pdf2png.com). This will give you better control over the image quality.');
+          e.target.value = ''; // Reset input
+          return;
+        }
+        
         const reader = new FileReader();
         reader.onloadend = () => {
           setBackgroundImage(reader.result as string);
@@ -425,11 +434,11 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
           {/* Toolbar */}
           <div className="w-64 border-r bg-white p-6 flex flex-col gap-6 overflow-y-auto">
             <div>
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Venue Elements</h3>
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest mb-4">Venue Elements</h3>
               <div className="grid grid-cols-1 gap-2">
                 <button 
                   onClick={() => addItem('seat')}
-                  className="flex items-center gap-3 px-4 py-3 border rounded-xl hover:bg-indigo-50 transition-all text-sm font-medium"
+                  className="flex items-center gap-3 px-4 py-3 border border-slate-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition-all text-sm font-semibold text-slate-900"
                 >
                   <div className="bg-indigo-100 p-2 rounded text-indigo-600">
                     <Plus className="w-5 h-5" />
@@ -438,7 +447,7 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
                 </button>
                 <button 
                   onClick={() => addItem('zone')}
-                  className="flex items-center gap-3 px-4 py-3 border rounded-xl hover:bg-indigo-50 transition-all text-sm font-medium"
+                  className="flex items-center gap-3 px-4 py-3 border border-slate-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition-all text-sm font-semibold text-slate-900"
                 >
                    <div className="bg-indigo-100 p-2 rounded text-indigo-600">
                     <Plus className="w-5 h-5" />
@@ -447,7 +456,7 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
                 </button>
                 <button 
                   onClick={() => addItem('stage')}
-                  className="flex items-center gap-3 px-4 py-3 border rounded-xl hover:bg-indigo-50 transition-all text-sm font-medium"
+                  className="flex items-center gap-3 px-4 py-3 border border-slate-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition-all text-sm font-semibold text-slate-900"
                 >
                    <div className="bg-indigo-100 p-2 rounded text-indigo-600">
                     <Plus className="w-5 h-5" />

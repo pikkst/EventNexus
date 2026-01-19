@@ -418,29 +418,44 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     logger.log('Validation passed, generating image...');
     setIsGeneratingImage(true);
     try {
-      const prompt = `${formData.name}: ${descriptionText}. Category: ${formData.category}`;
+      // Create detailed prompt for better image generation
+      const prompt = `Professional event poster for "${formData.name}". ${descriptionText}. Category: ${formData.category}. Modern, vibrant, eye-catching design suitable for social media and marketing.`;
       logger.log('Calling generateAdImage with prompt:', prompt.substring(0, 100) + '...');
       
-      // Don't save to storage (avoid Upload error) - use base64 directly
+      // Import service dynamically
       const { generateAdImage } = await import('../services/geminiService');
-      const imageData = await generateAdImage(prompt, '16:9', false);
+      
+      // Try to generate image with retry logic
+      let imageData = null;
+      let retryCount = 0;
+      const maxRetries = 2;
+      
+      while (!imageData && retryCount <= maxRetries) {
+        if (retryCount > 0) {
+          logger.log(`Retry attempt ${retryCount}/${maxRetries}...`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s between retries
+        }
+        
+        imageData = await generateAdImage(prompt, '16:9', false);
+        retryCount++;
+      }
       
       logger.log('Image data received:', imageData ? `${imageData.substring(0, 50)}... (${imageData.length} chars)` : 'null');
       
-      if (imageData) {
+      if (imageData && imageData.startsWith('data:image')) {
         logger.log('Setting image preview');
-        // Just set the preview - no need to convert to File since we're not uploading
         setImagePreview(imageData);
-        // Clear any previously uploaded file
         setImageFile(null);
-        logger.log('AI image generation complete!');
+        logger.log('✅ AI image generation complete!');
+        alert('✅ AI image generated successfully!');
       } else {
-        logger.error('No image data returned');
-        alert('Failed to generate AI image. Please try again or upload manually.');
+        logger.error('No valid image data returned');
+        alert('⚠️ AI image generation did not return a valid image. Please try again or upload manually.');
       }
     } catch (error) {
       logger.error('Error generating AI image:', error);
-      alert('AI image generation failed. Please try again or upload manually.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`❌ AI image generation failed: ${errorMessage}\n\nPlease try again or upload an image manually.`);
     } finally {
       setIsGeneratingImage(false);
     }
@@ -805,30 +820,25 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
 
       const { validation, seo } = validateAndOptimizeEvent(eventForValidation, { autoFix: true });
 
-      // Check if validation passed
-      if (!validation.isValid) {
-        logger.error('Event validation failed:', validation.errors);
-        const errorMessage = `Event validation failed:\n\n${validation.errors.join('\n')}`;
+      // Check critical validation only (not SEO)
+      const criticalErrors = validation.errors.filter(err => 
+        !err.toLowerCase().includes('seo') && 
+        !err.toLowerCase().includes('description') && 
+        !err.toLowerCase().includes('image')
+      );
+      
+      if (criticalErrors.length > 0) {
+        logger.error('Event validation failed:', criticalErrors);
+        const errorMessage = `Event validation failed:\n\n${criticalErrors.join('\n')}`;
         alert(errorMessage);
         return;
       }
 
-      // Warn if SEO score is low but allow creation
-      if (!meetsMinimumSEO(validation)) {
-        logger.warn('Event SEO score is below recommended:', validation.seoScore);
-        const confirmed = window.confirm(
-          `⚠️ SEO Score: ${validation.seoScore}/100\n\n` +
-          `Your event is valid but may not perform well in search results.\n\n` +
-          `Recommendations:\n${getSEORecommendations(validation, seo).join('\n')}\n\n` +
-          `Do you want to publish anyway?`
-        );
-        
-        if (!confirmed) {
-          logger.log('User chose to improve SEO before publishing');
-          return;
-        }
+      // Log SEO score but don't block creation
+      if (validation.seoScore < 60) {
+        logger.warn('Event SEO score is low (informational only):', validation.seoScore);
       } else {
-        logger.log(`✅ Event SEO validated: ${validation.seoScore}/100`);
+        logger.log(`✅ Event SEO score: ${validation.seoScore}/100`);
       }
     } catch (validationError) {
       logger.error('SEO validation error:', validationError);
@@ -1002,24 +1012,71 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           logger.warn('Analytics tracking failed:', trackingError);
         }
         
-        // Create ticket templates if any were defined
+        // Auto-generate ticket templates from venue layout
+        const allTicketTemplates = [];
+        
+        // 1. If venue layout exists, create tickets from seats and zones
+        if (venueLayout && venueLayout.items && venueLayout.items.length > 0) {
+          logger.log('Auto-generating tickets from venue layout...');
+          
+          // Group seats and zones by name and price
+          const venueTickets = new Map<string, { name: string; price: number; items: any[] }>();
+          
+          venueLayout.items.forEach(item => {
+            if (item.type === 'seat' || item.type === 'zone') {
+              const key = `${item.name}_${item.price}`;
+              if (!venueTickets.has(key)) {
+                venueTickets.set(key, {
+                  name: item.name,
+                  price: item.price,
+                  items: []
+                });
+              }
+              venueTickets.get(key)!.items.push(item);
+            }
+          });
+          
+          // Create ticket template for each group
+          venueTickets.forEach((group) => {
+            const quantity = group.items.length;
+            allTicketTemplates.push({
+              name: group.name,
+              type: 'general' as any,
+              price: group.price || 0,
+              quantity_total: quantity,
+              quantity_available: quantity,
+              quantity_sold: 0,
+              description: `Venue seating: ${quantity} ${group.items[0].type === 'seat' ? 'seats' : 'zones'}`,
+              is_active: true
+            });
+          });
+          
+          logger.log(`Generated ${allTicketTemplates.length} ticket types from venue layout`);
+        }
+        
+        // 2. Add manual ticket templates if any
         if (ticketTemplates && ticketTemplates.length > 0) {
-          logger.log(`Creating ${ticketTemplates.length} ticket templates...`);
+          logger.log(`Adding ${ticketTemplates.length} manual ticket templates...`);
+          const manualTemplates = ticketTemplates.map(template => ({
+            name: template.name,
+            type: template.type as any,
+            price: template.price || 0,
+            quantity_total: template.quantity || 50,
+            quantity_available: template.quantity || 50,
+            quantity_sold: 0,
+            description: template.description,
+            is_active: true
+          }));
+          allTicketTemplates.push(...manualTemplates);
+        }
+        
+        // 3. Create all tickets in database
+        if (allTicketTemplates.length > 0) {
+          logger.log(`Creating ${allTicketTemplates.length} total ticket templates...`);
           try {
             const { createTicketTemplates } = await import('../services/dbService');
-            const templates = ticketTemplates.map(template => ({
-              name: template.name,
-              type: template.type as any,
-              price: template.price || 0,
-              quantity_total: template.quantity || 50,
-              quantity_available: template.quantity || 50,
-              quantity_sold: 0,
-              description: template.description,
-              is_active: true
-            }));
-            
-            await createTicketTemplates(created.id, templates);
-            logger.log('Ticket templates created successfully!');
+            await createTicketTemplates(created.id, allTicketTemplates);
+            logger.log('All ticket templates created successfully!');
           } catch (ticketError) {
             logger.error('Failed to create ticket templates:', ticketError);
             // Don't fail the whole event creation if tickets fail
@@ -1402,7 +1459,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <h2 className="text-2xl font-bold">Venue Seating Layout (Optional)</h2>
             <p className="text-sm text-slate-400">
-              Design your venue layout with seats, zones, and stages. Customers can select specific seats when purchasing tickets.
+              Skip this step if you don't need assigned seating. Perfect for concerts, theaters, and conferences with specific seat selection.
             </p>
 
             {venueLayout ? (
@@ -1471,7 +1528,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             {/* Info box */}
             <div className="p-4 bg-indigo-950/20 border border-indigo-900/50 rounded-2xl">
               <p className="text-xs text-slate-400">
-                💡 <span className="font-bold">Tip:</span> Venue layouts are perfect for concerts, theaters, conferences, and any event with assigned seating. Customers will see an interactive map and select their preferred seats during checkout.
+                💡 <span className="font-bold">Tip:</span> Venue layouts are optional. If you skip this, customers will buy regular tickets in the next step. Use layouts for assigned seating at theaters, concerts, or conferences.
               </p>
             </div>
           </div>
@@ -1480,10 +1537,37 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <h2 className="text-2xl font-bold">Tickets & Pricing</h2>
-            <p className="text-sm text-slate-400">Create different ticket types for your event</p>
+            <p className="text-sm text-slate-400">
+              {venueLayout ? 'Your venue layout tickets will be generated automatically. You can add additional general admission tickets below.' : 'Create different ticket types for your event'}
+            </p>
             
-            {/* Ticket Templates List */}
+            {/* Auto-generated tickets from venue layout */}
+            {venueLayout && venueLayout.items && venueLayout.items.length > 0 && (
+              <div className="p-4 bg-green-950/20 border border-green-900/50 rounded-2xl space-y-3">
+                <div className="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h4 className="font-bold text-green-400">Venue Layout Tickets Auto-Generated</h4>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Your venue has <span className="font-bold text-white">{venueLayout.items.filter(i => i.type === 'seat').length} seats</span> and <span className="font-bold text-white">{venueLayout.items.filter(i => i.type === 'zone').length} zones</span>. 
+                  Tickets for these will be created automatically. Customers will select seats during checkout.
+                </p>
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  {Array.from(new Set(venueLayout.items.filter(i => i.type === 'seat' || i.type === 'zone').map(i => ({ name: i.name, price: i.price })))).map((item, idx) => (
+                    <div key={idx} className="p-3 bg-slate-900/50 rounded-lg border border-slate-700">
+                      <p className="text-sm font-bold text-white">{item.name}</p>
+                      <p className="text-xs text-slate-400">€{item.price}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Additional General Admission Tickets */}
             <div className="space-y-3">
+              <h3 className="text-sm font-bold text-slate-400">{venueLayout ? 'Additional General Tickets (Optional)' : 'Ticket Types'}</h3>
               {ticketTemplates.map((ticket, index) => (
                 <div key={index} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
                   <div className="flex items-center justify-between">

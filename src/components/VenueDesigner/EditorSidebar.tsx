@@ -59,15 +59,15 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-4">Floor Plan Background</label>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-4">Floor Plan Background (Optional)</label>
             <div className="flex flex-col gap-2">
               <input
                 type="file"
-                accept="image/*,application/pdf"
+                accept="image/*"
                 onChange={onBgUpload}
                 className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
               />
-              <p className="text-[10px] text-slate-400">Supports JPG, PNG, PDF</p>
+              <p className="text-[10px] text-slate-400">Upload JPG/PNG floor plan (optional). Convert PDFs first at pdf2png.com</p>
               {hasBg && (
                 <button 
                   onClick={onBgClear}
