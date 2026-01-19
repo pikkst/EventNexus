@@ -30,15 +30,13 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
   // Inject structured data for Google Rich Results
   useEffect(() => {
     if (events.length > 0) {
-      // Generate ItemList structured data (returns array of ItemLists for pagination)
-      const structuredDataLists = generateEventListStructuredData(events);
+      // Generate single ItemList structured data (Google prefers one list per page)
+      const structuredDataList = generateEventListStructuredData(events);
       
-      // Inject each ItemList separately
-      structuredDataLists.forEach((listData) => {
-        injectStructuredData(listData);
-      });
+      // Inject the ItemList
+      injectStructuredData(structuredDataList);
 
-      console.log(`✅ Injected ${structuredDataLists.length} ItemList(s) with ${events.length} total events on /browse`);
+      console.log(`✅ Injected ItemList with ${events.length} events on /browse`);
 
       // Cleanup on unmount
       return () => {

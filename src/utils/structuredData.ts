@@ -205,30 +205,21 @@ export function removeStructuredData(): void {
  * Generate ItemList schema for event listings with full Event details
  * https://schema.org/ItemList
  * Includes offers and aggregateRating for Google Rich Results
- * Returns array of ItemLists (max 999 items each) for pagination
+ * Returns single ItemList with all events (Google can handle up to 2000+)
  */
 export function generateEventListStructuredData(events: EventNexusEvent[]) {
-  // Google handles max ~1000 items per ItemList well
-  const ITEMS_PER_LIST = 999;
-  const itemLists: any[] = [];
+  // Google can index large ItemLists if properly formatted
+  // Limit to 1500 to keep JSON manageable while covering most events
+  const MAX_ITEMS = 1500;
+  const itemsToInclude = events.slice(0, MAX_ITEMS);
   
-  // Split events into chunks of 999
-  for (let page = 0; page * ITEMS_PER_LIST < events.length; page++) {
-    const start = page * ITEMS_PER_LIST;
-    const end = Math.min(start + ITEMS_PER_LIST, events.length);
-    const pageEvents = events.slice(start, end);
-    
-    const itemList = {
-      '@context': 'https://schema.org',
-      '@type': 'ItemList',
-      'name': page === 0 
-        ? 'Upcoming Events on EventNexus'
-        : `Upcoming Events on EventNexus - Page ${page + 1}`,
-      'description': page === 0
-        ? 'Browse upcoming events, concerts, conferences, and workshops'
-        : `Browse more upcoming events (${start + 1}-${end} of ${events.length})`,
-      'numberOfItems': pageEvents.length,
-      'itemListElement': pageEvents.map((event, index) => {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    'name': 'Upcoming Events on EventNexus',
+    'description': `Browse ${itemsToInclude.length} upcoming events, concerts, conferences, and workshops`,
+    'numberOfItems': itemsToInclude.length,
+    'itemListElement': itemsToInclude.map((event, index) => {
       const eventUrl = `https://eventnexus.eu/event/${event.id}`;
       const startDateTime = `${event.date}T${event.time || '00:00'}`;
       const endDateTime = event.end_date && event.end_time
@@ -310,15 +301,9 @@ export function generateEventListStructuredData(events: EventNexusEvent[]) {
 
       return {
         '@type': 'ListItem',
-        'position': start + index + 1, // Global position across all pages
+        'position': index + 1, // Sequential numbering 1, 2, 3...
         'item': eventSchema,
       };
     }),
-    };
-    
-    itemLists.push(itemList);
-  }
-  
-  // Return array of ItemLists (Google will index all of them)
-  return itemLists;
+  };
 }
