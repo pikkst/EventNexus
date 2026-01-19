@@ -337,6 +337,57 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
     }
   };
 
+  const handleBulkArchiveExpired = async () => {
+    // Find all expired events (ended at least 1 day ago)
+    const expiredEvents = organizedEvents.filter(event => {
+      const eventEndDate = event.end_date || event.date;
+      return eventEndDate && new Date(eventEndDate) < new Date(Date.now() - 24 * 60 * 60 * 1000);
+    });
+
+    if (expiredEvents.length === 0) {
+      alert('No expired events to archive');
+      return;
+    }
+
+    if (!confirm(`Archive ${expiredEvents.length} expired event${expiredEvents.length !== 1 ? 's' : ''}?\n\nYou can restore them later from the archived view.`)) {
+      return;
+    }
+
+    setIsDeletingEvent('bulk-archive'); // Use this state to show loading
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const event of expiredEvents) {
+        try {
+          const result = await archiveEvent(event.id, user.id);
+          if (result.success) {
+            successCount++;
+            // Move event from active to archived
+            setOrganizedEvents(prev => prev.filter(e => e.id !== event.id));
+            setArchivedEvents(prev => [event, ...prev]);
+          } else {
+            failCount++;
+            logger.error('Failed to archive event:', event.name, result.message);
+          }
+        } catch (error) {
+          failCount++;
+          logger.error('Error archiving event:', event.name, error);
+        }
+      }
+
+      if (successCount > 0 && failCount === 0) {
+        alert(`Successfully archived ${successCount} event${successCount !== 1 ? 's' : ''}`);
+      } else if (successCount > 0) {
+        alert(`Archived ${successCount} event${successCount !== 1 ? 's' : ''}, but ${failCount} failed. Please try again for the failed ones.`);
+      } else {
+        alert('Failed to archive events. Please try again.');
+      }
+    } finally {
+      setIsDeletingEvent(null);
+    }
+  };
+
   const handleDisconnectStripe = async () => {
     if (!confirm('⚠️ Disconnect Stripe Connect account?\n\nThis will:\n- Remove your current payout setup\n- Require re-onboarding to accept payments\n- Not affect past payouts\n\nYou can reconnect anytime.')) {
       return;
@@ -911,6 +962,32 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
                       </>
                     )}
                   </button>
+                  {!showArchivedEvents && (() => {
+                    const expiredCount = organizedEvents.filter(event => {
+                      const eventEndDate = event.end_date || event.date;
+                      return eventEndDate && new Date(eventEndDate) < new Date(Date.now() - 24 * 60 * 60 * 1000);
+                    }).length;
+                    return expiredCount > 0 ? (
+                      <button
+                        onClick={handleBulkArchiveExpired}
+                        disabled={isDeletingEvent === 'bulk-archive'}
+                        className="px-3 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 disabled:opacity-50"
+                        title={`Archive all ${expiredCount} expired event${expiredCount !== 1 ? 's' : ''}`}
+                      >
+                        {isDeletingEvent === 'bulk-archive' ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Archiving...
+                          </>
+                        ) : (
+                          <>
+                            <Archive className="w-4 h-4" />
+                            Archive {expiredCount} Expired
+                          </>
+                        )}
+                      </button>
+                    ) : null;
+                  })()}
                 </div>
                 <span className="text-xs font-bold text-slate-500">
                   {showArchivedEvents ? archivedEvents.length : organizedEvents.length} events
