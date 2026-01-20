@@ -220,6 +220,15 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     // Debounce validation to avoid excessive re-renders
     const timer = setTimeout(() => {
       try {
+        // Calculate actual price and capacity from tickets (including venue layout)
+        const actualPrice = ticketTemplates.length > 0
+          ? Math.min(...ticketTemplates.map(t => t.price || 0).filter(p => p > 0), formData.price || 0)
+          : formData.price;
+        
+        const actualCapacity = ticketTemplates.length > 0
+          ? ticketTemplates.reduce((sum, t) => sum + (t.quantity || 0), 0)
+          : formData.max_capacity;
+        
         // Build event object for validation
         const eventForValidation: Partial<EventNexusEvent> = {
           name: formData.name,
@@ -236,10 +245,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             address: formData.locationAddress || formData.location,
             city: formData.locationCity
           },
-          price: formData.price,
+          price: actualPrice,
           visibility: formData.visibility as any,
           imageUrl: imagePreview || undefined,
-          maxAttendees: formData.max_capacity
+          maxAttendees: actualCapacity
         };
 
         // Run validation
@@ -283,7 +292,9 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     formData.price,
     formData.visibility,
     formData.max_capacity,
-    imagePreview
+    imagePreview,
+    ticketTemplates, // Include tickets from venue layout
+    venueLayout // Include venue layout changes
   ]);
 
   // Image handling functions
@@ -754,7 +765,14 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     
     setIsGenerating(true);
     const { generateMarketingTagline } = await import('../services/geminiService');
-    const result = await generateMarketingTagline(formData.name, formData.category);
+    // Pass description for better SEO-optimized tagline generation
+    const result = await generateMarketingTagline(
+      formData.name, 
+      formData.category,
+      user?.id,
+      user?.subscription_tier,
+      formData.description
+    );
     setFormData(prev => ({ ...prev, tagline: result }));
     setIsGenerating(false);
   };
@@ -1846,10 +1864,15 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                     <p className="font-bold text-lg">
                       {ticketTemplates.length > 0 
                         ? (() => {
-                            const prices = ticketTemplates.map(t => t.price || 0).filter(p => p > 0);
-                            if (prices.length === 0) return 'Free';
-                            const minPrice = Math.min(...prices);
-                            const maxPrice = Math.max(...prices);
+                            const prices = ticketTemplates.map(t => t.price || 0);
+                            const paidPrices = prices.filter(p => p > 0);
+                            
+                            if (paidPrices.length === 0) {
+                              return 'Free';
+                            }
+                            
+                            const minPrice = Math.min(...paidPrices);
+                            const maxPrice = Math.max(...paidPrices);
                             return minPrice === maxPrice ? `€${minPrice}` : `€${minPrice} - €${maxPrice}`;
                           })()
                         : formData.price === 0 ? 'Free' : `€${formData.price}`}
@@ -1859,7 +1882,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                     <p className="text-slate-500 text-[10px] uppercase font-bold mb-1">Total Capacity</p>
                     <p className="font-bold text-lg">
                       {ticketTemplates.length > 0 
-                        ? ticketTemplates.reduce((sum, t) => sum + (t.quantity || 0), 0)
+                        ? `${ticketTemplates.reduce((sum, t) => sum + (t.quantity || 0), 0)} tickets`
                         : formData.max_capacity}
                     </p>
                   </div>
@@ -2016,6 +2039,51 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         onClose={() => setShowVenueDesigner(false)}
         onSave={(layout) => {
           setVenueLayout(layout);
+          
+          // Auto-generate ticket templates from venue layout
+          if (layout && layout.items && layout.items.length > 0) {
+            logger.log('Auto-generating ticket templates from venue layout...');
+            
+            // Group seats and zones by name and price
+            const venueTickets = new Map<string, { name: string; type: string; price: number; quantity: number }>();
+            
+            layout.items.forEach(item => {
+              if (item.type === 'seat' || item.type === 'zone') {
+                const key = `${item.name}_${item.price}`;
+                
+                if (!venueTickets.has(key)) {
+                  venueTickets.set(key, {
+                    name: item.name,
+                    type: 'general',
+                    price: item.price || 0,
+                    quantity: 0
+                  });
+                }
+                
+                const ticket = venueTickets.get(key)!;
+                
+                // For zones: add capacity. For seats: add 1
+                if (item.type === 'zone' && item.capacity) {
+                  ticket.quantity += item.capacity;
+                } else {
+                  ticket.quantity += 1;
+                }
+              }
+            });
+            
+            // Convert to ticketTemplates array
+            const generatedTemplates = Array.from(venueTickets.values()).map(ticket => ({
+              name: ticket.name,
+              type: ticket.type as any,
+              price: ticket.price,
+              quantity: ticket.quantity,
+              description: `Venue layout: ${ticket.quantity} spots`
+            }));
+            
+            setTicketTemplates(generatedTemplates);
+            logger.log(`Generated ${generatedTemplates.length} ticket templates from venue layout`);
+          }
+          
           setShowVenueDesigner(false);
         }}
         initialLayout={venueLayout || undefined}

@@ -22,10 +22,10 @@ Give your event a memorable name that captures attention. Whether it's a confere
 Select from our comprehensive category system: Music, Sports, Technology, Arts & Culture, Business, Food & Drink, Health & Wellness, Education, Community, and Entertainment. This ensures your event reaches the right audience through intelligent search algorithms.
 
 **Craft Your Description**  
-Tell your story. Describe what makes your event special. Our platform automatically optimizes your description for search engines and AI discoverability. Every word you write is indexed for Google, Bing, and next-generation AI search engines like ChatGPT and Perplexity.
+Tell your story. Describe what makes your event special. Our platform automatically optimizes your description for search engines and AI discoverability. Every word you write is indexed for Google, Bing, and next-generation AI search engines like ChatGPT and Perplexity. Our AI analyzes your full description to understand context, identify key themes, and extract relevant keywords.
 
 **AI-Powered Tagline Generation**  
-Not sure how to capture your event in one line? Click the sparkle icon and watch Gemini AI generate professional marketing taglines instantly. Choose the perfect hook that sells your event.
+Not sure how to capture your event in one line? Click the sparkle icon and watch Gemini AI analyze your event name, category, and description to generate professional, SEO-optimized marketing taglines instantly. Our AI doesn't just create catchy phrases – it crafts taglines designed for maximum discoverability across traditional search engines and AI-powered search platforms. Choose the perfect hook that sells your event and ranks in search results.
 
 **About Section**  
 Add rich details about your event. Share the story, the speakers, the agenda, or the experience attendees can expect. This section is fully multilingual-ready for global reach.
