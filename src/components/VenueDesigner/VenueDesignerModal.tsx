@@ -60,7 +60,8 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
   
   // Drag and Marquee states
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{ x: number, y: number } | null>(null);
+  const [dragStart, setDragStart] = useState<{ screenX: number, screenY: number } | null>(null);
+  const [draggedItemsStart, setDraggedItemsStart] = useState<Map<string, { x: number, y: number }>>(new Map());
   const [selectionBox, setSelectionBox] = useState<{ x1: number, y1: number, x2: number, y2: number } | null>(null);
   
   const canvasRef = useRef<SVGSVGElement>(null);
@@ -387,8 +388,18 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
           setSelectedIds([id]);
         }
       }
+      
+      // Store initial positions of all selected items
+      const initialPositions = new Map<string, { x: number, y: number }>();
+      items.forEach(item => {
+        if (selectedIds.includes(item.id) || item.id === id) {
+          initialPositions.set(item.id, { x: item.x, y: item.y });
+        }
+      });
+      
       setIsDragging(true);
-      setDragStart({ x, y });
+      setDragStart({ screenX: e.clientX, screenY: e.clientY });
+      setDraggedItemsStart(initialPositions);
     } else {
       if (!(e.ctrlKey || e.metaKey)) {
         setSelectedIds([]);
@@ -414,21 +425,27 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
     }
 
     if (isDragging && dragStart && selectedIds.length > 0) {
-      const dx = x - dragStart.x;
-      const dy = y - dragStart.y;
+      // Calculate delta using screen coordinates divided by zoom
+      const dx = (e.clientX - dragStart.screenX) / zoom;
+      const dy = (e.clientY - dragStart.screenY) / zoom;
 
-      if (Math.abs(dx) >= 0.5 || Math.abs(dy) >= 0.5) {
+      if (Math.abs(dx) >= 0.1 || Math.abs(dy) >= 0.1) {
         setItems(prev => prev.map(item => {
           if (!selectedIds.includes(item.id) || lockedIds.includes(item.id)) return item;
-          let newX = item.x + dx;
-          let newY = item.y + dy;
+          
+          const startPos = draggedItemsStart.get(item.id);
+          if (!startPos) return item;
+          
+          let newX = startPos.x + dx;
+          let newY = startPos.y + dy;
+          
           if (snapToGrid && selectedIds.length === 1) {
             newX = Math.round(newX / SNAP_GRID) * SNAP_GRID;
             newY = Math.round(newY / SNAP_GRID) * SNAP_GRID;
           }
+          
           return { ...item, x: newX, y: newY };
         }));
-        setDragStart({ x, y });
       }
     } else if (selectionBox) {
       setSelectionBox(prev => prev ? { ...prev, x2: x, y2: y } : null);
@@ -458,6 +475,7 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
     setIsDragging(false);
     setIsPanning(false);
     setDragStart(null);
+    setDraggedItemsStart(new Map());
     setPanStart(null);
     setSelectionBox(null);
   };
