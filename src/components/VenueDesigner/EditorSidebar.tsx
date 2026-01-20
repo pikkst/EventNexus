@@ -4,6 +4,7 @@ import { VenueItem, ItemShape } from './types';
 interface EditorSidebarProps {
   selectedItem: VenueItem | null;
   selectedCount: number;
+  selectedItems?: VenueItem[];
   onUpdate: (updates: Partial<VenueItem>) => void;
   onDelete: (id: string) => void;
   canvasSize: { width: number; height: number };
@@ -20,6 +21,7 @@ const PRESET_COLORS = [
 const EditorSidebar: React.FC<EditorSidebarProps> = ({ 
   selectedItem, 
   selectedCount,
+  selectedItems = [],
   onUpdate, 
   onDelete,
   canvasSize,
@@ -28,6 +30,15 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
   onBgClear,
   hasBg
 }) => {
+  // For bulk editing, calculate common values
+  const bulkPrice = selectedItems.length > 0 
+    ? (selectedItems.every(i => i.price === selectedItems[0].price) ? selectedItems[0].price : '')
+    : (selectedItem?.price ?? 0);
+  
+  const bulkColor = selectedItems.length > 0
+    ? (selectedItems.every(i => i.color === selectedItems[0].color) ? selectedItems[0].color : '')
+    : (selectedItem?.color || '#6366f1');
+
   return (
     <div className="w-80 border-l bg-slate-50 p-6 shadow-xl flex flex-col overflow-y-auto">
       <h3 className="text-lg font-bold mb-6 text-slate-900">Venue Designer</h3>
@@ -79,14 +90,37 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
             </div>
           </div>
 
-          <div className="p-4 bg-white rounded-xl border border-slate-200 text-slate-700 text-sm">
-            <h4 className="font-bold mb-1 text-slate-900">Quick Tips</h4>
-            <ul className="list-disc list-inside space-y-1 text-xs text-slate-700">
-              <li>Drag background to select multiple</li>
-              <li>Hold Shift to multi-select items</li>
-              <li>Use arrow keys to nudge selection</li>
-              <li>Press Delete to remove selected</li>
-            </ul>
+          <div className="p-4 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-200 text-slate-700 text-sm">
+            <h4 className="font-bold mb-2 text-indigo-900 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Quick Guide
+            </h4>
+            <div className="space-y-2 text-xs text-slate-700">
+              <div className="font-semibold text-indigo-800 mt-2">Selection:</div>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Click to select single item</li>
+                <li>Shift+Click for multi-select</li>
+                <li>Drag background for box select</li>
+                <li>Ctrl+A to select all</li>
+              </ul>
+              <div className="font-semibold text-indigo-800 mt-2">Editing:</div>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Drag items to reposition</li>
+                <li>Arrow keys to move precisely</li>
+                <li>Shift+Arrows for 1px nudge</li>
+                <li>Ctrl+C/V to copy/paste</li>
+                <li>Ctrl+D to duplicate</li>
+                <li>Delete to remove selected</li>
+              </ul>
+              <div className="font-semibold text-indigo-800 mt-2">Bulk Operations:</div>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Select multiple items</li>
+                <li>Set price for all at once</li>
+                <li>Apply color to entire group</li>
+              </ul>
+            </div>
           </div>
         </div>
       ) : (
@@ -118,10 +152,18 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
             </label>
             <input
               type="number"
-              value={selectedItem?.price ?? 0}
+              value={bulkPrice}
+              placeholder={selectedCount > 1 && bulkPrice === '' ? 'Multiple values' : undefined}
               onChange={(e) => onUpdate({ price: Number(e.target.value) })}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 bg-white"
+              disabled={selectedItem?.type === 'wall' || selectedItem?.type === 'decoration'}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 bg-white disabled:bg-slate-100 disabled:text-slate-500"
             />
+            {selectedCount > 1 && bulkPrice === '' && (
+              <p className="text-xs text-amber-600 mt-1">Selected items have different prices. Enter a value to apply to all.</p>
+            )}
+            {(selectedItem?.type === 'wall' || selectedItem?.type === 'decoration') && (
+              <p className="text-xs text-slate-500 mt-1">Price not applicable for decorative elements</p>
+            )}
           </div>
 
           <div>
@@ -131,20 +173,27 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 <button
                   key={color}
                   onClick={() => onUpdate({ color })}
-                  className={`w-6 h-6 rounded-full border-2 transition-all ${selectedItem?.color === color ? 'border-slate-900 scale-110' : 'border-transparent'}`}
+                  className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${
+                    bulkColor === color ? 'border-slate-900 scale-110 shadow-lg' : 'border-slate-200'
+                  }`}
                   style={{ backgroundColor: color }}
+                  title={`Apply ${color}`}
                 />
               ))}
               <input 
                 type="color" 
-                value={selectedItem?.color || '#6366f1'} 
+                value={bulkColor || '#6366f1'} 
                 onChange={(e) => onUpdate({ color: e.target.value })}
-                className="w-6 h-6 p-0 border-0 bg-transparent cursor-pointer"
+                className="w-8 h-8 p-0 border-2 border-slate-200 rounded-full cursor-pointer hover:scale-110 transition-all"
+                title="Custom color"
               />
             </div>
+            {selectedCount > 1 && bulkColor === '' && (
+              <p className="text-xs text-amber-600 mt-1">Selected items have different colors. Pick one to apply to all.</p>
+            )}
           </div>
 
-          {selectedCount === 1 && selectedItem && (selectedItem.type === 'zone' || selectedItem.type === 'stage') && (
+          {selectedCount === 1 && selectedItem && (selectedItem.type === 'zone' || selectedItem.type === 'stage' || selectedItem.type === 'wall' || selectedItem.type === 'decoration') && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Shape</label>
               <div className="flex gap-2">
@@ -176,7 +225,7 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
             </div>
           )}
 
-          {selectedCount === 1 && selectedItem && (selectedItem.type === 'zone' || selectedItem.type === 'stage') && (
+          {selectedCount === 1 && selectedItem && (selectedItem.type === 'zone' || selectedItem.type === 'stage' || selectedItem.type === 'wall' || selectedItem.type === 'decoration') && (
             <>
               {selectedItem.type === 'zone' && (
                 <div>
@@ -205,7 +254,7 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
                     type="number"
                     value={selectedItem.height}
                     onChange={(e) => onUpdate({ height: Number(e.target.value) })}
-                    className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 bg-white"
                   />
                 </div>
               </div>

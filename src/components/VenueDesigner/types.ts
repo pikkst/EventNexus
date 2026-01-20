@@ -1,4 +1,4 @@
-export type ItemType = 'seat' | 'zone' | 'stage';
+export type ItemType = 'seat' | 'zone' | 'stage' | 'wall' | 'decoration';
 export type ItemShape = 'rect' | 'circle';
 
 export interface VenueItem {
