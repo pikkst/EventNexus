@@ -388,9 +388,11 @@ export const generateAdImage = async (
           console.log('[Gemini] Prompt:', prompt.substring(0, 100) + '...');
           console.log('[Gemini] Aspect ratio:', aspectRatio);
           
-          // Nano Banana (gemini-2.5-flash-image) expects simple string prompt
-          // IMPORTANT: Only generate event title text and background image - no additional text or false information
-          const imagePrompt = `Create a professional event marketing background image with ONLY the event title "${prompt}" as text overlay. DO NOT add any dates, times, locations, prices, or other details - these will be added separately. Background should be vibrant, modern, and eye-catching with premium aesthetic. ${aspectRatio} aspect ratio. Focus on visual appeal with minimal text - ONLY show the event title "${prompt}".`;
+          // Nano Banana (gemini-2.5-flash-image) expects simple visual description
+          // Use positive description + negative prompt to prevent unwanted text
+          const imagePrompt = `Event poster: "${prompt}". Vibrant colorful background, professional photography style, cinematic lighting, premium aesthetic. ${aspectRatio}. Title text overlay only.
+
+NEGATIVE PROMPT (what NOT to include): No dates, no times, no locations, no addresses, no prices, no contact information, no phone numbers, no websites, no "Category:", no "Modern,vibrant", no "design suitable", no extra descriptive text, no instructions visible, no prompt text, no technical terms.`;
           
           const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
