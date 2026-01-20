@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { X, Undo, Redo, Plus, Save, FolderOpen } from 'lucide-react';
+import { X, Undo, Redo, Plus, Save, FolderOpen, Maximize2, Minimize2, ZoomIn, ZoomOut, Move, Grid3x3, Lock, Unlock, Eye, Layers } from 'lucide-react';
 import { VenueItem, VenueLayout } from './types';
 import LayoutItem from './LayoutItem';
 import EditorSidebar from './EditorSidebar';
@@ -43,6 +43,20 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
 
   // Multi-selection state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  
+  // Clipboard for copy/paste
+  const [clipboard, setClipboard] = useState<VenueItem[]>([]);
+  
+  // Fullscreen and view controls
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState<{ x: number, y: number } | null>(null);
+  const [snapToGrid, setSnapToGrid] = useState(true);
+  const [showGrid, setShowGrid] = useState(true);
+  const [lockedIds, setLockedIds] = useState<string[]>([]);
+  const [previewMode, setPreviewMode] = useState(false);
   
   // Drag and Marquee states
   const [isDragging, setIsDragging] = useState(false);
@@ -155,6 +169,45 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
         redo();
       }
 
+      // Copy/Paste/Duplicate shortcuts
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && selectedIds.length > 0) {
+        e.preventDefault();
+        const copiedItems = items.filter(i => selectedIds.includes(i.id));
+        setClipboard(copiedItems);
+        console.log(`Copied ${copiedItems.length} item(s) to clipboard`);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboard.length > 0) {
+        e.preventDefault();
+        const newItems = clipboard.map(item => ({
+          ...item,
+          id: Math.random().toString(36).substr(2, 9),
+          x: item.x + 40,
+          y: item.y + 40
+        }));
+        const nextItems = [...items, ...newItems];
+        commitToHistory(nextItems);
+        setSelectedIds(newItems.map(i => i.id));
+        console.log(`Pasted ${newItems.length} item(s)`);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && selectedIds.length > 0) {
+        e.preventDefault();
+        const duplicatedItems = items.filter(i => selectedIds.includes(i.id)).map(item => ({
+          ...item,
+          id: Math.random().toString(36).substr(2, 9),
+          x: item.x + 40,
+          y: item.y + 40
+        }));
+        const nextItems = [...items, ...duplicatedItems];
+        commitToHistory(nextItems);
+        setSelectedIds(duplicatedItems.map(i => i.id));
+        console.log(`Duplicated ${duplicatedItems.length} item(s)`);
+      }
+      // Select All shortcut
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        e.preventDefault();
+        setSelectedIds(items.map(i => i.id));
+      }
+
       if (selectedIds.length === 0) return;
 
       const step = e.shiftKey ? 1 : SNAP_GRID;
@@ -185,7 +238,7 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, selectedIds, items, undo, redo, commitToHistory]);
 
-  const addItem = (type: 'seat' | 'zone' | 'stage') => {
+  const addItem = (type: 'seat' | 'zone' | 'stage' | 'wall' | 'decoration') => {
     const id = Math.random().toString(36).substr(2, 9);
     let newItem: VenueItem;
     
@@ -212,6 +265,32 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
         capacity: 100, 
         color: '#6366f1', 
         shape: 'rect' 
+      };
+    } else if (type === 'wall') {
+      newItem = { 
+        id, 
+        type, 
+        x: canvasSize.width / 2 - 100, 
+        y: canvasSize.height / 2, 
+        width: 200, 
+        height: 10, 
+        name: 'Wall', 
+        price: 0, 
+        color: '#64748b', 
+        shape: 'rect' 
+      };
+    } else if (type === 'decoration') {
+      newItem = { 
+        id, 
+        type, 
+        x: canvasSize.width / 2, 
+        y: canvasSize.height / 2, 
+        width: 100, 
+        height: 100, 
+        name: 'Decoration', 
+        price: 0, 
+        color: '#10b981', 
+        shape: 'circle' 
       };
     } else {
       newItem = { 
@@ -251,17 +330,28 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (previewMode) return;
+    
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left - panOffset.x) / zoom;
+    const y = (e.clientY - rect.top - panOffset.y) / zoom;
 
     const target = e.target as SVGElement;
     const itemElement = target.closest('[data-item-id]');
     
+    // Pan with spacebar or middle mouse
+    if (e.button === 1 || (e.button === 0 && e.shiftKey && !itemElement)) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+      return;
+    }
+    
     if (itemElement) {
       const id = itemElement.getAttribute('data-item-id')!;
-      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      if (lockedIds.includes(id)) return; // Don't select locked items
+      
+      if (e.ctrlKey || e.metaKey) {
         setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
       } else {
         if (!selectedIds.includes(id)) {
@@ -271,7 +361,7 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
       setIsDragging(true);
       setDragStart({ x, y });
     } else {
-      if (!(e.shiftKey || e.ctrlKey || e.metaKey)) {
+      if (!(e.ctrlKey || e.metaKey)) {
         setSelectedIds([]);
       }
       setSelectionBox({ x1: x, y1: y, x2: x, y2: y });
@@ -279,21 +369,31 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (previewMode) return;
+    
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left - panOffset.x) / zoom;
+    const y = (e.clientY - rect.top - panOffset.y) / zoom;
+
+    if (isPanning && panStart) {
+      setPanOffset({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      });
+      return;
+    }
 
     if (isDragging && dragStart && selectedIds.length > 0) {
       const dx = x - dragStart.x;
       const dy = y - dragStart.y;
 
-      if (Math.abs(dx) >= 1 || Math.abs(dy) >= 1) {
+      if (Math.abs(dx) >= 0.5 || Math.abs(dy) >= 0.5) {
         setItems(prev => prev.map(item => {
-          if (!selectedIds.includes(item.id)) return item;
+          if (!selectedIds.includes(item.id) || lockedIds.includes(item.id)) return item;
           let newX = item.x + dx;
           let newY = item.y + dy;
-          if (selectedIds.length === 1) {
+          if (snapToGrid && selectedIds.length === 1) {
             newX = Math.round(newX / SNAP_GRID) * SNAP_GRID;
             newY = Math.round(newY / SNAP_GRID) * SNAP_GRID;
           }
@@ -318,7 +418,7 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
       const yMax = Math.max(selectionBox.y1, selectionBox.y2);
 
       const newlySelected = items.filter(item => {
-        return item.x >= xMin && item.x <= xMax && item.y >= yMin && item.y <= yMax;
+        return item.x >= xMin && item.x <= xMax && item.y >= yMin && item.y <= yMax && !lockedIds.includes(item.id);
       }).map(i => i.id);
 
       if (newlySelected.length > 0) {
@@ -327,7 +427,9 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
     }
 
     setIsDragging(false);
+    setIsPanning(false);
     setDragStart(null);
+    setPanStart(null);
     setSelectionBox(null);
   };
 
@@ -368,46 +470,168 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
     onClose();
   };
 
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 3));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.3));
+  const handleZoomReset = () => { setZoom(1); setPanOffset({ x: 0, y: 0 }); };
+  const handleZoomFit = () => {
+    const container = canvasRef.current?.parentElement;
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
+    const scaleX = (containerRect.width - 100) / canvasSize.width;
+    const scaleY = (containerRect.height - 100) / canvasSize.height;
+    setZoom(Math.min(scaleX, scaleY, 1));
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  const toggleLockSelected = () => {
+    const newLocked = selectedIds.some(id => !lockedIds.includes(id))
+      ? [...lockedIds, ...selectedIds.filter(id => !lockedIds.includes(id))]
+      : lockedIds.filter(id => !selectedIds.includes(id));
+    setLockedIds(newLocked);
+  };
+
+  const addSeatRow = () => {
+    const seatsCount = parseInt(prompt('How many seats in a row?') || '10');
+    const spacing = 40;
+    const startX = canvasSize.width / 2 - (seatsCount * spacing) / 2;
+    const startY = canvasSize.height / 2;
+    const rowItems: VenueItem[] = [];
+    for (let i = 0; i < seatsCount; i++) {
+      rowItems.push({
+        id: Math.random().toString(36).substr(2, 9),
+        type: 'seat',
+        x: startX + i * spacing,
+        y: startY,
+        name: `Seat ${i + 1}`,
+        price: 20,
+        seatNumber: items.filter(item => item.type === 'seat').length + i + 1
+      });
+    }
+    const nextItems = [...items, ...rowItems];
+    commitToHistory(nextItems);
+  };
+
   const selectedItem = selectedIds.length === 1 ? items.find(i => i.id === selectedIds[0]) || null : null;
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col">
+    <div className={`fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center ${isFullscreen ? 'p-0' : 'p-4'}`}>
+      <div className={`bg-white shadow-2xl ${isFullscreen ? 'w-full h-full' : 'rounded-lg w-full max-w-7xl h-[90vh]'} flex flex-col`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-4 border-b bg-slate-50">
           <div className="flex items-center gap-3">
             <div className="bg-indigo-600 p-2 rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-slate-800">Venue Designer</h2>
+            <h2 className="text-xl font-bold text-slate-800">Venue Designer</h2>
+            {previewMode && (
+              <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">PREVIEW MODE</span>
+            )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* View Controls */}
+            <div className="flex items-center gap-1 bg-white rounded-lg px-2 py-1 border border-slate-200">
+              <button 
+                onClick={handleZoomOut}
+                disabled={zoom <= 0.3}
+                className="p-1.5 hover:bg-slate-100 rounded disabled:opacity-30 transition-colors text-slate-600"
+                title="Zoom Out"
+              >
+                <ZoomOut className="h-4 w-4" />
+              </button>
+              <span className="text-xs font-mono text-slate-600 min-w-[3rem] text-center">{Math.round(zoom * 100)}%</span>
+              <button 
+                onClick={handleZoomIn}
+                disabled={zoom >= 3}
+                className="p-1.5 hover:bg-slate-100 rounded disabled:opacity-30 transition-colors text-slate-600"
+                title="Zoom In"
+              >
+                <ZoomIn className="h-4 w-4" />
+              </button>
+              <div className="h-4 w-px bg-slate-300 mx-1" />
+              <button 
+                onClick={handleZoomReset}
+                className="p-1.5 hover:bg-slate-100 rounded transition-colors text-slate-600 text-xs font-medium"
+                title="Reset Zoom (100%)"
+              >
+                1:1
+              </button>
+              <button 
+                onClick={handleZoomFit}
+                className="p-1.5 hover:bg-slate-100 rounded transition-colors text-slate-600"
+                title="Fit to Screen"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Tools */}
+            <div className="flex items-center gap-1 bg-white rounded-lg px-2 py-1 border border-slate-200">
+              <button 
+                onClick={() => setShowGrid(!showGrid)}
+                className={`p-1.5 rounded transition-colors ${showGrid ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-slate-100 text-slate-600'}`}
+                title={`Grid: ${showGrid ? 'On' : 'Off'}`}
+              >
+                <Grid3x3 className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => setSnapToGrid(!snapToGrid)}
+                className={`p-1.5 rounded transition-colors ${snapToGrid ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-slate-100 text-slate-600'}`}
+                title={`Snap to Grid: ${snapToGrid ? 'On' : 'Off'}`}
+              >
+                <Move className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={toggleLockSelected}
+                disabled={selectedIds.length === 0}
+                className={`p-1.5 rounded transition-colors disabled:opacity-30 ${
+                  selectedIds.some(id => lockedIds.includes(id)) ? 'bg-amber-100 text-amber-600' : 'hover:bg-slate-100 text-slate-600'
+                }`}
+                title="Lock/Unlock Selected"
+              >
+                {selectedIds.some(id => lockedIds.includes(id)) ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+              </button>
+              <button 
+                onClick={() => setPreviewMode(!previewMode)}
+                className={`p-1.5 rounded transition-colors ${previewMode ? 'bg-indigo-100 text-indigo-600' : 'hover:bg-slate-100 text-slate-600'}`}
+                title="Toggle Preview Mode"
+              >
+                <Eye className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={addSeatRow}
+                className="p-1.5 hover:bg-slate-100 rounded transition-colors text-slate-600"
+                title="Quick Add Seat Row"
+              >
+                <Layers className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="h-6 w-px bg-slate-300" />
+            
             <button 
               onClick={() => setShowTemplateModal(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-700 font-medium text-sm"
+              className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
               title="Load Template"
             >
               <FolderOpen className="h-4 w-4" />
-              Load Template
             </button>
             <button 
               onClick={() => setShowSaveTemplateModal(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-700 font-medium text-sm"
+              className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
               title="Save as Template"
             >
               <Save className="h-4 w-4" />
-              Save as Template
             </button>
             <div className="h-6 w-px bg-slate-300" />
             <button 
               onClick={undo}
               disabled={past.length === 0}
-              className="p-2 hover:bg-slate-100 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-slate-600"
+              className="p-1.5 hover:bg-slate-100 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-slate-600"
               title="Undo (Ctrl+Z)"
             >
               <Undo className="h-5 w-5" />
@@ -415,16 +639,24 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
             <button 
               onClick={redo}
               disabled={future.length === 0}
-              className="p-2 hover:bg-slate-100 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-slate-600"
+              className="p-1.5 hover:bg-slate-100 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-slate-600"
               title="Redo (Ctrl+Y)"
             >
               <Redo className="h-5 w-5" />
             </button>
+            <div className="h-6 w-px bg-slate-300" />
+            <button 
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
+              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            >
+              {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+            </button>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
+              className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-600"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -465,28 +697,97 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
                 </button>
               </div>
             </div>
+
+            <div>
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest mb-4">Design Elements</h3>
+              <div className="grid grid-cols-1 gap-2">
+                <button 
+                  onClick={() => addItem('wall')}
+                  className="flex items-center gap-3 px-4 py-3 border border-slate-200 rounded-xl hover:bg-green-50 hover:border-green-300 transition-all text-sm font-semibold text-slate-900"
+                >
+                  <div className="bg-green-100 p-2 rounded text-green-600">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  Add Wall/Line
+                </button>
+                <button 
+                  onClick={() => addItem('decoration')}
+                  className="flex items-center gap-3 px-4 py-3 border border-slate-200 rounded-xl hover:bg-green-50 hover:border-green-300 transition-all text-sm font-semibold text-slate-900"
+                >
+                   <div className="bg-green-100 p-2 rounded text-green-600">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  Add Decoration
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest mb-3">Keyboard Shortcuts</h3>
+              <div className="text-xs text-slate-600 space-y-2">
+                <div className="flex justify-between">
+                  <span>Copy</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">Ctrl+C</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span>Paste</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">Ctrl+V</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span>Duplicate</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">Ctrl+D</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span>Select All</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">Ctrl+A</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span>Delete</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">Del</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span>Move</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">Arrows</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span>Nudge 1px</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-mono">Shift+↑↓←→</kbd>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Canvas */}
-          <main className="flex-1 overflow-auto bg-slate-100 p-8 flex justify-center items-center">
-            <div className="relative shadow-2xl rounded-xl bg-white border border-slate-200">
+          <main className="flex-1 overflow-hidden bg-slate-100 p-8 flex justify-center items-center relative">
+            <div 
+              className="relative shadow-2xl rounded-xl bg-white border border-slate-200"
+              style={{
+                transform: `scale(${zoom}) translate(${panOffset.x / zoom}px, ${panOffset.y / zoom}px)`,
+                transformOrigin: 'center center',
+                transition: isPanning ? 'none' : 'transform 0.1s ease-out'
+              }}
+            >
               <svg
                 ref={canvasRef}
                 width={canvasSize.width}
                 height={canvasSize.height}
-                className="block cursor-crosshair overflow-hidden"
+                className={`block overflow-hidden ${previewMode ? 'cursor-default' : isPanning ? 'cursor-grabbing' : 'cursor-crosshair'}`}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
               >
                 {/* Grid Lines */}
-                <defs>
-                  <pattern id="grid" width={SNAP_GRID} height={SNAP_GRID} patternUnits="userSpaceOnUse">
-                    <path d={`M ${SNAP_GRID} 0 L 0 0 0 ${SNAP_GRID}`} fill="none" stroke="#e2e8f0" strokeWidth="0.5"/>
-                  </pattern>
-                </defs>
-                <rect width={canvasSize.width} height={canvasSize.height} fill="url(#grid)" />
+                {showGrid && (
+                  <>
+                    <defs>
+                      <pattern id="grid" width={SNAP_GRID} height={SNAP_GRID} patternUnits="userSpaceOnUse">
+                        <path d={`M ${SNAP_GRID} 0 L 0 0 0 ${SNAP_GRID}`} fill="none" stroke="#e2e8f0" strokeWidth="0.5"/>
+                      </pattern>
+                    </defs>
+                    <rect width={canvasSize.width} height={canvasSize.height} fill="url(#grid)" />
+                  </>
+                )}
                 
                 {backgroundImage && (
                   <image 
@@ -512,22 +813,70 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
                   />
                 )}
 
-                {items.map(item => (
-                  <LayoutItem 
-                    key={item.id} 
-                    item={item}
-                    isSelected={selectedIds.includes(item.id)}
-                    onSelect={(id) => {}}
-                  />
-                ))}
+                {items.map(item => {
+                  const isLocked = lockedIds.includes(item.id);
+                  return (
+                    <g key={item.id}>
+                      <LayoutItem 
+                        item={item}
+                        isSelected={selectedIds.includes(item.id)}
+                        onSelect={(id) => {}}
+                      />
+                      {isLocked && !previewMode && (
+                        <g transform={`translate(${item.x + 15}, ${item.y - 15})`}>
+                          <circle cx="0" cy="0" r="8" fill="#f59e0b" />
+                          <Lock className="h-3 w-3" style={{ transform: 'translate(-6px, -6px)' }} stroke="white" strokeWidth="2" />
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
               </svg>
               
-              <div className="absolute bottom-4 right-4 flex gap-4 bg-white/80 backdrop-blur p-2 rounded-lg border text-[10px] font-bold text-slate-400 uppercase tracking-tight pointer-events-none">
-                <span>{canvasSize.width}x{canvasSize.height}px</span>
+              <div className="absolute bottom-4 right-4 flex flex-col gap-2 bg-white/90 backdrop-blur p-3 rounded-lg border shadow-lg text-xs pointer-events-none">
+                <div className="flex items-center gap-3 text-slate-600">
+                  <span className="font-mono font-bold">{canvasSize.width}×{canvasSize.height}px</span>
+                  <span>•</span>
+                  <span>Zoom: {Math.round(zoom * 100)}%</span>
+                </div>
                 {selectedIds.length > 0 && (
-                  <span className="text-indigo-600 ml-2">Selected: {selectedIds.length}</span>
+                  <div className="text-indigo-600 font-bold">
+                    Selected: {selectedIds.length} item{selectedIds.length > 1 ? 's' : ''}
+                  </div>
+                )}
+                {lockedIds.length > 0 && (
+                  <div className="text-amber-600 font-bold flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
+                    {lockedIds.length} locked
+                  </div>
+                )}
+                {previewMode && (
+                  <div className="text-indigo-600 font-bold flex items-center gap-1">
+                    <Eye className="h-3 w-3" />
+                    Preview Mode
+                  </div>
                 )}
               </div>
+              
+              {/* Instructions Overlay (shown when nothing selected) */}
+              {!previewMode && selectedIds.length === 0 && items.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 max-w-md text-center border-2 border-indigo-200">
+                    <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Layers className="h-8 w-8 text-indigo-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">Welcome to Venue Designer!</h3>
+                    <p className="text-slate-600 text-sm mb-4">
+                      Start by adding seats, zones, or design elements from the left toolbar.
+                    </p>
+                    <div className="text-xs text-slate-500 space-y-1">
+                      <p>💡 Use keyboard shortcuts for faster workflow</p>
+                      <p>🎨 Customize colors and prices for each item</p>
+                      <p>🔍 Zoom and pan to work comfortably</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </main>
 
@@ -535,6 +884,7 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
           <EditorSidebar 
             selectedItem={selectedItem} 
             selectedCount={selectedIds.length}
+            selectedItems={items.filter(i => selectedIds.includes(i.id))}
             onUpdate={(u) => {
               if (selectedIds.length === 1) {
                 updateItem(selectedIds[0], u);
