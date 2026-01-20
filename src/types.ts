@@ -1017,6 +1017,42 @@ export interface EventReview {
 }
 
 /**
+ * Event Memory
+ * User-uploaded photos, videos, and reviews from events they attended
+ */
+export interface EventMemory {
+  id: string;
+  user_id: string;
+  event_id: string;
+  memory_type: 'photo' | 'video' | 'review';
+  media_url?: string; // URL to photo/video in Supabase Storage
+  review_text?: string; // Optional review/memory text
+  rating?: number; // Optional 1-5 star rating
+  visibility: 'public' | 'private' | 'followers';
+  likes_count: number;
+  created_at: string;
+  updated_at: string;
+  // Populated fields from joins
+  username?: string;
+  user_avatar?: string;
+  event_name?: string;
+  event_date?: string;
+  event_image?: string;
+  user_has_liked?: boolean;
+}
+
+/**
+ * Event Memory Like
+ * Tracks which users liked which event memories
+ */
+export interface EventMemoryLike {
+  id: string;
+  memory_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+/**
  * Event Rating Summary
  * Aggregated ratings for an event
  */
