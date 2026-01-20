@@ -35,7 +35,11 @@ const LayoutItem: React.FC<LayoutItemProps> = ({
       if (isAddingToCart) return '#10b981';
       return isSeat ? '#ffffff' : itemColor;
     }
-    if (isSeat) return isSelected ? '#4f46e5' : '#ffffff';
+    // For seats in designer mode: use custom color if set, otherwise white
+    if (isSeat) {
+      if (isSelected) return itemColor; // Use custom color when selected
+      return item.color ? itemColor : '#ffffff'; // Use custom color or default white
+    }
     return itemColor;
   };
 
@@ -47,6 +51,11 @@ const LayoutItem: React.FC<LayoutItemProps> = ({
       if (item.isBooked) return '#94a3b8';
       if (isAddingToCart) return '#059669';
       return isSeat ? '#3b82f6' : 'transparent';
+    }
+    // For seats: darker stroke when selected
+    if (isSeat && isSelected) {
+      // Darken the fill color for stroke
+      return '#1e293b';
     }
     return isSelected ? '#1e1b4b' : '#cbd5e1';
   };
@@ -76,6 +85,17 @@ const LayoutItem: React.FC<LayoutItemProps> = ({
   };
 
   if (isSeat) {
+    // Calculate if the color is dark or light for text contrast
+    const isDarkColor = () => {
+      if (!item.color) return false;
+      const hex = item.color.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+      return brightness < 128;
+    };
+
     return (
       <g {...commonProps}>
         <circle
@@ -91,7 +111,7 @@ const LayoutItem: React.FC<LayoutItemProps> = ({
           y={item.y + 2.5}
           textAnchor="middle"
           fontSize="7"
-          className={`${isSelected ? 'fill-white' : 'fill-slate-500'} pointer-events-none font-bold`}
+          className={`${item.color && isDarkColor() ? 'fill-white' : 'fill-slate-700'} pointer-events-none font-bold`}
         >
           {item.seatNumber || ''}
         </text>
