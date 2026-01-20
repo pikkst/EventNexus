@@ -66,7 +66,7 @@ CREATE POLICY "Followers can view follower-only memories"
     EXISTS (
       SELECT 1 FROM public.users 
       WHERE id = (SELECT user_id FROM public.event_memories WHERE id = event_memories.id)
-      AND auth.uid()::text = ANY(followedOrganizers)
+      AND followed_organizers @> to_jsonb(auth.uid()::text)
     )
   );
 
@@ -188,7 +188,7 @@ BEGIN
     AND (
       em.visibility = 'public' 
       OR em.user_id = auth.uid()
-      OR (em.visibility = 'followers' AND auth.uid()::text = ANY(u.followedOrganizers))
+      OR (em.visibility = 'followers' AND u.followed_organizers @> to_jsonb(auth.uid()::text))
     )
   ORDER BY em.created_at DESC
   LIMIT p_limit;
@@ -232,8 +232,10 @@ BEGIN
     AND (
       em.visibility = 'public'
       OR em.user_id = auth.uid()
-      OR (em.visibility = 'followers' AND auth.uid()::text = ANY(
-        SELECT followedOrganizers FROM public.users WHERE id = p_user_id
+      OR (em.visibility = 'followers' AND EXISTS (
+        SELECT 1 FROM public.users 
+        WHERE id = p_user_id 
+        AND followed_organizers @> to_jsonb(auth.uid()::text)
       ))
     )
   ORDER BY em.created_at DESC
