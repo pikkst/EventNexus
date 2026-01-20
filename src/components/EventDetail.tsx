@@ -31,6 +31,8 @@ import EventCheckIn from './EventCheckIn';
 import EventReviews from './EventReviews';
 import BuddyMatching from './BuddyMatching';
 import VenueSeatSelector from './VenueSeatSelector';
+import EventMemoryUpload from './EventMemoryUpload';
+import EventMemoriesGallery from './EventMemoriesGallery';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
 import { isEventExpired } from '../utils/eventUtils';
@@ -146,6 +148,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [showSeatSelector, setShowSeatSelector] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [pendingTicketTemplate, setPendingTicketTemplate] = useState<TicketTemplate | null>(null);
+  const [showMemoryUpload, setShowMemoryUpload] = useState(false);
+  const [memoriesRefreshKey, setMemoriesRefreshKey] = useState(0);
   const translationCache = useRef<Map<string, { name: string; aboutText: string; description: string }>>(new Map());
 
   const LANGUAGE_LABELS: Record<string, string> = {
@@ -1101,6 +1105,46 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                   />
                 </div>
               )}
+
+              {/* Event Memories Section - Share photos, videos, and reviews */}
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg sm:text-xl font-bold">Event Memories</h3>
+                  {user && eventCompleted && (
+                    <button
+                      onClick={() => setShowMemoryUpload(!showMemoryUpload)}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-sm font-bold transition-colors flex items-center gap-2"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share Your Experience
+                    </button>
+                  )}
+                </div>
+
+                {/* Memory Upload Form - Only for past events where user has ticket */}
+                {showMemoryUpload && user && eventCompleted && (
+                  <div className="mb-6">
+                    <EventMemoryUpload
+                      userId={user.id}
+                      eventId={event.id}
+                      eventName={event.name}
+                      onMemoryCreated={() => {
+                        setShowMemoryUpload(false);
+                        setMemoriesRefreshKey(prev => prev + 1);
+                        logger.log('Memory uploaded for event:', event.id);
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Memories Gallery */}
+                <EventMemoriesGallery
+                  key={memoriesRefreshKey}
+                  eventId={event.id}
+                  currentUserId={user?.id || ''}
+                  showEventInfo={false}
+                />
+              </div>
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-[32px] p-4 lg:p-6 shadow-xl">

@@ -51,6 +51,7 @@ import Button from './Button';
 import { SimplifiedSocialMediaManager } from './SimplifiedSocialMediaManager';
 import BetaTesterReport from './BetaTesterReport';
 import ReferralSystem from './ReferralSystem';
+import EventMemoriesGallery from './EventMemoriesGallery';
 
 interface UserProfileProps {
   user: User;
@@ -1309,6 +1310,30 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onUpdateUser,
         </div>
 
         <div className="space-y-6">
+          {/* Event Memories Section */}
+          <div className="bg-slate-900 border border-slate-800 rounded-[40px] overflow-hidden shadow-2xl">
+            <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md">
+              <div className="flex items-center gap-4">
+                <h3 className="font-black text-xl tracking-tight flex items-center gap-3">
+                  <div className="p-2 bg-purple-600/20 rounded-xl">
+                    <Camera className="w-5 h-5 text-purple-400" />
+                  </div>
+                  Event Memories
+                </h3>
+              </div>
+              <span className="px-3 py-1.5 bg-purple-600/20 text-purple-400 rounded-full text-sm font-bold">
+                My Uploads
+              </span>
+            </div>
+            <div className="p-6">
+              <EventMemoriesGallery
+                userId={user.id}
+                currentUserId={user.id}
+                showEventInfo={true}
+              />
+            </div>
+          </div>
+
           {user.is_beta_tester && (
             <div className="bg-gradient-to-br from-indigo-900/70 via-slate-900 to-slate-950 border border-indigo-500/30 rounded-[40px] p-8 shadow-xl">
               <div className="flex items-center justify-between mb-4">
