@@ -569,7 +569,7 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors font-medium"
+              className="px-6 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors font-medium text-slate-700"
             >
               Cancel
             </button>
@@ -659,7 +659,7 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
             <div className="flex items-center justify-end gap-3 p-6 border-t bg-slate-50">
               <button
                 onClick={() => setShowSaveTemplateModal(false)}
-                className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors font-medium"
+                className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors font-medium text-slate-700"
               >
                 Cancel
               </button>

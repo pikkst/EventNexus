@@ -296,7 +296,7 @@ const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ userRole }) => {
                   setEditing(null);
                   resetForm();
                 }}
-                className="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded-xl font-bold transition-colors"
+                className="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded-xl font-bold transition-colors text-white"
               >
                 Cancel
               </button>
@@ -389,14 +389,14 @@ const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ userRole }) => {
                         </button>
                         <button
                           onClick={() => startEditing(media)}
-                          className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+                          className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-slate-400"
                           title="Edit"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
                           onClick={() => handleDelete(media.id)}
-                          className="p-2 bg-slate-800 hover:bg-red-600 rounded-lg transition-colors"
+                          className="p-2 bg-slate-800 hover:bg-red-600 rounded-lg transition-colors text-slate-400 hover:text-white"
                           title="Delete"
                         >
                           <Trash2 size={18} />

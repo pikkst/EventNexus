@@ -157,7 +157,7 @@ export default function CityFiltersPanel({
             </select>
             <button
               onClick={onSortOrderToggle}
-              className="px-2 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-r-lg border border-l-0 border-gray-300"
+              className="px-2 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-r-lg border border-l-0 border-gray-300 text-gray-700"
               title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
             >
               {sortOrder === 'asc' ? '↑' : '↓'}
@@ -211,7 +211,7 @@ export default function CityFiltersPanel({
           )}
           <button
             onClick={clearAllFilters}
-            className="ml-auto px-3 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded"
+            className="ml-auto px-3 py-1 text-xs text-gray-700 hover:text-gray-900 hover:bg-gray-200 rounded font-medium"
           >
             Clear All
           </button>
