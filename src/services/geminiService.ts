@@ -498,10 +498,17 @@ NEGATIVE PROMPT (what NOT to include): No dates, no times, no locations, no addr
 };
 
 /**
- * Generate marketing tagline
+ * Generate marketing tagline optimized for search engines and AI discoverability
+ * Analyzes event name, category, and description to create SEO-optimized taglines
  * Free tier: costs credits | Paid tiers: included
  */
-export const generateMarketingTagline = async (name: string, category: string, userId?: string, userTier?: string) => {
+export const generateMarketingTagline = async (
+  name: string, 
+  category: string, 
+  userId?: string, 
+  userTier?: string,
+  description?: string
+) => {
   // Check if user needs to pay with credits (Free tier only)
   if (userId && userTier === 'free') {
     const hasCredits = await checkUserCredits(userId, AI_CREDIT_COSTS.EVENT_AI_TAGLINE);
@@ -512,9 +519,23 @@ export const generateMarketingTagline = async (name: string, category: string, u
 
   try {
     const ai = getAI();
+    
+    // Build context-aware prompt with description if available
+    const contextInfo = description 
+      ? `\n\nEvent Description: ${description.substring(0, 500)}`
+      : '';
+    
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Create ONE compelling marketing tagline (maximum 60 characters) for an event named "${name}" in the ${category} category. Return ONLY the tagline text, no explanations, no numbering, no quotes, no alternatives.`
+      contents: `Create ONE compelling, SEO-optimized marketing tagline (maximum 60 characters) for an event named "${name}" in the ${category} category.${contextInfo}
+
+The tagline should:
+- Be discoverable by Google, Bing, ChatGPT, Perplexity, and other AI search engines
+- Include relevant keywords naturally
+- Capture the event's essence in a memorable way
+- Be optimized for both traditional and AI-powered search
+
+Return ONLY the tagline text, no explanations, no numbering, no quotes, no alternatives.`
     });
 
     const result = response.text?.trim().replace(/^["']|["']$/g, '') || '';
