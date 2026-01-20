@@ -178,12 +178,26 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboard.length > 0) {
         e.preventDefault();
-        const newItems = clipboard.map(item => ({
-          ...item,
-          id: Math.random().toString(36).substr(2, 9),
-          x: item.x + 40,
-          y: item.y + 40
-        }));
+        // Get the highest seat number currently in use
+        const maxSeatNumber = Math.max(0, ...items.filter(i => i.type === 'seat' && i.seatNumber).map(i => i.seatNumber || 0));
+        let seatCounter = maxSeatNumber + 1;
+        
+        const newItems = clipboard.map(item => {
+          const newItem = {
+            ...item,
+            id: Math.random().toString(36).substr(2, 9),
+            x: item.x + 40,
+            y: item.y + 40
+          };
+          
+          // Auto-increment seat numbers for seats
+          if (item.type === 'seat') {
+            newItem.seatNumber = seatCounter++;
+            newItem.name = `Seat ${newItem.seatNumber}`;
+          }
+          
+          return newItem;
+        });
         const nextItems = [...items, ...newItems];
         commitToHistory(nextItems);
         setSelectedIds(newItems.map(i => i.id));
@@ -191,12 +205,26 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'd' && selectedIds.length > 0) {
         e.preventDefault();
-        const duplicatedItems = items.filter(i => selectedIds.includes(i.id)).map(item => ({
-          ...item,
-          id: Math.random().toString(36).substr(2, 9),
-          x: item.x + 40,
-          y: item.y + 40
-        }));
+        // Get the highest seat number currently in use
+        const maxSeatNumber = Math.max(0, ...items.filter(i => i.type === 'seat' && i.seatNumber).map(i => i.seatNumber || 0));
+        let seatCounter = maxSeatNumber + 1;
+        
+        const duplicatedItems = items.filter(i => selectedIds.includes(i.id)).map(item => {
+          const newItem = {
+            ...item,
+            id: Math.random().toString(36).substr(2, 9),
+            x: item.x + 40,
+            y: item.y + 40
+          };
+          
+          // Auto-increment seat numbers for seats
+          if (item.type === 'seat') {
+            newItem.seatNumber = seatCounter++;
+            newItem.name = `Seat ${newItem.seatNumber}`;
+          }
+          
+          return newItem;
+        });
         const nextItems = [...items, ...duplicatedItems];
         commitToHistory(nextItems);
         setSelectedIds(duplicatedItems.map(i => i.id));
@@ -250,7 +278,8 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
         y: canvasSize.height / 2, 
         name: 'New Seat', 
         price: 20, 
-        seatNumber: items.filter(i => i.type === 'seat').length + 1 
+        seatNumber: items.filter(i => i.type === 'seat').length + 1,
+        color: '#6366f1' // Default indigo color
       };
     } else if (type === 'zone') {
       newItem = { 
@@ -504,7 +533,8 @@ const VenueDesignerModal: React.FC<VenueDesignerModalProps> = ({
         y: startY,
         name: `Seat ${i + 1}`,
         price: 20,
-        seatNumber: items.filter(item => item.type === 'seat').length + i + 1
+        seatNumber: items.filter(item => item.type === 'seat').length + i + 1,
+        color: '#6366f1' // Default indigo color
       });
     }
     const nextItems = [...items, ...rowItems];
