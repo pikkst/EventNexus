@@ -7255,4 +7255,281 @@ export const cleanupUnusedTranslations = async (): Promise<number> => {
   }
 };
 
+// ============================================
+// Event Memories System
+// ============================================
 
+/**
+ * Upload event memory media to Supabase Storage
+ */
+export const uploadEventMemory = async (
+  userId: string,
+  eventId: string,
+  file: File
+): Promise<string | null> => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}/${eventId}/${Date.now()}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from('event-memories')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      logger.error('Error uploading event memory:', error);
+      return null;
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('event-memories')
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
+  } catch (error) {
+    logger.error('Error uploading event memory:', error);
+    return null;
+  }
+};
+
+/**
+ * Create an event memory (photo, video, or review)
+ */
+export const createEventMemory = async (memory: {
+  user_id: string;
+  event_id: string;
+  memory_type: 'photo' | 'video' | 'review';
+  media_url?: string;
+  review_text?: string;
+  rating?: number;
+  visibility?: 'public' | 'private' | 'followers';
+}): Promise<any | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('event_memories')
+      .insert({
+        user_id: memory.user_id,
+        event_id: memory.event_id,
+        memory_type: memory.memory_type,
+        media_url: memory.media_url,
+        review_text: memory.review_text,
+        rating: memory.rating,
+        visibility: memory.visibility || 'public'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Error creating event memory:', error);
+      return null;
+    }
+
+    logger.info(`Created event memory for user ${memory.user_id} on event ${memory.event_id}`);
+    return data;
+  } catch (error) {
+    logger.error('Error creating event memory:', error);
+    return null;
+  }
+};
+
+/**
+ * Get memories for a specific event
+ */
+export const getEventMemories = async (
+  eventId: string,
+  limit: number = 50
+): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_event_memories', {
+        p_event_id: eventId,
+        p_limit: limit
+      });
+
+    if (error) {
+      logger.error('Error fetching event memories:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    logger.error('Error fetching event memories:', error);
+    return [];
+  }
+};
+
+/**
+ * Get memories created by a specific user
+ */
+export const getUserMemories = async (
+  userId: string,
+  limit: number = 50
+): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_user_memories', {
+        p_user_id: userId,
+        p_limit: limit
+      });
+
+    if (error) {
+      logger.error('Error fetching user memories:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    logger.error('Error fetching user memories:', error);
+    return [];
+  }
+};
+
+/**
+ * Update an event memory
+ */
+export const updateEventMemory = async (
+  memoryId: string,
+  updates: {
+    review_text?: string;
+    rating?: number;
+    visibility?: 'public' | 'private' | 'followers';
+  }
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('event_memories')
+      .update(updates)
+      .eq('id', memoryId);
+
+    if (error) {
+      logger.error('Error updating event memory:', error);
+      return false;
+    }
+
+    logger.info(`Updated event memory ${memoryId}`);
+    return true;
+  } catch (error) {
+    logger.error('Error updating event memory:', error);
+    return false;
+  }
+};
+
+/**
+ * Delete an event memory
+ */
+export const deleteEventMemory = async (memoryId: string, mediaUrl?: string): Promise<boolean> => {
+  try {
+    // Delete from database
+    const { error: dbError } = await supabase
+      .from('event_memories')
+      .delete()
+      .eq('id', memoryId);
+
+    if (dbError) {
+      logger.error('Error deleting event memory from database:', dbError);
+      return false;
+    }
+
+    // Delete media file from storage if exists
+    if (mediaUrl) {
+      try {
+        const urlPath = new URL(mediaUrl).pathname;
+        const filePath = urlPath.split('/event-memories/')[1];
+        if (filePath) {
+          await supabase.storage
+            .from('event-memories')
+            .remove([filePath]);
+        }
+      } catch (storageError) {
+        logger.warn('Error deleting memory media file (continuing anyway):', storageError);
+      }
+    }
+
+    logger.info(`Deleted event memory ${memoryId}`);
+    return true;
+  } catch (error) {
+    logger.error('Error deleting event memory:', error);
+    return false;
+  }
+};
+
+/**
+ * Like an event memory
+ */
+export const likeEventMemory = async (memoryId: string, userId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('event_memory_likes')
+      .insert({
+        memory_id: memoryId,
+        user_id: userId
+      });
+
+    if (error) {
+      if (error.code === '23505') {
+        // Already liked, ignore duplicate error
+        return true;
+      }
+      logger.error('Error liking event memory:', error);
+      return false;
+    }
+
+    logger.info(`User ${userId} liked memory ${memoryId}`);
+    return true;
+  } catch (error) {
+    logger.error('Error liking event memory:', error);
+    return false;
+  }
+};
+
+/**
+ * Unlike an event memory
+ */
+export const unlikeEventMemory = async (memoryId: string, userId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('event_memory_likes')
+      .delete()
+      .eq('memory_id', memoryId)
+      .eq('user_id', userId);
+
+    if (error) {
+      logger.error('Error unliking event memory:', error);
+      return false;
+    }
+
+    logger.info(`User ${userId} unliked memory ${memoryId}`);
+    return true;
+  } catch (error) {
+    logger.error('Error unliking event memory:', error);
+    return false;
+  }
+};
+
+/**
+ * Check if user has attended an event (has a valid ticket)
+ */
+export const hasAttendedEvent = async (userId: string, eventId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('tickets')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('event_id', eventId)
+      .in('status', ['valid', 'used'])
+      .limit(1);
+
+    if (error) {
+      logger.error('Error checking event attendance:', error);
+      return false;
+    }
+
+    return (data && data.length > 0) || false;
+  } catch (error) {
+    logger.error('Error checking event attendance:', error);
+    return false;
+  }
+};
