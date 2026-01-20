@@ -400,7 +400,7 @@ const AdminContentManager: React.FC<AdminContentManagerProps> = ({ userRole }) =
                     setEditing(null);
                     resetStoryForm();
                   }}
-                  className="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded-xl font-bold transition-colors"
+                  className="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded-xl font-bold transition-colors text-white"
                 >
                   Cancel
                 </button>
@@ -544,7 +544,7 @@ const AdminContentManager: React.FC<AdminContentManagerProps> = ({ userRole }) =
                     setEditing(null);
                     resetPressForm();
                   }}
-                  className="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded-xl font-bold transition-colors"
+                  className="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded-xl font-bold transition-colors text-white"
                 >
                   Cancel
                 </button>
@@ -598,14 +598,14 @@ const AdminContentManager: React.FC<AdminContentManagerProps> = ({ userRole }) =
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => startEditing(story)}
-                        className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+                        className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-slate-400"
                         title="Edit"
                       >
                         <Edit2 size={18} />
                       </button>
                       <button
                         onClick={() => handleDeleteStory(story.id)}
-                        className="p-2 bg-slate-800 hover:bg-red-600 rounded-lg transition-colors"
+                        className="p-2 bg-slate-800 hover:bg-red-600 rounded-lg transition-colors text-slate-400 hover:text-white"
                         title="Delete"
                       >
                         <Trash2 size={18} />
@@ -660,14 +660,14 @@ const AdminContentManager: React.FC<AdminContentManagerProps> = ({ userRole }) =
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => startEditing(mention)}
-                        className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+                        className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-slate-400"
                         title="Edit"
                       >
                         <Edit2 size={18} />
                       </button>
                       <button
                         onClick={() => handleDeletePress(mention.id)}
-                        className="p-2 bg-slate-800 hover:bg-red-600 rounded-lg transition-colors"
+                        className="p-2 bg-slate-800 hover:bg-red-600 rounded-lg transition-colors text-slate-400 hover:text-white"
                         title="Delete"
                       >
                         <Trash2 size={18} />

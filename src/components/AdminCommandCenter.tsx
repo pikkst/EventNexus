@@ -2194,8 +2194,8 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                 <h3 className="text-xl font-black tracking-tight">Message User</h3>
                 <p className="text-xs text-slate-500 font-medium">{selectedUser.name} · {selectedUser.email}</p>
               </div>
-              <button className="p-2 bg-slate-800 rounded-xl hover:bg-slate-700" onClick={() => setSelectedUser(null)}>
-                <X size={18} className="text-slate-400" />
+              <button className="p-2 bg-slate-800 rounded-xl hover:bg-slate-700 text-slate-400" onClick={() => setSelectedUser(null)}>
+                <X size={18} />
               </button>
             </div>
             <div className="space-y-3">
@@ -2253,7 +2253,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                     className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-center font-mono text-lg tracking-widest text-white outline-none focus:border-red-500 transition-all"
                   />
                   <div className="flex gap-4">
-                     <button onClick={() => setShowSecurityModal(false)} className="flex-1 py-4 bg-slate-800 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400">Abort</button>
+                     <button onClick={() => setShowSecurityModal(false)} className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white">Abort</button>
                      <button onClick={handleVerifySecurity} className="flex-1 py-4 bg-red-600 hover:bg-red-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-xl shadow-red-600/20">Authorize</button>
                   </div>
                </div>
@@ -2271,8 +2271,8 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
                      <h2 className="text-3xl font-black text-white tracking-tight">{editingCampaign?.id ? 'Edit Campaign' : 'New Campaign'}</h2>
                      <p className="text-slate-500 text-sm font-medium">Create engaging growth campaigns with AI assistance</p>
                   </div>
-                  <button onClick={() => setIsCampaignModalOpen(false)} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all">
-                     <X size={20} className="text-slate-400" />
+                  <button onClick={() => setIsCampaignModalOpen(false)} className="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all text-slate-400">
+                     <X size={20} />
                   </button>
                </div>
 
