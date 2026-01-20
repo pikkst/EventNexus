@@ -5,7 +5,8 @@ import Breadcrumbs from './Breadcrumbs';
 import { MapLocationPicker } from './MapLocationPicker';
 import { 
   ChevronRight, 
-  ChevronLeft, 
+  ChevronLeft,
+  ChevronDown,
   MapPin, 
   Calendar, 
   Clock, 
@@ -175,6 +176,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   const [qualityScore, setQualityScore] = useState<number>(0);
   const [seoRecommendations, setSeoRecommendations] = useState<string[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Collapse states for ticket sections
+  const [isVenueTicketsExpanded, setIsVenueTicketsExpanded] = useState(true);
+  const [isAdditionalTicketsExpanded, setIsAdditionalTicketsExpanded] = useState(true);
 
   const navigate = useNavigate();
 
@@ -1558,31 +1563,80 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             {/* Auto-generated tickets from venue layout */}
             {venueLayout && venueLayout.items && venueLayout.items.length > 0 && (
               <div className="p-4 bg-green-950/20 border border-green-900/50 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <h4 className="font-bold text-green-400">Venue Layout Tickets Auto-Generated</h4>
-                </div>
-                <p className="text-xs text-slate-400">
-                  Your venue has <span className="font-bold text-white">{venueLayout.items.filter(i => i.type === 'seat').length} seats</span> and <span className="font-bold text-white">{venueLayout.items.filter(i => i.type === 'zone').length} zones</span>. 
-                  Tickets for these will be created automatically. Customers will select seats during checkout.
-                </p>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  {Array.from(new Set(venueLayout.items.filter(i => i.type === 'seat' || i.type === 'zone').map(i => ({ name: i.name, price: i.price })))).map((item, idx) => (
-                    <div key={idx} className="p-3 bg-slate-900/50 rounded-lg border border-slate-700">
-                      <p className="text-sm font-bold text-white">{item.name}</p>
-                      <p className="text-xs text-slate-400">€{item.price}</p>
+                <button
+                  onClick={() => setIsVenueTicketsExpanded(!isVenueTicketsExpanded)}
+                  className="w-full flex items-center justify-between hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h4 className="font-bold text-green-400">Venue Layout Tickets Auto-Generated</h4>
+                  </div>
+                  <ChevronDown className={`w-5 h-5 text-green-400 transition-transform ${isVenueTicketsExpanded ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {isVenueTicketsExpanded && (
+                  <>
+                    <p className="text-xs text-slate-400">
+                      Your venue has <span className="font-bold text-white">{venueLayout.items.filter(i => i.type === 'seat').length} seats</span> and <span className="font-bold text-white">{venueLayout.items.filter(i => i.type === 'zone').length} zones</span>. 
+                      Tickets for these will be created automatically. Customers will select seats during checkout.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                  {(() => {
+                    // Group seats and zones by name and price to show ticket summaries
+                    const ticketGroups = new Map<string, { name: string; price: number; quantity: number }>();
+                    
+                    venueLayout.items.forEach(item => {
+                      if (item.type === 'seat' || item.type === 'zone') {
+                        const key = `${item.name}_${item.price}`;
+                        
+                        if (!ticketGroups.has(key)) {
+                          ticketGroups.set(key, {
+                            name: item.name,
+                            price: item.price || 0,
+                            quantity: 0
+                          });
+                        }
+                        
+                        const group = ticketGroups.get(key)!;
+                        
+                        // For zones: add capacity. For seats: add 1
+                        if (item.type === 'zone' && item.capacity) {
+                          group.quantity += item.capacity;
+                        } else {
+                          group.quantity += 1;
+                        }
+                      }
+                    });
+                    
+                    // Convert to array and render
+                    return Array.from(ticketGroups.values()).map((group, idx) => (
+                      <div key={idx} className="p-3 bg-slate-900/50 rounded-lg border border-slate-700">
+                        <p className="text-sm font-bold text-white">{group.name}</p>
+                        <p className="text-xs text-indigo-400">€{group.price} × {group.quantity} tickets</p>
+                      </div>
+                    ));
+                  })()}
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
               </div>
             )}
 
             {/* Additional General Admission Tickets */}
             <div className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-400">{venueLayout ? 'Additional General Tickets (Optional)' : 'Ticket Types'}</h3>
-              {ticketTemplates.map((ticket, index) => (
+              <button
+                onClick={() => setIsAdditionalTicketsExpanded(!isAdditionalTicketsExpanded)}
+                className="w-full flex items-center justify-between hover:opacity-80 transition-opacity"
+              >
+                <h3 className="text-sm font-bold text-slate-400">{venueLayout ? 'Additional General Tickets (Optional)' : 'Ticket Types'}</h3>
+                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isAdditionalTicketsExpanded ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {isAdditionalTicketsExpanded && (
+                <>
+                  {ticketTemplates.map((ticket, index) => (
                 <div key={index} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="font-bold text-sm">Ticket {index + 1}</h4>
@@ -1693,6 +1747,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               >
                 + Add Another Ticket Type
               </button>
+                </>
+              )}
             </div>
 
             {/* About Event (Detailed Description) */}
