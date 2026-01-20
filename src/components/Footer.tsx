@@ -89,15 +89,25 @@ const Footer: React.FC = () => {
         </div>
 
         <div className="pt-10 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest">
-            <ShieldCheck className="w-4 h-4" /> © 2024 EventNexus Global. All Rights Reserved.
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+              <ShieldCheck className="w-4 h-4" /> © 2026 EventNexus OÜ. All Rights Reserved.
+            </div>
+            <div className="text-slate-500 text-[10px] font-medium">
+              Address: Põltsamaa, Estonia
+            </div>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col md:flex-row items-center gap-6">
              <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold">
                <Globe className="w-3.5 h-3.5" /> English (US)
              </div>
-             <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold">
-               <Mail className="w-3.5 h-3.5" /> support@mail.eventnexus.eu
+             <div className="flex flex-col gap-1">
+               <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold">
+                 <Mail className="w-3.5 h-3.5" /> support@eventnexus.eu
+               </div>
+               <div className="text-slate-600 text-[9px] font-medium">
+                 Response time: Within 24 hours
+               </div>
              </div>
           </div>
         </div>

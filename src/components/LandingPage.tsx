@@ -305,11 +305,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             <div className="space-y-8 text-left md:pt-4">
               <div>
                 <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1] mb-6">
-                  Find Your<br />
-                  <span className="text-indigo-500">Next Vibe</span>
+                  Stop Missing Out.<br />
+                  <span className="text-indigo-500">Find Local Events</span><br />
+                  <span className="text-emerald-500">in Your Language</span>
                 </h1>
                 <p className="text-base sm:text-lg md:text-xl text-slate-300 leading-relaxed mb-4">
-                  Browse {platformStats?.eventsLast24h || 531} events discovered daily across {platformStats?.totalCities || 1169} cities. From festivals to underground concerts—find exactly what's happening around you.
+                  We solve the problem of high platform fees and language barriers. EventNexus uses AI to discover and translate {platformStats?.eventsLast24h || 500}+ daily events into 50+ languages.
                 </p>
                 <p className="text-sm md:text-base text-slate-400 flex items-center gap-2 mb-8">
                   <span className="inline-flex items-center justify-center w-5 h-5 bg-emerald-500/20 rounded-full text-emerald-400 flex-shrink-0">✓</span>
@@ -1068,6 +1069,54 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           </div>
         </section>
       )}
+
+      {/* Meet the Founder Section */}
+      <section className="max-w-7xl mx-auto px-4">
+        <div className="relative bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 rounded-[48px] p-12 md:p-16 overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl" />
+          
+          <div className="relative z-10">
+            <div className="text-center mb-12 space-y-3">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 px-4 py-2 rounded-full border border-indigo-500/30 mb-4">
+                <Users className="w-4 h-4 text-indigo-400" />
+                <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Our Story</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tight">Driven by AI, Built for Community</h2>
+            </div>
+
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-slate-950/50 border border-slate-800 rounded-3xl p-8 md:p-12">
+                <p className="text-slate-300 text-lg md:text-xl leading-relaxed mb-6">
+                  EventNexus was founded in <span className="text-indigo-400 font-bold">October 2025</span> by <span className="text-white font-bold">Villu Künnap</span>, an AI developer and tech visionary. After years of experimenting with Large Language Models, Villu saw a gap in how local events are discovered globally.
+                </p>
+                <p className="text-slate-300 text-lg md:text-xl leading-relaxed mb-6">
+                  Our mission is to remove language barriers and high fees using cutting-edge AI (Gemini 3.0) and geospatial technology.
+                </p>
+                <p className="text-slate-300 text-lg md:text-xl leading-relaxed">
+                  Based in <span className="text-emerald-400 font-bold">Põltsamaa, Estonia</span>, we are building a world where every local experience is just one click away.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-6 mt-8">
+                <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-6 text-center hover:border-indigo-500/50 transition-all">
+                  <div className="text-3xl font-black text-indigo-400 mb-2">Oct 2025</div>
+                  <div className="text-sm text-slate-400 uppercase tracking-wider">Founded</div>
+                </div>
+                <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-6 text-center hover:border-emerald-500/50 transition-all">
+                  <div className="text-3xl font-black text-emerald-400 mb-2">AI-First</div>
+                  <div className="text-sm text-slate-400 uppercase tracking-wider">Technology</div>
+                </div>
+                <div className="bg-slate-950/50 border border-slate-800 rounded-2xl p-6 text-center hover:border-purple-500/50 transition-all">
+                  <div className="text-3xl font-black text-purple-400 mb-2">Estonia</div>
+                  <div className="text-sm text-slate-400 uppercase tracking-wider">Headquarters</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Pricing Preview */}
       <section className="max-w-7xl mx-auto px-4">

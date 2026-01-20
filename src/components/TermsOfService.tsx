@@ -22,7 +22,7 @@ const TermsOfService: React.FC = () => {
     }
   ];
 
-  return <LegalPage title="Terms of Service" lastUpdated="November 10, 2024" sections={sections} />;
+  return <LegalPage title="Terms of Service" lastUpdated="January 20, 2026" sections={sections} />;
 };
 
 export default TermsOfService;
