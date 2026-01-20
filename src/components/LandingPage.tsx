@@ -365,47 +365,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 </div>
               </div>
             </div>
-
-            {/* Right: Visual - Quick Stats or Feature Preview */}
-            <div className="relative h-80 md:h-96 rounded-3xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl group">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-purple-600/20" />
-              
-              {/* Live Stats Card */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 space-y-8">
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600/20 rounded-2xl mb-4">
-                    <Calendar className="w-8 h-8 text-indigo-400" />
-                  </div>
-                  <h3 className="text-2xl font-black text-white mb-2">Live Right Now</h3>
-                  <p className="text-slate-300 text-lg">{platformStats?.eventsLast24h?.toLocaleString() || '531'} new events found</p>
-                  <p className="text-slate-500 text-xs mt-2">Updated continuously across all regions</p>
-                </div>
-
-                <div className="w-full h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
-
-                <div className="grid grid-cols-3 gap-4 w-full">
-                  <div className="bg-indigo-600/10 border border-indigo-500/30 rounded-2xl p-4 text-center hover:border-indigo-500/60 transition-all group/card">
-                    <div className="text-3xl font-black text-indigo-400 mb-2">{platformStats?.totalCities?.toLocaleString() || '1169'}</div>
-                    <p className="text-xs font-bold text-slate-400">Active Cities</p>
-                    <p className="text-[10px] text-slate-500 mt-2">Worldwide coverage</p>
-                  </div>
-                  <div className="bg-emerald-600/10 border border-emerald-500/30 rounded-2xl p-4 text-center hover:border-emerald-500/60 transition-all group/card">
-                    <div className="text-3xl font-black text-emerald-400 mb-2">{platformStats?.freeEventsActive?.toLocaleString() || '592'}</div>
-                    <p className="text-xs font-bold text-slate-400">Free Events</p>
-                    <p className="text-[10px] text-slate-500 mt-2">No hidden costs</p>
-                  </div>
-                  <div className="bg-orange-600/10 border border-orange-500/30 rounded-2xl p-4 text-center hover:border-orange-500/60 transition-all group/card">
-                    <div className="text-3xl font-black text-orange-400 mb-2">50+</div>
-                    <p className="text-xs font-bold text-slate-400">Languages</p>
-                    <p className="text-[10px] text-slate-500 mt-2">AI-powered translation</p>
-                  </div>
-                </div>
-
-                <p className="text-center text-slate-400 text-sm">
-                  🚀 <span className="font-semibold text-indigo-400">Join thousands</span> discovering events every day
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
