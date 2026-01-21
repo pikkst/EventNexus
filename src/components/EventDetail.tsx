@@ -957,8 +957,46 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                       </div>
                     </div>
                   )}
-                  
-                  {ticketTemplates.filter(t => t.is_active && t.quantity_available > 0).map((template) => {
+
+                  {/* Venue Seating Events - Simplified View */}
+                  {event.has_seating && event.venue_layout_id ? (
+                    <div className="bg-indigo-600/10 border border-indigo-500/30 rounded-2xl p-6">
+                      <div className="text-center space-y-4">
+                        <div className="w-16 h-16 mx-auto bg-indigo-600/20 rounded-2xl flex items-center justify-center">
+                          <MapPin className="w-8 h-8 text-indigo-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-white mb-2">Select Your Seats</h3>
+                          <p className="text-sm text-slate-400 mb-4">
+                            This event has assigned seating. Choose your preferred seats from our interactive venue map.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            // Use the first available ticket template to trigger seat selection
+                            const firstTemplate = ticketTemplates.find(t => t.is_active && t.quantity_available > 0);
+                            if (firstTemplate) {
+                              setTicketQuantities({ [firstTemplate.id]: 1 });
+                              handlePurchaseTicket(firstTemplate);
+                            }
+                          }}
+                          disabled={isPurchasing || eventCompleted || !organizerPaymentReady}
+                          className={`px-8 py-4 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                            event.isFeatured
+                              ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600'
+                              : 'bg-indigo-600 hover:bg-indigo-700'
+                          }`}
+                        >
+                          View Seating Map & Select Seats
+                        </button>
+                        <p className="text-xs text-slate-500">
+                          {remaining} seats available • Prices from €{Math.min(...ticketTemplates.map(t => t.price))}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Regular ticket list for non-seating events */
+                    ticketTemplates.filter(t => t.is_active && t.quantity_available > 0).map((template) => {
                     const quantity = ticketQuantities[template.id] || 0;
                     
                     return (
@@ -1049,7 +1087,8 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                         </div>
                       </div>
                     );
-                  })}
+                  })
+                  )}
                 </div>
               )}
 
