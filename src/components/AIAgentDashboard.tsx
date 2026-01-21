@@ -446,6 +446,44 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
 
   // Manual job functions
   
+  // Normalize country name to English to prevent duplicates (e.g., "Eesti" -> "Estonia", "Estonja" -> "Estonia")
+  async function normalizeCountryName(countryInput: string): Promise<string> {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `Convert this country name to its official English name: "${countryInput}"\n\nReturn ONLY the English country name, nothing else. Examples:\n- "Eesti" -> "Estonia"\n- "Estonja" -> "Estonia"\n- "Deutschland" -> "Germany"\n- "Suomi" -> "Finland"\n- "Ukraine" -> "Ukraine"\n- "Україна" -> "Ukraine"`
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 50,
+            }
+          })
+        }
+      );
+      
+      if (!response.ok) {
+        console.warn('Failed to normalize country name, using original:', countryInput);
+        return countryInput;
+      }
+      
+      const data = await response.json();
+      const normalizedName = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || countryInput;
+      
+      console.log(`🌍 Normalized "${countryInput}" -> "${normalizedName}"`);
+      return normalizedName;
+    } catch (error) {
+      console.error('Error normalizing country name:', error);
+      return countryInput;
+    }
+  }
+  
   // Bulk country import - fetch major cities using Gemini AI
   async function fetchMajorCitiesForCountry() {
     if (!selectedCountryForBulk.trim()) {
@@ -458,7 +496,9 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     setSelectedCitiesForImport(new Set());
     
     try {
-      console.log(`🌍 Fetching ALL cities for ${selectedCountryForBulk}...`);
+      // First normalize the country name to English to prevent duplicates
+      const normalizedCountry = await normalizeCountryName(selectedCountryForBulk.trim());
+      console.log(`🌍 Fetching ALL cities for ${normalizedCountry}...`);
       
       // Use Gemini to get ALL cities with coordinates
       const response = await fetch(
@@ -469,7 +509,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `List ALL cities in ${selectedCountryForBulk} with their approximate coordinates and timezones. Include:\n- All major cities\n- All regional capitals\n- All significant towns with population over 5,000\n- All administrative centers\n\nReturn ONLY a JSON array with this exact structure (no markdown, no explanations):\n[{"city_name":"City","country":"${selectedCountryForBulk}","latitude":12.34,"longitude":56.78,"timezone":"Region/City"}]\n\nEnsure:\n- Use English city names\n- Include capital and ALL significant cities\n- Provide accurate coordinates (latitude/longitude as numbers)\n- Use IANA timezone format (e.g., Europe/Berlin, America/New_York)\n- Return valid JSON only\n- Include as many cities as possible (aim for comprehensive coverage)`
+                text: `List ALL cities in ${normalizedCountry} with their approximate coordinates and timezones. Include:\n- All major cities\n- All regional capitals\n- All significant towns with population over 5,000\n- All administrative centers\n\nReturn ONLY a JSON array with this exact structure (no markdown, no explanations):\n[{"city_name":"City","country":"${normalizedCountry}","latitude":12.34,"longitude":56.78,"timezone":"Region/City"}]\n\nEnsure:\n- Use English city names\n- Include capital and ALL significant cities\n- Provide accurate coordinates (latitude/longitude as numbers)\n- Use IANA timezone format (e.g., Europe/Berlin, America/New_York)\n- Return valid JSON only\n- Include as many cities as possible (aim for comprehensive coverage)`
               }]
             }],
             generationConfig: {
@@ -521,11 +561,11 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         throw new Error('No valid cities in response');
       }
       
-      // Check which cities already exist
+      // Check which cities already exist (use normalized country name)
       const { data: existingCities, error: checkError } = await supabase
         .from('city_configs')
         .select('city_name, country')
-        .eq('country', selectedCountryForBulk);
+        .eq('country', normalizedCountry);
       
       if (checkError) {
         console.error('Error checking existing cities:', checkError);
@@ -551,7 +591,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       setSelectedCitiesForImport(new Set(newCities));
       
       alert(
-        `✅ Found ${citiesWithStatus.length} cities for ${selectedCountryForBulk}\n\n` +
+        `✅ Found ${citiesWithStatus.length} cities for ${normalizedCountry}\n\n` +
         `New cities: ${citiesWithStatus.filter(c => !c.exists).length}\n` +
         `Already in database: ${citiesWithStatus.filter(c => c.exists).length}\n\n` +
         `Review and select cities to import below.`
@@ -576,9 +616,12 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       selectedCitiesForImport.has(city.city_name) && !city.exists
     );
     
+    // Get the normalized country name from the first city (they all have the same country)
+    const countryName = citiesToImport[0]?.country || selectedCountryForBulk;
+    
     const confirmed = confirm(
       `🌍 Bulk Import Cities?\n\n` +
-      `Country: ${selectedCountryForBulk}\n` +
+      `Country: ${countryName}\n` +
       `Cities to import: ${citiesToImport.length}\n\n` +
       citiesToImport.map(c => `• ${c.city_name}`).join('\n') +
       `\n\nEach city will be:\n` +
