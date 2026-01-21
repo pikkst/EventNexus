@@ -1279,7 +1279,6 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           eventId={event.id}
           venueLayoutId={event.venue_layout_id}
           ticketPrice={pendingTicketTemplate.price}
-          maxSeats={ticketQuantities[pendingTicketTemplate.id] || 1}
           onSelectSeats={async (seats) => {
             await completeTicketPurchase(pendingTicketTemplate, seats.map(s => s.id));
             setShowSeatSelector(false);
