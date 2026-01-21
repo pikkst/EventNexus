@@ -7,7 +7,7 @@ import { getBookedVenueItems, getVenueLayout } from '../services/dbService';
 interface VenueSeatSelectorProps {
   eventId: string;
   venueLayoutId: string;
-  maxSeats: number;
+  maxSeats?: number;
   ticketPrice: number;
   onSelectSeats: (seats: VenueItem[]) => void;
   onClose: () => void;
@@ -25,6 +25,7 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
   const [bookedSeats, setBookedSeats] = useState<string[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [zoom, setZoom] = useState(1);
 
   // Load venue layout and booked seats
   useEffect(() => {
@@ -47,23 +48,30 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
   }, [eventId, venueLayoutId]);
 
   const handleSeatClick = (item: VenueItem) => {
+    console.log('Seat clicked:', item.name, 'Type:', item.type);
+    
     // Skip if stage
     if (item.type === 'stage') return;
     
     // Skip if already booked
-    if (bookedSeats.includes(item.id)) return;
+    if (bookedSeats.includes(item.id)) {
+      console.log('Seat already booked');
+      return;
+    }
 
     // Toggle selection
     if (selectedSeats.includes(item.id)) {
       // Deselect
+      console.log('Deselecting seat');
       setSelectedSeats(prev => prev.filter(id => id !== item.id));
     } else {
-      // Check if max seats reached
-      if (selectedSeats.length >= maxSeats) {
+      // Check if max seats reached (if maxSeats is set)
+      if (maxSeats && selectedSeats.length >= maxSeats) {
         alert(`You can only select up to ${maxSeats} seat(s) for this ticket type.`);
         return;
       }
       // Select
+      console.log('Selecting seat');
       setSelectedSeats(prev => [...prev, item.id]);
     }
   };
@@ -104,7 +112,34 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
           {/* Venue Map */}
-          <div className="flex-1 overflow-auto bg-slate-950 p-8 flex justify-center items-center">
+          <div className="flex-1 overflow-auto bg-slate-950 p-8 relative">
+            {/* Zoom Controls */}
+            {!isLoading && venueLayout && (
+              <div className="absolute top-4 right-4 z-10 bg-slate-800 rounded-lg shadow-lg p-2 space-y-2">
+                <button
+                  onClick={() => setZoom(prev => Math.min(prev + 0.2, 3))}
+                  className="w-10 h-10 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-bold text-white flex items-center justify-center"
+                  title="Zoom in"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => setZoom(1)}
+                  className="w-10 h-10 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-white flex items-center justify-center"
+                  title="Reset zoom"
+                >
+                  100%
+                </button>
+                <button
+                  onClick={() => setZoom(prev => Math.max(prev - 0.2, 0.5))}
+                  className="w-10 h-10 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-bold text-white flex items-center justify-center"
+                  title="Zoom out"
+                >
+                  −
+                </button>
+              </div>
+            )}
+            <div className="w-full h-full flex justify-center items-center">
             {isLoading ? (
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
@@ -121,7 +156,7 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="relative shadow-2xl rounded-xl bg-white border border-slate-700">
+              <div className="relative shadow-2xl rounded-xl bg-white border border-slate-700" style={{ transform: `scale(${zoom})`, transformOrigin: 'center', transition: 'transform 0.2s' }}>
                 <svg
                   width={venueLayout.canvasWidth || venueLayout.canvas_width || 800}
                   height={venueLayout.canvasHeight || venueLayout.canvas_height || 600}
@@ -152,6 +187,7 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
                 </svg>
               </div>
             )}
+            </div>
           </div>
 
           {/* Sidebar - Selection Cart */}
