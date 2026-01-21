@@ -596,7 +596,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           const seat = layout.items.find(item => item.id === seatId);
           if (seat) {
             lineItems.push({
-              name: seat.type === 'zone' ? `${seat.label} - Spot ${index + 1}` : seat.label || `Seat ${seat.number || index + 1}`,
+              name: seat.type === 'zone' ? `${seat.name} - Spot ${index + 1}` : seat.name || `Seat ${seat.seatNumber || index + 1}`,
               description: seat.type === 'zone' ? `Zone spot` : `Individual seat`,
               price: seat.price || template.price,
               seatId: seatId
@@ -657,7 +657,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       }
     } catch (error) {
       console.error('Purchase failed:', error);
-      alert(`Failed to start checkout. If the organizer's payout setup is incomplete, Stripe may block payment. Please try again later or contact the organizer.`);
+      console.error('Line items sent:', lineItems);
+      console.error('Event ID:', event.id);
+      alert(`Failed to start checkout: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again or contact support.`);
       setIsPurchasing(false);
     }
   };

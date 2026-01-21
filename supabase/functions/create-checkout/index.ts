@@ -173,7 +173,7 @@ serve(async (req: Request) => {
           throw err;
         }
       }
-    } else if (eventId && ticketCount && pricePerTicket) {
+    } else if (eventId && (lineItems || (ticketCount && pricePerTicket))) {
       // Ticket purchase checkout - need to get organizer's Connect account
 
       // Get event with organizer_id only (avoid relying on FK alias names)
@@ -211,7 +211,20 @@ serve(async (req: Request) => {
       }
 
       // Calculate amounts for Stripe Connect transfer
-      const totalAmount = Math.round(ticketCount * pricePerTicket * 100); // in cents
+      // If lineItems provided, calculate from line items; otherwise use old ticketCount * pricePerTicket
+      let totalAmount: number;
+      let actualTicketCount: number;
+      
+      if (lineItems && Array.isArray(lineItems) && lineItems.length > 0) {
+        // New API: sum up line items
+        totalAmount = lineItems.reduce((sum: number, item: any) => sum + Math.round(item.price * 100), 0);
+        actualTicketCount = lineItems.length;
+      } else {
+        // Old API: use ticketCount and pricePerTicket
+        totalAmount = Math.round(ticketCount * pricePerTicket * 100);
+        actualTicketCount = ticketCount;
+      }
+      
       const platformFeeRate = COMMISSION_RATES[organizer.subscription_tier || 'free'] || COMMISSION_RATES.free;
       const platformFeeCents = Math.round(totalAmount * platformFeeRate);
       const netAmountCents = totalAmount - platformFeeCents;
@@ -263,7 +276,7 @@ serve(async (req: Request) => {
             type: 'ticket',
             user_id: userId,
             event_id: eventId,
-            ticket_count: ticketCount.toString(),
+            ticket_count: actualTicketCount.toString(),
             ticket_template_id: ticketTemplateId || '',
             ticket_type: ticketType || 'general',
             ticket_name: ticketName || 'Standard',
@@ -273,7 +286,7 @@ serve(async (req: Request) => {
         metadata: {
           user_id: userId,
           event_id: eventId,
-          ticket_count: ticketCount.toString(),
+          ticket_count: actualTicketCount.toString(),
           ticket_template_id: ticketTemplateId || '',
           ticket_type: ticketType || 'general',
           ticket_name: ticketName || 'Standard',
@@ -301,22 +314,47 @@ serve(async (req: Request) => {
 
       // Create pending ticket records with template ID, type, and price_paid
       const now = new Date().toISOString();
-      const tickets = Array.from({ length: ticketCount }, () => ({
-        user_id: userId,
-        event_id: eventId,
-        ticket_template_id: ticketTemplateId || null,
-        ticket_type: ticketType || 'general',
-        ticket_name: ticketName || 'Standard Ticket',
-        price_paid: pricePerTicket,
-        holder_name: user?.name || 'Guest',
-        holder_email: user?.email || customerEmail || 'guest@eventnexus.eu',
-        qr_code: crypto.randomUUID(), // Temporary QR code, will be updated on payment success
-        status: 'valid',
-        purchased_at: now,
-        payment_status: 'pending', // Set to pending until webhook confirms payment
-        stripe_session_id: session.id, // Link to Stripe session for tracking
-        purchase_date: now,
-      }));
+      
+      // Build tickets array with individual prices from lineItems if available
+      let tickets: any[];
+      if (lineItems && Array.isArray(lineItems) && lineItems.length > 0) {
+        // New API: create ticket for each line item with its specific price and seatId
+        tickets = lineItems.map((item: any, index: number) => ({
+          user_id: userId,
+          event_id: eventId,
+          ticket_template_id: ticketTemplateId || null,
+          ticket_type: ticketType || 'general',
+          ticket_name: item.name || ticketName || 'Standard Ticket',
+          price_paid: item.price,
+          holder_name: user?.name || 'Guest',
+          holder_email: user?.email || customerEmail || 'guest@eventnexus.eu',
+          qr_code: crypto.randomUUID(),
+          status: 'valid',
+          purchased_at: now,
+          payment_status: 'pending',
+          stripe_session_id: session.id,
+          purchase_date: now,
+          seat_id: item.seatId || null, // Store seat/zone ID if provided
+        }));
+      } else {
+        // Old API: create identical tickets using pricePerTicket
+        tickets = Array.from({ length: actualTicketCount }, () => ({
+          user_id: userId,
+          event_id: eventId,
+          ticket_template_id: ticketTemplateId || null,
+          ticket_type: ticketType || 'general',
+          ticket_name: ticketName || 'Standard Ticket',
+          price_paid: pricePerTicket,
+          holder_name: user?.name || 'Guest',
+          holder_email: user?.email || customerEmail || 'guest@eventnexus.eu',
+          qr_code: crypto.randomUUID(),
+          status: 'valid',
+          purchased_at: now,
+          payment_status: 'pending',
+          stripe_session_id: session.id,
+          purchase_date: now,
+        }));
+      }
 
       const { error: ticketInsertError } = await supabase.from('tickets').insert(tickets);
       if (ticketInsertError) {
@@ -324,7 +362,7 @@ serve(async (req: Request) => {
         throw new Error('Failed to create ticket records');
       }
       
-      console.log(`✓ Created ${ticketCount} pending tickets for session ${session.id}`);
+      console.log(`✓ Created ${actualTicketCount} pending tickets for session ${session.id}`);
     } else {
       console.error('Invalid checkout parameters:', { tier, priceId, eventId, ticketCount, pricePerTicket });
       throw new Error('Invalid checkout request: must provide either (tier + priceId) for subscription or (eventId + ticketCount + pricePerTicket) for tickets');
