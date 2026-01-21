@@ -72,7 +72,11 @@ const PublicUserProfile = lazy(() => import('./components/PublicUserProfile'));
 const EventFeed = lazy(() => import('./components/EventFeed'));
 const Communities = lazy(() => import('./components/Communities'));
 const Achievements = lazy(() => import('./components/Achievements'));
+const BlogList = lazy(() => import('./components/BlogList'));
+const BlogPost = lazy(() => import('./components/BlogPost'));
+const BlogPostEditor = lazy(() => import('./components/BlogPostEditor'));
 import ErrorBoundary from './components/ErrorBoundary';
+import { HelmetProvider } from 'react-helmet-async';
 
 import { User, Notification, EventNexusEvent } from './types';
 import { CATEGORIES } from './constants';
@@ -812,18 +816,19 @@ const App: React.FC = () => {
   };
 
   return (
-    <BrowserRouter>
-      <AnalyticsTracker user={user} />
-      <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
-        {/* Loading overlay for initial authentication */}
-        {isLoading && (
-          <div className="fixed inset-0 z-[9999] bg-slate-950 flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-slate-400 text-sm animate-pulse">Loading EventNexus...</p>
+    <HelmetProvider>
+      <BrowserRouter>
+        <AnalyticsTracker user={user} />
+        <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
+          {/* Loading overlay for initial authentication */}
+          {isLoading && (
+            <div className="fixed inset-0 z-[9999] bg-slate-950 flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 mx-auto border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-slate-400 text-sm animate-pulse">Loading EventNexus...</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
         
         <Navbar 
           toggleSidebar={() => setSidebarOpen(true)} 
@@ -865,6 +870,9 @@ const App: React.FC = () => {
                   <Route path="/feed" element={<EventFeed user={user} />} />
               <Route path="/communities" element={<Communities user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/achievements" element={user ? <Achievements user={user} onOpenAuth={() => setIsAuthModalOpen(true)} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/blog" element={<BlogList />} />
+              <Route path="/blog/new" element={user ? <BlogPostEditor /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/ai-agents" element={user?.role === 'admin' ? <AIAgentDashboard user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
@@ -939,6 +947,7 @@ const App: React.FC = () => {
         )}
       </div>
     </BrowserRouter>
+    </HelmetProvider>
   );
 };
 

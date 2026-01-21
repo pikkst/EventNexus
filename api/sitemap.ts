@@ -19,6 +19,13 @@ interface OrganizerSitemapEntry {
   updated_at: string;
 }
 
+interface BlogPostSitemapEntry {
+  slug: string;
+  published_at: string;
+  updated_at: string;
+  title: string;
+}
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse,
@@ -44,6 +51,7 @@ export default async function handler(
       { path: '/map', priority: 0.9, changefreq: 'daily' },
       { path: '/browse', priority: 0.9, changefreq: 'daily' },
       { path: '/events', priority: 0.9, changefreq: 'daily' },
+      { path: '/blog', priority: 0.9, changefreq: 'daily' },
       { path: '/pricing', priority: 0.8, changefreq: 'monthly' },
       { path: '/beta', priority: 0.7, changefreq: 'monthly' },
       { path: '/help', priority: 0.7, changefreq: 'monthly' },
@@ -77,6 +85,19 @@ export default async function handler(
 
     if (orgsError) {
       console.error('Error fetching organizers:', orgsError);
+    }
+
+    // Fetch published blog posts
+    const { data: blogPosts, error: blogError } = await supabase
+      .from('blog_posts')
+      .select('slug, published_at, updated_at, title')
+      .eq('status', 'published')
+      .lte('published_at', new Date().toISOString())
+      .order('published_at', { ascending: false })
+      .limit(1000) as { data: BlogPostSitemapEntry[] | null; error: any };
+
+    if (blogError) {
+      console.error('Error fetching blog posts:', blogError);
     }
 
     // Build XML sitemap
@@ -138,6 +159,34 @@ export default async function handler(
         xml += `    <lastmod>${lastmod}</lastmod>\n`;
         xml += `    <changefreq>monthly</changefreq>\n`;
         xml += `    <priority>0.7</priority>\n`;
+        xml += '  </url>\n';
+      }
+    }
+
+    // Add blog posts
+    if (blogPosts && blogPosts.length > 0) {
+      for (const post of blogPosts) {
+        const lastmod = post.updated_at ? post.updated_at.split('T')[0] : now;
+        const pubDate = post.published_at;
+        xml += '  <url>\n';
+        xml += `    <loc>${baseUrl}/blog/${post.slug}</loc>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.8</priority>\n`;
+        // Add news sitemap tags for recent blog posts
+        const postDate = new Date(pubDate);
+        const daysSincePublish = Math.floor((Date.now() - postDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSincePublish <= 7) {
+          xml += '    <news:news>\n';
+          xml += '      <news:publication>\n';
+          xml += '        <news:name>EventNexus Blog</news:name>\n';
+          xml += '        <news:language>en</news:language>\n';
+          xml += '      </news:publication>\n';
+          xml += `      <news:publication_date>${pubDate}</news:publication_date>\n`;
+          const titleEn = typeof post.title === 'object' ? (post.title as any).en : post.title;
+          xml += `      <news:title>${escapeXml(titleEn || 'Blog Post')}</news:title>\n`;
+          xml += '    </news:news>\n';
+        }
         xml += '  </url>\n';
       }
     }

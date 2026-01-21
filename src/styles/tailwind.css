@@ -5,6 +5,97 @@
 /* Custom global styles */
 body { font-family: 'Inter', sans-serif; }
 
+/* Template Marker Animations */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes markerBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes holographic {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+@keyframes borderPulse {
+  0%, 100% {
+    border-color: currentColor;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    border-color: transparent;
+    box-shadow: 0 0 20px 5px currentColor;
+  }
+}
+
+.marker-bounce {
+  animation: markerBounce 0.5s ease-in-out;
+}
+
+.custom-event-marker {
+  background: none !important;
+  border: none !important;
+}
+
+.animate-holographic {
+  animation: holographic 3s linear infinite;
+}
+
+/* Ticket Template Patterns */
+.ticket-pattern-dots {
+  background-image: radial-gradient(circle, rgba(0,0,0,0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.ticket-pattern-lines {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0,0,0,0.05) 10px,
+    rgba(0,0,0,0.05) 20px
+  );
+}
+
+.ticket-pattern-waves {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0.03) 0px,
+    rgba(0,0,0,0.03) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+.ticket-pattern-geometric {
+  background-image: 
+    linear-gradient(135deg, rgba(0,0,0,0.05) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(0,0,0,0.05) 25%, transparent 25%),
+    linear-gradient(45deg, rgba(0,0,0,0.05) 25%, transparent 25%),
+    linear-gradient(315deg, rgba(0,0,0,0.05) 25%, transparent 25%);
+  background-position: 10px 0, 10px 0, 0 0, 0 0;
+  background-size: 20px 20px;
+  background-repeat: repeat;
+}
+
 /* Real-time map animation for new events */
 @keyframes pulse-in {
   0% {
