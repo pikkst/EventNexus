@@ -174,11 +174,11 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
                   )}
 
                   {itemsWithStatus.map(item => (
-                    <g key={item.id} onClick={() => handleSeatClick(item)} style={{ cursor: item.type === 'stage' || item.isBooked ? 'default' : 'pointer' }}>
+                    <g key={item.id} style={{ cursor: item.type === 'stage' || item.isBooked ? 'default' : 'pointer' }}>
                       <LayoutItem 
                         item={item}
                         isAttendeeMode={true}
-                        onBook={() => {}}
+                        onBook={(id) => handleSeatClick(item)}
                         isAddingToCart={selectedSeats.includes(item.id)}
                         onSelect={() => {}}
                       />
