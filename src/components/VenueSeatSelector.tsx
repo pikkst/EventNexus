@@ -2,38 +2,49 @@ import React, { useState, useEffect } from 'react';
 import { X, ShoppingCart, Check } from 'lucide-react';
 import { VenueLayout, VenueItem } from './VenueDesigner/types';
 import LayoutItem from './VenueDesigner/LayoutItem';
-import { getBookedVenueItems } from '../services/dbService';
+import { getBookedVenueItems, getVenueLayout } from '../services/dbService';
 
 interface VenueSeatSelectorProps {
   eventId: string;
-  venueLayout: VenueLayout;
-  onSeatSelect: (seat: VenueItem) => void;
-  onSeatDeselect: (seatId: string) => void;
-  selectedSeats: string[]; // Array of venue item IDs
+  venueLayoutId: string;
+  maxSeats: number;
+  ticketPrice: number;
+  onSelectSeats: (seats: VenueItem[]) => void;
   onClose: () => void;
 }
 
 const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
   eventId,
-  venueLayout,
-  onSeatSelect,
-  onSeatDeselect,
-  selectedSeats,
+  venueLayoutId,
+  maxSeats,
+  ticketPrice,
+  onSelectSeats,
   onClose
 }) => {
+  const [venueLayout, setVenueLayout] = useState<VenueLayout | null>(null);
   const [bookedSeats, setBookedSeats] = useState<string[]>([]);
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load booked seats
+  // Load venue layout and booked seats
   useEffect(() => {
-    const loadBookedSeats = async () => {
+    const loadData = async () => {
       setIsLoading(true);
-      const booked = await getBookedVenueItems(eventId);
-      setBookedSeats(booked);
-      setIsLoading(false);
+      try {
+        const [layout, booked] = await Promise.all([
+          getVenueLayout(eventId),
+          getBookedVenueItems(eventId)
+        ]);
+        setVenueLayout(layout);
+        setBookedSeats(booked);
+      } catch (error) {
+        console.error('Error loading venue data:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    loadBookedSeats();
-  }, [eventId]);
+    loadData();
+  }, [eventId, venueLayoutId]);
 
   const handleSeatClick = (item: VenueItem) => {
     // Skip if stage
@@ -44,20 +55,34 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
 
     // Toggle selection
     if (selectedSeats.includes(item.id)) {
-      onSeatDeselect(item.id);
+      // Deselect
+      setSelectedSeats(prev => prev.filter(id => id !== item.id));
     } else {
-      onSeatSelect(item);
+      // Check if max seats reached
+      if (selectedSeats.length >= maxSeats) {
+        alert(`You can only select up to ${maxSeats} seat(s) for this ticket type.`);
+        return;
+      }
+      // Select
+      setSelectedSeats(prev => [...prev, item.id]);
     }
   };
 
+  const handleConfirmSelection = () => {
+    if (!venueLayout || selectedSeats.length === 0) return;
+    
+    const selectedItems = venueLayout.items.filter(item => selectedSeats.includes(item.id));
+    onSelectSeats(selectedItems);
+  };
+
   // Prepare items with booking status
-  const itemsWithStatus = venueLayout.items.map(item => ({
+  const itemsWithStatus = venueLayout?.items.map(item => ({
     ...item,
     isBooked: bookedSeats.includes(item.id)
-  }));
+  })) || [];
 
   const selectedItems = itemsWithStatus.filter(item => selectedSeats.includes(item.id));
-  const totalPrice = selectedItems.reduce((sum, item) => sum + item.price, 0);
+  const totalPrice = selectedItems.reduce((sum, item) => sum + (item.price || ticketPrice), 0);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
@@ -85,19 +110,29 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
                 <p className="text-slate-400">Loading venue map...</p>
               </div>
+            ) : !venueLayout ? (
+              <div className="text-center">
+                <p className="text-red-400 mb-2">Failed to load venue layout</p>
+                <button 
+                  onClick={onClose}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg"
+                >
+                  Close
+                </button>
+              </div>
             ) : (
               <div className="relative shadow-2xl rounded-xl bg-white border border-slate-700">
                 <svg
-                  width={venueLayout.canvasWidth}
-                  height={venueLayout.canvasHeight}
+                  width={venueLayout.canvasWidth || venueLayout.canvas_width || 800}
+                  height={venueLayout.canvasHeight || venueLayout.canvas_height || 600}
                   className="block"
                   style={{ maxWidth: '100%', height: 'auto' }}
                 >
-                  {venueLayout.backgroundImage && (
+                  {(venueLayout.backgroundImage || venueLayout.background_image) && (
                     <image 
-                      href={venueLayout.backgroundImage} 
-                      width={venueLayout.canvasWidth} 
-                      height={venueLayout.canvasHeight} 
+                      href={venueLayout.backgroundImage || venueLayout.background_image} 
+                      width={venueLayout.canvasWidth || venueLayout.canvas_width || 800} 
+                      height={venueLayout.canvasHeight || venueLayout.canvas_height || 600} 
                       preserveAspectRatio="xMidYMid slice"
                       style={{ opacity: 0.3 }}
                     />
@@ -146,6 +181,7 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
                   <ShoppingCart className="w-12 h-12 text-slate-700 mx-auto mb-3" />
                   <p className="text-slate-500 text-sm">No seats selected yet</p>
                   <p className="text-slate-600 text-xs mt-1">Click on seats to add them</p>
+                  <p className="text-slate-600 text-xs mt-2 font-bold">Max: {maxSeats} seat(s)</p>
                 </div>
               ) : (
                 selectedItems.map(item => (
@@ -158,9 +194,9 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-indigo-400">${item.price}</span>
+                      <span className="font-bold text-indigo-400">€{item.price || ticketPrice}</span>
                       <button
-                        onClick={() => onSeatDeselect(item.id)}
+                        onClick={() => setSelectedSeats(prev => prev.filter(id => id !== item.id))}
                         className="p-1 hover:bg-red-600/20 rounded text-red-400 transition-colors"
                       >
                         <X className="w-4 h-4" />
@@ -176,14 +212,14 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
               <div className="pt-4 border-t border-slate-800 space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-slate-400">Seats Selected</span>
-                  <span className="text-xl font-black">{selectedItems.length}</span>
+                  <span className="text-xl font-black">{selectedItems.length} / {maxSeats}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-slate-400">Total Price</span>
-                  <span className="text-2xl font-black text-indigo-400">${totalPrice.toFixed(2)}</span>
+                  <span className="text-2xl font-black text-indigo-400">€{totalPrice.toFixed(2)}</span>
                 </div>
                 <button 
-                  onClick={onClose}
+                  onClick={handleConfirmSelection}
                   className="w-full bg-indigo-600 text-white rounded-xl py-4 font-bold hover:bg-indigo-700 transition-colors shadow-lg flex items-center justify-center gap-2"
                 >
                   <Check className="w-5 h-5" />
