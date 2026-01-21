@@ -458,9 +458,9 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     setSelectedCitiesForImport(new Set());
     
     try {
-      console.log(`🌍 Fetching major cities for ${selectedCountryForBulk}...`);
+      console.log(`🌍 Fetching ALL cities for ${selectedCountryForBulk}...`);
       
-      // Use Gemini to get major cities with coordinates
+      // Use Gemini to get ALL cities with coordinates
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
@@ -469,14 +469,14 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `List the top 20 major cities in ${selectedCountryForBulk} with their approximate coordinates and timezones.\n\nReturn ONLY a JSON array with this exact structure (no markdown, no explanations):\n[{"city_name":"City","country":"${selectedCountryForBulk}","latitude":12.34,"longitude":56.78,"timezone":"Region/City"}]\n\nEnsure:\n- Use English city names\n- Include capital and largest cities\n- Provide accurate coordinates (latitude/longitude as numbers)\n- Use IANA timezone format (e.g., Europe/Berlin, America/New_York)\n- Return valid JSON only`
+                text: `List ALL cities in ${selectedCountryForBulk} with their approximate coordinates and timezones. Include:\n- All major cities\n- All regional capitals\n- All significant towns with population over 5,000\n- All administrative centers\n\nReturn ONLY a JSON array with this exact structure (no markdown, no explanations):\n[{"city_name":"City","country":"${selectedCountryForBulk}","latitude":12.34,"longitude":56.78,"timezone":"Region/City"}]\n\nEnsure:\n- Use English city names\n- Include capital and ALL significant cities\n- Provide accurate coordinates (latitude/longitude as numbers)\n- Use IANA timezone format (e.g., Europe/Berlin, America/New_York)\n- Return valid JSON only\n- Include as many cities as possible (aim for comprehensive coverage)`
               }]
             }],
             generationConfig: {
               temperature: 0.3,
               topK: 1,
               topP: 0.8,
-              maxOutputTokens: 4096,
+              maxOutputTokens: 8192,
             }
           })
         }
