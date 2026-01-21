@@ -1194,10 +1194,45 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         return;
       }
       
+      // 🔍 DEBUG: Log selected cities and all cities for comparison
+      console.log('🔍 DEBUG: Selected cities:', Array.from(selectedCities));
+      console.log('🔍 DEBUG: Selected cities types:', Array.from(selectedCities).map(id => typeof id));
+      console.log('🔍 DEBUG: All cities loaded:', allCities.map(c => ({ 
+        city_id: c.city_id, 
+        city_id_type: typeof c.city_id,
+        name: c.city_name, 
+        country: c.country 
+      })));
+      
+      // 🔍 DEBUG: Check if Set.has() is working properly
+      const ukrainianCities = allCities.filter(c => c.country === 'Ukraine');
+      console.log('🔍 DEBUG: Ukrainian cities test:', ukrainianCities.map(city => ({
+        city_name: city.city_name,
+        city_id: city.city_id,
+        city_id_type: typeof city.city_id,
+        has_check: selectedCities.has(city.city_id),
+        has_toString_check: selectedCities.has(String(city.city_id))
+      })));
+      
       // Filter by selected cities if any are selected
       const citiesToProcess = selectedCities.size > 0
-        ? allCities.filter(city => selectedCities.has(city.city_id))
+        ? allCities.filter(city => {
+            const isSelected = selectedCities.has(city.city_id);
+            if (!isSelected && city.country === 'Ukraine') {
+              console.error('❌ Ukrainian city NOT matched:', {
+                city_id: city.city_id,
+                city_id_type: typeof city.city_id,
+                city_name: city.city_name,
+                selectedCities: Array.from(selectedCities),
+                has_check: selectedCities.has(city.city_id),
+                has_string_check: selectedCities.has(String(city.city_id))
+              });
+            }
+            return isSelected;
+          })
         : allCities.filter(city => city.active); // If no selection, default to active cities only
+      
+      console.log('🔍 DEBUG: Cities to process:', citiesToProcess.map(c => ({ city_id: c.city_id, name: c.city_name })));
       
       if (citiesToProcess.length === 0) {
         alert('⚠️ No cities selected. Please select at least one city to run the pipeline.');
@@ -2913,6 +2948,13 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                               type="checkbox"
                               checked={selectedCities.has(metric.city_id)}
                               onChange={(e) => {
+                                console.log('🔍 Checkbox toggle (grouped):', {
+                                  city: metric.city?.city_name,
+                                  country: metric.city?.country,
+                                  city_id: metric.city_id,
+                                  city_id_type: typeof metric.city_id,
+                                  checked: e.target.checked
+                                });
                                 const newSelected = new Set(selectedCities);
                                 if (e.target.checked) {
                                   newSelected.add(metric.city_id);
@@ -3062,6 +3104,13 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                                 type="checkbox"
                                 checked={selectedCities.has(metric.city_id)}
                                 onChange={(e) => {
+                                  console.log('🔍 Checkbox toggle (regular):', {
+                                    city: metric.city?.city_name,
+                                    country: metric.city?.country,
+                                    city_id: metric.city_id,
+                                    city_id_type: typeof metric.city_id,
+                                    checked: e.target.checked
+                                  });
                                   const newSelected = new Set(selectedCities);
                                   if (e.target.checked) {
                                     newSelected.add(metric.city_id);
