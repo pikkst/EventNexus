@@ -35,7 +35,10 @@ const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
     // Premium tier fields
     isFeatured: dbEvent.is_featured || false,
     customBranding: dbEvent.custom_branding || undefined,
-    translations: dbEvent.translations || undefined
+    translations: dbEvent.translations || undefined,
+    // Venue seating fields
+    has_seating: dbEvent.has_seating || false,
+    venue_layout_id: dbEvent.venue_layout_id || undefined
   };
 };
 

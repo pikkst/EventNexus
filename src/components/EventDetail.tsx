@@ -1237,6 +1237,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
           onSelectSeats={async (seats) => {
             await completeTicketPurchase(pendingTicketTemplate, seats.map(s => s.id));
             setShowSeatSelector(false);
+            setPendingTicketTemplate(null);
           }}
           onClose={() => {
             setShowSeatSelector(false);
