@@ -70,13 +70,22 @@ export const createSubscriptionCheckout = async (
 };
 
 /**
+ * Line item for ticket checkout
+ */
+export interface TicketLineItem {
+  name: string;
+  description?: string;
+  price: number;
+  seatId?: string;
+}
+
+/**
  * Create a Stripe checkout session for ticket purchase
  */
 export const createTicketCheckout = async (
   userId: string,
   eventId: string,
-  ticketCount: number,
-  pricePerTicket: number,
+  lineItems: TicketLineItem[],
   eventName: string,
   ticketTemplateId?: string,
   ticketType?: string,
@@ -93,14 +102,17 @@ export const createTicketCheckout = async (
     // Get the base URL (use origin for clean URLs with BrowserRouter)
     const baseUrl = window.location.origin;
 
+    // Calculate total count for metadata
+    const ticketCount = lineItems.length;
+
     // Call Supabase Edge Function to create checkout session
     // Note: Include session_id placeholder in URL to ensure proper placement
     const { data, error } = await supabase.functions.invoke('create-checkout', {
       body: {
         userId,
         eventId,
+        lineItems,
         ticketCount,
-        pricePerTicket,
         eventName,
         ticketTemplateId,
         ticketType,

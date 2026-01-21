@@ -70,7 +70,7 @@ serve(async (req: Request) => {
       );
     }
 
-    const { userId, tier, priceId, customerEmail, eventId, ticketCount, pricePerTicket, eventName, ticketTemplateId, ticketType, ticketName, successUrl, cancelUrl } = await req.json();
+    const { userId, tier, priceId, customerEmail, eventId, ticketCount, lineItems, pricePerTicket, eventName, ticketTemplateId, ticketType, ticketName, successUrl, cancelUrl } = await req.json();
 
     // Validate required parameters
     if (!userId) {
@@ -220,23 +220,40 @@ serve(async (req: Request) => {
 
       // Create checkout session for ticket purchase
       // Money held on platform, transferred 2 days after event via automated payout system
+      
+      // Build line items from detailed array (each seat/zone spot separate)
+      const stripeLineItems = lineItems && Array.isArray(lineItems) && lineItems.length > 0
+        ? lineItems.map((item: any) => ({
+            price_data: {
+              currency: 'eur',
+              product_data: {
+                name: item.name || 'Ticket',
+                description: item.description || '',
+              },
+              unit_amount: Math.round(item.price * 100),
+            },
+            quantity: 1, // Each line item is for 1 seat/spot
+          }))
+        : [
+            // Fallback for old API calls without lineItems
+            {
+              price_data: {
+                currency: 'eur',
+                product_data: {
+                  name: `${eventName} - Tickets`,
+                  description: `${ticketCount} ticket(s) @ €${pricePerTicket.toFixed(2)} each`,
+                },
+                unit_amount: Math.round(pricePerTicket * 100),
+              },
+              quantity: ticketCount,
+            },
+          ];
+      
       const buildTicketSession = async (custId: string) => stripe.checkout.sessions.create({
         customer: custId,
         payment_method_types: ['card'],
         mode: 'payment',
-        line_items: [
-          {
-            price_data: {
-              currency: 'eur',
-              product_data: {
-                name: `${eventName} - Tickets`,
-                description: `${ticketCount} ticket(s) @ €${pricePerTicket.toFixed(2)} each`,
-              },
-              unit_amount: Math.round(pricePerTicket * 100),
-            },
-            quantity: ticketCount,
-          },
-        ],
+        line_items: stripeLineItems,
         success_url: successUrl + (successUrl.includes('?') ? '&' : '?') + 'session_id={CHECKOUT_SESSION_ID}',
         cancel_url: cancelUrl,
         payment_intent_data: {

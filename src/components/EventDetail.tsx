@@ -584,11 +584,49 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const completeTicketPurchase = async (template: TicketTemplate, seatIds: string[]) => {
     if (!event) return;
 
-    // For venue seating events, quantity = number of seats selected
-    // For regular events, use the quantity from ticketQuantities
-    const quantity = seatIds.length > 0 ? seatIds.length : (ticketQuantities[template.id] || 0);
+    // Build line items array - each seat/zone spot gets its own line
+    const lineItems: Array<{name: string; description?: string; price: number; seatId?: string}> = [];
     
-    if (quantity === 0) {
+    if (seatIds.length > 0) {
+      // Venue seating event - get venue layout to build detailed line items
+      const layout = await getVenueLayout(event.id);
+      if (layout) {
+        // Create a line item for each selected seat
+        seatIds.forEach((seatId, index) => {
+          const seat = layout.items.find(item => item.id === seatId);
+          if (seat) {
+            lineItems.push({
+              name: seat.type === 'zone' ? `${seat.label} - Spot ${index + 1}` : seat.label || `Seat ${seat.number || index + 1}`,
+              description: seat.type === 'zone' ? `Zone spot` : `Individual seat`,
+              price: seat.price || template.price,
+              seatId: seatId
+            });
+          }
+        });
+      } else {
+        // Fallback if layout not found - generic line items
+        seatIds.forEach((seatId, index) => {
+          lineItems.push({
+            name: `Ticket ${index + 1}`,
+            description: template.name,
+            price: template.price,
+            seatId: seatId
+          });
+        });
+      }
+    } else {
+      // Regular ticket purchase without seating
+      const quantity = ticketQuantities[template.id] || 0;
+      for (let i = 0; i < quantity; i++) {
+        lineItems.push({
+          name: `${template.name} - Ticket ${i + 1}`,
+          description: template.description,
+          price: template.price
+        });
+      }
+    }
+    
+    if (lineItems.length === 0) {
       alert('Please select at least one seat or ticket.');
       return;
     }
@@ -596,12 +634,11 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
     setIsPurchasing(true);
     
     try {
-      // Create Stripe checkout session for this specific ticket type
+      // Create Stripe checkout session with detailed line items
       const checkoutUrl = await createTicketCheckout(
         user!.id,
         event.id,
-        quantity,
-        template.price,
+        lineItems,
         `${event.name} - ${template.name}`,
         template.id,
         template.type,
