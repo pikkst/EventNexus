@@ -975,6 +975,29 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       }
 
       logger.log('Preparing event data...');
+      
+      // Calculate actual price: use lowest price from venue layout or ticket templates if available
+      let actualEventPrice = formData.price;
+      if (venueLayout && venueLayout.items && venueLayout.items.length > 0) {
+        // Get lowest price from venue seats/zones
+        const venuePrices = venueLayout.items
+          .filter(item => (item.type === 'seat' || item.type === 'zone') && item.price > 0)
+          .map(item => item.price);
+        if (venuePrices.length > 0) {
+          actualEventPrice = Math.min(...venuePrices);
+          logger.log(`Using lowest venue price: €${actualEventPrice}`);
+        }
+      } else if (ticketTemplates && ticketTemplates.length > 0) {
+        // Get lowest price from ticket templates
+        const templatePrices = ticketTemplates
+          .filter(t => t.price > 0)
+          .map(t => t.price);
+        if (templatePrices.length > 0) {
+          actualEventPrice = Math.min(...templatePrices, actualEventPrice || Infinity);
+          logger.log(`Using lowest ticket price: €${actualEventPrice}`);
+        }
+      }
+      
       const eventData: Omit<EventNexusEvent, 'id'> = {
         name: formData.name,
         category: formData.category,
@@ -990,7 +1013,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           address: formData.locationAddress || formData.location,
           city: formData.locationCity || 'New York'
         },
-        price: formData.price,
+        price: actualEventPrice,
         visibility: formData.visibility as any,
         organizerId: user.id,
         imageUrl: uploadedImageUrl,
