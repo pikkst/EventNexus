@@ -1182,6 +1182,10 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
     };
 
     try {
+      // 🚨 DEBUG ALERT #1: Show selected cities
+      const selectedIds = Array.from(selectedCities);
+      alert(`🔍 DEBUG #1: Selected Cities\n\nCount: ${selectedCities.size}\nFirst 3 IDs:\n${selectedIds.slice(0, 3).join('\n')}\n\nClick OK to continue...`);
+      
       // Load ALL cities (including inactive ones if explicitly selected by user)
       const { data: allCities, error: citiesError } = await supabase
         .from('city_configs')
@@ -1194,45 +1198,25 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         return;
       }
       
-      // 🔍 DEBUG: Log selected cities and all cities for comparison
-      console.log('🔍 DEBUG: Selected cities:', Array.from(selectedCities));
-      console.log('🔍 DEBUG: Selected cities types:', Array.from(selectedCities).map(id => typeof id));
-      console.log('🔍 DEBUG: All cities loaded:', allCities.map(c => ({ 
-        city_id: c.city_id, 
-        city_id_type: typeof c.city_id,
-        name: c.city_name, 
-        country: c.country 
-      })));
+      // 🚨 DEBUG ALERT #2: Show Ukrainian cities from DB
+      const ukrainianCitiesFromDB = allCities.filter(c => c.country === 'Ukraine');
+      alert(`🔍 DEBUG #2: Ukrainian Cities from DB\n\nCount: ${ukrainianCitiesFromDB.length}\nFirst 3:\n${ukrainianCitiesFromDB.slice(0, 3).map(c => `${c.city_name}: ${c.city_id}`).join('\n')}`);
       
-      // 🔍 DEBUG: Check if Set.has() is working properly
-      const ukrainianCities = allCities.filter(c => c.country === 'Ukraine');
-      console.log('🔍 DEBUG: Ukrainian cities test:', ukrainianCities.map(city => ({
-        city_name: city.city_name,
-        city_id: city.city_id,
-        city_id_type: typeof city.city_id,
-        has_check: selectedCities.has(city.city_id),
-        has_toString_check: selectedCities.has(String(city.city_id))
-      })));
+      // 🚨 DEBUG ALERT #3: Test Set.has() for first Ukrainian city
+      if (ukrainianCitiesFromDB.length > 0) {
+        const testCity = ukrainianCitiesFromDB[0];
+        const hasCheck = selectedCities.has(testCity.city_id);
+        const hasStringCheck = selectedCities.has(String(testCity.city_id));
+        alert(`🔍 DEBUG #3: Set.has() Test\n\nCity: ${testCity.city_name}\nDB city_id: ${testCity.city_id}\nType: ${typeof testCity.city_id}\n\nSet.has(city_id): ${hasCheck}\nSet.has(String(city_id)): ${hasStringCheck}\n\nSelected IDs sample:\n${selectedIds.slice(0, 2).join('\n')}`);
+      }
       
       // Filter by selected cities if any are selected
       const citiesToProcess = selectedCities.size > 0
-        ? allCities.filter(city => {
-            const isSelected = selectedCities.has(city.city_id);
-            if (!isSelected && city.country === 'Ukraine') {
-              console.error('❌ Ukrainian city NOT matched:', {
-                city_id: city.city_id,
-                city_id_type: typeof city.city_id,
-                city_name: city.city_name,
-                selectedCities: Array.from(selectedCities),
-                has_check: selectedCities.has(city.city_id),
-                has_string_check: selectedCities.has(String(city.city_id))
-              });
-            }
-            return isSelected;
-          })
-        : allCities.filter(city => city.active); // If no selection, default to active cities only
+        ? allCities.filter(city => selectedCities.has(city.city_id))
+        : allCities.filter(city => city.active);
       
-      console.log('🔍 DEBUG: Cities to process:', citiesToProcess.map(c => ({ city_id: c.city_id, name: c.city_name })));
+      // 🚨 DEBUG ALERT #4: Show final result
+      alert(`🔍 DEBUG #4: Filter Result\n\nCities to process: ${citiesToProcess.length}\nUkrainian cities matched: ${citiesToProcess.filter(c => c.country === 'Ukraine').length}`);
       
       if (citiesToProcess.length === 0) {
         alert('⚠️ No cities selected. Please select at least one city to run the pipeline.');
