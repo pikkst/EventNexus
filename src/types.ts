@@ -7,6 +7,123 @@ export interface EventTranslation {
   aboutText?: string;
 }
 
+// Ticket and Event Display Template Types
+export type TemplateType = 'standard' | 'premium' | 'vip' | 'luxury';
+export type BorderStyle = 'none' | 'silver' | 'gold' | 'gradient' | 'animated';
+export type BackgroundStyle = 'solid' | 'gradient' | 'pattern' | 'image';
+export type ShadowEffect = 'none' | 'light' | 'medium' | 'heavy' | 'glow';
+export type QRCodeStyle = 'standard' | 'rounded' | 'dotted' | 'custom';
+export type MarkerStyle = 'standard' | 'pin' | 'circle' | 'custom';
+export type MarkerSize = 'small' | 'medium' | 'large' | 'xl';
+
+export interface TicketTemplate {
+  id: string;
+  name: string;
+  display_name: {
+    en: string;
+    et: string;
+    ru: string;
+  };
+  description: {
+    en: string;
+    et: string;
+    ru: string;
+  };
+  template_type: TemplateType;
+  border_style: BorderStyle;
+  border_color?: string;
+  background_style: BackgroundStyle;
+  background_colors?: string[]; // Array of hex colors for gradients
+  background_pattern?: string;
+  background_image_url?: string;
+  text_color: string;
+  accent_color: string;
+  font_family: string;
+  corner_radius: number;
+  shadow_effect: ShadowEffect;
+  overlay_effect?: string;
+  qr_code_style: QRCodeStyle;
+  required_tier: string;
+  is_premium: boolean;
+  credit_price: number;
+  preview_image_url?: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface EventMarkerTemplate {
+  id: string;
+  name: string;
+  display_name: {
+    en: string;
+    et: string;
+    ru: string;
+  };
+  description: {
+    en: string;
+    et: string;
+    ru: string;
+  };
+  marker_style: MarkerStyle;
+  marker_color: string;
+  marker_icon?: string; // Lucide icon name
+  marker_size: MarkerSize;
+  pulse_effect: boolean;
+  glow_effect: boolean;
+  bounce_on_hover: boolean;
+  border_width: number;
+  border_color: string;
+  shadow_style: string;
+  icon_color: string;
+  required_tier: string;
+  is_premium: boolean;
+  credit_price: number;
+  preview_image_url?: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface UserPurchasedTemplate {
+  id: string;
+  user_id: string;
+  template_type: 'ticket' | 'marker';
+  template_id: string;
+  purchased_at: string;
+  credits_spent: number;
+}
+
+export interface EventTemplateSelection {
+  id: string;
+  event_id: string;
+  standard_ticket_template_id?: string;
+  vip_ticket_template_id?: string;
+  early_bird_ticket_template_id?: string;
+  marker_template_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserAvailableTemplate {
+  template_id: string;
+  name: string;
+  display_name: {
+    en: string;
+    et: string;
+    ru: string;
+  };
+  description: {
+    en: string;
+    et: string;
+    ru: string;
+  };
+  preview_image_url?: string;
+  required_tier: string;
+  is_premium: boolean;
+  credit_price: number;
+  has_access: boolean;
+  is_purchased: boolean;
+}
+
 // Venue Designer Types
 export type VenueItemType = 'seat' | 'zone' | 'stage';
 export type VenueItemShape = 'rect' | 'circle';

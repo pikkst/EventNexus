@@ -42,6 +42,8 @@ import { validateAndOptimizeEvent, meetsMinimumSEO, getSEORecommendations } from
 import CreditsPricingModal from './CreditsPricingModal';
 import VenueDesignerModal from './VenueDesigner/VenueDesignerModal';
 import LayoutItem from './VenueDesigner/LayoutItem';
+import TemplateSelector from './Templates/TemplateSelector';
+import { saveEventTemplateSelections } from '../services/templateService';
 
 // Simple logger for debugging
 const logger = {
@@ -160,6 +162,14 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   // Venue designer state
   const [venueLayout, setVenueLayout] = useState<VenueLayout | null>(null);
   const [showVenueDesigner, setShowVenueDesigner] = useState(false);
+
+  // Template selection state
+  const [standardTicketTemplateId, setStandardTicketTemplateId] = useState<string | undefined>();
+  const [vipTicketTemplateId, setVipTicketTemplateId] = useState<string | undefined>();
+  const [earlyBirdTicketTemplateId, setEarlyBirdTicketTemplateId] = useState<string | undefined>();
+  const [markerTemplateId, setMarkerTemplateId] = useState<string | undefined>();
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [selectedTicketType, setSelectedTicketType] = useState<'standard' | 'vip' | 'early_bird'>('standard');
 
   const [ticketTemplates, setTicketTemplates] = useState<Array<{
     name: string;
@@ -1161,6 +1171,23 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
           }
         }
         
+        // Save template selections
+        if (created.id && (standardTicketTemplateId || vipTicketTemplateId || earlyBirdTicketTemplateId || markerTemplateId)) {
+          logger.log('Saving template selections for event...');
+          try {
+            await saveEventTemplateSelections(created.id, {
+              standard_ticket_template_id: standardTicketTemplateId,
+              vip_ticket_template_id: vipTicketTemplateId,
+              early_bird_ticket_template_id: earlyBirdTicketTemplateId,
+              marker_template_id: markerTemplateId
+            });
+            logger.log('Template selections saved successfully!');
+          } catch (templateError) {
+            logger.error('Failed to save template selections:', templateError);
+            // Don't fail the whole event creation if template save fails
+          }
+        }
+        
         logger.log('Navigating to dashboard...');
         const translationCount = Object.keys(translations).length;
         const scannerMessage = createdScannerCode 
@@ -1771,6 +1798,78 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 + Add Another Ticket Type
               </button>
                 </>
+              )}
+            </div>
+
+            {/* Ticket & Marker Design Templates */}
+            <div className="space-y-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold">Ticket Design</h3>
+                  <p className="text-xs text-slate-400">Choose how your tickets will look</p>
+                </div>
+                <button
+                  onClick={() => setShowTemplateSelector(!showTemplateSelector)}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-sm font-medium"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {showTemplateSelector ? 'Hide Templates' : 'Choose Design'}
+                </button>
+              </div>
+
+              {showTemplateSelector && (
+                <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-6">
+                  {/* Standard Ticket Template */}
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-300 mb-3">Standard Tickets</h4>
+                    <TemplateSelector
+                      userId={user.id}
+                      userTier={user.subscription_tier || 'free'}
+                      templateType="ticket"
+                      ticketType="standard"
+                      selectedTemplateId={standardTicketTemplateId}
+                      onSelect={setStandardTicketTemplateId}
+                      eventDetails={{
+                        name: formData.name,
+                        date: formData.date,
+                        location: formData.locationCity
+                      }}
+                    />
+                  </div>
+
+                  {/* VIP Ticket Template (if VIP tickets exist) */}
+                  {ticketTemplates.some(t => t.type === 'vip') && (
+                    <div className="pt-4 border-t border-slate-800">
+                      <h4 className="text-sm font-bold text-slate-300 mb-3">VIP Tickets</h4>
+                      <TemplateSelector
+                        userId={user.id}
+                        userTier={user.subscription_tier || 'free'}
+                        templateType="ticket"
+                        ticketType="vip"
+                        selectedTemplateId={vipTicketTemplateId}
+                        onSelect={setVipTicketTemplateId}
+                        eventDetails={{
+                          name: formData.name,
+                          date: formData.date,
+                          location: formData.locationCity
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Map Marker Template */}
+                  <div className="pt-4 border-t border-slate-800">
+                    <h4 className="text-sm font-bold text-slate-300 mb-3">Map Marker Design</h4>
+                    <p className="text-xs text-slate-400 mb-3">How your event appears on the map</p>
+                    <TemplateSelector
+                      userId={user.id}
+                      userTier={user.subscription_tier || 'free'}
+                      templateType="marker"
+                      selectedTemplateId={markerTemplateId}
+                      onSelect={setMarkerTemplateId}
+                    />
+                  </div>
+                </div>
               )}
             </div>
 
