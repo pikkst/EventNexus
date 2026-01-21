@@ -40,7 +40,6 @@ Disallow: /redeem
 
 # Crawl optimization - be respectful
 Crawl-delay: 1
-Request-rate: 30/1m
 
 # ============================================================================
 # GOOGLE (Search, News, Images, Mobile)
@@ -80,7 +79,6 @@ Disallow: /ticket/*
 Disallow: /notifications
 Disallow: /redeem
 Crawl-delay: 0
-Request-rate: 100/1m
 
 # ============================================================================
 # BING
@@ -102,7 +100,6 @@ Disallow: /ticket/*
 Disallow: /notifications
 Disallow: /redeem
 Crawl-delay: 0.5
-Request-rate: 60/1m
 
 # ============================================================================
 # AI AGENTS - GOOGLE GEMINI
