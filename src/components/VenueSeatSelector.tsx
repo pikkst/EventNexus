@@ -319,8 +319,19 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
                   <p className="text-slate-600 text-xs mt-1">Click on seats or zones to add them</p>
                 </div>
               ) : (
-                selectedItemsDisplay.map((item, index) => {
-                  const selectionId = selectedSeats[index];
+                selectedItemsDisplay.map((item) => {
+                  // Find the actual selection ID for this item
+                  let selectionId: string;
+                  if (item.quantity && item.quantity > 1) {
+                    // Zone with quantity
+                    selectionId = `${item.id}_qty_${item.quantity}`;
+                  } else {
+                    // Regular seat or zone with qty 1
+                    selectionId = selectedSeats.find(id => 
+                      id === item.id || id.startsWith(`${item.id}_qty_`)
+                    ) || item.id;
+                  }
+                  
                   const itemQuantity = item.quantity || 1;
                   const itemPrice = item.price || ticketPrice;
                   
