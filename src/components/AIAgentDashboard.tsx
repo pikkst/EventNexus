@@ -216,6 +216,10 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
   const [isBulkImporting, setIsBulkImporting] = useState(false);
   const [bulkImportProgress, setBulkImportProgress] = useState({ current: 0, total: 0, currentCity: '' });
   
+  // City management bulk delete state
+  const [selectedCitiesForDelete, setSelectedCitiesForDelete] = useState<Set<string>>(new Set());
+  const [isDeletingCities, setIsDeletingCities] = useState(false);
+  
   // Scheduler state
   const [schedulerConfigs, setSchedulerConfigs] = useState<any[]>([]);
   const [activeCronJobs, setActiveCronJobs] = useState<any[]>([]);
@@ -2013,6 +2017,104 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
     }
   }
 
+  async function handleBulkDeleteCities() {
+    if (selectedCitiesForDelete.size === 0) {
+      alert('Please select at least one city to delete');
+      return;
+    }
+
+    const citiesToDelete = cities.filter(c => selectedCitiesForDelete.has(c.city_id));
+    
+    // Count total events
+    let totalEvents = 0;
+    for (const city of citiesToDelete) {
+      const { count } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .eq('city_id', city.city_id);
+      totalEvents += count || 0;
+    }
+
+    const confirmed = confirm(
+      `⚠️ Bulk Delete ${citiesToDelete.length} Cities?\n\n` +
+      `Cities to delete:\n${citiesToDelete.map(c => `• ${c.city_name}, ${c.country}`).join('\n')}\n\n` +
+      (totalEvents > 0 ? `Total events: ${totalEvents}\n\n` : '') +
+      `This will permanently remove:\n` +
+      `✗ ${citiesToDelete.length} cities\n` +
+      (totalEvents > 0 ? `✗ ${totalEvents} published events\n` : '') +
+      `✗ All event sources\n` +
+      `✗ All AI agent data\n` +
+      `✗ All parsed events\n\n` +
+      `⚠️ This action CANNOT be undone!\n\n` +
+      `Type 'DELETE' to confirm:`
+    );
+
+    if (!confirmed) return;
+
+    setIsDeletingCities(true);
+    const results = {
+      success: [] as string[],
+      failed: [] as { city: string, error: string }[]
+    };
+
+    try {
+      for (const city of citiesToDelete) {
+        try {
+          // Delete events first
+          const { error: eventsError } = await supabase
+            .from('events')
+            .delete()
+            .eq('city_id', city.city_id);
+
+          if (eventsError) throw eventsError;
+
+          // Delete event sources
+          await supabase
+            .from('event_sources')
+            .delete()
+            .eq('city_id', city.city_id);
+
+          // Delete city config
+          const { error: cityError } = await supabase
+            .from('city_configs')
+            .delete()
+            .eq('city_id', city.city_id);
+
+          if (cityError) throw cityError;
+
+          results.success.push(`${city.city_name}, ${city.country}`);
+        } catch (error: any) {
+          results.failed.push({ 
+            city: `${city.city_name}, ${city.country}`, 
+            error: error.message 
+          });
+        }
+      }
+
+      const summary = `
+🗑️ Bulk Delete Complete!
+
+✅ Successfully deleted: ${results.success.length}
+${results.failed.length > 0 ? `❌ Failed: ${results.failed.length}` : ''}
+
+${results.success.length > 0 ? 'Deleted cities:\n' + results.success.map(c => `✓ ${c}`).join('\n') : ''}
+
+${results.failed.length > 0 ? '\nFailed:\n' + results.failed.map(f => `✗ ${f.city}: ${f.error}`).join('\n') : ''}
+      `.trim();
+
+      alert(summary);
+
+      setSelectedCitiesForDelete(new Set());
+      await loadCities();
+      await loadCityMetrics();
+      
+    } catch (error: any) {
+      alert(`❌ Bulk delete failed: ${error.message}`);
+    } finally {
+      setIsDeletingCities(false);
+    }
+  }
+
   // Auto-geocode city when name and country are provided
   async function geocodeCity(cityName: string, country: string) {
     if (!cityName || !country) return;
@@ -3546,11 +3648,116 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
 
                 {/* Existing Cities List */}
                 <div className="border border-gray-200 rounded-lg p-6 bg-white">
-                  <h4 className="font-medium text-gray-900 mb-4">Active Cities</h4>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium text-gray-900">Active Cities</h4>
+                    {selectedCitiesForDelete.size > 0 && (
+                      <button
+                        onClick={handleBulkDeleteCities}
+                        disabled={isDeletingCities}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {isDeletingCities ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4" />
+                            Delete {selectedCitiesForDelete.size} Selected
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Search and Filter Controls */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    <div className="md:col-span-2">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          value={citySearchQuery}
+                          onChange={(e) => setCitySearchQuery(e.target.value)}
+                          placeholder="Search cities..."
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <select
+                        value={cityFilterCountry}
+                        onChange={(e) => setCityFilterCountry(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="all">All Countries</option>
+                        {Array.from(new Set(cities.map(c => c.country)))
+                          .sort()
+                          .map(country => (
+                            <option key={country} value={country}>{country}</option>
+                          ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Bulk Selection Controls */}
+                  {cities.length > 0 && (
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedCitiesForDelete.size === cities.filter(c => {
+                            const matchesSearch = citySearchQuery === '' || 
+                              c.city_name.toLowerCase().includes(citySearchQuery.toLowerCase()) ||
+                              c.country.toLowerCase().includes(citySearchQuery.toLowerCase());
+                            const matchesCountry = cityFilterCountry === 'all' || c.country === cityFilterCountry;
+                            return matchesSearch && matchesCountry;
+                          }).length && cities.length > 0}
+                          onChange={(e) => {
+                            const filtered = cities.filter(c => {
+                              const matchesSearch = citySearchQuery === '' || 
+                                c.city_name.toLowerCase().includes(citySearchQuery.toLowerCase()) ||
+                                c.country.toLowerCase().includes(citySearchQuery.toLowerCase());
+                              const matchesCountry = cityFilterCountry === 'all' || c.country === cityFilterCountry;
+                              return matchesSearch && matchesCountry;
+                            });
+                            if (e.target.checked) {
+                              setSelectedCitiesForDelete(new Set(filtered.map(c => c.city_id)));
+                            } else {
+                              setSelectedCitiesForDelete(new Set());
+                            }
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm text-gray-600">
+                          {selectedCitiesForDelete.size > 0 
+                            ? `${selectedCitiesForDelete.size} selected`
+                            : 'Select all'}
+                        </span>
+                      </div>
+                      {selectedCitiesForDelete.size > 0 && (
+                        <button
+                          onClick={() => setSelectedCitiesForDelete(new Set())}
+                          className="text-sm text-gray-600 hover:text-gray-900"
+                        >
+                          Clear selection
+                        </button>
+                      )}
+                    </div>
+                  )}
                   
                   {/* Cities List */}
                   <div className="space-y-4">
-                  {cities.map((city) => (
+                  {cities
+                    .filter(city => {
+                      const matchesSearch = citySearchQuery === '' || 
+                        city.city_name.toLowerCase().includes(citySearchQuery.toLowerCase()) ||
+                        city.country.toLowerCase().includes(citySearchQuery.toLowerCase());
+                      const matchesCountry = cityFilterCountry === 'all' || city.country === cityFilterCountry;
+                      return matchesSearch && matchesCountry;
+                    })
+                    .map((city) => (
                     <div key={city.city_id} className="border border-gray-200 rounded-lg p-4">
                       {editingCity?.city_id === city.city_id ? (
                         <div className="space-y-4">
@@ -3603,36 +3810,74 @@ ${totalResults.cityErrors.length > 0 ? '\n⚠️ City Errors:\n' + totalResults.
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium text-gray-900 flex items-center gap-2">
-                              {city.city_name}, {city.country}
-                              {!city.is_active && (
-                                <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded">Inactive</span>
-                              )}
-                            </h4>
-                            <p className="text-sm text-gray-500">
-                              Lat: {(city.latitude || 0).toFixed(4)}, Lng: {(city.longitude || 0).toFixed(4)} • {city.timezone}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setEditingCity(city)}
-                              className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCity(city.city_id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedCitiesForDelete.has(city.city_id)}
+                            onChange={(e) => {
+                              const newSet = new Set(selectedCitiesForDelete);
+                              if (e.target.checked) {
+                                newSet.add(city.city_id);
+                              } else {
+                                newSet.delete(city.city_id);
+                              }
+                              setSelectedCitiesForDelete(newSet);
+                            }}
+                            className="w-4 h-4"
+                          />
+                          <div className="flex-1 flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                                {city.city_name}, {city.country}
+                                {!city.is_active && (
+                                  <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded">Inactive</span>
+                                )}
+                              </h4>
+                              <p className="text-sm text-gray-500">
+                                Lat: {(city.latitude || 0).toFixed(4)}, Lng: {(city.longitude || 0).toFixed(4)} • {city.timezone}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setEditingCity(city)}
+                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCity(city.city_id)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
                     </div>
                   ))}
+                  
+                  {cities.filter(city => {
+                    const matchesSearch = citySearchQuery === '' || 
+                      city.city_name.toLowerCase().includes(citySearchQuery.toLowerCase()) ||
+                      city.country.toLowerCase().includes(citySearchQuery.toLowerCase());
+                    const matchesCountry = cityFilterCountry === 'all' || city.country === cityFilterCountry;
+                    return matchesSearch && matchesCountry;
+                  }).length === 0 && cities.length > 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p>No cities match your search criteria.</p>
+                      <button
+                        onClick={() => {
+                          setCitySearchQuery('');
+                          setCityFilterCountry('all');
+                        }}
+                        className="mt-3 text-indigo-600 hover:text-indigo-700 text-sm"
+                      >
+                        Clear filters
+                      </button>
+                    </div>
+                  )}
                   
                   {cities.length === 0 && !showAddCity && (
                     <div className="text-center py-12 text-gray-500">
