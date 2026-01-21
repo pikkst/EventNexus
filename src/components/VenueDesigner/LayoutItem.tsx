@@ -158,15 +158,29 @@ const LayoutItem: React.FC<LayoutItemProps> = ({
         {item.name}
       </text>
       {!isStage && !isWall && !isDecoration && (
-        <text
-          x={item.x}
-          y={item.y + 12}
-          textAnchor="middle"
-          fontSize="9"
-          className={`${isAttendeeMode ? 'fill-indigo-50' : 'fill-slate-500'} font-medium pointer-events-none`}
-        >
-          ${item.price}
-        </text>
+        <>
+          <text
+            x={item.x}
+            y={item.y + 12}
+            textAnchor="middle"
+            fontSize="9"
+            className={`${isAttendeeMode ? 'fill-indigo-50' : 'fill-slate-500'} font-medium pointer-events-none`}
+          >
+            ${item.price}
+          </text>
+          {/* Show capacity info for zones in attendee mode */}
+          {item.type === 'zone' && isAttendeeMode && item.capacity && (
+            <text
+              x={item.x}
+              y={item.y + 24}
+              textAnchor="middle"
+              fontSize="8"
+              className="fill-indigo-300 font-bold pointer-events-none"
+            >
+              {(item.capacity - (item.bookedCount || 0))} / {item.capacity}
+            </text>
+          )}
+        </>
       )}
     </g>
   );

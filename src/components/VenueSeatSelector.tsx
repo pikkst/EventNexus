@@ -59,6 +59,51 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
       return;
     }
 
+    // Handle zones differently - allow quantity selection
+    if (item.type === 'zone') {
+      const availableCapacity = (item.capacity || 0) - (item.bookedCount || 0);
+      
+      if (availableCapacity <= 0) {
+        alert('This zone is fully booked.');
+        return;
+      }
+
+      // Ask user how many spots they want in this zone
+      const requested = prompt(
+        `How many spots do you want in ${item.name}?\n\nAvailable: ${availableCapacity} of ${item.capacity}\nPrice per spot: €${item.price || ticketPrice}`,
+        '1'
+      );
+
+      if (!requested) return; // User cancelled
+      
+      const quantity = parseInt(requested, 10);
+      
+      if (isNaN(quantity) || quantity < 1) {
+        alert('Please enter a valid number.');
+        return;
+      }
+
+      if (quantity > availableCapacity) {
+        alert(`Only ${availableCapacity} spots available in this zone.`);
+        return;
+      }
+
+      // Create multiple "virtual" seats for this zone selection
+      // We'll track them by appending quantity to the zone ID
+      const zoneSelectionId = `${item.id}_qty_${quantity}`;
+      
+      // Store the zone selection with quantity info
+      setSelectedSeats(prev => {
+        // Remove any previous selections from this zone
+        const filtered = prev.filter(id => !id.startsWith(`${item.id}_qty_`));
+        return [...filtered, zoneSelectionId];
+      });
+
+      console.log(`Selected ${quantity} spots in zone ${item.name}`);
+      return;
+    }
+
+    // Regular seat handling
     // Toggle selection
     if (selectedSeats.includes(item.id)) {
       // Deselect
@@ -79,7 +124,31 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
   const handleConfirmSelection = () => {
     if (!venueLayout || selectedSeats.length === 0) return;
     
-    const selectedItems = venueLayout.items.filter(item => selectedSeats.includes(item.id));
+    // Build the selected items list with quantities for zones
+    const selectedItems: VenueItem[] = [];
+    
+    selectedSeats.forEach(selectionId => {
+      // Check if this is a zone selection with quantity
+      if (selectionId.includes('_qty_')) {
+        const [zoneId, , quantityStr] = selectionId.split('_qty_');
+        const quantity = parseInt(quantityStr, 10);
+        const zoneItem = venueLayout.items.find(item => item.id === zoneId);
+        
+        if (zoneItem) {
+          // Add the zone item multiple times based on quantity
+          for (let i = 0; i < quantity; i++) {
+            selectedItems.push(zoneItem);
+          }
+        }
+      } else {
+        // Regular seat
+        const item = venueLayout.items.find(item => item.id === selectionId);
+        if (item) {
+          selectedItems.push(item);
+        }
+      }
+    });
+    
     onSelectSeats(selectedItems);
   };
 
@@ -89,8 +158,39 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
     isBooked: bookedSeats.includes(item.id)
   })) || [];
 
-  const selectedItems = itemsWithStatus.filter(item => selectedSeats.includes(item.id));
-  const totalPrice = selectedItems.reduce((sum, item) => sum + (item.price || ticketPrice), 0);
+  // Calculate selected items for display
+  const getSelectedItemsForDisplay = () => {
+    const items: Array<VenueItem & { quantity?: number }> = [];
+    
+    selectedSeats.forEach(selectionId => {
+      if (selectionId.includes('_qty_')) {
+        // Zone with quantity
+        const [zoneId, , quantityStr] = selectionId.split('_qty_');
+        const quantity = parseInt(quantityStr, 10);
+        const zoneItem = itemsWithStatus.find(item => item.id === zoneId);
+        
+        if (zoneItem) {
+          items.push({ ...zoneItem, quantity });
+        }
+      } else {
+        // Regular seat
+        const item = itemsWithStatus.find(item => item.id === selectionId);
+        if (item) {
+          items.push(item);
+        }
+      }
+    });
+    
+    return items;
+  };
+
+  const selectedItemsDisplay = getSelectedItemsForDisplay();
+  const totalPrice = selectedItemsDisplay.reduce((sum, item) => {
+    const price = item.price || ticketPrice;
+    const quantity = item.quantity || 1;
+    return sum + (price * quantity);
+  }, 0);
+  const totalQuantity = selectedItemsDisplay.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
@@ -212,43 +312,56 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
 
             {/* Selected Seats List */}
             <div className="flex-1 overflow-auto space-y-3 mb-6">
-              {selectedItems.length === 0 ? (
+              {selectedItemsDisplay.length === 0 ? (
                 <div className="text-center py-12">
                   <ShoppingCart className="w-12 h-12 text-slate-700 mx-auto mb-3" />
                   <p className="text-slate-500 text-sm">No seats selected yet</p>
-                  <p className="text-slate-600 text-xs mt-1">Click on seats to add them</p>
-                  <p className="text-slate-600 text-xs mt-2 font-bold">Max: {maxSeats} seat(s)</p>
+                  <p className="text-slate-600 text-xs mt-1">Click on seats or zones to add them</p>
                 </div>
               ) : (
-                selectedItems.map(item => (
-                  <div key={item.id} className="flex justify-between items-center p-3 bg-slate-800 rounded-lg border border-slate-700">
-                    <div className="flex-1">
-                      <div className="font-bold text-sm">{item.name}</div>
-                      <div className="text-xs text-slate-400 uppercase font-bold tracking-tight">
-                        {item.type === 'seat' && item.seatNumber && `Seat #${item.seatNumber}`}
-                        {item.type === 'zone' && item.capacity && `Zone (Capacity: ${item.capacity})`}
+                selectedItemsDisplay.map((item, index) => {
+                  const selectionId = selectedSeats[index];
+                  const itemQuantity = item.quantity || 1;
+                  const itemPrice = item.price || ticketPrice;
+                  
+                  return (
+                    <div key={selectionId} className="flex justify-between items-center p-3 bg-slate-800 rounded-lg border border-slate-700">
+                      <div className="flex-1">
+                        <div className="font-bold text-sm">{item.name}</div>
+                        <div className="text-xs text-slate-400 uppercase font-bold tracking-tight">
+                          {item.type === 'seat' && item.seatNumber && `Seat #${item.seatNumber}`}
+                          {item.type === 'zone' && (
+                            <>
+                              Zone • {itemQuantity} spot{itemQuantity > 1 ? 's' : ''}
+                              {item.capacity && ` (${(item.capacity || 0) - (item.bookedCount || 0)} available)`}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-indigo-400">
+                          €{(itemPrice * itemQuantity).toFixed(2)}
+                          {itemQuantity > 1 && <span className="text-xs text-slate-500 ml-1">(€{itemPrice} × {itemQuantity})</span>}
+                        </span>
+                        <button
+                          onClick={() => setSelectedSeats(prev => prev.filter(id => id !== selectionId))}
+                          className="p-1 hover:bg-red-600/20 rounded text-red-400 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-indigo-400">€{item.price || ticketPrice}</span>
-                      <button
-                        onClick={() => setSelectedSeats(prev => prev.filter(id => id !== item.id))}
-                        className="p-1 hover:bg-red-600/20 rounded text-red-400 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
             {/* Checkout Summary */}
-            {selectedItems.length > 0 && (
+            {selectedItemsDisplay.length > 0 && (
               <div className="pt-4 border-t border-slate-800 space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-400">Seats Selected</span>
-                  <span className="text-xl font-black">{selectedItems.length} / {maxSeats}</span>
+                  <span className="text-sm font-medium text-slate-400">Total Tickets</span>
+                  <span className="text-xl font-black">{totalQuantity}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-slate-400">Total Price</span>
