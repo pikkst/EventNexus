@@ -557,7 +557,14 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       return;
     }
 
+    // If event has seating, show seat selector first (skip quantity check)
+    if (event?.has_seating) {
+      setPendingTicketTemplate(template);
+      setShowSeatSelector(true);
+      return;
+    }
 
+    // For non-seating events, check quantity
     const quantity = ticketQuantities[template.id] || 0;
     
     if (quantity === 0) {
@@ -570,13 +577,6 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       return;
     }
 
-    // If event has seating, show seat selector first
-    if (event?.has_seating) {
-      setPendingTicketTemplate(template);
-      setShowSeatSelector(true);
-      return;
-    }
-
     // Otherwise, proceed directly to checkout
     await completeTicketPurchase(template, []);
   };
@@ -584,7 +584,15 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const completeTicketPurchase = async (template: TicketTemplate, seatIds: string[]) => {
     if (!event) return;
 
-    const quantity = ticketQuantities[template.id] || 0;
+    // For venue seating events, quantity = number of seats selected
+    // For regular events, use the quantity from ticketQuantities
+    const quantity = seatIds.length > 0 ? seatIds.length : (ticketQuantities[template.id] || 0);
+    
+    if (quantity === 0) {
+      alert('Please select at least one seat or ticket.');
+      return;
+    }
+    
     setIsPurchasing(true);
     
     try {
@@ -976,7 +984,6 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                             // Use the first available ticket template to trigger seat selection
                             const firstTemplate = ticketTemplates.find(t => t.is_active && t.quantity_available > 0);
                             if (firstTemplate) {
-                              setTicketQuantities({ [firstTemplate.id]: 1 });
                               handlePurchaseTicket(firstTemplate);
                             }
                           }}
