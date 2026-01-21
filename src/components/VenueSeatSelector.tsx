@@ -130,11 +130,13 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
     selectedSeats.forEach(selectionId => {
       // Check if this is a zone selection with quantity
       if (selectionId.includes('_qty_')) {
-        const [zoneId, , quantityStr] = selectionId.split('_qty_');
+        const parts = selectionId.split('_qty_');
+        const zoneId = parts[0];
+        const quantityStr = parts[1];
         const quantity = parseInt(quantityStr, 10);
         const zoneItem = venueLayout.items.find(item => item.id === zoneId);
         
-        if (zoneItem) {
+        if (zoneItem && !isNaN(quantity)) {
           // Add the zone item multiple times based on quantity
           for (let i = 0; i < quantity; i++) {
             selectedItems.push(zoneItem);
@@ -164,12 +166,14 @@ const VenueSeatSelector: React.FC<VenueSeatSelectorProps> = ({
     
     selectedSeats.forEach(selectionId => {
       if (selectionId.includes('_qty_')) {
-        // Zone with quantity
-        const [zoneId, , quantityStr] = selectionId.split('_qty_');
+        // Zone with quantity - format is "zoneId_qty_number"
+        const parts = selectionId.split('_qty_');
+        const zoneId = parts[0];
+        const quantityStr = parts[1];
         const quantity = parseInt(quantityStr, 10);
         const zoneItem = itemsWithStatus.find(item => item.id === zoneId);
         
-        if (zoneItem) {
+        if (zoneItem && !isNaN(quantity)) {
           items.push({ ...zoneItem, quantity });
         }
       } else {
