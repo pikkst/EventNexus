@@ -20,7 +20,7 @@ async function generateSitemap() {
   try {
     console.log('🗺️  Generating sitemap.xml...');
     
-    const baseUrl = 'https://eventnexus.eu';
+    const baseUrl = 'https://www.eventnexus.eu';
     const now = new Date().toISOString().split('T')[0];
 
     // Initialize Supabase client

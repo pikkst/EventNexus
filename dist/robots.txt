@@ -40,7 +40,6 @@ Disallow: /redeem
 
 # Crawl optimization - be respectful
 Crawl-delay: 1
-Request-rate: 30/1m
 
 # ============================================================================
 # GOOGLE (Search, News, Images, Mobile)
@@ -80,7 +79,6 @@ Disallow: /ticket/*
 Disallow: /notifications
 Disallow: /redeem
 Crawl-delay: 0
-Request-rate: 100/1m
 
 # ============================================================================
 # BING
@@ -102,7 +100,6 @@ Disallow: /ticket/*
 Disallow: /notifications
 Disallow: /redeem
 Crawl-delay: 0.5
-Request-rate: 60/1m
 
 # ============================================================================
 # AI AGENTS - GOOGLE GEMINI
@@ -270,16 +267,16 @@ Crawl-delay: 1
 # SITEMAPS AND FEEDS
 # ============================================================================
 # Primary sitemap for Google & AI crawlers
-Sitemap: https://eventnexus.eu/sitemap.xml
+Sitemap: https://www.eventnexus.eu/sitemap.xml
 
 # Future dynamic sitemap endpoints
-# Sitemap: https://eventnexus.eu/api/sitemap
-# Sitemap: https://eventnexus.eu/sitemap-events.xml
-# Sitemap: https://eventnexus.eu/sitemap-organizers.xml
+# Sitemap: https://www.eventnexus.eu/api/sitemap
+# Sitemap: https://www.eventnexus.eu/sitemap-events.xml
+# Sitemap: https://www.eventnexus.eu/sitemap-organizers.xml
 
 # RSS/Atom Feeds for AI aggregators and news readers
-# RSS: https://eventnexus.eu/api/feed
-# Atom: https://eventnexus.eu/api/feed?format=atom
+# RSS: https://www.eventnexus.eu/api/feed
+# Atom: https://www.eventnexus.eu/api/feed?format=atom
 
 # ============================================================================
 # AI CRAWLER NOTES
