@@ -31,7 +31,7 @@ export default async function handler(
   res: VercelResponse,
 ) {
   try {
-    const baseUrl = 'https://eventnexus.eu';
+    const baseUrl = 'https://www.eventnexus.eu';
     const now = new Date().toISOString().split('T')[0];
 
     // Initialize Supabase client (uses anon key for public data)
