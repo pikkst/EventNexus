@@ -94,6 +94,44 @@ self.addEventListener('message', (event) => {
   }
 });
 
+// Handle messages from clients (e.g., show notifications)
+self.addEventListener('message', (event) => {
+  if (event.data.type === 'SHOW_NOTIFICATION') {
+    const options = event.data.options;
+    self.registration.showNotification(options.title, {
+      body: options.body,
+      icon: options.icon || '/favicon.ico',
+      badge: options.badge || '/favicon.ico',
+      tag: options.tag || 'EventNexus',
+      requireInteraction: options.requireInteraction || false,
+      data: options.data || {},
+    });
+  }
+});
+
+// Handle notification clicks
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  // Navigate to event detail page if data is provided
+  if (event.notification.data?.event_id) {
+    event.waitUntil(
+      clients.matchAll({ type: 'window' }).then((clientList) => {
+        // Check if window already exists
+        for (let i = 0; i < clientList.length; i++) {
+          if (clientList[i].url === `${BASE_PATH}events/${event.notification.data.event_id}`) {
+            return clientList[i].focus();
+          }
+        }
+        // Open new window if not found
+        if (clients.openWindow) {
+          return clients.openWindow(`${BASE_PATH}events/${event.notification.data.event_id}`);
+        }
+      })
+    );
+  }
+});
+
 // Updating sitemap generation logic to include hreflang tags
 function generateSitemap() {
     const urls = getEventUrls(); // Function to get event URLs

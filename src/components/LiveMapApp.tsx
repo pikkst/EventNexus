@@ -19,8 +19,10 @@ import {
   ChevronDown,
   Zap,
   Radar,
+  Bell,
 } from 'lucide-react';
 import { useGeolocation } from '../hooks/useGeolocation';
+import { useWebNotifications } from '../hooks/useWebNotifications';
 import { EventNexusEvent, User } from '../types';
 import { supabase } from '../services/supabase';
 
@@ -40,6 +42,7 @@ interface LiveMapAppProps {
  */
 const LiveMapApp: React.FC<LiveMapAppProps> = ({ user, onOpenAuth }) => {
   const { coords, error: geoError, isLoading: geoLoading } = useGeolocation();
+  const { sendNotification, requestPermission, isGranted } = useWebNotifications();
 
   // State
   const [radiusKm, setRadiusKm] = useState(5);
@@ -54,6 +57,7 @@ const LiveMapApp: React.FC<LiveMapAppProps> = ({ user, onOpenAuth }) => {
   const [lastUpdate, setLastUpdate] = useState<number>(0);
   const [savedEventIds, setSavedEventIds] = useState<Set<string>>(new Set());
   const [isBuyingTicket, setIsBuyingTicket] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   // Categories
   const categories = [
@@ -96,6 +100,31 @@ const LiveMapApp: React.FC<LiveMapAppProps> = ({ user, onOpenAuth }) => {
       if (error) {
         console.error('Proximity radar error:', error);
       } else if (data?.events) {
+        // Find new events (not in previous list)
+        const newEventIds = new Set(data.events.map((e: ProximityEvent) => e.id));
+        const previousEventIds = new Set(proximityEvents.map((e) => e.id));
+        const addedEvents = data.events.filter(
+          (e: ProximityEvent) => !previousEventIds.has(e.id)
+        );
+
+        // Send notifications for new events
+        if (addedEvents.length > 0 && isGranted) {
+          addedEvents.slice(0, 3).forEach((event: ProximityEvent) => {
+            sendNotification({
+              title: `🎯 Event Found: ${event.name}`,
+              body: `${event.distance_m > 0 ? `${Math.round(event.distance_m)}m away` : 'Near you'} • ${new Date(event.date).toLocaleDateString()}`,
+              icon: event.image || '/favicon.ico',
+              tag: `event-${event.id}`,
+              data: { event_id: event.id },
+              requireInteraction: false,
+            });
+          });
+
+          if (addedEvents.length > 3) {
+            setNotificationCount((prev) => prev + addedEvents.length - 3);
+          }
+        }
+
         setProximityEvents(data.events);
         setLastUpdate(Date.now());
       }
@@ -104,7 +133,7 @@ const LiveMapApp: React.FC<LiveMapAppProps> = ({ user, onOpenAuth }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [coords, user, radiusKm, selectedCategories, lastUpdate]);
+  }, [coords, user, radiusKm, selectedCategories, lastUpdate, proximityEvents, isGranted, sendNotification]);
 
   // Auto-fetch on location/settings change
   useEffect(() => {
@@ -286,6 +315,26 @@ const LiveMapApp: React.FC<LiveMapAppProps> = ({ user, onOpenAuth }) => {
             <span>50km</span>
           </div>
         </div>
+
+        {/* Notifications Toggle */}
+        <button
+          onClick={requestPermission}
+          className={`w-full px-3 py-2 rounded-lg flex items-center justify-between text-sm font-semibold transition-all ${
+            isGranted
+              ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <Bell className="w-4 h-4" />
+            {isGranted ? 'Notifications enabled' : 'Enable notifications'}
+          </span>
+          {notificationCount > 0 && (
+            <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+              +{notificationCount}
+            </span>
+          )}
+        </button>
 
         {/* Category Filter */}
         <div className="space-y-2">
