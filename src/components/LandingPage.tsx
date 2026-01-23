@@ -305,9 +305,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             onError={() => setVideoFailed(true)}
             className={`w-full h-full object-cover ${videoFailed ? 'hidden' : 'opacity-40'}`}
           >
-            {/* Local hero video (place your converted MP4 at public/vidio/landing-hero.mp4) */}
+            {/* Preferred local WebM hero video */}
+            <source src="/vidio/vecteezy_dubai-uae-1-14-2023-drone-flies-over-the-dj-console_42199484.webm" type="video/webm" />
+            {/* MP4 fallback (local if available) */}
             <source src="/vidio/landing-hero.mp4" type="video/mp4" />
-            {/* Fallback sample video (temporary) */}
+            {/* Remote sample MP4 as last-resort fallback */}
             <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/80 to-slate-950" />
