@@ -54,6 +54,7 @@ const TicketScanner = lazy(() => import('./components/TicketScanner'));
 const TicketViewPage = lazy(() => import('./components/TicketViewPage'));
 const PricingPage = lazy(() => import('./components/PricingPage'));
 const MobileAppsPage = lazy(() => import('./components/MobileAppsPage'));
+const LiveMapApp = lazy(() => import('./components/LiveMapApp'));
 const AgencyProfile = lazy(() => import('./components/AgencyProfile'));
 const AdminCommandCenter = lazy(() => import('./components/AdminCommandCenter'));
 const AIAgentDashboard = lazy(() => import('./components/AIAgentDashboard'));
@@ -871,6 +872,7 @@ const App: React.FC = () => {
               <Route path="/scanner" element={<TicketScanner user={user} />} />
               <Route path="/ticket" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/ticket/:id" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/live-map" element={user ? <LiveMapApp user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription_tier: t, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/mobile" element={<MobileAppsPage />} />
               <Route path="/beta" element={<BetaInvitation />} />
@@ -1180,6 +1182,7 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
         </div>
         <nav className="p-4 space-y-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 97px)', scrollbarWidth: 'thin', scrollbarColor: '#475569 #1e293b' }}>
           <SidebarItem icon={<MapIcon />} label="Explore Map" to="/map" onClick={closeSidebar} />
+          <SidebarItem icon={<Radar />} label="Live Map" to="/live-map" onClick={closeSidebar} />
           <SidebarItem icon={<Globe />} label="Event Directory" to="/directory" onClick={closeSidebar} />
           <SidebarItem icon={<PlusCircle />} label="Create Event" to="/create" onClick={closeSidebar} />
           <SidebarItem icon={<TicketIcon />} label="My Tickets" to="/profile" onClick={closeSidebar} />
