@@ -143,24 +143,32 @@ export const getOrganizerScannerCodes = async (organizerId: string): Promise<Sca
  */
 export const verifyScannerCode = async (code: string): Promise<VerifyScannerCodeResponse> => {
   try {
+    const normalizedCode = code.toUpperCase(); // Normalize input
+    
+    console.log('Verifying scanner code:', { original: code, normalized: normalizedCode });
+    
     const { data, error } = await supabase.rpc('verify_scanner_code', {
-      p_code: code
+      p_code: normalizedCode
     });
+
+    console.log('RPC response:', { data, error });
 
     if (error) {
       console.error('Error verifying scanner code:', error);
       return { valid: false };
     }
 
-    // RPC returns an array with one result
-    if (data && data.length > 0) {
+    // RPC might return single object or array - handle both cases
+    const result = Array.isArray(data) ? data[0] : data;
+    
+    if (result) {
       return {
-        valid: data[0].valid,
-        event_id: data[0].event_id,
-        event_name: data[0].event_name,
-        scanner_code_id: data[0].scanner_code_id,
-        organizer_id: data[0].organizer_id,
-        expires_at: data[0].expires_at
+        valid: result.valid,
+        event_id: result.event_id,
+        event_name: result.event_name,
+        scanner_code_id: result.scanner_code_id,
+        organizer_id: result.organizer_id,
+        expires_at: result.expires_at
       };
     }
 

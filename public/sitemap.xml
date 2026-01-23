@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-23T23:28:05.024Z -->
+<!-- Last generated: 2026-01-23T23:33:49.850Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -1794,6 +1794,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/5f02b4bc-a7e1-4688-a94f-fc2d24cc5533</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:32:11.169673+00:00</news:publication_date>
+      <news:title>Documentaire : &quot;Last night I saw you smiling&quot; à la Médiathèque Landowski</news:title>
+      <news:keywords>Film Screening</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/24845d6f-d6df-4bc8-8601-f23a74ba2593</loc>
     <lastmod>2026-01-16</lastmod>
     <changefreq>weekly</changefreq>
@@ -3159,6 +3174,81 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/87dc275f-56bf-4968-9c42-4b16c2ca70b0</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:32:04.630924+00:00</news:publication_date>
+      <news:title>Rencontre avec Mona Azzam à la Librairie Les mots et les choses</news:title>
+      <news:keywords>Author Meeting, Literary Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c153d769-56bd-4969-aac5-879392657ab2</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:32:07.079151+00:00</news:publication_date>
+      <news:title>Scène ouverte du PSPBB à la danse jazz</news:title>
+      <news:keywords>Dance Performance</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/68dd2e10-1365-4fe5-897e-4ea82de74e6b</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:32:15.127683+00:00</news:publication_date>
+      <news:title>Villes et campagnes au cœur des Nuits de la lecture 2026</news:title>
+      <news:keywords>Literary Event, Festival</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/fe56e32b-d387-4263-a13d-f49aa4ef3f1b</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:32:17.846602+00:00</news:publication_date>
+      <news:title>Atelier lactofermentation à la Maison de la Planète</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/ec1bbd9f-0468-4e24-a1b3-9a413d772da6</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:32:20.27156+00:00</news:publication_date>
+      <news:title>Atelier couture débutants à la Maison de la Planète</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/ed95ce5b-3ef4-455b-86c8-d8e73b15bcfe</loc>
     <lastmod>2026-01-21</lastmod>
     <changefreq>weekly</changefreq>
@@ -3684,6 +3774,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/b027b2ee-ab76-4e93-98a4-894dc1822a27</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:32:02.200972+00:00</news:publication_date>
+      <news:title>Concert Batterie Fanfare à la Maison des familles</news:title>
+      <news:keywords>Concert</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/8f96b17c-457a-4438-a06b-27d41d0ae611</loc>
     <lastmod>2026-01-20</lastmod>
     <changefreq>weekly</changefreq>
@@ -4069,6 +4174,21 @@
     <lastmod>2026-01-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/bafd53c4-20f9-41b9-bfd2-424786ec77ff</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:31:59.736535+00:00</news:publication_date>
+      <news:title>Exposition de peinture &quot;Avènements&quot; à la Maison des familles</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/56a7f118-1b0c-43b5-9bd4-f00165c6deb4</loc>
@@ -5052,6 +5172,36 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/8d9b1b68-d299-41a3-b7e6-d248f699817d</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:31:51.57636+00:00</news:publication_date>
+      <news:title>Rencontre avec Benjamin Dierstein à la Librairie Les mots et les choses</news:title>
+      <news:keywords>Author Meeting, Literary Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/78a143c9-e42d-4f43-9bbf-419657d1c326</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:31:55.719448+00:00</news:publication_date>
+      <news:title>Présentation des classes de danse au Conservatoire de Boulogne-Billancourt</news:title>
+      <news:keywords>Presentation, Dance</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/ea7f0d78-966b-4e02-a192-d4d9f1ab36fa</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -5721,6 +5871,21 @@
       <news:publication_date>2026-01-23T00:12:15.171658+00:00</news:publication_date>
       <news:title>Programul Azuga la schi! (Students - Afternoon Study)</news:title>
       <news:keywords>Sports</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/9ddabd3b-b85e-446d-8872-8669fefecde0</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:31:49.139633+00:00</news:publication_date>
+      <news:title>Rencontre avec Gaspard Koenig à la Librairie Les mots et les choses</news:title>
+      <news:keywords>Author Meeting, Literary Event</news:keywords>
     </news:news>
   </url>
   <url>
@@ -8157,6 +8322,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/fd0ccce4-3bc5-4177-8a18-8912b9a74bae</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:32:34.513867+00:00</news:publication_date>
+      <news:title>Ouverture du Parc départemental Gauthier-Mougin sur l&apos;Île Seguin</news:title>
+      <news:keywords>Park, Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/f7a2c3b4-b863-4658-8dc6-71a75e444efe</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -8255,78 +8435,6 @@
   <url>
     <loc>https://eventnexus.eu/event/556622db-c800-48b0-b3d6-1ce1157ad8b3</loc>
     <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f0636691-712a-4480-9ae2-9b86bce8f5c7</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/3de85873-66a0-45b3-b50e-fcbcae3b0f96</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a2cdb64d-1a76-4833-a7bf-1ea44fa6cad0</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/0552e79a-8dca-467b-9c1f-9714ca754d8b</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/63b5ab96-888a-4fe7-9b65-9ecf6f9a904c</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/1bad5684-29fc-4d21-992f-c09aa1d559a6</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a6909726-dbad-4dc5-bcae-4ca07d0e3a2d</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/14344cb9-a0c7-4e47-a004-ab3994746d8c</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a651174a-9c05-4f64-bbfa-9027d9bb7d72</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/4ab6474d-170f-40d8-9574-1cce9efdb306</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a0cee258-31ed-4e7f-b76b-c0b7aff35bb1</loc>
-    <lastmod>2026-01-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/52f394ae-e3ed-401d-8b41-b7959e525230</loc>
-    <lastmod>2026-01-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
