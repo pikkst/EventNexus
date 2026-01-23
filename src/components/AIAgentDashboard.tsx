@@ -450,7 +450,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
 
   // Manual job functions
   
-  // Normalize country name to English to prevent duplicates (e.g., "Eesti" -> "Estonia", "Estonja" -> "Estonia")
+  // Normalize country/city name to English to prevent duplicates (e.g., "Eesti" -> "Estonia", "pariis" -> "France", "Tallinn" -> "Estonia")
   async function normalizeCountryName(countryInput: string): Promise<string> {
     try {
       const response = await fetch(
@@ -461,12 +461,13 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `Convert this country name to its official English name: "${countryInput}"\n\nReturn ONLY the English country name, nothing else. Examples:\n- "Eesti" -> "Estonia"\n- "Estonja" -> "Estonia"\n- "Deutschland" -> "Germany"\n- "Suomi" -> "Finland"\n- "Ukraine" -> "Ukraine"\n- "Україна" -> "Ukraine"`
+                text: `Convert this location (country or city name) to its official English country name: "${countryInput}"\n\nIf it's a city, return the country it belongs to. If it's a country, return the English country name.\n\nReturn ONLY the English country name, nothing else. Examples:\n- "Eesti" -> "Estonia"\n- "Estonja" -> "Estonia"\n- "Deutschland" -> "Germany"\n- "Suomi" -> "Finland"\n- "Ukraine" -> "Ukraine"\n- "Україна" -> "Ukraine"\n- "Tallinn" -> "Estonia"\n- "pariis" -> "France"\n- "Paris" -> "France"\n- "Berlin" -> "Germany"`
               }]
             }],
             generationConfig: {
               temperature: 0.1,
               maxOutputTokens: 50,
+              responseMimeType: "text/plain"
             }
           })
         }
@@ -478,7 +479,8 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       }
       
       const data = await response.json();
-      const normalizedName = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || countryInput;
+      // Trim whitespace and newlines from the response
+      const normalizedName = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().replace(/\n/g, '') || countryInput;
       
       console.log(`🌍 Normalized "${countryInput}" -> "${normalizedName}"`);
       return normalizedName;
