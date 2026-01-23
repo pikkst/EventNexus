@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-23T23:14:11.104Z -->
+<!-- Last generated: 2026-01-23T23:28:05.024Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -3096,6 +3096,66 @@
       <news:publication_date>2026-01-23T00:20:54.72112+00:00</news:publication_date>
       <news:title>Spectacol aniversar „Din Rădăcini de Neam, o Țară”</news:title>
       <news:keywords>Cultural / Performance</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/0ed66965-ebd7-4051-ac38-5e0e14f6a2f9</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:18:43.684788+00:00</news:publication_date>
+      <news:title>Portes ouvertes | CMA formation</news:title>
+      <news:keywords>Open Day</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/0c3400d2-b1b9-4f15-951d-1aa8e93d7d72</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:18:28.804998+00:00</news:publication_date>
+      <news:title>Improvisation workshop feedback concert (part of 2nd Edition of the Week of Musical Improvisation)</news:title>
+      <news:keywords>Concert</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/fa295761-28ab-4b8a-a90f-ce6b93dee9f6</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:18:33.121273+00:00</news:publication_date>
+      <news:title>Sport | Samedis Sport Santé - Natation santé</news:title>
+      <news:keywords>Sport</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/1a8ef8f5-1163-4666-b87f-870f2bc27208</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:18:48.472986+00:00</news:publication_date>
+      <news:title>Journée Portes Ouvertes - UniLaSalle Amiens</news:title>
+      <news:keywords>Open Day</news:keywords>
     </news:news>
   </url>
   <url>
@@ -7161,6 +7221,36 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/bde4fa46-2afe-4da3-97bd-422d2d9b4065</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:18:13.558472+00:00</news:publication_date>
+      <news:title>Exposition &quot;Dedans / Dehors – Quand l&apos;art arrête les passants&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/148b3bf7-3d9a-4e46-9b80-a4511d8a15da</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:18:25.660729+00:00</news:publication_date>
+      <news:title>Exposition photographique de Maxime Ledru &quot;Voyage onirique&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/cea14a76-ae18-4215-aac4-72f7d82423e3</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -8237,42 +8327,6 @@
   <url>
     <loc>https://eventnexus.eu/event/52f394ae-e3ed-401d-8b41-b7959e525230</loc>
     <lastmod>2026-01-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/44536050-48d2-443d-bc1a-d1ba44d3484d</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/275fbe5f-12c7-423a-a051-41e2b5f9a493</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/94db97ec-d20f-42d4-a95b-49f35f13da6a</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/9187f696-b5d1-4764-86d5-7818006d1202</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/112516e8-300e-414e-968d-ddadfdd5bd4d</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f7c50a91-e68a-4943-985b-630992aac019</loc>
-    <lastmod>2026-01-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

@@ -218,7 +218,7 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
               onClick={async () => {
                 setVerifyingCode(true);
                 setCodeError('');
-                const code = codeInput.trim();
+                const code = codeInput.trim().toUpperCase(); // Normalize to uppercase
                 if (code.length < 6) {
                   setCodeError('Scanner code must be at least 6 characters');
                   setVerifyingCode(false);
@@ -239,6 +239,7 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
                   }
                 } catch (e) {
                   setCodeError('Failed to verify scanner code');
+                  console.error('Verify scanner code error:', e);
                 } finally {
                   setVerifyingCode(false);
                 }

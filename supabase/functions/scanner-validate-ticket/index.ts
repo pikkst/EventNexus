@@ -74,24 +74,40 @@ serve(async (req) => {
       );
     }
 
-    // Validate scanner code
+    // Validate scanner code (case-insensitive)
+    const normalizedCode = scannerCode.toUpperCase();
+    
     const { data: scannerRow, error: scannerError } = await supabase
       .from('scanner_codes')
       .select('*')
-      .eq('code', scannerCode)
+      .eq('code', normalizedCode)
       .eq('is_active', true)
       .maybeSingle();
 
     if (scannerError || !scannerRow) {
+      console.error('Scanner code validation failed:', {
+        normalizedCode,
+        scannerError: scannerError?.message,
+        found: !!scannerRow
+      });
       return new Response(
         JSON.stringify({ valid: false, error: 'INVALID_SCANNER_CODE', message: 'Scanner code invalid or inactive' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
       );
     }
 
+    // Check expiration (with null check)
     if (scannerRow.expires_at) {
-      const expiresAt = new Date(scannerRow.expires_at).getTime();
-      if (Date.now() > expiresAt) {
+      const expiresAt = new Date(scannerRow.expires_at);
+      const now = new Date();
+      
+      console.log('Expiration check:', {
+        expiresAt: expiresAt.toISOString(),
+        now: now.toISOString(),
+        isExpired: now > expiresAt
+      });
+      
+      if (now > expiresAt) {
         return new Response(
           JSON.stringify({ valid: false, error: 'SCANNER_CODE_EXPIRED', message: 'Scanner code has expired' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }

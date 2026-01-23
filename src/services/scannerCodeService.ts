@@ -186,8 +186,11 @@ export const validateTicketWithScannerCode = async (
       return { valid: false, error: 'INVALID_QR_FORMAT', message: 'Invalid QR code' };
     }
 
+    // Normalize scanner code to uppercase
+    const normalizedCode = scannerCode.toUpperCase();
+
     const { data, error } = await supabase.functions.invoke('scanner-validate-ticket', {
-      body: { qrCode: qrCodeData, scannerCode, deviceInfo }
+      body: { qrCode: qrCodeData, scannerCode: normalizedCode, deviceInfo }
     });
 
     if (error) {
