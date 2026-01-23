@@ -4,6 +4,22 @@ import logger from '../utils/logger';
 import { logAuth, logEventAction, logError, logEvent } from './auditService';
 
 // Helper function to transform database event to EventNexusEvent
+// Establish a blog discussing 'Local Experiences' to build topical authority
+// and acquire backlinks from travel and lifestyle publishers.
+// Use AI translation capability to auto-generate unique meta descriptions
+// and titles for every localized page variant.
+// Create a 'Directory' sub-folder structure for events
+// to give crawlers a clear path to content outside the map.
+// Implement 'Event' Schema.org markup on all individual event views
+// to qualify for Google's Event Pack rich results.
+// Code-split heavy libraries and defer non-essential AI scripts
+// until user interaction occurs to improve performance.
+// Ensure sitemap includes dynamically generated event URLs
+// and is complete for all localized pages.
+// Implement hreflang tags for localized versions of event pages
+// and ensure a robust sitemap index.
+// Implement server-side rendering (SSR) or dynamic serving for event details
+// to ensure accessibility for search engine crawlers
 const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
   // Parse location if it's a string (JSON string from DB)
   let location = dbEvent.location;

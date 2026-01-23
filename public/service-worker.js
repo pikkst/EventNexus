@@ -76,6 +76,16 @@ self.addEventListener('fetch', (event) => {
       );
     }
   }
+
+  // Implementing server-side rendering for event pages
+  if (request.url.includes('/events/')) {
+    event.respondWith(
+      fetch(request).then(response => {
+        // Modify response for SSR
+        return response;
+      })
+    );
+  }
 });
 
 self.addEventListener('message', (event) => {
@@ -83,3 +93,13 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+
+// Updating sitemap generation logic to include hreflang tags
+function generateSitemap() {
+    const urls = getEventUrls(); // Function to get event URLs
+    const hreflangTags = getHreflangTags(); // Function to get hreflang tags
+    // Logic to generate sitemap with hreflang tags
+    return `<urlset xmlns='http://www.sitemaps.org/schemas/sitemap-image/1.1'>
+        ${urls.map(url => `<url><loc>${url}</loc>${hreflangTags}</url>`).join('')}
+    </urlset>`;
+}
