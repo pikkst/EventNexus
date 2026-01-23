@@ -1,0 +1,46 @@
+{
+  "name": "EventNexus Scanner",
+  "short_name": "Nexus Scanner",
+  "id": "./scanner",
+  "start_url": "./scanner?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "description": "Installable web scanner for EventNexus tickets. Scan, validate, and manage entry control on any device.",
+  "theme_color": "#4f46e5",
+  "background_color": "#020617",
+  "icons": [
+    {
+      "src": "logo-optimized.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Scanner",
+      "short_name": "Scanner",
+      "url": "./scanner",
+      "description": "Launch the EventNexus ticket scanner"
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "./dashboard",
+      "description": "Manage events and tickets"
+    }
+  ],
+  "categories": ["events", "productivity", "business"]
+}

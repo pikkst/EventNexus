@@ -18,3 +18,14 @@ root.render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swPath = `${import.meta.env.BASE_URL || '/'}service-worker.js`;
+    const scope = import.meta.env.BASE_URL || '/';
+
+    navigator.serviceWorker.register(swPath, { scope }).catch((error) => {
+      console.error('Service worker registration failed:', error);
+    });
+  });
+}

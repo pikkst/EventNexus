@@ -16,16 +16,18 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { usePWAInstallPrompt } from '../hooks/usePWAInstallPrompt';
 
 /**
  * Mobile Apps Landing Page
  * Showcase and download page for EventNexus Scanner mobile apps
  */
 const MobileAppsPage: React.FC = () => {
-  const [platform, setPlatform] = useState<'ios' | 'android'>('android');
   const [selectedApp, setSelectedApp] = useState<'scanner' | 'livemap'>('scanner');
-  const appsDisabled = true;
-  const appsDisabledMessage = 'Mobile apps are temporarily unavailable while we resolve issues.';
+  const [installMessage, setInstallMessage] = useState<string>('');
+  const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const { isInstallable, promptInstall, isStandalone } = usePWAInstallPrompt();
+  const appsDisabledMessage = 'Native Android and iOS builds are paused while we ship the installable web scanner.';
 
   const features = {
     scanner: [
@@ -131,22 +133,32 @@ const MobileAppsPage: React.FC = () => {
     ]
   };
 
-  const handleDownload = (platform: 'ios' | 'android') => {
-    if (appsDisabled) {
-      alert(appsDisabledMessage);
+  const handleWebInstall = async () => {
+    setInstallMessage('');
+
+    if (isStandalone) {
+      setInstallMessage('The web scanner is already installed on this device.');
       return;
     }
 
-    if (platform === 'android') {
-      const appName = selectedApp === 'scanner' ? 'EventNexusScanner' : 'EventNexusLiveMap';
-      window.location.href = `/downloads/${appName}.apk`;
+    if (isInstallable) {
+      const outcome = await promptInstall();
+      if (outcome) {
+        setInstallMessage(
+          outcome === 'accepted'
+            ? 'Installation started. Check your home screen for EventNexus Scanner.'
+            : 'Install dismissed. You can still open the web scanner directly.'
+        );
+      }
     } else {
-      const appTitle = selectedApp === 'scanner' ? 'Scanner' : 'Live Map';
-      alert(`🍎 iOS ${appTitle} App\n\nThe iOS version is coming soon!\n\nContact us at huntersest@gmail.com for TestFlight beta access.`);
+      setShowInstallHelp(true);
+      setInstallMessage('Install prompt not available. Use the manual add-to-home-screen steps below.');
     }
   };
 
-  const disabledButtonStyles = appsDisabled ? 'opacity-60 cursor-not-allowed pointer-events-none' : '';
+  const openScanner = () => {
+    window.location.href = '/scanner';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
@@ -200,7 +212,7 @@ const MobileAppsPage: React.FC = () => {
                 </h1>
                 
                 <p className="text-xl text-slate-300 max-w-2xl mx-auto mb-8">
-                  Professional ticket scanning app for event entrances. Fast, secure, and easy to use.
+                  Installable web ticket scanner for event entrances. Fast, secure, and ready for every device.
                 </p>
               </>
             ) : (
@@ -220,31 +232,33 @@ const MobileAppsPage: React.FC = () => {
               <span>{appsDisabledMessage}</span>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
               <button
                 type="button"
-                onClick={() => handleDownload('android')}
-                disabled={appsDisabled}
-                aria-disabled={appsDisabled}
-                className={`flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-500/20 transition-all group ${disabledButtonStyles}`}
+                onClick={handleWebInstall}
+                className="flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-500/20 transition-all group"
               >
                 <PlayCircle className="w-6 h-6" />
-                Android download paused
+                Install web scanner
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               
               <button
                 type="button"
-                onClick={() => handleDownload('ios')}
-                disabled={appsDisabled}
-                aria-disabled={appsDisabled}
-                className={`flex items-center gap-3 px-8 py-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl font-bold text-lg transition-all group ${disabledButtonStyles}`}
+                onClick={openScanner}
+                className="flex items-center gap-3 px-8 py-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl font-bold text-lg transition-all group"
               >
-                <Apple className="w-6 h-6" />
-                iOS guide unavailable
+                <QrCode className="w-6 h-6" />
+                Open scanner now
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
+
+            {installMessage && (
+              <p className="text-sm text-indigo-100 max-w-2xl mx-auto mb-6">
+                {installMessage}
+              </p>
+            )}
 
             <div className="flex items-center justify-center gap-8 text-sm text-slate-400">
               <div className="flex items-center gap-2">
@@ -257,7 +271,7 @@ const MobileAppsPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-400" />
-                Instant setup
+                Install to home screen
               </div>
             </div>
           </div>
@@ -338,8 +352,8 @@ const MobileAppsPage: React.FC = () => {
                 <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
                   2
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">Download App</h3>
-                <p className="text-slate-400">Install EventNexus Scanner on iOS or Android device</p>
+                <h3 className="text-lg font-bold text-white mb-2">Install Web App</h3>
+                <p className="text-slate-400">Tap "Install" or use Add to Home Screen in your browser</p>
               </div>
 
               <div className="text-center">
@@ -364,8 +378,8 @@ const MobileAppsPage: React.FC = () => {
                 <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">
                   1
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">Download App</h3>
-                <p className="text-slate-400">Install EventNexus Live Map on iOS or Android device</p>
+                <h3 className="text-lg font-bold text-white mb-2">Open Web App</h3>
+                <p className="text-slate-400">Launch EventNexus Live Map in your mobile browser</p>
               </div>
 
               <div className="text-center">
@@ -400,7 +414,7 @@ const MobileAppsPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 py-20">
         <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8">
           <h2 className="text-3xl font-bold text-white text-center mb-8">
-            Choose Your Platform
+            Install on Your Device
           </h2>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -418,13 +432,13 @@ const MobileAppsPage: React.FC = () => {
 
               <p className="text-slate-400">
                 {selectedApp === 'scanner'
-                  ? 'Request TestFlight access for the scanner app. Perfect for event staff.'
-                  : 'Request TestFlight access for the Live Map app. Perfect for attendees.'}
+                  ? 'Open Safari, tap Share, and pick "Add to Home Screen" to install the web scanner.'
+                  : 'Use Safari and Add to Home Screen to pin the Live Map to your device.'}
               </p>
 
               <ul className="space-y-2 text-sm text-slate-300">
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" /> iOS 15.0 or later
+                  <CheckCircle className="w-4 h-4 text-green-400" /> iOS 15.0 or later (Safari)
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-400" /> iPhone or iPad supported
@@ -436,13 +450,11 @@ const MobileAppsPage: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => handleDownload('ios')}
-                disabled={appsDisabled}
-                aria-disabled={appsDisabled}
-                className={`flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-semibold transition-all ${disabledButtonStyles}`}
+                onClick={() => setShowInstallHelp(true)}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-semibold transition-all"
               >
                 <Apple className="w-5 h-5" />
-                TestFlight access paused
+                View iOS install steps
               </button>
             </div>
 
@@ -458,14 +470,14 @@ const MobileAppsPage: React.FC = () => {
                 </div>
               </div>
 
-              <p className="text-slate-400">Direct APK download for Android phones and tablets.</p>
+              <p className="text-slate-400">Open in Chrome, tap "Install app" or Add to Home Screen to pin the scanner.</p>
 
               <ul className="space-y-2 text-sm text-slate-300">
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" /> Android 8.0 or later
+                  <CheckCircle className="w-4 h-4 text-green-400" /> Android 8.0 or later (Chrome / Edge)
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" /> Material Design 3 UI
+                  <CheckCircle className="w-4 h-4 text-green-400" /> Camera permission enabled
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-400" /> Works on phones & tablets
@@ -474,18 +486,51 @@ const MobileAppsPage: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => handleDownload('android')}
-                disabled={appsDisabled}
-                aria-disabled={appsDisabled}
-                className={`flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-semibold transition-all ${disabledButtonStyles}`}
+                onClick={handleWebInstall}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-semibold transition-all"
               >
                 <Download className="w-5 h-5" />
-                Android download paused
+                Install web app
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {(showInstallHelp || selectedApp === 'scanner') && (
+        <div className="max-w-4xl mx-auto px-4 pb-10">
+          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8">
+            <h3 className="text-2xl font-bold text-white mb-4">Install guide</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <PlayCircle className="w-5 h-5 text-indigo-400" />
+                  <p className="text-sm font-semibold text-white">Android (Chrome / Edge)</p>
+                </div>
+                <ol className="list-decimal list-inside text-slate-300 space-y-2 text-sm">
+                  <li>Open eventnexus.eu/scanner in Chrome or Edge.</li>
+                  <li>Tap the browser menu and choose "Install app" or "Add to Home Screen".</li>
+                  <li>Open from your home screen and allow camera access for scanning.</li>
+                </ol>
+              </div>
+              <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Apple className="w-5 h-5 text-indigo-200" />
+                  <p className="text-sm font-semibold text-white">iOS (Safari)</p>
+                </div>
+                <ol className="list-decimal list-inside text-slate-300 space-y-2 text-sm">
+                  <li>Open eventnexus.eu/scanner in Safari.</li>
+                  <li>Tap Share and select "Add to Home Screen".</li>
+                  <li>Launch from the home screen shortcut and allow camera access.</li>
+                </ol>
+              </div>
+            </div>
+            <p className="text-sm text-slate-400 mt-4">
+              Ticket validation still runs online to prevent fraud. The web app keeps the scanner shell cached for quick launches.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* FAQ Section */}
       <div className="max-w-4xl mx-auto px-4 py-20">
@@ -607,38 +652,34 @@ const MobileAppsPage: React.FC = () => {
         <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-3xl p-12 text-center">
           <Users className="w-16 h-16 text-white mx-auto mb-6" />
           <h2 className="text-3xl font-bold text-white mb-4">
-            Mobile apps temporarily offline
+            Install the EventNexus Web Scanner
           </h2>
           <p className="text-xl text-indigo-100 mb-8">
-            We are fixing issues with both Android and iOS apps. Downloads are paused until the update is ready.
+            Add the scanner to your home screen for a full-screen, installable experience while native builds are paused.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               type="button"
-              onClick={() => handleDownload('android')}
-              disabled={appsDisabled}
-              aria-disabled={appsDisabled}
-              className={`flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 rounded-2xl font-bold hover:bg-indigo-50 transition-all ${disabledButtonStyles}`}
+              onClick={handleWebInstall}
+              className="flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 rounded-2xl font-bold hover:bg-indigo-50 transition-all"
             >
               <PlayCircle className="w-5 h-5" />
-              Android download paused
+              Install web scanner
             </button>
             
             <button
               type="button"
-              onClick={() => handleDownload('ios')}
-              disabled={appsDisabled}
-              aria-disabled={appsDisabled}
-              className={`flex items-center gap-2 px-8 py-4 bg-indigo-800 text-white rounded-2xl font-bold hover:bg-indigo-900 transition-all ${disabledButtonStyles}`}
+              onClick={openScanner}
+              className="flex items-center gap-2 px-8 py-4 bg-indigo-800 text-white rounded-2xl font-bold hover:bg-indigo-900 transition-all"
             >
               <Apple className="w-5 h-5" />
-              iOS guide unavailable
+              Open scanner now
             </button>
           </div>
 
           <p className="text-sm text-indigo-100 mt-6">
-            Need help? <Link to="/help" className="underline hover:text-white">Contact Support</Link>
+            Need help? <Link to="/help" className="underline hover:text-white">Contact Support</Link> · {isStandalone ? 'Installed on this device' : 'Install prompt appears after first page load'}
           </p>
         </div>
       </div>
