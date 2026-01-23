@@ -57,6 +57,7 @@ const Footer: React.FC = () => {
               <FooterLink to="/create">Host an Event</FooterLink>
               <FooterLink to="/pricing">Pricing & Plans</FooterLink>
               <FooterLink to="/dashboard">Organizer Hub</FooterLink>
+              <FooterLink to="/blog">Blog & News</FooterLink>
             </ul>
           </div>
 

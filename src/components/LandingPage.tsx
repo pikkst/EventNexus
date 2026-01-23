@@ -1558,6 +1558,41 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         </div>
       </section>
 
+      {/* Latest Blog Posts Preview */}
+      <section className="max-w-7xl mx-auto px-4">
+        <div className="text-center mb-12 space-y-3">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-4 py-2 rounded-full border border-blue-500/30 mb-4">
+            <Newspaper className="w-4 h-4 text-blue-400" />
+            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Latest Updates</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight">EventNexus Blog</h2>
+          <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+            Industry insights, platform updates, and event management tips from our team
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 rounded-[40px] p-12 text-center">
+          <div className="space-y-6">
+            <div className="w-20 h-20 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto">
+              <Newspaper className="w-10 h-10 text-blue-400" />
+            </div>
+            <h3 className="text-2xl font-black text-white">Discover Our Latest Articles</h3>
+            <p className="text-slate-300 max-w-2xl mx-auto">
+              Stay updated with industry trends, platform features, success stories, and expert tips for creating unforgettable events.
+            </p>
+            <Link
+              to="/blog"
+              onClick={() => trackCTAClick('visit_blog')}
+              className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-3xl text-white font-black text-lg transition-all shadow-xl shadow-blue-600/30 group"
+            >
+              <Newspaper className="w-6 h-6 group-hover:scale-110 transition-transform" /> 
+              Visit Blog
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Organizer Call to Action - Split messaging */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-8">

@@ -988,6 +988,22 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
             />
             <span className="hidden sm:inline">EventNexus</span>
           </Link>
+          
+          {/* Desktop Quick Links */}
+          <div className="hidden lg:flex items-center gap-1 ml-8">
+            <Link to="/map" className="px-4 py-2 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
+              Explore
+            </Link>
+            <Link to="/browse" className="px-4 py-2 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
+              Events
+            </Link>
+            <Link to="/blog" className="px-4 py-2 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
+              Blog
+            </Link>
+            <Link to="/pricing" className="px-4 py-2 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
+              Pricing
+            </Link>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
@@ -1163,6 +1179,9 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
           <SidebarItem icon={<Users />} label="Social Feed" to="/feed" onClick={closeSidebar} />
           <SidebarItem icon={<Heart />} label="Find Friends" to="/communities" onClick={closeSidebar} />
           <SidebarItem icon={<Trophy />} label="Achievements" to="/achievements" onClick={closeSidebar} />
+          
+          <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">Resources</div>
+          <SidebarItem icon={<Newspaper />} label="Blog" to="/blog" onClick={closeSidebar} />
           
           <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">User</div>
           <SidebarItem icon={<Settings />} label="Settings" to="/notifications" onClick={closeSidebar} />

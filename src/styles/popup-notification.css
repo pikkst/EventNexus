@@ -1,0 +1,47 @@
+.popup-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    z-index: 1000;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.popup-notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.popup-notification h4 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: #333;
+}
+
+.popup-notification p {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.popup-notification .close-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 16px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.popup-notification .close-btn:hover {
+    color: #333;
+}
