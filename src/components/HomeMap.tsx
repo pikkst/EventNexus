@@ -1041,7 +1041,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                         </button>
                       </>
                     )}
-                  </div>
+                  </section>
                 </Popup>
               </Marker>
             );
@@ -1049,7 +1049,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           {routeToEvent && <Polyline positions={[userLocation, [routeToEvent.location.lat, routeToEvent.location.lng]]} pathOptions={{ color: '#6366f1', weight: 4, opacity: 0.8, dashArray: '10, 15' }} />}
         </MapContainer>
         <div className="leaflet-vignette" />
-      </div>
+      </section>
 
       {/* Vibe Radar - Mobile Floating Navigator */}
       {!compactMode && nearestEvent && !selectedEvent && (
@@ -1417,7 +1417,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         .vertical-range { -webkit-appearance: slider-vertical; width: 8px; height: 120px; }
         .custom-marker { background: transparent; border: none; }
       `}} />
-    </div>
+    </article>
   );
 };
 
