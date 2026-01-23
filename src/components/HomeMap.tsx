@@ -171,6 +171,34 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         setUserLocation([latNum, lngNum]);
       }
 
+
+    // When URL contains lat/lng (e.g., city chips), center the map immediately
+    useEffect(() => {
+      try {
+        const params = new URLSearchParams(location.search);
+        const qLat = params.get('lat');
+        const qLng = params.get('lng');
+        const qZoom = params.get('zoom');
+
+        const latNum = qLat ? parseFloat(qLat) : null;
+        const lngNum = qLng ? parseFloat(qLng) : null;
+        const zoomNum = qZoom ? parseInt(qZoom, 10) : null;
+
+        if (latNum !== null && lngNum !== null && Number.isFinite(latNum) && Number.isFinite(lngNum)) {
+          setUserLocation([latNum, lngNum]);
+          if (zoomNum !== null && Number.isFinite(zoomNum)) {
+            setMapZoom(zoomNum);
+          }
+
+          // Move the live map if it already exists
+          if (mapRef.current?.setView) {
+            mapRef.current.setView([latNum, lngNum], zoomNum ?? mapRef.current.getZoom(), { animate: true });
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to center map from URL params:', err);
+      }
+    }, [location.search]);
       if (qZoom) {
         const zoomNum = parseInt(qZoom, 10);
         if (!Number.isNaN(zoomNum)) {
@@ -216,7 +244,21 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const [guestIpLocation, setGuestIpLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const [userLocation, setUserLocation] = useState<[number, number]>(() => {
-    // Try to restore from localStorage first
+    // 1) URL params take priority (deep links / city chips)
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const qLat = params.get('lat');
+      const qLng = params.get('lng');
+      const latNum = qLat ? parseFloat(qLat) : null;
+      const lngNum = qLng ? parseFloat(qLng) : null;
+      if (latNum !== null && lngNum !== null && Number.isFinite(latNum) && Number.isFinite(lngNum)) {
+        return [latNum, lngNum];
+      }
+    } catch (error) {
+      console.error('Failed to read URL center:', error);
+    }
+
+    // 2) Fallback: restore from localStorage
     try {
       const saved = localStorage.getItem('homemap_last_center');
       if (saved) {
@@ -227,7 +269,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     } catch (error) {
       console.error('Failed to load saved map position:', error);
     }
-    // Default to Tallinn, Estonia if no saved position
+
+    // 3) Default to Tallinn, Estonia
     return [59.4370, 24.7536];
   });
   
