@@ -49,10 +49,15 @@ export interface EventSchemaMarkup {
     '@type': 'Person' | 'PerformingGroup';
     name: string;
   }[];
+  // Google Event Search API specific fields
+  url?: string;
+  doorTime?: string;
+  duration?: string;
+  isAccessibleForFree?: boolean;
 }
 
 /**
- * Generate comprehensive Event Schema.org JSON-LD markup
+ * Generate comprehensive Event Schema.org JSON-LD markup optimized for Google Event Search API
  */
 export function generateEventSchema(event: EventNexusEvent, baseUrl: string = 'https://www.eventnexus.eu'): EventSchemaMarkup {
   const eventUrl = `${baseUrl}/event/${event.id}`;
@@ -82,7 +87,7 @@ export function generateEventSchema(event: EventNexusEvent, baseUrl: string = 'h
     };
   }
 
-  // Build offers array for ticketing
+  // Build offers array for ticketing (Google Event Search API requirement)
   const offers: EventSchemaMarkup['offers'] = [];
   if (event.price !== undefined) {
     offers.push({
@@ -97,18 +102,31 @@ export function generateEventSchema(event: EventNexusEvent, baseUrl: string = 'h
     });
   }
 
-  // Build schema object
+  // Calculate event duration (default 2 hours if not specified)
+  let duration = 'PT2H';
+  if (event.date && event.endDate) {
+    const startTime = new Date(event.date).getTime();
+    const endTime = new Date(event.endDate).getTime();
+    const hours = Math.floor((endTime - startTime) / (1000 * 60 * 60));
+    const minutes = Math.floor(((endTime - startTime) % (1000 * 60 * 60)) / (1000 * 60));
+    duration = `PT${hours}H${minutes}M`;
+  }
+
+  // Build schema object with Google Event Search API optimizations
   const schema: EventSchemaMarkup = {
     '@context': 'https://schema.org',
     '@type': 'Event',
     name: event.name,
     description: event.description || event.name,
+    url: eventUrl, // Required for Google Event Search API
     startDate: new Date(event.date).toISOString(),
+    duration, // Required for Google Event Search API
     eventStatus,
     eventAttendanceMode: event.venue 
       ? 'https://schema.org/OfflineEventAttendanceMode'
       : 'https://schema.org/OnlineEventAttendanceMode',
     location,
+    isAccessibleForFree: event.price === 0, // Google Event Search API field
   };
 
   // Add optional fields

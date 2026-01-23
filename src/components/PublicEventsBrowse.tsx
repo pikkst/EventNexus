@@ -27,6 +27,59 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
     trackPageView(null, '/browse', document.referrer);
   }, []);
 
+  // Update SEO meta tags for /browse page
+  useEffect(() => {
+    document.title = 'Browse Events | EventNexus.eu - AI-Powered Event Discovery';
+    
+    // Update or create meta description
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute('content', `Browse upcoming events across Europe. Discover concerts, conferences, and local experiences with EventNexus.eu. Powered by Gemini 3.0 translation technology.`);
+
+    // Update canonical URL
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', 'https://eventnexus.eu/browse');
+
+    // Update Open Graph tags
+    const updateMetaProperty = (property: string, content: string) => {
+      let meta = document.querySelector(`meta[property="${property}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('property', property);
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', content);
+    };
+
+    updateMetaProperty('og:title', 'Browse Events - EventNexus.eu');
+    updateMetaProperty('og:description', 'Discover upcoming events across Europe with AI-powered translation and geospatial discovery.');
+    updateMetaProperty('og:url', 'https://eventnexus.eu/browse');
+    updateMetaProperty('og:type', 'website');
+
+    // Update Twitter tags
+    const updateTwitter = (name: string, content: string) => {
+      let meta = document.querySelector(`meta[name="${name}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', name);
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', content);
+    };
+
+    updateTwitter('twitter:title', 'Browse Events - EventNexus.eu');
+    updateTwitter('twitter:description', 'Discover events across Europe. Search by location, category, and date.');
+  }, []);
+
   // Inject structured data for Google Rich Results
   useEffect(() => {
     if (events.length > 0) {
