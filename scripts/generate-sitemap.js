@@ -207,6 +207,14 @@ async function generateSitemap() {
     
     fs.writeFileSync(sitemapPath, xml, 'utf-8');
     
+    // Validate that XML ends correctly
+    const content = fs.readFileSync(sitemapPath, 'utf-8');
+    if (!content.trim().endsWith('</urlset>')) {
+      console.error('❌ ERROR: Sitemap does not end with </urlset>');
+      console.error(`   Last 100 chars: ${content.slice(-100)}`);
+      process.exit(1);
+    }
+    
     const totalUrls = staticPages.length + 
                       (events?.length || 0) + 
                       (organizers?.length || 0) + 
