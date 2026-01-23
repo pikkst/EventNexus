@@ -157,6 +157,31 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     } catch {}
   }, [location.search, normalizeDate]);
 
+  // Allow deep links: center map via ?lat=...&lng=...&zoom=...
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const qLat = params.get('lat');
+      const qLng = params.get('lng');
+      const qZoom = params.get('zoom');
+
+      const latNum = qLat ? parseFloat(qLat) : null;
+      const lngNum = qLng ? parseFloat(qLng) : null;
+      if (latNum !== null && lngNum !== null && !Number.isNaN(latNum) && !Number.isNaN(lngNum)) {
+        setUserLocation([latNum, lngNum]);
+      }
+
+      if (qZoom) {
+        const zoomNum = parseInt(qZoom, 10);
+        if (!Number.isNaN(zoomNum)) {
+          setMapZoom(zoomNum);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to parse map URL params:', err);
+    }
+  }, [location.search]);
+
   useEffect(() => {
     // Update URL query only when it differs to avoid loops
     try {

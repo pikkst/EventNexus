@@ -14,6 +14,17 @@ import { trackLandingPageView, trackCTAClick, trackScrollDepth, trackTimeOnPage,
 import { FeaturedEventsCarousel } from './FeaturedEventsCarousel';
 import { ExitIntentPopup } from './ExitIntentPopup';
 
+const DEFAULT_CITY_LINKS = [
+  { label: 'Tallinn', lat: 59.437, lng: 24.7536 },
+  { label: 'Tartu', lat: 58.3776, lng: 26.729 },
+  { label: 'Pärnu', lat: 58.384, lng: 24.497 },
+  { label: 'Narva', lat: 59.379, lng: 28.2 },
+  { label: 'Helsinki', lat: 60.1699, lng: 24.9384 },
+  { label: 'Riga', lat: 56.9496, lng: 24.1052 },
+  { label: 'Vilnius', lat: 54.6872, lng: 25.2797 },
+  { label: 'Stockholm', lat: 59.3293, lng: 18.0686 }
+];
+
 interface LandingPageProps {
   user: User | null;
   onOpenAuth: () => void;
@@ -35,6 +46,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const [showExitIntentPopup, setShowExitIntentPopup] = useState(false);
   const [exitIntentShown, setExitIntentShown] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
+  const [visitorCountry, setVisitorCountry] = useState<string | null>(null);
+  const [cityLinks, setCityLinks] = useState<Array<{ label: string; lat: number; lng: number }>>(DEFAULT_CITY_LINKS);
 
   // SEO optimization for AI crawlers
   usePageSEO({
@@ -79,6 +92,60 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
     }, 5000); // Track every 5 seconds
 
     return () => clearInterval(trackTimeInterval);
+  }, []);
+
+  // Geo-personalize city links based on visitor IP country
+  useEffect(() => {
+    const countryCityMap: Record<string, Array<{ label: string; lat: number; lng: number }>> = {
+      EE: [
+        { label: 'Tallinn', lat: 59.437, lng: 24.7536 },
+        { label: 'Tartu', lat: 58.3776, lng: 26.729 },
+        { label: 'Pärnu', lat: 58.384, lng: 24.497 },
+        { label: 'Narva', lat: 59.379, lng: 28.2 }
+      ],
+      FI: [
+        { label: 'Helsinki', lat: 60.1699, lng: 24.9384 },
+        { label: 'Espoo', lat: 60.2055, lng: 24.6559 },
+        { label: 'Tampere', lat: 61.4978, lng: 23.761 },
+        { label: 'Turku', lat: 60.4518, lng: 22.2666 }
+      ],
+      LV: [
+        { label: 'Riga', lat: 56.9496, lng: 24.1052 },
+        { label: 'Liepaja', lat: 56.5047, lng: 21.0108 },
+        { label: 'Jurmala', lat: 56.968, lng: 23.7703 }
+      ],
+      LT: [
+        { label: 'Vilnius', lat: 54.6872, lng: 25.2797 },
+        { label: 'Kaunas', lat: 54.8985, lng: 23.9036 },
+        { label: 'Klaipėda', lat: 55.7033, lng: 21.1443 }
+      ],
+      SE: [
+        { label: 'Stockholm', lat: 59.3293, lng: 18.0686 },
+        { label: 'Gothenburg', lat: 57.7089, lng: 11.9746 },
+        { label: 'Malmö', lat: 55.605, lng: 13.0038 }
+      ]
+    };
+
+    const resolveCities = (countryCode: string | null) => {
+      if (!countryCode) return DEFAULT_CITY_LINKS;
+      return countryCityMap[countryCode] || DEFAULT_CITY_LINKS;
+    };
+
+    const fetchGeo = async () => {
+      try {
+        const resp = await fetch('https://ipapi.co/json/');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const countryCode = (data?.country_code as string | undefined) || null;
+        setVisitorCountry(countryCode);
+        setCityLinks(resolveCities(countryCode));
+      } catch (err) {
+        console.warn('Geo lookup failed; using default cities', err);
+        setCityLinks(DEFAULT_CITY_LINKS);
+      }
+    };
+
+    fetchGeo();
   }, []);
 
   // Exit-intent popup detection
@@ -701,14 +768,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         <div className="bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border border-indigo-500/30 rounded-3xl p-10">
           <h3 className="text-2xl font-bold text-white mb-6 text-center">Find Events in Major Cities</h3>
           <div className="flex flex-wrap justify-center gap-4">
-            {['Tallinn', 'Tartu', 'Pärnu', 'Narva', 'Helsinki', 'Riga', 'Vilnius', 'Stockholm'].map(city => (
+            {cityLinks.map(({ label, lat, lng }) => (
               <Link
-                key={city}
-                to={`/events-in-${city.toLowerCase()}`}
+                key={label}
+                to={`/map?lat=${lat}&lng=${lng}&zoom=12&city=${encodeURIComponent(label)}`}
                 className="inline-flex items-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 border border-slate-700 hover:border-indigo-500/50 px-6 py-3 rounded-full transition-all group"
               >
                 <MapIcon className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
-                <span className="text-white font-semibold">{city}</span>
+                <span className="text-white font-semibold">{label}</span>
               </Link>
             ))}
           </div>
