@@ -144,15 +144,17 @@ const MobileAppsPage: React.FC = () => {
     if (isInstallable) {
       const outcome = await promptInstall();
       if (outcome) {
-        setInstallMessage(
-          outcome === 'accepted'
-            ? 'Installation started. Check your home screen for EventNexus Scanner.'
-            : 'Install dismissed. You can still open the web scanner directly.'
-        );
+        if (outcome === 'accepted') {
+          setInstallMessage('Installation started. Check your home screen for EventNexus Scanner.');
+        } else {
+          setShowInstallHelp(true);
+          setInstallMessage('If you closed the prompt, open the browser menu and choose Add to Home Screen.');
+        }
+        return;
       }
     } else {
       setShowInstallHelp(true);
-      setInstallMessage('Install prompt not available. Use the manual add-to-home-screen steps below.');
+      setInstallMessage('Some browsers hide the install prompt. Open the browser menu and choose Add to Home Screen.');
     }
   };
 
