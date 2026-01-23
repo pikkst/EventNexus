@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-23T21:55:29.178Z -->
+<!-- Last generated: 2026-01-23T22:16:22.323Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -2832,6 +2832,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/e18433cc-f1af-4754-b0bf-0f72bea73414</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T21:56:50.671734+00:00</news:publication_date>
+      <news:title>&quot;Let&apos;s Have a City&quot; - A series of lectures on the experiences of modernity in Lviv</news:title>
+      <news:keywords>Lecture Series</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/223ec0fc-7185-41cd-add5-16200d40da60</loc>
     <lastmod>2026-01-19</lastmod>
     <changefreq>weekly</changefreq>
@@ -2853,6 +2868,21 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/d644bc3b-7c7e-4a6c-9f08-ee4cafb67a0f</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T21:56:59.080469+00:00</news:publication_date>
+      <news:title>Evening of authentic Ukrainian songs</news:title>
+      <news:keywords>Concert/Performance</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/3a1bd134-b585-4cd8-94d3-13af3f3e0104</loc>
     <lastmod>2026-01-21</lastmod>
     <changefreq>weekly</changefreq>
@@ -2868,6 +2898,21 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/8427d0e0-a5f1-4f61-9a50-7d8566176bc2</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T21:57:02.047337+00:00</news:publication_date>
+      <news:title>Opening of the exhibition &quot;Touch and Imagination&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/49043850-79af-4a06-bc1a-b32e816066fa</loc>
     <lastmod>2026-01-23</lastmod>
     <changefreq>weekly</changefreq>
@@ -2880,6 +2925,21 @@
       <news:publication_date>2026-01-23T01:08:14.567809+00:00</news:publication_date>
       <news:title>Ceremonii dedicate celebrării zilei de 24 ianuarie – Ziua Unirii Principatelor Române</news:title>
       <news:keywords>Ceremony</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/dcce7e32-94b2-4d02-827c-69cbb384b0b2</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T21:57:08.349427+00:00</news:publication_date>
+      <news:title>Exhibition &quot;post-System: Painting and Photography on the Verge of Control&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
     </news:news>
   </url>
   <url>
@@ -3510,6 +3570,21 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/b0503ff0-45c3-43d7-b8f6-156a7b9feddd</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T22:09:41.496482+00:00</news:publication_date>
+      <news:title>International Olympiad in Solving Chess Compositions</news:title>
+      <news:keywords>Competition</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/aee71fee-d0bb-494f-9e64-3d9cb8537f2f</loc>
     <lastmod>2026-01-19</lastmod>
     <changefreq>weekly</changefreq>
@@ -4050,6 +4125,21 @@
       <news:publication_date>2026-01-21T11:30:36.087045+00:00</news:publication_date>
       <news:title>30. jaanuar – Eesti kirjanduse päev (Exhibition)</news:title>
       <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/e7e36b7b-4f66-408b-9e94-8cf53e9f1238</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T21:57:13.724987+00:00</news:publication_date>
+      <news:title>Theatrical performance &quot;Farewell to Kolyada&quot;</news:title>
+      <news:keywords>Performance</news:keywords>
     </news:news>
   </url>
   <url>
@@ -5398,6 +5488,36 @@
     <lastmod>2026-01-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/134e6713-0975-47e3-9977-85f873592b11</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T22:06:35.5881+00:00</news:publication_date>
+      <news:title>Мовно-літературна вітальня «Дивослово» (Language and Literary Lounge &quot;Dyvoslovo&quot;)</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/ea5484d8-5abc-4c6e-9dcd-02327297d1e9</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T22:06:57.768951+00:00</news:publication_date>
+      <news:title>&quot;Movie nights in the library&quot; - English film screenings with discussion</news:title>
+      <news:keywords>Film Screening</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/48966fc8-dbff-4f41-8cf6-38a86e09a417</loc>
@@ -8152,54 +8272,6 @@
   </url>
   <url>
     <loc>https://eventnexus.eu/event/f7c50a91-e68a-4943-985b-630992aac019</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/32bb4541-851f-4308-8637-d3b785f4f513</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/6359efdd-d276-4a69-8aec-db9c2c5730d1</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/848abd1d-2ccc-4e09-ab10-6f91a3f5d9b2</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/93c08ed8-be94-488c-b567-e226d225b75b</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/0a7a1a1e-2b44-43a6-b843-73fe4df54edd</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/8d5ed0a2-3dc2-4144-aaf5-c8e21a9d6761</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/25c53a47-9588-4563-83ed-46f727cf6c86</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/90e11ad4-2e31-4376-9858-e90ec25dd54a</loc>
     <lastmod>2026-01-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

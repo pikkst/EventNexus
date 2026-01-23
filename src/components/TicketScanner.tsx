@@ -1,17 +1,36 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, X, CheckCircle, AlertCircle, RefreshCw, ShieldCheck, User as UserIcon, Info } from 'lucide-react';
+import { Camera, X, CheckCircle, AlertCircle, RefreshCw, ShieldCheck, User as UserIcon, Info, KeyRound, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import QrScanner from 'qr-scanner';
 import { User as UserType } from '../types';
 import { validateTicket, getTicketById } from '../services/dbService';
 import { parseQRCodeData } from '../services/ticketService';
+import { verifyScannerCode, validateTicketWithScannerCode, VerifyScannerCodeResponse } from '../services/scannerCodeService';
 
 interface TicketScannerProps {
   user?: UserType;
 }
 
 const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
+  const sessionStorageKey = 'scanner-session-v1';
+  const [scannerContext, setScannerContext] = useState<{
+    code: string;
+    eventId: string;
+    eventName?: string;
+    scannerCodeId?: string;
+  } | null>(() => {
+    try {
+      const cached = localStorage.getItem(sessionStorageKey);
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      console.warn('Failed to restore scanner session', e);
+      return null;
+    }
+  });
+  const [codeInput, setCodeInput] = useState('');
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [codeError, setCodeError] = useState('');
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<null | { success: boolean; message: string; data?: any }>(null);
   const [hasCamera, setHasCamera] = useState(true);
@@ -61,7 +80,7 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
   };
 
   const handleQRCodeScanned = async (qrData: string) => {
-    if (!user) return;
+    if (!scannerContext && !user) return;
     // Throttle duplicate scans of same code within 3s
     const now = Date.now();
     if (lastScanRef.current && lastScanRef.current.data === qrData && (now - lastScanRef.current.ts) < 3000) {
@@ -100,27 +119,31 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
     if (!pendingScan) return;
     setProcessing(true);
     try {
-      const validation = await validateTicket(pendingScan.qrData);
+      const deviceInfo = { userAgent: navigator.userAgent }; 
+      const validation = scannerContext
+        ? await validateTicketWithScannerCode(pendingScan.qrData, scannerContext.code, deviceInfo)
+        : await validateTicket(pendingScan.qrData);
+
       if (validation && validation.valid) {
         setResult({
           success: true,
           message: validation.message || 'Access Granted',
           data: {
-            name: validation.ticket?.user?.name || 'Attendee',
-            email: validation.ticket?.user?.email || '',
+            name: validation.ticket?.user_name || validation.ticket?.user?.name || 'Attendee',
+            email: validation.ticket?.user_email || validation.ticket?.user?.email || '',
             type: validation.ticket?.ticket_type || 'General',
-            eventName: validation.ticket?.event?.name || 'Event',
+            eventName: validation.ticket?.event_name || validation.ticket?.event?.name || scannerContext?.eventName || 'Event',
             ref: validation.ticket?.id || '',
-            selfScan: validation.selfScan || false,
+            selfScan: false,
           }
         });
       } else {
         setResult({
           success: false,
           message: validation?.message || validation?.error || 'Invalid Ticket',
-          data: validation?.ticket ? {
-            name: validation.ticket.user?.name || 'Unknown',
-            status: validation.ticket.status,
+          data: (validation as any)?.ticket ? {
+            name: (validation as any).ticket.user_name || (validation as any).ticket.user?.name || 'Unknown',
+            status: (validation as any).ticket.status,
           } : null
         });
       }
@@ -145,24 +168,91 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
   };
 
   useEffect(() => {
-    startCamera();
+    if (scannerContext) {
+      startCamera();
+    }
     return () => stopCamera();
-  }, []);
+  }, [scannerContext]);
 
-  if (!user) {
+  useEffect(() => {
+    try {
+      if (scannerContext) {
+        localStorage.setItem(sessionStorageKey, JSON.stringify(scannerContext));
+      } else {
+        localStorage.removeItem(sessionStorageKey);
+      }
+    } catch (e) {
+      console.warn('Failed to persist scanner session', e);
+    }
+  }, [scannerContext]);
+
+  if (!scannerContext) {
     return (
-      <div className="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center">
-        <div className="text-center p-8">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">Authentication Required</h2>
-          <p className="text-slate-400 mb-6">Please sign in to use the ticket scanner</p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold"
-            aria-label="Return to dashboard"
-          >
-            Back to Dashboard
-          </button>
+      <div className="fixed inset-0 bg-slate-950 z-[100] flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-indigo-600/20 border border-indigo-500/30">
+              <KeyRound className="w-6 h-6 text-indigo-300" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-500 font-bold">Event Scanner</p>
+              <h2 className="text-2xl font-black text-white leading-tight">Enter scanner code</h2>
+            </div>
+          </div>
+
+          <p className="text-sm text-slate-400">
+            Paste the 8-character scanner code from the Organizer Hub. No login needed for door staff.
+          </p>
+
+          <div className="space-y-3">
+            <input
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value.trim())}
+              maxLength={32}
+              placeholder="e.g. XR7F-92QM"
+              className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+              aria-label="Scanner code"
+            />
+            {codeError && <p className="text-sm text-red-400">{codeError}</p>}
+            <button
+              onClick={async () => {
+                setVerifyingCode(true);
+                setCodeError('');
+                const code = codeInput.trim();
+                if (code.length < 6) {
+                  setCodeError('Scanner code must be at least 6 characters');
+                  setVerifyingCode(false);
+                  return;
+                }
+                try {
+                  const res: VerifyScannerCodeResponse = await verifyScannerCode(code);
+                  if (res.valid && res.event_id) {
+                    setScannerContext({
+                      code,
+                      eventId: res.event_id,
+                      eventName: res.event_name,
+                      scannerCodeId: res.scanner_code_id,
+                    });
+                    setCodeInput('');
+                  } else {
+                    setCodeError('Invalid or expired scanner code');
+                  }
+                } catch (e) {
+                  setCodeError('Failed to verify scanner code');
+                } finally {
+                  setVerifyingCode(false);
+                }
+              }}
+              disabled={verifyingCode}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 rounded-xl text-white font-bold transition-colors"
+            >
+              {verifyingCode ? 'Verifying…' : 'Start scanning'}
+            </button>
+          </div>
+
+          <div className="text-xs text-slate-500">
+            Need a code? Organizers can create one in Organizer Hub → Scanner Codes.
+          </div>
         </div>
       </div>
     );
@@ -178,16 +268,30 @@ const TicketScanner: React.FC<TicketScannerProps> = ({ user }) => {
           </div>
           <div>
             <h1 className="text-lg font-black tracking-tighter text-white">
-              {isEnterprise ? 'Branded Entry Control' : 'Entry Control'}
+              Entrance Control
             </h1>
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: brandColor }}>
-              {isEnterprise ? user?.name : 'Midnight Techno RAVE'}
+              {scannerContext?.eventName || 'Scanner Ready'}
             </p>
           </div>
         </div>
-        <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400" aria-label="Close scanner and return to dashboard">
-          <X className="w-6 h-6" aria-hidden="true" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              stopCamera();
+              setScannerContext(null);
+              setResult(null);
+            }}
+            className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 flex items-center gap-2"
+            aria-label="Change scanner code"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="hidden sm:inline text-sm font-semibold">Change code</span>
+          </button>
+          <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400" aria-label="Close scanner and return to dashboard">
+            <X className="w-6 h-6" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       {/* Main Scanner View */}

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { parseQRCodeData } from './ticketService';
 
 export interface ScannerCode {
   id: string;
@@ -33,6 +34,23 @@ export interface VerifyScannerCodeResponse {
   scanner_code_id?: string;
   organizer_id?: string;
   expires_at?: string;
+}
+
+export interface ScannerValidationResult {
+  valid: boolean;
+  message?: string;
+  error?: string;
+  scanner_code_id?: string;
+  event_id?: string;
+  ticket?: {
+    id: string;
+    event_name?: string;
+    user_name?: string;
+    user_email?: string;
+    ticket_type?: string;
+    status?: string;
+    scanned_at?: string;
+  };
 }
 
 /**
@@ -150,6 +168,37 @@ export const verifyScannerCode = async (code: string): Promise<VerifyScannerCode
   } catch (error) {
     console.error('Error in verifyScannerCode:', error);
     return { valid: false };
+  }
+};
+
+/**
+ * Validate a ticket using a scanner code (no user auth required)
+ */
+export const validateTicketWithScannerCode = async (
+  qrCodeData: string,
+  scannerCode: string,
+  deviceInfo?: Record<string, unknown>
+): Promise<ScannerValidationResult> => {
+  try {
+    // Ensure QR is in expected format before calling edge function
+    const parsed = parseQRCodeData(qrCodeData);
+    if (!parsed?.ticketId) {
+      return { valid: false, error: 'INVALID_QR_FORMAT', message: 'Invalid QR code' };
+    }
+
+    const { data, error } = await supabase.functions.invoke('scanner-validate-ticket', {
+      body: { qrCode: qrCodeData, scannerCode, deviceInfo }
+    });
+
+    if (error) {
+      console.error('scanner-validate-ticket error:', error);
+      return { valid: false, error: error.message || 'VALIDATION_FAILED', message: 'Validation failed' };
+    }
+
+    return data as ScannerValidationResult;
+  } catch (error: any) {
+    console.error('Error in validateTicketWithScannerCode:', error);
+    return { valid: false, error: error.message || 'VALIDATION_FAILED', message: 'Validation failed' };
   }
 };
 
