@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-23T21:08:40.618Z -->
+<!-- Last generated: 2026-01-23T21:18:45.870Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -7917,6 +7917,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/aab34b6f-77e7-4621-b840-786d2c4300cf</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T21:17:49.651502+00:00</news:publication_date>
+      <news:title>Open Championship of Chernihiv Region among Youth in Indoor Pedestrian Tourism</news:title>
+      <news:keywords>Sports Competition</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/23821afd-f45d-4ee0-a9c5-a530883f90e6</loc>
     <lastmod>2026-01-18</lastmod>
     <changefreq>weekly</changefreq>
@@ -7924,12 +7939,6 @@
   </url>
   <url>
     <loc>https://eventnexus.eu/event/ce5181c5-9954-4581-b484-d11178054ffe</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/e8b711e1-bbf2-40d5-b757-029b67feaaf0</loc>
     <lastmod>2026-01-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -7980,4 +7989,18 @@
   </url>
 
   <!-- Blog Articles & News (AI Training Data) -->
+  <url>
+    <loc>https://eventnexus.eu/blog/new-styles-for-the-popup-notifications-d</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus Blog</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T21:10:48.86+00:00</news:publication_date>
+      <news:title> New styles for the popup notifications ! :-D</news:title>
+    </news:news>
+  </url>
 </urlset>

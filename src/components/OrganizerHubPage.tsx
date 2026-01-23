@@ -113,7 +113,7 @@ const OrganizerHubPage: React.FC<OrganizerHubProps> = ({ user, onOpenAuth }) => 
               {
                 icon: DollarSign,
                 title: 'Transparent Pricing',
-                description: 'Competitive fees with no hidden charges. Keep more of your revenue. Only pay when you sell.',
+                description: 'Start free with 100 welcome credits. Upgrade to Pro (€19.99/mo) for unlimited creation. Platform fees from 1.5-3% based on tier.',
                 color: 'from-green-600/20 to-green-600/5'
               },
               {
@@ -203,48 +203,93 @@ const OrganizerHubPage: React.FC<OrganizerHubProps> = ({ user, onOpenAuth }) => 
           </div>
         </section>
 
-        {/* Case Studies / Trust Signals */}
+        {/* Pricing Tiers Overview */}
         <section>
-          <h2 className="text-4xl font-bold text-white mb-12 text-center">Success Stories</h2>
+          <h2 className="text-4xl font-bold text-white mb-12 text-center">Choose Your Plan</h2>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                org: 'Tallinn Tech Conference',
-                stats: '1,200+ attendees',
-                testimonial: 'EventNexus helped us reach tech professionals across the Baltics. The AI translation feature was game-changing.',
-                metric: '€18,500 revenue'
-              },
-              {
-                org: 'Jazz Summer Festival',
-                stats: '3,500+ attendees',
-                testimonial: 'Simple to use, great mobile experience. Our attendees loved the seamless ticket purchase process.',
-                metric: '€42,000 revenue'
-              },
-              {
-                org: 'Local Workshop Series',
-                stats: '450+ attendees',
-                testimonial: 'Affordable option compared to other platforms. Customer support was incredibly helpful.',
-                metric: '€8,900 revenue'
-              }
-            ].map((cs, idx) => (
-              <div 
-                key={idx}
-                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50"
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <span key={i} className="text-yellow-400">★</span>
-                  ))}
-                </div>
-                <p className="text-slate-300 italic mb-6">"{cs.testimonial}"</p>
-                <div className="border-t border-slate-700 pt-4">
-                  <p className="font-bold text-white">{cs.org}</p>
-                  <p className="text-indigo-400 font-semibold text-lg mb-2">{cs.metric}</p>
-                  <p className="text-sm text-slate-400">{cs.stats}</p>
-                </div>
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-white mb-2">Free</h3>
+                <div className="text-4xl font-black text-indigo-400 mb-2">€0<span className="text-lg text-slate-400">/mo</span></div>
+                <p className="text-slate-300">Perfect for exploring and trying out</p>
               </div>
-            ))}
+              <ul className="space-y-3 text-slate-300">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>100 welcome credits (€50 value)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>Browse and attend events</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>Create events with credits</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-gradient-to-br from-indigo-600/30 to-purple-600/30 backdrop-blur-sm rounded-2xl p-8 border-2 border-indigo-500/50 relative">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-indigo-500 rounded-full text-white text-sm font-bold">
+                Most Popular
+              </div>
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
+                <div className="text-4xl font-black text-indigo-400 mb-2">€19.99<span className="text-lg text-slate-400">/mo</span></div>
+                <p className="text-slate-300">For creators and promoters</p>
+              </div>
+              <ul className="space-y-3 text-slate-300">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>Create up to 20 events/month</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>AI-powered translations</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>3% platform fee</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>Analytics dashboard</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-white mb-2">Premium</h3>
+                <div className="text-4xl font-black text-indigo-400 mb-2">€49.99<span className="text-lg text-slate-400">/mo</span></div>
+                <p className="text-slate-300">For professional agencies</p>
+              </div>
+              <ul className="space-y-3 text-slate-300">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>Create up to 100 events/month</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>2.5% platform fee</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>Featured map placement</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span>Custom branded tickets</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="text-center mt-8">
+            <Link to="/pricing" className="text-indigo-400 hover:text-indigo-300 font-semibold">
+              View full pricing details →
+            </Link>
           </div>
         </section>
 
@@ -266,13 +311,14 @@ const OrganizerHubPage: React.FC<OrganizerHubProps> = ({ user, onOpenAuth }) => 
                 </thead>
                 <tbody className="divide-y divide-slate-700">
                   {[
-                    { feature: 'Transaction Fee', nexus: '2% + €0.20', eventbrite: '3.5% + €0.99' },
-                    { feature: 'AI Event Translation', nexus: 'Included', eventbrite: 'Not available' },
-                    { feature: 'Geospatial Discovery', nexus: 'Automatic', eventbrite: 'Not available' },
-                    { feature: 'QR Check-In', nexus: 'Free', eventbrite: 'Premium only' },
-                    { feature: 'Payment Processing', nexus: 'Weekly', eventbrite: 'Bi-weekly' },
-                    { feature: 'Setup Complexity', nexus: 'Very Simple', eventbrite: 'Complex' },
-                    { feature: 'EU Focus', nexus: 'Yes', eventbrite: 'Global only' },
+                    { feature: 'Starting Price', nexus: 'Free + Credits', eventbrite: 'Free' },
+                    { feature: 'Platform Fee (Pro)', nexus: '3%', eventbrite: '3.5% + €0.99' },
+                    { feature: 'Platform Fee (Premium)', nexus: '2.5%', eventbrite: '3.5% + €0.99' },
+                    { feature: 'AI Event Translation', nexus: '17 Languages', eventbrite: 'Not available' },
+                    { feature: 'Geospatial Discovery', nexus: 'Map-First Interface', eventbrite: 'List Only' },
+                    { feature: 'QR Check-In', nexus: 'All Plans', eventbrite: 'Premium only' },
+                    { feature: 'Setup Time', nexus: '< 5 minutes', eventbrite: '15+ minutes' },
+                    { feature: 'EU Focus', nexus: 'Optimized', eventbrite: 'Global' },
                   ].map((row, idx) => (
                     <tr key={idx} className="hover:bg-slate-800/50 transition-colors">
                       <td className="px-6 py-4 font-semibold text-white">{row.feature}</td>
@@ -309,23 +355,23 @@ const OrganizerHubPage: React.FC<OrganizerHubProps> = ({ user, onOpenAuth }) => 
             {[
               {
                 q: 'How much does it cost to host an event?',
-                a: 'EventNexus is free to use. We only charge a small transaction fee (2% + €0.20) when you sell tickets. There are no setup fees or monthly charges.'
+                a: 'Start free with 100 welcome credits. Pro plan is €19.99/mo with 3% platform fee, Premium is €49.99/mo with 2.5% fee, and Enterprise is €149.99/mo with 1.5% fee. Free tier can create events using credits.'
+              },
+              {
+                q: 'What are platform fees?',
+                a: 'Platform fees are charged per ticket sale and vary by plan: Free/Pro 3%, Premium 2.5%, Enterprise 1.5%. This covers payment processing, hosting, and AI features.'
               },
               {
                 q: 'Do I need to promote my event?',
-                a: 'No. Your event automatically appears on EventNexus maps and reaches audiences across Europe. Our AI system handles translation and discovery optimization.'
-              },
-              {
-                q: 'When do I get paid?',
-                a: 'Payouts are processed weekly to your bank account. You can view your earnings in real-time on your organizer dashboard.'
+                a: 'Your event automatically appears on EventNexus maps and gets translated into 17 languages. However, promotion through your own channels will boost attendance.'
               },
               {
                 q: 'Can I sell different ticket types?',
-                a: 'Yes. Create unlimited ticket tiers, early-bird pricing, group discounts, and more. Our system handles all variations automatically.'
+                a: 'Yes. All plans support multiple ticket tiers, early-bird pricing, group discounts, and custom pricing structures.'
               },
               {
                 q: 'What payment methods do you support?',
-                a: 'We support all major credit cards, bank transfers, and digital wallets through our integrated payment processor.'
+                a: 'We support all major credit cards and bank transfers through our integrated Stripe payment processor.'
               }
             ].map((faq, idx) => (
               <div 
