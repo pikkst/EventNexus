@@ -46,6 +46,8 @@ async function generateSitemap() {
       { path: '/directory', priority: 0.9, changefreq: 'daily' },
       { path: '/blog', priority: 0.9, changefreq: 'daily' },
       { path: '/press', priority: 0.8, changefreq: 'weekly' },
+      { path: '/host', priority: 0.85, changefreq: 'weekly' },
+      { path: '/data-source', priority: 0.8, changefreq: 'monthly' },
       
       // Signup & pricing pages
       { path: '/pricing', priority: 0.8, changefreq: 'monthly' },

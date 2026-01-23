@@ -80,6 +80,7 @@ const EventDirectory = lazy(() => import('./components/EventDirectory'));
 const PressPage = lazy(() => import('./components/PressPage'));
 const CityLandingPage = lazy(() => import('./components/CityLandingPage'));
 const DataSourcePage = lazy(() => import('./components/DataSourcePage'));
+const OrganizerHubPage = lazy(() => import('./components/OrganizerHubPage'));
 import ErrorBoundary from './components/ErrorBoundary';
 import { HelmetProvider } from 'react-helmet-async';
 
@@ -858,6 +859,7 @@ const App: React.FC = () => {
               <Route path="/directory/:category" element={<EventDirectory />} />
               <Route path="/events-in-:city" element={<CityLandingPage />} />
               <Route path="/data-source" element={<DataSourcePage />} />
+              <Route path="/host" element={<OrganizerHubPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/map" element={<HomeMap theme={mapTheme} onToggleTheme={handleToggleMapTheme} events={events} />} />
               <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
