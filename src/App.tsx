@@ -76,6 +76,8 @@ const Achievements = lazy(() => import('./components/Achievements'));
 const BlogList = lazy(() => import('./components/BlogList'));
 const BlogPost = lazy(() => import('./components/BlogPost'));
 const BlogPostEditor = lazy(() => import('./components/BlogPostEditor'));
+const EventDirectory = lazy(() => import('./components/EventDirectory'));
+const PressPage = lazy(() => import('./components/PressPage'));
 import ErrorBoundary from './components/ErrorBoundary';
 import { HelmetProvider } from 'react-helmet-async';
 
@@ -850,6 +852,8 @@ const App: React.FC = () => {
               <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/browse" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/events" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/directory" element={<EventDirectory />} />
+              <Route path="/directory/:category" element={<EventDirectory />} />
               <Route path="/map" element={<HomeMap theme={mapTheme} onToggleTheme={handleToggleMapTheme} events={events} />} />
               <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
@@ -874,6 +878,7 @@ const App: React.FC = () => {
               <Route path="/blog" element={<BlogList />} />
               <Route path="/blog/new" element={user ? <BlogPostEditor /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
+              <Route path="/press" element={<PressPage />} />
               <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/ai-agents" element={user?.role === 'admin' ? <AIAgentDashboard user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
@@ -1169,6 +1174,7 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
         </div>
         <nav className="p-4 space-y-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 97px)', scrollbarWidth: 'thin', scrollbarColor: '#475569 #1e293b' }}>
           <SidebarItem icon={<MapIcon />} label="Explore Map" to="/map" onClick={closeSidebar} />
+          <SidebarItem icon={<Globe />} label="Event Directory" to="/directory" onClick={closeSidebar} />
           <SidebarItem icon={<PlusCircle />} label="Create Event" to="/create" onClick={closeSidebar} />
           <SidebarItem icon={<TicketIcon />} label="My Tickets" to="/profile" onClick={closeSidebar} />
           <SidebarItem icon={<Radar />} label="Nexus Radar" to="/notifications" onClick={closeSidebar} />

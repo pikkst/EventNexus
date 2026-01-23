@@ -4,6 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import logger from '../utils/logger';
 import { useEventSEO } from '../hooks/useSEO';
 import Breadcrumbs from './Breadcrumbs';
+import { injectEventSchema, removeEventSchema } from '../utils/schemaMarkup';
 import { 
   MapPin, 
   Calendar, 
@@ -439,11 +440,15 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
     if (event) {
       const seoTags = generateEventSEO(event, organizerName);
       updatePageMeta(seoTags);
+      
+      // Inject Event Schema.org JSON-LD for Google Event Pack rich results
+      injectEventSchema(event);
     }
 
     // Cleanup: reset to homepage SEO when component unmounts
     return () => {
       cleanupSEO();
+      removeEventSchema();
     };
   }, [event, organizerName]);
 

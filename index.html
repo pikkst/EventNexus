@@ -14,11 +14,11 @@
     <!-- Preconnect to critical API services -->
     <link rel="preconnect" href="https://generativelanguage.googleapis.com">
     
-    <title>EventNexus - Discover Your Next Experience</title>
+    <title>EventNexus.eu - AI-Powered Event Discovery Across Europe</title>
     
     <!-- SEO Meta Tags (English only for optimal Google ranking) -->
-    <meta name="description" content="Find amazing events near you. From concerts to conferences, discover and book tickets for unforgettable experiences.">
-    <meta name="keywords" content="events, event tickets, concerts, conferences, workshops, event discovery, book tickets, event management, event platform">
+    <meta name="description" content="EventNexus.eu: Europe's first AI-powered event platform. Discover concerts, conferences & local experiences with Gemini 3.0 multilingual translation. Find events near you.">
+    <meta name="keywords" content="events europe, event tickets, AI event discovery, concerts europe, conferences, workshops, multilingual events, book tickets, event management, event platform, gemini ai events">
     <meta name="author" content="EventNexus">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://eventnexus.eu/">
@@ -54,10 +54,10 @@
     
     <!-- Open Graph / Social Media Meta Tags -->
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="EventNexus">
+    <meta property="og:site_name" content="EventNexus.eu">
     <meta property="og:url" content="https://eventnexus.eu/">
-    <meta property="og:title" content="EventNexus - Discover Your Next Experience">
-    <meta property="og:description" content="Find amazing events near you. From concerts to conferences, discover and book tickets for unforgettable experiences.">
+    <meta property="og:title" content="EventNexus.eu - AI-Powered Event Discovery Across Europe">
+    <meta property="og:description" content="Europe's first AI-powered event platform with Gemini 3.0 multilingual translation. Discover concerts, conferences & local experiences near you.">
     <meta property="og:image" content="https://www.eventnexus.eu/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -67,8 +67,8 @@
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://www.eventnexus.eu/">
-    <meta name="twitter:title" content="EventNexus - Discover Your Next Experience">
-    <meta name="twitter:description" content="Find amazing events near you. From concerts to conferences, discover and book tickets for unforgettable experiences.">
+    <meta name="twitter:title" content="EventNexus.eu - AI-Powered Event Discovery">
+    <meta name="twitter:description" content="Europe's first AI-powered event platform with Gemini 3.0 translation. Find concerts, conferences & local events near you.">
     <meta name="twitter:image" content="https://www.eventnexus.eu/og-image.png">
     <meta name="twitter:image:alt" content="EventNexus - Event Discovery Platform">
     
@@ -103,8 +103,65 @@
     <!-- Atom Feed for AI agents -->
     <link rel="alternate" type="application/atom+xml" href="https://www.eventnexus.eu/feed.xml">
     
-    <!-- JSON-LD will be injected by React component -->
-    <script type="application/ld+json" id="seo-schema"></script>
+    <!-- JSON-LD Schema.org Markup for Organization and WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://www.eventnexus.eu/#organization",
+          "name": "EventNexus.eu",
+          "alternateName": "EventNexus Europe",
+          "url": "https://www.eventnexus.eu/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://www.eventnexus.eu/logo-optimized.svg"
+          },
+          "description": "Europe's first AI-powered event discovery platform using Gemini 3.0 for multilingual event translation and personalized recommendations.",
+          "foundingDate": "2025-10",
+          "founder": {
+            "@type": "Person",
+            "name": "Villu Künnap"
+          },
+          "sameAs": [
+            "https://www.facebook.com/eventnexus.eu",
+            "https://twitter.com/eventnexuseu"
+          ]
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://www.eventnexus.eu/#webapp",
+          "name": "EventNexus.eu",
+          "url": "https://www.eventnexus.eu/",
+          "applicationCategory": "EventManagementApplication",
+          "operatingSystem": "Web Browser",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR"
+          },
+          "featureList": "AI-powered event discovery, Multilingual translation (Gemini 3.0), Geospatial event search, Ticket booking, Event management tools"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.eventnexus.eu/#website",
+          "url": "https://www.eventnexus.eu/",
+          "name": "EventNexus.eu",
+          "publisher": {
+            "@id": "https://www.eventnexus.eu/#organization"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://www.eventnexus.eu/events?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
+    <!-- Dynamic Event Schema will be injected by EventDetail component -->
+    <script type="application/ld+json" id="event-schema"></script>
     
     <!-- Simple redirect restoration for BrowserRouter -->
     <script>
