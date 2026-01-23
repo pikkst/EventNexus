@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-23T23:39:41.342Z -->
+<!-- Last generated: 2026-01-23T23:52:29.173Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -2112,6 +2112,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/16820910-b975-41c9-a8dc-d30aaf0af237</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:39:41.917774+00:00</news:publication_date>
+      <news:title>Exploration of Old Cayenne&apos;s Historical Sites</news:title>
+      <news:keywords>Historical Site</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/b08af235-e704-4bc1-931f-6b31289be69f</loc>
     <lastmod>2026-01-23</lastmod>
     <changefreq>weekly</changefreq>
@@ -2421,6 +2436,21 @@
       <news:publication_date>2026-01-23T21:33:05.59033+00:00</news:publication_date>
       <news:title>English Club. English language communication for youth IDPs</news:title>
       <news:keywords>Community</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/cf1da0e3-e69f-4a46-a3aa-507c543d26a3</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:39:45.836198+00:00</news:publication_date>
+      <news:title>Visit to Cayenne Market</news:title>
+      <news:keywords>Market</news:keywords>
     </news:news>
   </url>
   <url>
@@ -3264,6 +3294,21 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/8e2dc52c-3b3a-41a3-ba79-3aded44aca9b</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:40:28.883175+00:00</news:publication_date>
+      <news:title>Rencontres Photographiques de Guyane - Exposition : Reprendre Racines</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/ed95ce5b-3ef4-455b-86c8-d8e73b15bcfe</loc>
     <lastmod>2026-01-21</lastmod>
     <changefreq>weekly</changefreq>
@@ -3718,6 +3763,21 @@
     <lastmod>2026-01-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/a006a2e7-499b-40b9-ba1e-28076079b1fd</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:40:26.29148+00:00</news:publication_date>
+      <news:title>Carnival Street Parade (Vidés) - Sunday, January 25, 2026</news:title>
+      <news:keywords>Carnival</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/f4be252f-4d4a-4839-ac8f-2510f54d6994</loc>
@@ -8423,30 +8483,6 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-  <url>
-    <loc>https://eventnexus.eu/event/921d0fcf-790e-46b5-a777-cbf4986b2fe2</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/30813c08-729f-4fcd-816d-d23851407ed7</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f4d30475-f309-4f79-916b-a0d16c7198de</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/1a95176a-4c0c-4075-ab39-8277846ddbce</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
 
   <!-- User & Organizer Profiles (All registered users) -->
   <url>
@@ -8493,6 +8529,20 @@
   </url>
 
   <!-- Blog Articles & News (AI Training Data) -->
+  <url>
+    <loc>https://eventnexus.eu/blog/scanner-and-live-map-app-now-available</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus Blog</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:47:55.951+00:00</news:publication_date>
+      <news:title>scanner and live map app now available</news:title>
+    </news:news>
+  </url>
   <url>
     <loc>https://eventnexus.eu/blog/new-styles-for-the-popup-notifications-d</loc>
     <lastmod>2026-01-23</lastmod>

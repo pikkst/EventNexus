@@ -121,13 +121,21 @@ export async function getBlogPosts(filters?: {
 }
 
 export async function getBlogPostBySlug(slug: string, userId?: string) {
+  // First, get the post ID from the slug
+  const { data: slugData, error: slugError } = await supabase
+    .from('blog_posts')
+    .select('id')
+    .eq('slug', slug)
+    .single();
+
+  if (slugError || !slugData?.id) {
+    throw new Error(`Blog post not found for slug: ${slug}`);
+  }
+
+  // Now fetch the post with engagement data
   const { data, error } = await supabase
     .rpc('get_blog_post_with_engagement', {
-      p_post_id: (await supabase
-        .from('blog_posts')
-        .select('id')
-        .eq('slug', slug)
-        .single()).data?.id,
+      p_post_id: slugData.id,
       p_user_id: userId || null
     });
 

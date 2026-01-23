@@ -104,7 +104,7 @@ const Footer: React.FC = () => {
              </div>
              <div className="flex flex-col gap-1">
                <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold">
-                 <Mail className="w-3.5 h-3.5" /> support@eventnexus.eu
+                 <Mail className="w-3.5 h-3.5" /> villu@mail.eventnexus.eu
                </div>
                <div className="text-slate-600 text-[9px] font-medium">
                  Response time: Within 24 hours
