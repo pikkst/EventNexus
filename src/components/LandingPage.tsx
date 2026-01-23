@@ -290,81 +290,163 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         </section>
       )}
 
-      {/* Hero Section - OPTIMIZED FOR CONVERSIONS */}
-      <section className="relative px-4 pt-12 pb-16 flex flex-col items-center text-center overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-600/20 rounded-full blur-[120px] -z-10" />
-        
-        <div className="max-w-6xl mx-auto space-y-0">
-          {/* Header Row */}
-          <div className="inline-flex items-center gap-2 bg-indigo-600/10 border border-indigo-500/20 px-4 py-2 rounded-full text-indigo-400 text-sm font-bold animate-bounce mb-6">
-            <Zap className="w-4 h-4 fill-current" /> {platformStats?.eventsLast24h || 531} events found in 24h
+      {/* Hero Section - OPTIMIZED FOR CONVERSIONS WITH VIDEO BACKGROUND */}
+      <section className="relative min-h-screen h-screen flex items-center justify-center overflow-hidden">
+        {/* Video Background */}
+        <div className="absolute inset-0 z-0">
+          <video 
+            autoPlay 
+            loop 
+            muted 
+            playsInline
+            className="w-full h-full object-cover opacity-40"
+          >
+            {/* Event/Party video from Pixabay - celebrations, people enjoying events */}
+            <source src="https://cdn.pixabay.com/video/2022/08/09/127490-738868382_large.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/80 to-slate-950" />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 py-20">
+          {/* Live Stats Badge */}
+          <div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-2xl border border-white/10 px-6 py-3 rounded-full text-white text-sm font-bold animate-in fade-in slide-in-from-top-4 duration-700 mb-8">
+            <Zap className="w-5 h-5 fill-current text-yellow-400 animate-pulse" /> 
+            <span>{platformStats?.eventsLast24h || 531} events discovered in last 24h</span>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center md:items-start">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
             {/* Left: Text Content */}
-            <div className="space-y-8 text-left md:pt-4">
+            <div className="space-y-8 text-left animate-in fade-in slide-in-from-left duration-1000">
               <div>
-                <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1] mb-6">
-                  Stop Missing Out.<br />
-                  <span className="text-indigo-500">Find Local Events</span><br />
-                  <span className="text-emerald-500">in Your Language</span>
+                <h1 className="text-6xl sm:text-7xl md:text-8xl font-black tracking-tighter leading-[0.95] mb-6 text-white">
+                  Stop Missing Out
                 </h1>
-                <p className="text-base sm:text-lg md:text-xl text-slate-300 leading-relaxed mb-4">
+                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-tight mb-8">
+                  <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Find Local Events</span><br />
+                  <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">in Your Language</span>
+                </h2>
+                <p className="text-lg sm:text-xl md:text-2xl text-slate-200 leading-relaxed mb-6 font-medium">
                   We solve the problem of high platform fees and language barriers. EventNexus uses AI to discover and translate {platformStats?.eventsLast24h || 500}+ daily events into 50+ languages.
                 </p>
-                <p className="text-sm md:text-base text-slate-400 flex items-center gap-2 mb-8">
-                  <span className="inline-flex items-center justify-center w-5 h-5 bg-emerald-500/20 rounded-full text-emerald-400 flex-shrink-0">✓</span>
-                  <span><strong>13,000+</strong> attendees discovering events right now</span>
-                </p>
+                <div className="flex flex-col gap-3">
+                  <p className="text-base md:text-lg text-slate-300 flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-emerald-500/20 rounded-full text-emerald-400 flex-shrink-0 font-bold">✓</span>
+                    <span><strong className="text-white">13,000+</strong> attendees discovering events right now</span>
+                  </p>
+                  <p className="text-base md:text-lg text-slate-300 flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-indigo-500/20 rounded-full text-indigo-400 flex-shrink-0 font-bold">✓</span>
+                    <span><strong className="text-white">Zero</strong> platform fees for attendees</span>
+                  </p>
+                  <p className="text-base md:text-lg text-slate-300 flex items-center gap-3">
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-500/20 rounded-full text-purple-400 flex-shrink-0 font-bold">✓</span>
+                    <span><strong className="text-white">50+</strong> languages supported by AI</span>
+                  </p>
+                </div>
               </div>
 
               {/* Primary CTA - DOMINANT */}
-              <div className="space-y-2 md:space-y-3">
+              <div className="space-y-4 pt-6">
                 <Link 
                   to="/browse" 
                   onClick={() => trackCTAClick('browse_events')}
-                  className="w-full block bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 px-6 md:px-8 py-4 md:py-5 rounded-2xl md:rounded-3xl font-black text-base md:text-lg text-white transition-all shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-2 md:gap-3 group text-center"
+                  className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-700 px-10 py-6 rounded-3xl font-black text-lg text-white transition-all shadow-2xl shadow-indigo-600/40 group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300"
                   aria-label="Browse all events catalog now"
                 >
-                  <Calendar className="w-5 md:w-6 h-5 md:h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
+                  <Calendar className="w-6 h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
                   Browse All Events
+                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <p className="text-[10px] md:text-xs text-slate-500 text-center">👉 Discover events happening around the world</p>
+
+                {/* Secondary CTA - Map */}
+                <Link 
+                  to="/map" 
+                  onClick={() => trackCTAClick('explore_map')}
+                  className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-white/5 backdrop-blur-2xl border border-white/10 hover:bg-white/10 hover:border-white/20 text-white px-10 py-6 rounded-3xl font-bold text-lg transition-all animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500"
+                  aria-label="Explore events on interactive map"
+                >
+                  <MapIcon className="w-5 h-5" aria-hidden="true" /> 
+                  View on Map
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: Stats Cards */}
+            <div className="space-y-4 animate-in fade-in slide-in-from-right duration-1000 delay-300">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 hover:bg-white/10 hover:scale-105 transition-all group">
+                  <div className="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Zap className="w-6 h-6 text-indigo-400" />
+                  </div>
+                  <div className="text-4xl font-black text-white mb-2">{platformStats?.eventsLast24h?.toLocaleString() || '531'}</div>
+                  <div className="text-sm text-slate-300 font-bold">New Events</div>
+                  <div className="text-xs text-slate-400 mt-1">Last 24 hours</div>
+                </div>
+
+                <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 hover:bg-white/10 hover:scale-105 transition-all group">
+                  <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Globe className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div className="text-4xl font-black text-white mb-2">{platformStats?.totalCities?.toLocaleString() || '1169'}</div>
+                  <div className="text-sm text-slate-300 font-bold">Cities</div>
+                  <div className="text-xs text-slate-400 mt-1">Worldwide</div>
+                </div>
+
+                <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 hover:bg-white/10 hover:scale-105 transition-all group">
+                  <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Gift className="w-6 h-6 text-orange-400" />
+                  </div>
+                  <div className="text-4xl font-black text-white mb-2">{platformStats?.freeEventsActive?.toLocaleString() || '592'}</div>
+                  <div className="text-sm text-slate-300 font-bold">Free Events</div>
+                  <div className="text-xs text-slate-400 mt-1">Active now</div>
+                </div>
+
+                <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 hover:bg-white/10 hover:scale-105 transition-all group">
+                  <div className="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Users className="w-6 h-6 text-purple-400" />
+                  </div>
+                  <div className="text-4xl font-black text-white mb-2">92%</div>
+                  <div className="text-sm text-slate-300 font-bold">Satisfaction</div>
+                  <div className="text-xs text-slate-400 mt-1">4.8/5 rating</div>
+                </div>
               </div>
 
-              {/* Secondary CTA - Map */}
-              <Link 
-                to="/map" 
-                onClick={() => trackCTAClick('explore_map')}
-                className="w-full block bg-slate-800 border border-slate-700 hover:border-indigo-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-bold text-sm md:text-base transition-all flex items-center justify-center gap-2"
-                aria-label="Explore events on interactive map"
-              >
-                <MapIcon className="w-4 md:w-5 h-4 md:h-5" aria-hidden="true" /> 
-                View on Map
-              </Link>
-
-              {/* Trust Badges - Enhanced with Context */}
-              <div className="grid grid-cols-3 gap-3 pt-4 border-t border-slate-800">
-                <div className="group cursor-pointer rounded-2xl bg-slate-800/50 p-3 border border-slate-700 hover:border-indigo-500/50 hover:bg-slate-800 transition-all">
-                  <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">This 24h</div>
-                  <div className="text-2xl font-black text-indigo-400">{platformStats?.eventsLast24h?.toLocaleString() || '531'}</div>
-                  <div className="text-xs text-slate-400 mt-1">New Events</div>
-                  <div className="text-[10px] text-slate-500 mt-2 pt-2 border-t border-slate-700">📈 Growing</div>
+              {/* Featured Benefits */}
+              <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 space-y-3">
+                <h3 className="text-lg font-black text-white mb-4">Why EventNexus?</h3>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Languages className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">AI Translation</p>
+                    <p className="text-xs text-slate-400">50+ languages supported</p>
+                  </div>
                 </div>
-                <div className="group cursor-pointer rounded-2xl bg-slate-800/50 p-3 border border-slate-700 hover:border-emerald-500/50 hover:bg-slate-800 transition-all">
-                  <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Worldwide</div>
-                  <div className="text-2xl font-black text-emerald-400">{platformStats?.totalCities?.toLocaleString() || '1169'}</div>
-                  <div className="text-xs text-slate-400 mt-1">Active Cities</div>
-                  <div className="text-[10px] text-slate-500 mt-2 pt-2 border-t border-slate-700">🌍 Expanding</div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Secure Payments</p>
+                    <p className="text-xs text-slate-400">PCI-compliant checkout</p>
+                  </div>
                 </div>
-                <div className="group cursor-pointer rounded-2xl bg-slate-800/50 p-3 border border-slate-700 hover:border-orange-500/50 hover:bg-slate-800 transition-all">
-                  <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2">Zero Cost</div>
-                  <div className="text-2xl font-black text-orange-400">{platformStats?.freeEventsActive?.toLocaleString() || '592'}</div>
-                  <div className="text-xs text-slate-400 mt-1">Free Events</div>
-                  <div className="text-[10px] text-slate-500 mt-2 pt-2 border-t border-slate-700">💰 No fees</div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-orange-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <DollarSign className="w-4 h-4 text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Zero Fees</p>
+                    <p className="text-xs text-slate-400">Free for attendees</p>
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Scroll indicator */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+            <ChevronDown className="w-8 h-8 text-white/50" />
           </div>
         </div>
       </section>
@@ -372,58 +454,69 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
       {/* Live Platform Stats - NOW HIGHLIGHTED */}
       {platformStats && (
         <section className="max-w-7xl mx-auto px-4 relative">
-          <div className="absolute -inset-8 bg-gradient-to-r from-indigo-600/5 via-purple-600/5 to-indigo-600/5 rounded-[48px] blur-3xl" />
-          <div className="relative bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border-2 border-indigo-500/30 rounded-[40px] p-12 md:p-16">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-black mb-3">Trusted by Thousands</h2>
-              <p className="text-slate-300 text-lg">Real numbers. Real growth. Real communities discovering events.</p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {/* Events 24h - Shows platform activity */}
-              <div className="group">
-                <div className="bg-slate-950/50 border border-slate-800 hover:border-indigo-500/50 group-hover:shadow-xl group-hover:shadow-indigo-500/10 rounded-3xl p-6 text-center transition-all">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-indigo-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Zap className="w-8 h-8 text-indigo-400" />
-                  </div>
-                  <div className="text-4xl md:text-5xl font-black text-indigo-400 mb-2">{platformStats.eventsLast24h?.toLocaleString() || '531'}</div>
-                  <div className="text-sm font-bold text-slate-400">New Events Daily</div>
-                  <p className="text-xs text-slate-500 mt-2">Constantly updated, always fresh</p>
+          <div className="absolute -inset-12 bg-gradient-to-r from-indigo-600/5 via-purple-600/5 to-indigo-600/5 rounded-[64px] blur-3xl" />
+          <div className="relative bg-gradient-to-br from-indigo-900/50 via-purple-900/40 to-slate-900/50 border-2 border-indigo-500/30 rounded-[48px] p-14 md:p-20 backdrop-blur-xl overflow-hidden">
+            {/* Background decoration */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-3xl" />
+            
+            <div className="relative z-10">
+              <div className="text-center mb-16 space-y-4">
+                <div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-2xl border border-white/10 px-5 py-2 rounded-full mb-4">
+                  <TrendingUp className="w-5 h-5 text-emerald-400 animate-pulse" />
+                  <span className="text-sm font-bold text-white uppercase tracking-wider">Live Statistics</span>
                 </div>
+                <h2 className="text-4xl md:text-5xl font-black tracking-tight text-white">Trusted by <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Thousands</span></h2>
+                <p className="text-slate-200 text-xl font-medium max-w-2xl mx-auto">Real numbers. Real growth. Real communities discovering events.</p>
               </div>
-
-              {/* Cities Active - Shows global reach */}
-              <div className="group">
-                <div className="bg-slate-950/50 border border-slate-800 hover:border-emerald-500/50 group-hover:shadow-xl group-hover:shadow-emerald-500/10 rounded-3xl p-6 text-center transition-all">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-emerald-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Globe className="w-8 h-8 text-emerald-400" />
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {/* Events 24h - Shows platform activity */}
+                <div className="group">
+                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-indigo-500/50 group-hover:shadow-2xl group-hover:shadow-indigo-500/20 rounded-[28px] p-8 text-center transition-all group-hover:scale-105">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-indigo-600/30 to-indigo-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <Zap className="w-10 h-10 text-indigo-400" />
+                    </div>
+                    <div className="text-5xl md:text-6xl font-black bg-gradient-to-br from-indigo-400 to-indigo-500 bg-clip-text text-transparent mb-3">{platformStats.eventsLast24h?.toLocaleString() || '531'}</div>
+                    <div className="text-base font-bold text-white mb-2">New Events Daily</div>
+                    <p className="text-sm text-slate-300">Constantly updated, always fresh</p>
                   </div>
-                  <div className="text-4xl md:text-5xl font-black text-emerald-400 mb-2">{platformStats.totalCities?.toLocaleString() || '1169'}</div>
-                  <div className="text-sm font-bold text-slate-400">Cities Worldwide</div>
-                  <p className="text-xs text-slate-500 mt-2">Everywhere you need to be</p>
                 </div>
-              </div>
 
-              {/* Free Events - Conversion driver */}
-              <div className="group">
-                <div className="bg-slate-950/50 border border-slate-800 hover:border-orange-500/50 group-hover:shadow-xl group-hover:shadow-orange-500/10 rounded-3xl p-6 text-center transition-all">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-orange-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Gift className="w-8 h-8 text-orange-400" />
+                {/* Cities Active - Shows global reach */}
+                <div className="group">
+                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-emerald-500/50 group-hover:shadow-2xl group-hover:shadow-emerald-500/20 rounded-[28px] p-8 text-center transition-all group-hover:scale-105">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-emerald-600/30 to-emerald-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <Globe className="w-10 h-10 text-emerald-400" />
+                    </div>
+                    <div className="text-5xl md:text-6xl font-black bg-gradient-to-br from-emerald-400 to-emerald-500 bg-clip-text text-transparent mb-3">{platformStats.totalCities?.toLocaleString() || '1169'}</div>
+                    <div className="text-base font-bold text-white mb-2">Cities Worldwide</div>
+                    <p className="text-sm text-slate-300">Everywhere you need to be</p>
                   </div>
-                  <div className="text-4xl md:text-5xl font-black text-orange-400 mb-2">{platformStats.freeEventsActive?.toLocaleString() || '592'}</div>
-                  <div className="text-sm font-bold text-slate-400">Free Events Active</div>
-                  <p className="text-xs text-slate-500 mt-2">Start attending today, zero cost</p>
                 </div>
-              </div>
 
-              {/* Active Users / Attendees */}
-              <div className="group">
-                <div className="bg-slate-950/50 border border-slate-800 hover:border-purple-500/50 group-hover:shadow-xl group-hover:shadow-purple-500/10 rounded-3xl p-6 text-center transition-all">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-purple-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Users className="w-8 h-8 text-purple-400" />
+                {/* Free Events - Conversion driver */}
+                <div className="group">
+                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-orange-500/50 group-hover:shadow-2xl group-hover:shadow-orange-500/20 rounded-[28px] p-8 text-center transition-all group-hover:scale-105">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-orange-600/30 to-orange-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <Gift className="w-10 h-10 text-orange-400" />
+                    </div>
+                    <div className="text-5xl md:text-6xl font-black bg-gradient-to-br from-orange-400 to-orange-500 bg-clip-text text-transparent mb-3">{platformStats.freeEventsActive?.toLocaleString() || '592'}</div>
+                    <div className="text-base font-bold text-white mb-2">Free Events Active</div>
+                    <p className="text-sm text-slate-300">Start attending today, zero cost</p>
                   </div>
-                  <div className="text-4xl md:text-5xl font-black text-purple-400 mb-2">92%</div>
-                  <div className="text-sm font-bold text-slate-400">Attendee Satisfaction</div>
-                  <p className="text-xs text-slate-500 mt-2">Rating: 4.8/5 stars average</p>
+                </div>
+
+                {/* Active Users / Attendees */}
+                <div className="group">
+                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-purple-500/50 group-hover:shadow-2xl group-hover:shadow-purple-500/20 rounded-[28px] p-8 text-center transition-all group-hover:scale-105">
+                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-purple-600/30 to-purple-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <Users className="w-10 h-10 text-purple-400" />
+                    </div>
+                    <div className="text-5xl md:text-6xl font-black bg-gradient-to-br from-purple-400 to-purple-500 bg-clip-text text-transparent mb-3">92%</div>
+                    <div className="text-base font-bold text-white mb-2">Attendee Satisfaction</div>
+                    <p className="text-sm text-slate-300">Rating: 4.8/5 stars average</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -433,86 +526,88 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
       {/* How It Works - Redesigned for clarity */}
       <section className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-16 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 px-4 py-2 rounded-full border border-indigo-500/30 mb-4">
-            <Sparkles className="w-4 h-4 text-indigo-400" />
-            <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">3 Simple Steps</span>
+        <div className="text-center mb-20 space-y-4">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 px-5 py-2 rounded-full border border-indigo-500/30 mb-4">
+            <Sparkles className="w-5 h-5 text-indigo-400 animate-pulse" />
+            <span className="text-sm font-bold text-indigo-400 uppercase tracking-wider">Simple & Fast</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight">Get to Your Next Event in 3 Minutes</h2>
-          <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+          <h2 className="text-5xl md:text-6xl font-black tracking-tight">Get to Your Next Event<br />in <span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">3 Minutes</span></h2>
+          <p className="text-slate-300 text-xl max-w-2xl mx-auto font-medium">
             From discovering to attending—EventNexus makes it frictionless.
           </p>
         </div>
 
         <div className="relative">
           {/* Connection Lines (hidden on mobile) */}
-          <div className="hidden md:block absolute top-32 left-0 right-0 h-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 opacity-20" />
+          <div className="hidden lg:block absolute top-40 left-0 right-0 h-1">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 opacity-20 blur-sm" />
+          </div>
 
-          <div className="grid md:grid-cols-3 gap-8 md:gap-4 relative">
+          <div className="grid md:grid-cols-3 gap-8 lg:gap-6 relative">
             {/* Step 1 */}
-            <div className="group">
-              <div className="relative mb-6">
-                <div className="absolute -top-3 -left-3 w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-indigo-600/30 z-10">
+            <div className="group animate-in fade-in slide-in-from-bottom-8 duration-700">
+              <div className="relative">
+                <div className="absolute -top-4 -left-4 w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-2xl shadow-indigo-600/50 z-10 group-hover:scale-110 transition-transform">
                   1
                 </div>
-                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 pt-12 hover:border-indigo-500/50 transition-all group-hover:shadow-xl group-hover:shadow-indigo-500/10">
-                  <div className="mb-6">
-                    <div className="w-20 h-20 bg-indigo-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <MapIcon className="w-10 h-10 text-indigo-400" />
+                <div className="bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 rounded-[32px] p-10 pt-14 hover:border-indigo-500/50 transition-all group-hover:shadow-2xl group-hover:shadow-indigo-500/20">
+                  <div className="mb-8">
+                    <div className="w-24 h-24 bg-gradient-to-br from-indigo-600/30 to-indigo-500/10 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <MapIcon className="w-12 h-12 text-indigo-400" />
                     </div>
-                    <h3 className="text-2xl font-black mb-3">Open the Map</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="text-3xl font-black mb-4 text-white">Open the Map</h3>
+                    <p className="text-slate-300 leading-relaxed text-lg">
                       Tap "Explore Events" to see all live events on the interactive map. Use filters for category, date, or radius search.
                     </p>
                   </div>
-                  <div className="bg-indigo-600/10 border border-indigo-500/20 rounded-xl p-4">
-                    <p className="text-sm text-slate-300"><strong>💡 Tip:</strong> Use "Near Me" to find events within your radius</p>
+                  <div className="bg-gradient-to-br from-indigo-600/10 to-purple-600/10 border border-indigo-500/20 rounded-2xl p-5">
+                    <p className="text-sm text-slate-200 font-medium"><strong className="text-indigo-400">💡 Tip:</strong> Use "Near Me" to find events within your radius</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="group md:pt-8">
-              <div className="relative mb-6">
-                <div className="absolute -top-3 -left-3 w-14 h-14 bg-emerald-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-emerald-600/30 z-10">
+            <div className="group md:pt-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+              <div className="relative">
+                <div className="absolute -top-4 -left-4 w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-2xl shadow-emerald-600/50 z-10 group-hover:scale-110 transition-transform">
                   2
                 </div>
-                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 pt-12 hover:border-emerald-500/50 transition-all group-hover:shadow-xl group-hover:shadow-emerald-500/10">
-                  <div className="mb-6">
-                    <div className="w-20 h-20 bg-emerald-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <Ticket className="w-10 h-10 text-emerald-400" />
+                <div className="bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 rounded-[32px] p-10 pt-14 hover:border-emerald-500/50 transition-all group-hover:shadow-2xl group-hover:shadow-emerald-500/20">
+                  <div className="mb-8">
+                    <div className="w-24 h-24 bg-gradient-to-br from-emerald-600/30 to-emerald-500/10 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <Ticket className="w-12 h-12 text-emerald-400" />
                     </div>
-                    <h3 className="text-2xl font-black mb-3">Buy Instantly</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="text-3xl font-black mb-4 text-white">Buy Instantly</h3>
+                    <p className="text-slate-300 leading-relaxed text-lg">
                       Click on any event to see details. Secure checkout powered by Stripe. Receive your fraud-proof QR code in seconds.
                     </p>
                   </div>
-                  <div className="bg-emerald-600/10 border border-emerald-500/20 rounded-xl p-4">
-                    <p className="text-sm text-slate-300"><strong>🔒 Safe:</strong> PCI-compliant, encrypted payments</p>
+                  <div className="bg-gradient-to-br from-emerald-600/10 to-teal-600/10 border border-emerald-500/20 rounded-2xl p-5">
+                    <p className="text-sm text-slate-200 font-medium"><strong className="text-emerald-400">🔒 Safe:</strong> PCI-compliant, encrypted payments</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="group md:pt-16">
-              <div className="relative mb-6">
-                <div className="absolute -top-3 -left-3 w-14 h-14 bg-orange-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-orange-600/30 z-10">
+            <div className="group md:pt-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
+              <div className="relative">
+                <div className="absolute -top-4 -left-4 w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-2xl shadow-orange-600/50 z-10 group-hover:scale-110 transition-transform">
                   3
                 </div>
-                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 pt-12 hover:border-orange-500/50 transition-all group-hover:shadow-xl group-hover:shadow-orange-500/10">
-                  <div className="mb-6">
-                    <div className="w-20 h-20 bg-orange-600/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <Zap className="w-10 h-10 text-orange-400" />
+                <div className="bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 rounded-[32px] p-10 pt-14 hover:border-orange-500/50 transition-all group-hover:shadow-2xl group-hover:shadow-orange-500/20">
+                  <div className="mb-8">
+                    <div className="w-24 h-24 bg-gradient-to-br from-orange-600/30 to-orange-500/10 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <Zap className="w-12 h-12 text-orange-400" />
                     </div>
-                    <h3 className="text-2xl font-black mb-3">Enjoy!</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="text-3xl font-black mb-4 text-white">Enjoy!</h3>
+                    <p className="text-slate-300 leading-relaxed text-lg">
                       Show your QR code at entry. Instant validation. No lines, no paper—just pure event magic.
                     </p>
                   </div>
-                  <div className="bg-orange-600/10 border border-orange-500/20 rounded-xl p-4">
-                    <p className="text-sm text-slate-300"><strong>⭐ Rate the organizer</strong> after to help the community</p>
+                  <div className="bg-gradient-to-br from-orange-600/10 to-pink-600/10 border border-orange-500/20 rounded-2xl p-5">
+                    <p className="text-sm text-slate-200 font-medium"><strong className="text-orange-400">⭐ Rate</strong> the organizer after to help the community</p>
                   </div>
                 </div>
               </div>
@@ -521,14 +616,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         </div>
 
         {/* CTA Below */}
-        <div className="text-center mt-16">
-          <p className="text-slate-400 mb-6">Ready to explore?</p>
+        <div className="text-center mt-20 animate-in fade-in duration-700 delay-600">
+          <p className="text-slate-300 text-lg mb-6 font-medium">Ready to explore?</p>
           <Link
             to="/map"
             onClick={() => trackCTAClick('start_exploring')}
-            className="inline-flex items-center gap-3 px-12 py-5 bg-indigo-600 hover:bg-indigo-700 rounded-3xl text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/30 group"
+            className="inline-flex items-center gap-4 px-14 py-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-700 rounded-[28px] text-white font-black text-xl transition-all shadow-2xl shadow-indigo-600/40 group hover:scale-105"
           >
-            <MapIcon className="w-6 h-6 group-hover:scale-110 transition-transform" /> Start Exploring Now
+            <MapIcon className="w-7 h-7 group-hover:scale-110 transition-transform" /> 
+            Start Exploring Now
+            <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
       </section>
@@ -538,69 +635,69 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
       {/* Why Choose EventNexus - Benefits Section */}
       <section className="max-w-7xl mx-auto px-4">
-        <div className="relative bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 rounded-[48px] p-12 md:p-16 overflow-hidden">
+        <div className="relative bg-gradient-to-br from-slate-900/90 to-slate-950/90 border border-slate-800 rounded-[56px] p-14 md:p-20 overflow-hidden backdrop-blur-xl">
           {/* Background decoration */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-600/5 rounded-full blur-3xl" />
           
           <div className="relative z-10">
-            <div className="text-center mb-16 space-y-3">
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 px-4 py-2 rounded-full border border-indigo-500/30 mb-4">
-                <Star className="w-4 h-4 text-indigo-400" />
-                <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Why EventNexus</span>
+            <div className="text-center mb-20 space-y-4">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 px-5 py-2 rounded-full border border-indigo-500/30 mb-4">
+                <Star className="w-5 h-5 text-indigo-400 animate-pulse" />
+                <span className="text-sm font-bold text-indigo-400 uppercase tracking-wider">Why EventNexus</span>
               </div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tight">Built for Modern Event Discovery</h2>
-              <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+              <h2 className="text-5xl md:text-6xl font-black tracking-tight text-white">Built for Modern<br /><span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Event Discovery</span></h2>
+              <p className="text-slate-200 text-xl max-w-2xl mx-auto font-medium">
                 We're not just another events platform. We're the future of how people discover and experience events.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-8 lg:gap-10">
               {/* Left Column */}
-              <div className="space-y-6">
-                <div className="flex gap-4 items-start group">
-                  <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <MapIcon className="w-6 h-6 text-indigo-400" />
+              <div className="space-y-8">
+                <div className="flex gap-5 items-start group animate-in fade-in slide-in-from-left duration-700">
+                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-600/30 to-indigo-500/10 rounded-[20px] flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                    <MapIcon className="w-8 h-8 text-indigo-400" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white mb-2 text-lg">Visual, Not Lists</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="font-black text-white mb-3 text-xl">Visual, Not Lists</h3>
+                    <p className="text-slate-300 leading-relaxed text-base">
                       See events on an interactive map, not in boring lists. Filter by radius, category, date—discover events intuitively.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-4 items-start group">
-                  <div className="w-12 h-12 bg-emerald-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Globe className="w-6 h-6 text-emerald-400" />
+                <div className="flex gap-5 items-start group animate-in fade-in slide-in-from-left duration-700 delay-100">
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-600/30 to-emerald-500/10 rounded-[20px] flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                    <Globe className="w-8 h-8 text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white mb-2 text-lg">Global Reach, Local Feel</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="font-black text-white mb-3 text-xl">Global Reach, Local Feel</h3>
+                    <p className="text-slate-300 leading-relaxed text-base">
                       AI-powered translation in 50+ languages. Host in Estonian, reach audiences in Finnish, Swedish, German, and beyond.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-4 items-start group">
-                  <div className="w-12 h-12 bg-yellow-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Trophy className="w-6 h-6 text-yellow-400" />
+                <div className="flex gap-5 items-start group animate-in fade-in slide-in-from-left duration-700 delay-200">
+                  <div className="w-16 h-16 bg-gradient-to-br from-yellow-600/30 to-yellow-500/10 rounded-[20px] flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                    <Trophy className="w-8 h-8 text-yellow-400" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white mb-2 text-lg">Gamified Experience</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="font-black text-white mb-3 text-xl">Gamified Experience</h3>
+                    <p className="text-slate-300 leading-relaxed text-base">
                       Earn badges, level up, compete on leaderboards. Make attending events fun and rewarding with our achievement system.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-4 items-start group">
-                  <div className="w-12 h-12 bg-pink-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Heart className="w-6 h-6 text-pink-400" />
+                <div className="flex gap-5 items-start group animate-in fade-in slide-in-from-left duration-700 delay-300">
+                  <div className="w-16 h-16 bg-gradient-to-br from-pink-600/30 to-pink-500/10 rounded-[20px] flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                    <Heart className="w-8 h-8 text-pink-400" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white mb-2 text-lg">Community-Driven</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="font-black text-white mb-3 text-xl">Community-Driven</h3>
+                    <p className="text-slate-300 leading-relaxed text-base">
                       Join communities, connect with like-minded people, discover events through your network. Social discovery at its best.
                     </p>
                   </div>
@@ -608,50 +705,50 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
               </div>
 
               {/* Right Column */}
-              <div className="space-y-6">
-                <div className="flex gap-4 items-start group">
-                  <div className="w-12 h-12 bg-purple-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Bot className="w-6 h-6 text-purple-400" />
+              <div className="space-y-8">
+                <div className="flex gap-5 items-start group animate-in fade-in slide-in-from-right duration-700">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-600/30 to-purple-500/10 rounded-[20px] flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                    <Bot className="w-8 h-8 text-purple-400" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white mb-2 text-lg">AI-Powered Everything</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="font-black text-white mb-3 text-xl">AI-Powered Everything</h3>
+                    <p className="text-slate-300 leading-relaxed text-base">
                       From marketing materials to personalized recommendations—our AI does the heavy lifting so you can focus on what matters.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-4 items-start group">
-                  <div className="w-12 h-12 bg-orange-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Shield className="w-6 h-6 text-orange-400" />
+                <div className="flex gap-5 items-start group animate-in fade-in slide-in-from-right duration-700 delay-100">
+                  <div className="w-16 h-16 bg-gradient-to-br from-orange-600/30 to-orange-500/10 rounded-[20px] flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                    <Shield className="w-8 h-8 text-orange-400" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white mb-2 text-lg">Bank-Level Security</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="font-black text-white mb-3 text-xl">Bank-Level Security</h3>
+                    <p className="text-slate-300 leading-relaxed text-base">
                       Fraud-proof QR codes, Stripe-powered payments, encrypted storage. Your data and money are always protected.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-4 items-start group">
-                  <div className="w-12 h-12 bg-cyan-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Zap className="w-6 h-6 text-cyan-400" />
+                <div className="flex gap-5 items-start group animate-in fade-in slide-in-from-right duration-700 delay-200">
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-600/30 to-cyan-500/10 rounded-[20px] flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                    <Zap className="w-8 h-8 text-cyan-400" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white mb-2 text-lg">Instant Everything</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="font-black text-white mb-3 text-xl">Instant Everything</h3>
+                    <p className="text-slate-300 leading-relaxed text-base">
                       Buy tickets, get QR codes, check in—all in seconds. No printing, no hassle, no delays. Just seamless experiences.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-4 items-start group">
-                  <div className="w-12 h-12 bg-red-600/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <DollarSign className="w-6 h-6 text-red-400" />
+                <div className="flex gap-5 items-start group animate-in fade-in slide-in-from-right duration-700 delay-300">
+                  <div className="w-16 h-16 bg-gradient-to-br from-red-600/30 to-red-500/10 rounded-[20px] flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                    <DollarSign className="w-8 h-8 text-red-400" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white mb-2 text-lg">Fair Pricing, Always</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="font-black text-white mb-3 text-xl">Fair Pricing, Always</h3>
+                    <p className="text-slate-300 leading-relaxed text-base">
                       Platform fees as low as 1.5%. No hidden costs. What you see is what you pay. Start free, upgrade when you grow.
                     </p>
                   </div>
@@ -660,19 +757,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             </div>
 
             {/* Bottom CTA */}
-            <div className="mt-16 text-center">
-              <p className="text-slate-400 mb-6 text-lg">Ready to experience the difference?</p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="mt-20 text-center animate-in fade-in duration-700 delay-500">
+              <p className="text-slate-300 mb-8 text-xl font-medium">Ready to experience the difference?</p>
+              <div className="flex flex-col sm:flex-row gap-5 justify-center">
                 <Link
                   to="/browse"
                   onClick={() => trackCTAClick('why_choose_browse')}
-                  className="inline-flex items-center gap-2 px-10 py-5 bg-indigo-600 hover:bg-indigo-700 rounded-3xl text-white font-black text-lg transition-all shadow-xl shadow-indigo-600/30"
+                  className="inline-flex items-center gap-3 px-12 py-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-700 rounded-[28px] text-white font-black text-xl transition-all shadow-2xl shadow-indigo-600/40 group"
                 >
-                  <Calendar className="w-6 h-6" /> Browse Events
+                  <Calendar className="w-6 h-6 group-hover:scale-110 transition-transform" /> Browse Events
                 </Link>
                 <button
                   onClick={handleCreateEvent}
-                  className="inline-flex items-center gap-2 px-10 py-5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 rounded-3xl text-white font-black text-lg transition-all"
+                  className="inline-flex items-center gap-3 px-12 py-6 bg-white/5 backdrop-blur-2xl border border-white/10 hover:bg-white/10 hover:border-white/20 rounded-[28px] text-white font-black text-xl transition-all"
                 >
                   <Plus className="w-6 h-6" /> Create Event
                 </button>
