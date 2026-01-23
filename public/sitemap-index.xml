@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- EventNexus Sitemap Index - Single sitemap only -->
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
     <loc>https://eventnexus.eu/sitemap.xml</loc>
-    <lastmod>2026-01-22</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/sitemap-events</loc>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-23</lastmod>
   </sitemap>
 </sitemapindex>
