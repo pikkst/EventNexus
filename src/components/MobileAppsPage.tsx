@@ -18,6 +18,12 @@ import {
 import { Link } from 'react-router-dom';
 import { usePWAInstallPrompt } from '../hooks/usePWAInstallPrompt';
 
+type BeforeInstallPromptEvent = Event & {
+  readonly platforms: string[];
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+};
+
 /**
  * Mobile Apps Landing Page
  * Showcase and download page for EventNexus Scanner mobile apps
@@ -141,6 +147,7 @@ const MobileAppsPage: React.FC = () => {
       return;
     }
 
+    // First try the captured prompt from the hook
     if (isInstallable) {
       const outcome = await promptInstall();
       if (outcome) {
@@ -152,10 +159,45 @@ const MobileAppsPage: React.FC = () => {
         }
         return;
       }
-    } else {
-      setShowInstallHelp(true);
-      setInstallMessage('Some browsers hide the install prompt. Open the browser menu and choose Add to Home Screen.');
     }
+
+    // If prompt was not available yet, wait briefly for a fresh beforeinstallprompt event and trigger it immediately
+    setInstallMessage('Preparing install prompt...');
+    const waitForPrompt = () =>
+      new Promise<BeforeInstallPromptEvent | null>((resolve) => {
+        let settled = false;
+        const handler = (event: Event) => {
+          settled = true;
+          const deferred = event as BeforeInstallPromptEvent;
+          deferred.preventDefault();
+          window.removeEventListener('beforeinstallprompt', handler);
+          resolve(deferred);
+        };
+
+        window.addEventListener('beforeinstallprompt', handler, { once: true });
+        setTimeout(() => {
+          if (!settled) {
+            window.removeEventListener('beforeinstallprompt', handler);
+            resolve(null);
+          }
+        }, 1200);
+      });
+
+    const deferredPrompt = await waitForPrompt();
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        setInstallMessage('Installation started. Check your home screen for EventNexus Scanner.');
+      } else {
+        setShowInstallHelp(true);
+        setInstallMessage('If you closed the prompt, open the browser menu and choose Add to Home Screen.');
+      }
+      return;
+    }
+
+    setShowInstallHelp(true);
+    setInstallMessage('Browser did not show the install prompt. Open the browser menu and choose Add to Home Screen.');
   };
 
   const openScanner = () => {
