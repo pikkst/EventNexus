@@ -34,6 +34,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const [demoVideo, setDemoVideo] = useState<PlatformMedia | null>(null);
   const [showExitIntentPopup, setShowExitIntentPopup] = useState(false);
   const [exitIntentShown, setExitIntentShown] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   // SEO optimization for AI crawlers
   usePageSEO({
@@ -299,10 +300,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             loop 
             muted 
             playsInline
-            className="w-full h-full object-cover opacity-40"
+            preload="metadata"
+            poster="/og-image.png"
+            onError={() => setVideoFailed(true)}
+            className={`w-full h-full object-cover ${videoFailed ? 'hidden' : 'opacity-40'}`}
           >
-            {/* Event/Party video from Pixabay - celebrations, people enjoying events */}
-            <source src="https://cdn.pixabay.com/video/2022/08/09/127490-738868382_large.mp4" type="video/mp4" />
+            {/* Local hero video (place your converted MP4 at public/vidio/landing-hero.mp4) */}
+            <source src="/vidio/landing-hero.mp4" type="video/mp4" />
+            {/* Fallback sample video (temporary) */}
+            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/80 to-slate-950" />
         </div>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-23T18:23:14.236Z -->
+<!-- Last generated: 2026-01-23T18:34:07.799Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -5862,10 +5862,40 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/64f914ea-54c5-4004-a2be-eee5c320285e</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T18:24:47.363129+00:00</news:publication_date>
+      <news:title>Честване на 148 години от Освобождението на Кюстендил</news:title>
+      <news:keywords>Civic Ceremony</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/4282d3d4-db76-44f2-b86d-4c5c564cbccc</loc>
     <lastmod>2026-01-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8b555eff-a352-4054-8a9d-a6b707f33493</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T18:25:00.488514+00:00</news:publication_date>
+      <news:title>Безплатен вход за постоянната експозиция на Художествена галерия &quot;Владимир Димитров - Майстора&quot;</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/4e48d47b-2e26-4676-aee1-8d2d1ff6df22</loc>
@@ -6510,6 +6540,21 @@
       <news:publication_date>2026-01-21T12:55:33.912708+00:00</news:publication_date>
       <news:title>Literary Game-Journey &quot;Open Day of Forest School&quot;</news:title>
       <news:keywords>Literary Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8e9c082e-d013-4439-8401-7bce5feddbb0</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T18:24:50.317194+00:00</news:publication_date>
+      <news:title>Безплатен вход за постоянните експозиции на Регионален исторически музей &quot;Акад. Йордан Иванов&quot;</news:title>
+      <news:keywords>Museum</news:keywords>
     </news:news>
   </url>
   <url>
@@ -7861,24 +7906,6 @@
   </url>
   <url>
     <loc>https://eventnexus.eu/event/e8b711e1-bbf2-40d5-b757-029b67feaaf0</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/66cac258-3269-424f-be6a-c4d29b310ad7</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/6a161cc0-8b90-402c-921a-df611e93f192</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/27e536af-469e-4db9-8648-beece5b2bbc4</loc>
     <lastmod>2026-01-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

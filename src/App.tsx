@@ -31,6 +31,7 @@ import {
   Coins,
   Smartphone,
   Users,
+  Newspaper,
   Heart,
   Trophy
 } from 'lucide-react';
