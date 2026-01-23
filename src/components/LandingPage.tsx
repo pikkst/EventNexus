@@ -352,28 +352,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 </div>
               </div>
 
-              {/* Primary CTA - DOMINANT */}
+              {/* Primary CTA - DOMINANT - Focus on MAP (for humans) */}
               <div className="space-y-4 pt-6">
-                <Link 
-                  to="/browse" 
-                  onClick={() => trackCTAClick('browse_events')}
-                  className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-700 px-10 py-6 rounded-3xl font-black text-lg text-white transition-all shadow-2xl shadow-indigo-600/40 group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300"
-                  aria-label="Browse all events catalog now"
-                >
-                  <Calendar className="w-6 h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
-                  Browse All Events
-                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-
-                {/* Secondary CTA - Map */}
                 <Link 
                   to="/map" 
                   onClick={() => trackCTAClick('explore_map')}
-                  className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-white/5 backdrop-blur-2xl border border-white/10 hover:bg-white/10 hover:border-white/20 text-white px-10 py-6 rounded-3xl font-bold text-lg transition-all animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500"
-                  aria-label="Explore events on interactive map"
+                  className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-700 px-10 py-6 rounded-3xl font-black text-lg text-white transition-all shadow-2xl shadow-indigo-600/40 group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300"
+                  aria-label="Start exploring events on interactive map"
                 >
-                  <MapIcon className="w-5 h-5" aria-hidden="true" /> 
-                  View on Map
+                  <MapIcon className="w-6 h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
+                  Start Exploring Now
+                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+
+                {/* Secondary CTA - Browse (more for SEO/crawlers) */}
+                <Link 
+                  to="/browse" 
+                  onClick={() => trackCTAClick('browse_events')}
+                  className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-white/5 backdrop-blur-2xl border border-white/10 hover:bg-white/10 hover:border-white/20 text-white px-10 py-6 rounded-3xl font-bold text-lg transition-all animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500"
+                  aria-label="Browse full event catalog"
+                >
+                  <Calendar className="w-5 h-5" aria-hidden="true" /> 
+                  View All Events
                 </Link>
               </div>
             </div>
@@ -640,6 +640,80 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
       {/* Featured Events Carousel */}
       <FeaturedEventsCarousel className="bg-slate-950/50 py-6" />
+
+      {/* Popular Events Near You - Text-based for LLM readability */}
+      <section className="max-w-7xl mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
+            Popular Events <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Happening Now</span>
+          </h2>
+          <p className="text-slate-300 text-lg max-w-2xl mx-auto">
+            Discover concerts, conferences, workshops, and festivals near you. EventNexus.eu connects you with unique experiences across Estonia and Europe.
+          </p>
+        </div>
+
+        {/* Text-based event categories for SEO/LLM */}
+        <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <article className="bg-gradient-to-br from-slate-900/90 to-slate-950/90 border border-slate-800 rounded-3xl p-8 hover:border-indigo-500/50 transition-all">
+            <Calendar className="w-12 h-12 text-indigo-400 mb-4" />
+            <h3 className="text-2xl font-bold text-white mb-3">Concerts & Festivals</h3>
+            <p className="text-slate-300 leading-relaxed mb-4">
+              Live music events from underground indie bands to major international artists. Find concerts in Tallinn, Tartu, Pärnu, and across Estonia.
+            </p>
+            <Link 
+              to="/map?category=concert" 
+              className="inline-flex items-center text-indigo-400 hover:text-indigo-300 font-semibold"
+            >
+              Explore concerts <ArrowRight className="w-4 h-4 ml-2" />
+            </Link>
+          </article>
+
+          <article className="bg-gradient-to-br from-slate-900/90 to-slate-950/90 border border-slate-800 rounded-3xl p-8 hover:border-emerald-500/50 transition-all">
+            <Users className="w-12 h-12 text-emerald-400 mb-4" />
+            <h3 className="text-2xl font-bold text-white mb-3">Conferences & Workshops</h3>
+            <p className="text-slate-300 leading-relaxed mb-4">
+              Professional development events, tech conferences, business networking. Join industry leaders and learn new skills.
+            </p>
+            <Link 
+              to="/map?category=conference" 
+              className="inline-flex items-center text-emerald-400 hover:text-emerald-300 font-semibold"
+            >
+              Find conferences <ArrowRight className="w-4 h-4 ml-2" />
+            </Link>
+          </article>
+
+          <article className="bg-gradient-to-br from-slate-900/90 to-slate-950/90 border border-slate-800 rounded-3xl p-8 hover:border-purple-500/50 transition-all">
+            <Ticket className="w-12 h-12 text-purple-400 mb-4" />
+            <h3 className="text-2xl font-bold text-white mb-3">Sports & Community</h3>
+            <p className="text-slate-300 leading-relaxed mb-4">
+              Local sports events, marathons, fitness classes, and community gatherings. Stay active and meet new people.
+            </p>
+            <Link 
+              to="/map?category=sports" 
+              className="inline-flex items-center text-purple-400 hover:text-purple-300 font-semibold"
+            >
+              Discover sports events <ArrowRight className="w-4 h-4 ml-2" />
+            </Link>
+          </article>
+        </div>
+
+        {/* Key cities for geographic SEO */}
+        <div className="bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border border-indigo-500/30 rounded-3xl p-10">
+          <h3 className="text-2xl font-bold text-white mb-6 text-center">Find Events in Major Cities</h3>
+          <div className="flex flex-wrap justify-center gap-4">
+            {['Tallinn', 'Tartu', 'Pärnu', 'Narva', 'Helsinki', 'Riga', 'Vilnius', 'Stockholm'].map(city => (
+              <Link
+                key={city}
+                to={`/events-in-${city.toLowerCase()}`}
+                className="inline-flex items-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 border border-slate-700 hover:border-indigo-500/50 px-6 py-3 rounded-full transition-all group"
+              >
+                <MapIcon className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
+                <span className="text-white font-semibold">{city}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Why Choose EventNexus - Benefits Section */}
       <section className="max-w-7xl mx-auto px-4">

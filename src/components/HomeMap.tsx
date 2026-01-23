@@ -961,8 +961,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const bgClass = theme === 'light' ? 'bg-slate-50' : 'bg-slate-950';
 
   return (
-    <div className={`relative flex flex-col h-[calc(100vh-64px)] w-full ${bgClass} overflow-hidden`}>
-      <div className="absolute inset-0 z-0">
+    <article className={`relative flex flex-col h-[calc(100vh-64px)] w-full ${bgClass} overflow-hidden`} aria-label="Interactive event map">
+      <section className="absolute inset-0 z-0" role="application" aria-label="Map view of nearby events">
         <MapContainer center={userLocation} zoom={mapZoom} style={{ height: '100%', width: '100%' }} zoomControl={false} attributionControl={false}>
           <TileLayer 
             url={tileLayerUrl}
@@ -991,13 +991,13 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                 eventHandlers={{ click: () => { setSelectedEvent(primary); setIsFollowingUser(false); } }}
               >
                 <Popup minWidth={isMultipleEvents ? 280 : 260} className="rounded-xl">
-                  <div className="space-y-3 text-sm">
+                  <section className="space-y-3 text-sm" aria-label="Event details popup">
                     {/* If multiple events at same location, show table of all events */}
                     {isMultipleEvents ? (
                       <>
-                        <div className="font-black text-base text-slate-900 dark:text-white leading-tight">
+                        <header className="font-black text-base text-slate-900 dark:text-white leading-tight">
                           {totalCount} Events at this location
-                        </div>
+                        </header>
                         <div className="text-xs text-slate-500 flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
                           <span>{group.address}</span>

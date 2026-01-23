@@ -7,13 +7,15 @@
 #
 # The following headers would work on Netlify/Vercel:
 
-# Security Headers
+# Security Headers - Enhanced for SEO Report Requirements
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=()
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Content-Security-Policy: default-src 'self' https:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://anlivujgkjmajkcgbaxw.supabase.co https://generativelanguage.googleapis.com;
 
 # Static assets - cache for 1 year
 /assets/*
