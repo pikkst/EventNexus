@@ -301,7 +301,7 @@ BEGIN
       ELSE false
     END as valid,
     sc.event_id,
-    e.name as event_name,
+    e.name::TEXT as event_name,  -- Cast varchar to text explicitly
     sc.id as scanner_code_id,
     sc.organizer_id,
     sc.expires_at

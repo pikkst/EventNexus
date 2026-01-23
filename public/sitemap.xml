@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-23T23:33:49.850Z -->
+<!-- Last generated: 2026-01-23T23:39:41.342Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -3246,6 +3246,21 @@
       <news:publication_date>2026-01-23T23:32:20.27156+00:00</news:publication_date>
       <news:title>Atelier couture débutants à la Maison de la Planète</news:title>
       <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/3f62cd5c-4113-4ca0-8590-514563499250</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-23T23:39:39.315518+00:00</news:publication_date>
+      <news:title>General Carnival Street Festivities (Throughout the Season)</news:title>
+      <news:keywords>Carnival</news:keywords>
     </news:news>
   </url>
   <url>
@@ -8428,12 +8443,6 @@
   </url>
   <url>
     <loc>https://eventnexus.eu/event/1a95176a-4c0c-4075-ab39-8277846ddbce</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/556622db-c800-48b0-b3d6-1ce1157ad8b3</loc>
     <lastmod>2026-01-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

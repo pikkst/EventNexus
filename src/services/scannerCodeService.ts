@@ -140,6 +140,7 @@ export const getOrganizerScannerCodes = async (organizerId: string): Promise<Sca
 
 /**
  * Verify a scanner code (used by mobile apps)
+ * Falls back to direct table query if RPC fails
  */
 export const verifyScannerCode = async (code: string): Promise<VerifyScannerCodeResponse> => {
   try {
@@ -147,32 +148,69 @@ export const verifyScannerCode = async (code: string): Promise<VerifyScannerCode
     
     console.log('Verifying scanner code:', { original: code, normalized: normalizedCode });
     
-    const { data, error } = await supabase.rpc('verify_scanner_code', {
+    // Try RPC first
+    const { data: rpcData, error: rpcError } = await supabase.rpc('verify_scanner_code', {
       p_code: normalizedCode
     });
 
-    console.log('RPC response:', { data, error });
+    console.log('RPC response:', { rpcData, rpcError });
 
-    if (error) {
-      console.error('Error verifying scanner code:', error);
+    // If RPC works, use it
+    if (!rpcError) {
+      const result = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+      if (result) {
+        return {
+          valid: result.valid,
+          event_id: result.event_id,
+          event_name: result.event_name,
+          scanner_code_id: result.scanner_code_id,
+          organizer_id: result.organizer_id,
+          expires_at: result.expires_at
+        };
+      }
+    }
+
+    // Fallback: Direct table query
+    console.log('RPC failed, trying direct query...', rpcError?.message);
+    
+    const { data: scannerRow, error: dbError } = await supabase
+      .from('scanner_codes')
+      .select('id, event_id, is_active, expires_at, organizer_id')
+      .eq('code', normalizedCode)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    console.log('Direct query result:', { scannerRow, dbError });
+
+    if (dbError || !scannerRow) {
+      console.error('Scanner code not found or inactive:', dbError?.message || 'not found');
       return { valid: false };
     }
 
-    // RPC might return single object or array - handle both cases
-    const result = Array.isArray(data) ? data[0] : data;
-    
-    if (result) {
-      return {
-        valid: result.valid,
-        event_id: result.event_id,
-        event_name: result.event_name,
-        scanner_code_id: result.scanner_code_id,
-        organizer_id: result.organizer_id,
-        expires_at: result.expires_at
-      };
+    // Check expiration
+    if (scannerRow.expires_at) {
+      const expiresAt = new Date(scannerRow.expires_at);
+      if (new Date() > expiresAt) {
+        console.log('Scanner code expired');
+        return { valid: false };
+      }
     }
 
-    return { valid: false };
+    // Get event details
+    const { data: eventData } = await supabase
+      .from('events')
+      .select('id, name')
+      .eq('id', scannerRow.event_id)
+      .maybeSingle();
+
+    return {
+      valid: true,
+      event_id: scannerRow.event_id,
+      event_name: eventData?.name,
+      scanner_code_id: scannerRow.id,
+      organizer_id: scannerRow.organizer_id,
+      expires_at: scannerRow.expires_at
+    };
   } catch (error) {
     console.error('Error in verifyScannerCode:', error);
     return { valid: false };
