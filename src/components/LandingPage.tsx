@@ -545,14 +545,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 <p className="text-slate-200 text-xl font-medium max-w-2xl mx-auto">Real numbers. Real growth. Real communities discovering events.</p>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                 {/* Events 24h - Shows platform activity */}
                 <div className="group">
-                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-indigo-500/50 group-hover:shadow-2xl group-hover:shadow-indigo-500/20 rounded-[28px] p-8 text-center transition-all group-hover:scale-105">
-                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-indigo-600/30 to-indigo-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
-                      <Zap className="w-10 h-10 text-indigo-400" />
+                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-indigo-500/50 group-hover:shadow-2xl group-hover:shadow-indigo-500/20 rounded-[28px] p-4 sm:p-8 text-center transition-all group-hover:scale-105">
+                    <div className="w-12 h-12 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-indigo-600/30 to-indigo-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <Zap className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-400" />
                     </div>
-                    <div className="text-5xl md:text-6xl font-black bg-gradient-to-br from-indigo-400 to-indigo-500 bg-clip-text text-transparent mb-3">{platformStats.eventsLast24h?.toLocaleString() || '531'}</div>
+                    <div className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-black bg-gradient-to-br from-indigo-400 to-indigo-500 bg-clip-text text-transparent mb-2 sm:mb-3 break-words min-w-0">{platformStats.eventsLast24h?.toLocaleString() || '531'}</div>
                     <div className="text-base font-bold text-white mb-2">New Events Daily</div>
                     <p className="text-sm text-slate-300">Constantly updated, always fresh</p>
                   </div>
@@ -560,11 +560,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
                 {/* Cities Active - Shows global reach */}
                 <div className="group">
-                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-emerald-500/50 group-hover:shadow-2xl group-hover:shadow-emerald-500/20 rounded-[28px] p-8 text-center transition-all group-hover:scale-105">
-                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-emerald-600/30 to-emerald-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
-                      <Globe className="w-10 h-10 text-emerald-400" />
+                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-emerald-500/50 group-hover:shadow-2xl group-hover:shadow-emerald-500/20 rounded-[28px] p-4 sm:p-8 text-center transition-all group-hover:scale-105">
+                    <div className="w-12 h-12 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-emerald-600/30 to-emerald-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <Globe className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400" />
                     </div>
-                    <div className="text-5xl md:text-6xl font-black bg-gradient-to-br from-emerald-400 to-emerald-500 bg-clip-text text-transparent mb-3">{platformStats.totalCities?.toLocaleString() || '1169'}</div>
+                    <div className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-black bg-gradient-to-br from-emerald-400 to-emerald-500 bg-clip-text text-transparent mb-2 sm:mb-3 break-words min-w-0">{platformStats.totalCities?.toLocaleString() || '1169'}</div>
                     <div className="text-base font-bold text-white mb-2">Cities Worldwide</div>
                     <p className="text-sm text-slate-300">Everywhere you need to be</p>
                   </div>
@@ -572,11 +572,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
                 {/* Free Events - Conversion driver */}
                 <div className="group">
-                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-orange-500/50 group-hover:shadow-2xl group-hover:shadow-orange-500/20 rounded-[28px] p-8 text-center transition-all group-hover:scale-105">
-                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-orange-600/30 to-orange-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
-                      <Gift className="w-10 h-10 text-orange-400" />
+                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-orange-500/50 group-hover:shadow-2xl group-hover:shadow-orange-500/20 rounded-[28px] p-4 sm:p-8 text-center transition-all group-hover:scale-105">
+                    <div className="w-12 h-12 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-orange-600/30 to-orange-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <Gift className="w-8 h-8 sm:w-10 sm:h-10 text-orange-400" />
                     </div>
-                    <div className="text-5xl md:text-6xl font-black bg-gradient-to-br from-orange-400 to-orange-500 bg-clip-text text-transparent mb-3">{platformStats.freeEventsActive?.toLocaleString() || '592'}</div>
+                    <div className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-black bg-gradient-to-br from-orange-400 to-orange-500 bg-clip-text text-transparent mb-2 sm:mb-3 break-words min-w-0">{platformStats.freeEventsActive?.toLocaleString() || '592'}</div>
                     <div className="text-base font-bold text-white mb-2">Free Events Active</div>
                     <p className="text-sm text-slate-300">Start attending today, zero cost</p>
                   </div>
@@ -584,9 +584,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
                 {/* Active Users / Attendees */}
                 <div className="group">
-                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-purple-500/50 group-hover:shadow-2xl group-hover:shadow-purple-500/20 rounded-[28px] p-8 text-center transition-all group-hover:scale-105">
-                    <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-purple-600/30 to-purple-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
-                      <Users className="w-10 h-10 text-purple-400" />
+                  <div className="bg-slate-950/60 backdrop-blur-xl border border-slate-700 hover:border-purple-500/50 group-hover:shadow-2xl group-hover:shadow-purple-500/20 rounded-[28px] p-4 sm:p-8 text-center transition-all group-hover:scale-105">
+                    <div className="w-12 h-12 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-purple-600/30 to-purple-500/10 rounded-[24px] flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <Users className="w-8 h-8 sm:w-10 sm:h-10 text-purple-400" />
                     </div>
                     <div className="text-5xl md:text-6xl font-black bg-gradient-to-br from-purple-400 to-purple-500 bg-clip-text text-transparent mb-3">92%</div>
                     <div className="text-base font-bold text-white mb-2">Attendee Satisfaction</div>
