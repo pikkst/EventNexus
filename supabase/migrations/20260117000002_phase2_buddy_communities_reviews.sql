@@ -108,14 +108,17 @@ CREATE INDEX IF NOT EXISTS idx_user_followers_following ON user_followers(follow
 -- user_buddies RLS
 ALTER TABLE user_buddies ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "users_see_their_buddies" ON user_buddies CASCADE;
 CREATE POLICY "users_see_their_buddies"
   ON user_buddies FOR SELECT
   USING (auth.uid() = user_id_1 OR auth.uid() = user_id_2);
 
+DROP POLICY IF EXISTS "users_create_buddy_requests" ON user_buddies CASCADE;
 CREATE POLICY "users_create_buddy_requests"
   ON user_buddies FOR INSERT
   WITH CHECK (auth.uid() = initiated_by);
 
+DROP POLICY IF EXISTS "users_update_buddy_status" ON user_buddies CASCADE;
 CREATE POLICY "users_update_buddy_status"
   ON user_buddies FOR UPDATE
   USING (auth.uid() = user_id_1 OR auth.uid() = user_id_2);
@@ -123,14 +126,17 @@ CREATE POLICY "users_update_buddy_status"
 -- event_communities RLS
 ALTER TABLE event_communities ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "public_communities_readable" ON event_communities CASCADE;
 CREATE POLICY "public_communities_readable"
   ON event_communities FOR SELECT
   USING (is_public = true OR auth.uid() = organizer_id);
 
+DROP POLICY IF EXISTS "users_create_communities" ON event_communities CASCADE;
 CREATE POLICY "users_create_communities"
   ON event_communities FOR INSERT
   WITH CHECK (auth.uid() = organizer_id);
 
+DROP POLICY IF EXISTS "organizers_update_communities" ON event_communities CASCADE;
 CREATE POLICY "organizers_update_communities"
   ON event_communities FOR UPDATE
   USING (auth.uid() = organizer_id);
@@ -138,14 +144,17 @@ CREATE POLICY "organizers_update_communities"
 -- community_members RLS
 ALTER TABLE community_members ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "users_see_community_members" ON community_members CASCADE;
 CREATE POLICY "users_see_community_members"
   ON community_members FOR SELECT
   USING (true); -- public
 
+DROP POLICY IF EXISTS "users_join_communities" ON community_members CASCADE;
 CREATE POLICY "users_join_communities"
   ON community_members FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "users_leave_communities" ON community_members CASCADE;
 CREATE POLICY "users_leave_communities"
   ON community_members FOR DELETE
   USING (auth.uid() = user_id OR 
@@ -157,18 +166,22 @@ CREATE POLICY "users_leave_communities"
 -- event_reviews RLS
 ALTER TABLE event_reviews ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "public_reviews_readable" ON event_reviews CASCADE;
 CREATE POLICY "public_reviews_readable"
   ON event_reviews FOR SELECT
   USING (true); -- reviews are public
 
+DROP POLICY IF EXISTS "users_create_own_reviews" ON event_reviews CASCADE;
 CREATE POLICY "users_create_own_reviews"
   ON event_reviews FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "users_update_own_reviews" ON event_reviews CASCADE;
 CREATE POLICY "users_update_own_reviews"
   ON event_reviews FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "users_delete_own_reviews" ON event_reviews CASCADE;
 CREATE POLICY "users_delete_own_reviews"
   ON event_reviews FOR DELETE
   USING (auth.uid() = user_id);
@@ -176,18 +189,22 @@ CREATE POLICY "users_delete_own_reviews"
 -- review_helpful_votes RLS
 ALTER TABLE review_helpful_votes ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "public_votes_readable" ON review_helpful_votes CASCADE;
 CREATE POLICY "public_votes_readable"
   ON review_helpful_votes FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "users_vote_on_reviews" ON review_helpful_votes CASCADE;
 CREATE POLICY "users_vote_on_reviews"
   ON review_helpful_votes FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "users_update_own_votes" ON review_helpful_votes CASCADE;
 CREATE POLICY "users_update_own_votes"
   ON review_helpful_votes FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "users_delete_own_votes" ON review_helpful_votes CASCADE;
 CREATE POLICY "users_delete_own_votes"
   ON review_helpful_votes FOR DELETE
   USING (auth.uid() = user_id);
@@ -195,14 +212,17 @@ CREATE POLICY "users_delete_own_votes"
 -- user_followers RLS
 ALTER TABLE user_followers ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "public_followers_readable" ON user_followers CASCADE;
 CREATE POLICY "public_followers_readable"
   ON user_followers FOR SELECT
   USING (true); -- follower graphs are public
 
+DROP POLICY IF EXISTS "users_follow_others" ON user_followers CASCADE;
 CREATE POLICY "users_follow_others"
   ON user_followers FOR INSERT
   WITH CHECK (auth.uid() = follower_id);
 
+DROP POLICY IF EXISTS "users_unfollow" ON user_followers CASCADE;
 CREATE POLICY "users_unfollow"
   ON user_followers FOR DELETE
   USING (auth.uid() = follower_id);
@@ -249,7 +269,7 @@ BEGIN
       WHERE (user_id_1 = p_user_id AND user_id_2 = u.id) 
          OR (user_id_1 = u.id AND user_id_2 = p_user_id)
     )
-  GROUP BY u.id, u.full_name, u.avatar, ui.categories
+  GROUP BY u.id, u.name, u.avatar, ui.categories
   ORDER BY similarity_score DESC
   LIMIT p_limit;
 END;

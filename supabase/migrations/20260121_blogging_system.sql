@@ -427,8 +427,8 @@ BEGIN
     row_to_json(bp.*)::JSONB AS post,
     jsonb_build_object(
       'id', u.id,
-      'full_name', u.full_name,
-      'avatar_url', u.avatar_url,
+      'full_name', u.name,
+      'avatar_url', u.avatar,
       'role', u.role
     ) AS author,
     EXISTS (
@@ -529,8 +529,8 @@ BEGIN
     bp.excerpt,
     bp.cover_image_url,
     bp.author_id,
-    u.full_name AS author_name,
-    u.avatar_url AS author_avatar,
+    u.name AS author_name,
+    u.avatar AS author_avatar,
     bp.category,
     bp.tags,
     bp.published_at,

@@ -24,7 +24,7 @@ BEGIN
     bp.slug,
     bp.category,
     bp.tags,
-    u.full_name AS author_name,
+    u.name AS author_name,
     bp.published_at,
     'https://www.eventnexus.eu/blog/' || bp.slug AS url
   FROM public.blog_posts bp
@@ -94,7 +94,7 @@ BEGIN
     bp.excerpt,
     bp.cover_image_url,
     bp.author_id,
-    u.full_name AS author_name,
+    u.name AS author_name,
     bp.category,
     bp.tags,
     bp.published_at,
