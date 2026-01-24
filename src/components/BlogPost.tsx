@@ -30,6 +30,7 @@ import {
   createComment
 } from '../services/blogService';
 import { Helmet } from 'react-helmet-async';
+import { supabase } from '../services/supabase';
 
 interface BlogPost {
   id: string;
@@ -78,6 +79,7 @@ export default function BlogPost() {
   const [post, setPost] = useState<BlogPost | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -85,14 +87,22 @@ export default function BlogPost() {
   const [showShareMenu, setShowShareMenu] = useState(false);
 
   const language = 'en'; // Get from context/props
-  const userId = 'current-user-id'; // Get from auth context
+
+  // Get current user on mount
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
 
   useEffect(() => {
     if (slug) {
       loadPost();
       loadComments();
     }
-  }, [slug]);
+  }, [slug, userId]);
 
   async function loadPost() {
     try {
