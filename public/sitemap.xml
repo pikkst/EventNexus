@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-24T00:15:57.885Z -->
+<!-- Last generated: 2026-01-24T17:35:10.936Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -7693,7 +7693,7 @@
 
   <!-- Blog Articles & News (AI Training Data) -->
   <url>
-    <loc>https://eventnexus.eu/blog/scanner-and-live-map-now-live</loc>
+    <loc>https://eventnexus.eu/blog/the-platform-now-has-separate-downloadable-web-apps</loc>
     <lastmod>2026-01-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -7702,50 +7702,8 @@
         <news:name>EventNexus Blog</news:name>
         <news:language>en</news:language>
       </news:publication>
-      <news:publication_date>2026-01-24T00:13:43.875+00:00</news:publication_date>
-      <news:title>scanner and live map now live </news:title>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/blog/scanner-and-live-mapp-app-now-live</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus Blog</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-23T23:58:45.125+00:00</news:publication_date>
-      <news:title>scanner and live mapp app now live </news:title>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/blog/scanner-and-live-map-app-now-available</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus Blog</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-23T23:47:55.951+00:00</news:publication_date>
-      <news:title>scanner and live map app now available</news:title>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/blog/new-styles-for-the-popup-notifications-d</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus Blog</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-23T21:10:48.86+00:00</news:publication_date>
-      <news:title> New styles for the popup notifications ! :-D</news:title>
+      <news:publication_date>2026-01-24T00:22:38.481+00:00</news:publication_date>
+      <news:title>The platform now has separate downloadable web apps</news:title>
     </news:news>
   </url>
 </urlset>
