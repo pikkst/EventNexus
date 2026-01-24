@@ -183,7 +183,7 @@ export default function OrganizerStats({ organizerId }: OrganizerStatsProps) {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg p-6 text-white">
           <div className="flex items-center gap-3 mb-3">
             <Calendar className="w-8 h-8" />
@@ -284,7 +284,7 @@ export default function OrganizerStats({ organizerId }: OrganizerStatsProps) {
       )}
 
       {/* Event List with Stats */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white rounded-lg shadow-md overflow-x-auto">
         <div className="p-6 border-b border-gray-200">
           <h3 className="font-bold text-gray-900">Event Performance</h3>
         </div>
@@ -329,28 +329,28 @@ export default function OrganizerStats({ organizerId }: OrganizerStatsProps) {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 min-w-[340px]">
                   <div className="bg-blue-50 rounded-lg p-3">
                     <p className="text-xs text-blue-600 mb-1">Tickets Sold</p>
-                    <p className="text-2xl font-bold text-blue-900">
+                    <p className="text-xl sm:text-2xl font-bold text-blue-900 break-words">
                       {eventStat.total_tickets_sold}/{eventStat.total_tickets_available}
                     </p>
                   </div>
                   <div className="bg-green-50 rounded-lg p-3">
                     <p className="text-xs text-green-600 mb-1">Revenue</p>
-                    <p className="text-2xl font-bold text-green-900">
+                    <p className="text-xl sm:text-2xl font-bold text-green-900 break-words">
                       ${eventStat.total_revenue.toFixed(0)}
                     </p>
                   </div>
                   <div className="bg-purple-50 rounded-lg p-3">
                     <p className="text-xs text-purple-600 mb-1">Check-in Rate</p>
-                    <p className="text-2xl font-bold text-purple-900">
+                    <p className="text-xl sm:text-2xl font-bold text-purple-900 break-words">
                       {eventStat.check_in_rate.toFixed(0)}%
                     </p>
                   </div>
                   <div className="bg-orange-50 rounded-lg p-3">
                     <p className="text-xs text-orange-600 mb-1">Avg Price</p>
-                    <p className="text-2xl font-bold text-orange-900">
+                    <p className="text-xl sm:text-2xl font-bold text-orange-900 break-words">
                       ${eventStat.average_ticket_price.toFixed(2)}
                     </p>
                   </div>
@@ -359,7 +359,7 @@ export default function OrganizerStats({ organizerId }: OrganizerStatsProps) {
                 {selectedEvent === event.id && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <h5 className="font-semibold text-gray-900 mb-3">Ticket Breakdown</h5>
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {eventStat.tickets_by_type.map((ticketType, index) => (
                         <div key={index} className="bg-gray-50 rounded-lg p-4">
                           <div className="flex items-center justify-between mb-2">
