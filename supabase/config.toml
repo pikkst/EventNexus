@@ -4,6 +4,9 @@ verify_jwt = false
 [functions.data-deletion]
 verify_jwt = false
 
+[functions.feed]
+verify_jwt = false
+
 [functions.production-transition]
 verify_jwt = true
 

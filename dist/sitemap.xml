@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-25T13:37:21.781Z -->
+<!-- Last generated: 2026-01-25T13:51:39.608Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -945,6 +945,36 @@
       <news:publication_date>2026-01-25T13:10:44.200885+00:00</news:publication_date>
       <news:title>Bellwether (Flint Weisser&apos;s latest works)</news:title>
       <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/42bdfc2f-6c51-468d-bcb3-e75f3783acc8</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:38:32.811358+00:00</news:publication_date>
+      <news:title>2026 Brampton Budget: Coffee Chat Sessions - Wards 7 &amp; 8</news:title>
+      <news:keywords>Community</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/a5ea1f15-fcfd-40df-afb0-4c0deb60cdfd</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:38:36.137138+00:00</news:publication_date>
+      <news:title>2026 Brampton Budget: Coffee Chat Sessions - Wards 9 &amp; 10</news:title>
+      <news:keywords>Community</news:keywords>
     </news:news>
   </url>
   <url>
@@ -1941,6 +1971,21 @@
       <news:publication_date>2026-01-25T13:08:29.578174+00:00</news:publication_date>
       <news:title>Kinderkleider-Tauschbörse (Children&apos;s Clothes Exchange)</news:title>
       <news:keywords>Market</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/1a78a972-629c-4c93-95c9-fba685f98f1d</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:42:01.060187+00:00</news:publication_date>
+      <news:title>Italian Language Cafe (Jazyková kaviareň – Taliančina)</news:title>
+      <news:keywords>Social</news:keywords>
     </news:news>
   </url>
   <url>
@@ -2958,6 +3003,21 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/20893c76-3354-4380-8092-c70d3ab32c0e</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:41:58.033821+00:00</news:publication_date>
+      <news:title>Discussions in Pistori: Anton Heretik (Hovory v Pistori: Anton Heretik)</news:title>
+      <news:keywords>Discussion</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/ea7f0d78-966b-4e02-a192-d4d9f1ab36fa</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -3843,6 +3903,21 @@
       <news:publication_date>2026-01-25T13:35:55.950696+00:00</news:publication_date>
       <news:title>Formação gratuita: Cuidados na saúde mental (Free Training: Mental Health Care)</news:title>
       <news:keywords>Training</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/d5ef0a6d-5111-4385-8eb8-51a627f5e88c</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:42:04.070022+00:00</news:publication_date>
+      <news:title>MIB Talk: Brownfield Transformation (Transformácia brownfieldov)</news:title>
+      <news:keywords>Talk</news:keywords>
     </news:news>
   </url>
   <url>
@@ -4842,6 +4917,21 @@
       <news:publication_date>2026-01-25T13:04:34.604253+00:00</news:publication_date>
       <news:title>Meet the Expert – Einkommenssteuer in Deutschland (Income Tax in Germany)</news:title>
       <news:keywords>Information Session/Online</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/7f143b6a-67e4-4dca-9a57-582cc8cecaa7</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:41:54.918786+00:00</news:publication_date>
+      <news:title>Together with Art: Live Contact (Spolu s umením: Živý kontakt)</news:title>
+      <news:keywords>Art</news:keywords>
     </news:news>
   </url>
   <url>
@@ -6927,6 +7017,21 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/53a0ce95-cf95-40f7-97cb-e69ba6a6509c</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:44:59.418037+00:00</news:publication_date>
+      <news:title>Bray Sanctuary Runners – Saturday meet up</news:title>
+      <news:keywords>Community Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/f7a2c3b4-b863-4658-8dc6-71a75e444efe</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -8130,6 +8235,36 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/761a110d-811b-4587-81c7-1ce22b6124a1</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:42:34.951797+00:00</news:publication_date>
+      <news:title>Farmers&apos; Markets &amp; Bratislava Book Exchange</news:title>
+      <news:keywords>Market</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/fdf4fbaf-e7a9-427d-a1e9-a5b0a7359f42</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:44:56.873173+00:00</news:publication_date>
+      <news:title>Bray junior parkrun</news:title>
+      <news:keywords>Sports</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/021f42dc-b1d7-4e07-bcde-c961786a50bf</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -8474,60 +8609,6 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-  <url>
-    <loc>https://eventnexus.eu/event/e77b52ea-b0c3-44c0-a998-4910959e8ea2</loc>
-    <lastmod>2026-01-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c549aaf0-e2aa-49e5-bf42-7d9e45dc6e39</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/07e6eab7-6a85-4aba-a321-ffe4dccc5408</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/3e458c10-23ea-468e-85fa-953d152da5f9</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/eb3354b3-a49b-4641-b759-bce28bc2f1a7</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/98a2dce0-b04e-4b68-af80-08a4565cce16</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/51d56e56-c2e0-4d6d-905b-69f61c639023</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/4ddf1038-cd46-4a3e-b4a1-1e3fcd80b78a</loc>
-    <lastmod>2026-01-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/d5b0653c-470a-4046-85f5-fb2e5b1ed38f</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
 
   <!-- User & Organizer Profiles (All registered users) -->
   <url>
@@ -8585,20 +8666,6 @@
         <news:language>en</news:language>
       </news:publication>
       <news:publication_date>2026-01-25T11:56:41.481+00:00</news:publication_date>
-      <news:title>The Future of Event Discovery: How AI is Revolutionizing the Events Industry</news:title>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/blog/the-future-of-event-discovery-how-ai-is-revolutionizing-the-events-industry</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus Blog</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T11:25:31.686+00:00</news:publication_date>
       <news:title>The Future of Event Discovery: How AI is Revolutionizing the Events Industry</news:title>
     </news:news>
   </url>

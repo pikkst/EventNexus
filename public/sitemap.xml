@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-25T13:51:39.608Z -->
+<!-- Last generated: 2026-01-25T14:01:22.085Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -975,6 +975,36 @@
       <news:publication_date>2026-01-25T13:38:36.137138+00:00</news:publication_date>
       <news:title>2026 Brampton Budget: Coffee Chat Sessions - Wards 9 &amp; 10</news:title>
       <news:keywords>Community</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/943e1b6c-fe4c-4e61-b299-f5f2833df4a5</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:52:33.509999+00:00</news:publication_date>
+      <news:title>Ausstellung: Konturen des Lebens | Gerhard Mangold</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8fc875d4-6c32-4ecc-9ed1-38476b4b358b</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:52:36.609926+00:00</news:publication_date>
+      <news:title>Aktivtreff: Laufen im Winter</news:title>
+      <news:keywords>Sports</news:keywords>
     </news:news>
   </url>
   <url>
@@ -1986,6 +2016,21 @@
       <news:publication_date>2026-01-25T13:42:01.060187+00:00</news:publication_date>
       <news:title>Italian Language Cafe (Jazyková kaviareň – Taliančina)</news:title>
       <news:keywords>Social</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6ab2a525-b530-4f08-9d58-a22dea057d63</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:58:53.523873+00:00</news:publication_date>
+      <news:title>Giorno della Memoria 2026 (Diocesan Archive Documents)</news:title>
+      <news:keywords>Exhibition/Commemoration</news:keywords>
     </news:news>
   </url>
   <url>
@@ -3018,6 +3063,21 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/1410a85d-4fd6-43b1-a3df-56f8c0d8b55d</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:58:56.327761+00:00</news:publication_date>
+      <news:title>Giorno della Memoria 2026 (Official Commemoration)</news:title>
+      <news:keywords>Commemoration</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/ea7f0d78-966b-4e02-a192-d4d9f1ab36fa</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -3918,6 +3978,21 @@
       <news:publication_date>2026-01-25T13:42:04.070022+00:00</news:publication_date>
       <news:title>MIB Talk: Brownfield Transformation (Transformácia brownfieldov)</news:title>
       <news:keywords>Talk</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c06735b9-cb8d-405a-a90e-7e595655b74c</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:55:09.783033+00:00</news:publication_date>
+      <news:title>Sanierungsgeschichten II – Kulturbauten</news:title>
+      <news:keywords>Lecture/Discussion</news:keywords>
     </news:news>
   </url>
   <url>
@@ -4932,6 +5007,21 @@
       <news:publication_date>2026-01-25T13:41:54.918786+00:00</news:publication_date>
       <news:title>Together with Art: Live Contact (Spolu s umením: Živý kontakt)</news:title>
       <news:keywords>Art</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/3b8001ca-77a2-463d-bec2-cfe7b7558967</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:55:07.001593+00:00</news:publication_date>
+      <news:title>Finissage (Closing Event) with Quizabend</news:title>
+      <news:keywords>Social Event</news:keywords>
     </news:news>
   </url>
   <url>
@@ -8265,6 +8355,21 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/5f0dcb9b-fac2-4dba-9a93-ccf853f20f3f</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:54:56.382574+00:00</news:publication_date>
+      <news:title>2. Internationales Festival der Inklusion</news:title>
+      <news:keywords>Festival/Performance</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/021f42dc-b1d7-4e07-bcde-c961786a50bf</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -8564,48 +8669,6 @@
   <url>
     <loc>https://eventnexus.eu/event/16c29010-ed3a-476d-8f12-ff34dab8b877</loc>
     <lastmod>2026-01-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/6d680038-3e63-45b1-889c-84cbb32dad14</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/605f4903-96ee-4e68-baf4-3bb6bd30a118</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/772cc5e4-180c-442a-9540-3d801d5ca25b</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/05be6c09-d957-4f3c-a151-884bd7bd4137</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b7a4d8d1-53f3-4f9f-99f6-9940bb87e8cb</loc>
-    <lastmod>2026-01-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/850adc16-f1f4-40e2-9e9c-f920d2fdfe0a</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a86538b4-e094-4ccc-84de-c9699b42c1d8</loc>
-    <lastmod>2026-01-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

@@ -275,6 +275,11 @@ Crawl-delay: 1
 # Deployed via GitHub Pages with custom domain
 Sitemap: https://eventnexus.eu/sitemap.xml
 
+# RSS/Atom Feed - Dynamic via Supabase Edge Function
+# RSS 2.0: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/feed
+# Atom 1.0: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/feed?format=atom
+# Custom limits: ?limit=100 | Events only: ?blog=false | Blog only: ?events=false
+
 # ============================================================================
 # AI CRAWLER NOTES
 # ============================================================================
@@ -284,6 +289,8 @@ Sitemap: https://eventnexus.eu/sitemap.xml
 # - Individual events: /event/{id} with full structured data
 # - Organizer profiles: /org/{slug}, /agency/{slug}
 # - Blog posts: /blog, /blog/{slug}
+# - RSS Feed: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/feed
+# - Atom Feed: https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/feed?format=atom
 #
 # Structured data includes:
 # - Event schema (name, date, location, price, description)
@@ -293,4 +300,5 @@ Sitemap: https://eventnexus.eu/sitemap.xml
 #
 # Static site hosted on GitHub Pages with custom domain
 # Sitemap: https://eventnexus.eu/sitemap.xml (generated via scripts)
+# Feed: Dynamic via Supabase Edge Functions (real-time updates)
 
