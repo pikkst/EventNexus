@@ -89,10 +89,13 @@ export async function getBlogPosts(filters?: {
   limit?: number;
   offset?: number;
 }) {
+  console.log('📋 Fetching blog posts with filters:', filters);
+  
   let query = supabase
     .from('blog_posts')
     .select('*, author:users(id, name, avatar)')
     .eq('status', 'published')
+    .not('published_at', 'is', null)
     .lte('published_at', new Date().toISOString())
     .order('published_at', { ascending: false });
 
@@ -116,7 +119,13 @@ export async function getBlogPosts(filters?: {
   }
 
   const { data, error } = await query;
-  if (error) throw error;
+  
+  if (error) {
+    console.error('❌ Error fetching blog posts:', error);
+    throw error;
+  }
+  
+  console.log('✅ Fetched blog posts:', data?.length || 0, 'posts');
   return data;
 }
 

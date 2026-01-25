@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { marked } from 'marked';
 import { 
   Heart, 
   MessageCircle, 
@@ -87,6 +88,15 @@ export default function BlogPost() {
   const [showShareMenu, setShowShareMenu] = useState(false);
 
   const language = 'en'; // Get from context/props
+
+  // Convert markdown to HTML
+  const htmlContent = useMemo(() => {
+    if (!post?.content?.[language]) return '';
+    return marked(post.content[language], { 
+      breaks: true,
+      gfm: true 
+    }) as string;
+  }, [post?.content, language]);
 
   // Get current user on mount
   useEffect(() => {
@@ -388,7 +398,7 @@ export default function BlogPost() {
         {/* Content */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <article className="prose prose-lg prose-invert max-w-none prose-headings:text-slate-100 prose-p:text-slate-300 prose-a:text-indigo-400 prose-strong:text-slate-200 prose-code:text-indigo-400 prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-800">
-            <div dangerouslySetInnerHTML={{ __html: post.content[language] }} />
+            <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           </article>
 
           {/* Tags */}
