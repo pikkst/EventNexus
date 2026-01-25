@@ -1,0 +1,4 @@
+# Function configuration for resend-reply-handler
+# Disables JWT verification for webhook endpoints
+
+verify_jwt: false

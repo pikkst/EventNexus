@@ -33,14 +33,44 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // Handle GET requests (webhook status check)
+  if (req.method === 'GET') {
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'Admin inbox email handler is active',
+        info: 'Configure this URL in Resend inbound domain settings'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Parse webhook payload
-    const payload: ResendInboundEmail = await req.json();
+    // Parse webhook payload (POST from Resend)
+    const text = await req.text();
+    if (!text || text.trim() === '') {
+      console.error('Empty request body received');
+      return new Response(
+        JSON.stringify({ error: 'Empty request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let payload: ResendInboundEmail;
+    try {
+      payload = JSON.parse(text);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError, 'Body:', text.substring(0, 200));
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON payload' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     console.log('Received inbound email:', {
       from: payload.from,

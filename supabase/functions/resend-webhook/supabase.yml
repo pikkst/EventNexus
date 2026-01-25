@@ -1,0 +1,4 @@
+# Function configuration for resend-webhook
+# Disables JWT verification for webhook endpoints
+
+verify_jwt: false

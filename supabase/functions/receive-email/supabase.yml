@@ -1,0 +1,4 @@
+# Function configuration for receive-email
+# Disables JWT verification for webhook endpoints
+
+verify_jwt: false
