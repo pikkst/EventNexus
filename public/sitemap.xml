@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-25T12:09:07.366Z -->
+<!-- Last generated: 2026-01-25T12:18:05.494Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -1671,6 +1671,21 @@
       <news:publication_date>2026-01-25T12:06:20.477388+00:00</news:publication_date>
       <news:title>ADY ENDRE VALÓDI ARCA (The True Face of Endre Ady)</news:title>
       <news:keywords>Lecture</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/442d9d7d-86b6-4f15-8ea4-884eb3c8f79c</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T12:11:29.546292+00:00</news:publication_date>
+      <news:title>Besplatne ture za decu u Muzeju Nikole Tesle (Free Tours for Children at Nikola Tesla Museum)</news:title>
+      <news:keywords>Tour</news:keywords>
     </news:news>
   </url>
   <url>
@@ -4170,6 +4185,51 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/4802140f-cb6e-4af9-b406-972456d2aca4</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T12:10:48.79554+00:00</news:publication_date>
+      <news:title>AGRO BELGRADE 2026</news:title>
+      <news:keywords>Trade Fair</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/67bb9659-19da-4f20-9501-04036b589fcf</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T12:11:25.282713+00:00</news:publication_date>
+      <news:title>Međunarodni dan slagalica (International Puzzle Day) at UK Parobrod</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/70b44ee9-2093-4a93-9af1-2e364b005ebb</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T12:14:03.939904+00:00</news:publication_date>
+      <news:title>Zeitenwende für Liechtenstein: wissenschaftliche und politische Perspektiven</news:title>
+      <news:keywords>Lecture</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/d20bab5d-4b5b-489f-bae7-0d53b5893f3d</loc>
     <lastmod>2026-01-21</lastmod>
     <changefreq>weekly</changefreq>
@@ -6117,6 +6177,21 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/a65b1331-e3a9-41eb-b6d9-f9bf28f29b08</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T12:11:13.280018+00:00</news:publication_date>
+      <news:title>Interaktivna čitalačka radionica Mrežoslav (Interactive Reading Workshop Mrežoslav)</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/f7a2c3b4-b863-4658-8dc6-71a75e444efe</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -8002,45 +8077,6 @@
     <lastmod>2026-01-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/557f04d7-a636-438f-b600-7182874e061f</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/70049b3a-9a7e-4864-915f-7392220b9e73</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/4ca32b14-79ad-48c6-9f96-2300779141b0</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/008a3797-6d5c-44cd-a5c4-39268b56581b</loc>
-    <lastmod>2026-01-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/9eff45a4-95b1-4f20-b968-0c04d462b887</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-23T00:40:52.696754+00:00</news:publication_date>
-      <news:title>Grup de suport pentru părinți: Copiii și ecranele (Parent Support Group: Children and Screens)</news:title>
-      <news:keywords>Support Group</news:keywords>
-    </news:news>
   </url>
 
   <!-- User & Organizer Profiles (All registered users) -->

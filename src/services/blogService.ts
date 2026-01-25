@@ -268,10 +268,25 @@ export async function incrementBlogPostViews(postId: string) {
 
 // Trending & Featured
 export async function getTrendingPosts(limit = 10) {
+  // Calculate trending score based on recent engagement
   const { data, error } = await supabase
-    .rpc('get_trending_blog_posts', { p_limit: limit });
+    .from('blog_posts')
+    .select('*, author:users(id, name, avatar)')
+    .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', new Date().toISOString())
+    .gte('published_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Last 30 days
+    .order('like_count', { ascending: false })
+    .order('comment_count', { ascending: false })
+    .order('view_count', { ascending: false })
+    .limit(limit);
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Error fetching trending posts:', error);
+    throw error;
+  }
+  
+  console.log('✅ Fetched trending posts:', data?.length || 0);
   return data;
 }
 
@@ -281,19 +296,37 @@ export async function getFeaturedPosts(limit = 5) {
     .select('*, author:users(id, name, avatar)')
     .eq('status', 'published')
     .eq('is_featured', true)
+    .not('published_at', 'is', null)
     .lte('published_at', new Date().toISOString())
     .order('published_at', { ascending: false })
     .limit(limit);
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Error fetching featured posts:', error);
+    throw error;
+  }
+  
+  console.log('✅ Fetched featured posts:', data?.length || 0);
   return data;
 }
 
 export async function getAdminUpdates(limit = 10) {
   const { data, error } = await supabase
-    .rpc('get_admin_updates', { p_limit: limit });
+    .from('blog_posts')
+    .select('*, author:users(id, name, avatar)')
+    .eq('status', 'published')
+    .eq('post_type', 'admin_update')
+    .not('published_at', 'is', null)
+    .lte('published_at', new Date().toISOString())
+    .order('published_at', { ascending: false })
+    .limit(limit);
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Error fetching admin updates:', error);
+    throw error;
+  }
+  
+  console.log('✅ Fetched admin updates:', data?.length || 0);
   return data;
 }
 
