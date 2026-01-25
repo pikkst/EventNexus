@@ -167,8 +167,13 @@ export async function createBlogPost(post: Partial<BlogPost>) {
   const titleEn = post.title?.en || '';
   const { data: slugData } = await supabase.rpc('generate_blog_slug', { p_title: titleEn });
 
+  // Filter out undefined values to prevent "undefined" string being sent as UUID
+  const cleanPost = Object.fromEntries(
+    Object.entries(post).filter(([_, value]) => value !== undefined)
+  );
+
   const insertData = {
-    ...post,
+    ...cleanPost,
     author_id: publicUser.id,
     slug: slugData || titleEn.toLowerCase().replace(/[^a-z0-9]+/g, '-')
   };
@@ -176,7 +181,8 @@ export async function createBlogPost(post: Partial<BlogPost>) {
   console.log('📤 Inserting blog post:', { 
     author_id: insertData.author_id, 
     slug: insertData.slug,
-    status: insertData.status 
+    status: insertData.status,
+    keys: Object.keys(insertData)
   });
 
   const { data, error } = await supabase
