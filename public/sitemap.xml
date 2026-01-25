@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-25T14:49:08.042Z -->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<!-- Last generated: 2026-01-25T15:26:44.561Z -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Core Platform Pages (Public & AI-crawlable) -->
   <url>
     <loc>https://eventnexus.eu/</loc>
@@ -1065,6 +1062,66 @@
       <news:publication_date>2026-01-25T14:48:42.808468+00:00</news:publication_date>
       <news:title>Canillo Brilla 2025</news:title>
       <news:keywords>Festival</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/aa93d949-58a9-4c55-96e4-ffc91032a44e</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:02:13.042722+00:00</news:publication_date>
+      <news:title>Cronache d&apos;amore&quot; by Alex Majoli: Photographic Exhibition</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/4b2f1b34-eb0b-441b-9d5a-8484495f1960</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:23:04.903729+00:00</news:publication_date>
+      <news:title>Dance Master Classes (e.g., Bachata)</news:title>
+      <news:keywords>Dance</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/e290a56f-8d84-467f-a89a-dc15289c5f43</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:23:07.538697+00:00</news:publication_date>
+      <news:title>Film Screenings</news:title>
+      <news:keywords>Film Screening</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/2b018b5c-b27c-4874-ab06-816d90fc1987</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:23:10.0751+00:00</news:publication_date>
+      <news:title>Literary Evenings</news:title>
+      <news:keywords>Literary Event</news:keywords>
     </news:news>
   </url>
   <url>
@@ -2136,6 +2193,21 @@
       <news:publication_date>2026-01-25T14:48:40.243884+00:00</news:publication_date>
       <news:title>Canillo Brilla 2025</news:title>
       <news:keywords>Festival</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c5df9872-1600-408a-bcfb-8e4edb06ebe5</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:54:12.296633+00:00</news:publication_date>
+      <news:title>Expoziție de fotografie „Careiul prin ochii Gabrielei” – Negrea Gabriela</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
     </news:news>
   </url>
   <url>
@@ -3258,6 +3330,51 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/9fde206d-961a-432f-99b8-5cc9ba3d990f</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:57:43.53323+00:00</news:publication_date>
+      <news:title>Lunchtime Exhibition Tours @Visual – Free Weekly Events</news:title>
+      <news:keywords>Exhibition Tour</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/02ccf272-1a35-476e-ab96-f3cf5c238578</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:59:23.265518+00:00</news:publication_date>
+      <news:title>NAA Gallery “Fire and Ice” Show</news:title>
+      <news:keywords>Art</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/2f875ef8-9cb7-4712-96a5-12de0a18f6f4</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:12:31.237236+00:00</news:publication_date>
+      <news:title>Cesvaines Tūrisma centrs (Cesvaine Tourism Center)</news:title>
+      <news:keywords>Tourist Information</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/ea7f0d78-966b-4e02-a192-d4d9f1ab36fa</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -4188,6 +4305,81 @@
       <news:publication_date>2026-01-25T14:48:35.207272+00:00</news:publication_date>
       <news:title>Canillo Brilla 2025</news:title>
       <news:keywords>Festival</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/efc8b631-dd4d-4875-89d3-6d3391da60cd</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:59:20.705699+00:00</news:publication_date>
+      <news:title>NAA Gallery “Fire and Ice” Show</news:title>
+      <news:keywords>Art</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/45a8de19-7d1b-4fdb-a4e5-cc7de0e7eeaf</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:12:28.135213+00:00</news:publication_date>
+      <news:title>Cesvaine Castle Viewing Tower (Free on designated days)</news:title>
+      <news:keywords>Sightseeing</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/1149df44-588f-4bae-9056-151265668af8</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:12:33.768707+00:00</news:publication_date>
+      <news:title>Cesvaine Castle Exhibition &quot;No krātuves&quot; by Atis Ieviņš (Free Entry Day)</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/26b1f7d1-dba3-4608-92c3-573a2b7b71ce</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:12:36.208939+00:00</news:publication_date>
+      <news:title>Cesvaine Castle Exhibition &quot;Gadskārtas&quot; by Māris Apfelbergs (Free Entry Day)</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/11974c33-efc1-4972-8fde-5437339f26ac</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:17:26.558209+00:00</news:publication_date>
+      <news:title>Les Ateliers de la Bidouille - Quand Souffle le Vent du Carnaval</news:title>
+      <news:keywords>Workshop</news:keywords>
     </news:news>
   </url>
   <url>
@@ -5295,6 +5487,51 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/002a757e-1af5-44e2-8ca1-fd14d9f4fbcc</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:59:18.226831+00:00</news:publication_date>
+      <news:title>NAA Gallery “Fire and Ice” Show</news:title>
+      <news:keywords>Art</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/2015bf81-9776-4043-8290-bf7048cfec1d</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:04:44.497084+00:00</news:publication_date>
+      <news:title>Orchestre des Jeunes Échos d&apos;Amazonie 2026 (Youth Orchestra Echoes of Amazonia 2026)</news:title>
+      <news:keywords>Concert</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/3325e6b7-8e6d-40e8-939e-6d03af572fda</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:23:42.077877+00:00</news:publication_date>
+      <news:title>Creative Meeting with Halyna Novosad</news:title>
+      <news:keywords>Literary Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/d20bab5d-4b5b-489f-bae7-0d53b5893f3d</loc>
     <lastmod>2026-01-21</lastmod>
     <changefreq>weekly</changefreq>
@@ -6303,6 +6540,66 @@
       <news:publication_date>2026-01-25T14:48:30.262722+00:00</news:publication_date>
       <news:title>Canillo Brilla 2025</news:title>
       <news:keywords>Festival</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/4b42c6c1-1427-4caf-af2c-b228c4087c79</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:59:15.615217+00:00</news:publication_date>
+      <news:title>NAA Gallery “Fire and Ice” Show</news:title>
+      <news:keywords>Art</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/09b083fc-3c9a-4802-a760-0008b798502b</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:12:42.989181+00:00</news:publication_date>
+      <news:title>Vakarēšana &quot;Smēdes namā&quot; Cesvainē (Evening gathering at &quot;Smēdes nams&quot; in Cesvaine)</news:title>
+      <news:keywords>Cultural Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6063a762-09a8-4cc5-8859-439fd7bc0fac</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:17:16.06897+00:00</news:publication_date>
+      <news:title>Vernissage: Exposition &quot;Porcelaine et faits divers&quot; de Bachelot &amp; Caron</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/77e4bb39-5bc6-4709-b5f8-1153f72f9c04</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:17:18.689638+00:00</news:publication_date>
+      <news:title>Vernissage: Exposition &quot;…puisque bafouillent aussi les astres&quot; de Chantal Maes</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
     </news:news>
   </url>
   <url>
@@ -7572,6 +7869,66 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/da2c2521-8a7a-453a-975c-5d9f2156aaaf</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:57:19.556908+00:00</news:publication_date>
+      <news:title>Carlow Town parkrun</news:title>
+      <news:keywords>Running Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/87dd4a74-1797-42dc-8c20-301ded00680d</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:14:49.067265+00:00</news:publication_date>
+      <news:title>God Hephaestus and Metalworking (ΘΕΟΣ ΗΦΑΙΣΤΟΣ ΚΑΙ ΜΕΤΑΛΛΟΤΕΧΝΙΑ)</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/56173652-e22c-4e98-b8ff-5d9fac9f4f7d</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:17:08.812041+00:00</news:publication_date>
+      <news:title>Les Bisarticulés du Carnaval</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/bbac3ff7-01e8-4e58-9a73-be986b868fe8</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:17:13.337725+00:00</news:publication_date>
+      <news:title>Soumonce en Musique - Société Royale les Gilles du Pays Noir (Carnaval de Charleroi)</news:title>
+      <news:keywords>Carnival</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/f7a2c3b4-b863-4658-8dc6-71a75e444efe</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -8607,366 +8964,6 @@
       <news:publication_date>2026-01-25T11:47:46.811896+00:00</news:publication_date>
       <news:title>Free Admission Day: Exhibition &quot;Unforgettable&quot; (Genocide Victims)</news:title>
       <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/6d6d1f69-d18f-45b1-87e1-ea52040e31f0</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T11:55:03.107258+00:00</news:publication_date>
-      <news:title>Domenica al Museo: Ingresso Gratuito</news:title>
-      <news:keywords>Culture/Museum</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c0295216-7ce2-44f6-8d85-515938f8e9ff</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:23:35.013891+00:00</news:publication_date>
-      <news:title>Zentrum Paul Klee - Free Admission for Children and Adolescents (up to 16 years)</news:title>
-      <news:keywords>Museum</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/7f3a74bc-8b21-4817-835a-d4b33fa628d5</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:42:14.565724+00:00</news:publication_date>
-      <news:title>CLAUSURA DE LA EXPOSICIÓN: Encuentro con Juan Mayorga</news:title>
-      <news:keywords>Exhibition Closing Event</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/9e8a25cf-e2e1-4f8c-8d0e-e7f2913d4d4d</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:50:56.576705+00:00</news:publication_date>
-      <news:title>Outdoor Ice Skating Social at Hillside Park</news:title>
-      <news:keywords>Outdoor Activity</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/2e6567aa-5962-46fc-a5cb-9906ef1aba17</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:51:29.720172+00:00</news:publication_date>
-      <news:title>Free Public Ice Skating - VFW Sports Center</news:title>
-      <news:keywords>Outdoor Activity</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/64fc64dd-9b68-4f6e-b6f5-d1c6f5d9c19d</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:00:03.4591+00:00</news:publication_date>
-      <news:title>Sport: 5kmRun</news:title>
-      <news:keywords>Sport</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/0b2d0ec5-ad5c-45cf-b0f5-5472811e8f8c</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:04:10.905525+00:00</news:publication_date>
-      <news:title>Wilde Familie in Bochum-Mitte</news:title>
-      <news:keywords>Family/Nature</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a4b42480-6007-4932-9f99-e665c20ac7f3</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:04:15.14586+00:00</news:publication_date>
-      <news:title>HOWWEEEEE PARADE</news:title>
-      <news:keywords>Parade/Performance</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c316ab7a-464f-4d94-8b22-fe151cd31301</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:22:46.732526+00:00</news:publication_date>
-      <news:title>Origami Class</news:title>
-      <news:keywords>Workshop</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/008966b7-9c07-44cf-a8d7-dea5895fc847</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:32:09.672519+00:00</news:publication_date>
-      <news:title>Exposition &quot;Images d&apos;une exposition : un centenaire pour l&apos;Art déco&quot;</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/acbf78b1-92ad-41f7-8303-e63b0e41ef75</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:35:29.997492+00:00</news:publication_date>
-      <news:title>Campeonatos Nacionais de Pentatlo - Veteranos (National Pentathlon Championships - Veterans)</news:title>
-      <news:keywords>Sports</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/761a110d-811b-4587-81c7-1ce22b6124a1</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:42:34.951797+00:00</news:publication_date>
-      <news:title>Farmers&apos; Markets &amp; Bratislava Book Exchange</news:title>
-      <news:keywords>Market</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/fdf4fbaf-e7a9-427d-a1e9-a5b0a7359f42</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:44:56.873173+00:00</news:publication_date>
-      <news:title>Bray junior parkrun</news:title>
-      <news:keywords>Sports</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/5f0dcb9b-fac2-4dba-9a93-ccf853f20f3f</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:54:56.382574+00:00</news:publication_date>
-      <news:title>2. Internationales Festival der Inklusion</news:title>
-      <news:keywords>Festival/Performance</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a3381f02-8a7d-4ba8-ba2c-cfb12636c0eb</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:05:45.933866+00:00</news:publication_date>
-      <news:title>Clifton Suspension Bridge - Free Weekend Bridge Tour</news:title>
-      <news:keywords>Tour</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/adec179a-04d3-4a43-97b6-1ceb5956b57b</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:05:55.613963+00:00</news:publication_date>
-      <news:title>Family Activity: Story Sunday at M Shed</news:title>
-      <news:keywords>Family</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/1dbffb49-3d5f-4013-80f7-4bc5eb31c2f6</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:12:41.126108+00:00</news:publication_date>
-      <news:title>La Copie at the Museum (Exhibition)</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/eac2dda3-a60a-4e16-ba39-a4ee77be7e52</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:15:32.498459+00:00</news:publication_date>
-      <news:title>Place du Grand Sablon Antiques Market</news:title>
-      <news:keywords>Market, Antiques</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c1c672a1-d816-4bfc-974b-3de0c6ec2e58</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:15:47.606992+00:00</news:publication_date>
-      <news:title>La Copie at the Museum</news:title>
-      <news:keywords>Art Exhibition, Museum</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/549cc8a0-d55d-45f3-a4bd-b69b1bb4d5a1</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:15:50.305342+00:00</news:publication_date>
-      <news:title>Free Museum Sunday</news:title>
-      <news:keywords>Museum, Art Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/4c4f2cce-513e-4c6d-9db9-e9fe9a974206</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:15:54.478746+00:00</news:publication_date>
-      <news:title>FOSDEM 2026 (Day 2)</news:title>
-      <news:keywords>Conference, Technology</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/cf15feea-100b-459f-823c-0ed2a9b5c258</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:26:59.239687+00:00</news:publication_date>
-      <news:title>Pre-premiere of the film &quot;Kloshar&quot;</news:title>
-      <news:keywords>Film Screening</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b2b98e82-08f3-4300-a821-f49809f63d85</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:44:13.85197+00:00</news:publication_date>
-      <news:title>Voyage surprenant à dos de Varan (Surprising Journey on the back of the Varan)</news:title>
-      <news:keywords>Tour</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a52774c5-0cc1-4a3d-b8e2-0aca314ec423</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:48:25.045087+00:00</news:publication_date>
-      <news:title>Canillo Brilla 2025</news:title>
-      <news:keywords>Festival</news:keywords>
     </news:news>
   </url>
 

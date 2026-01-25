@@ -113,10 +113,7 @@ async function generateSitemap() {
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->\n';
     xml += '<!-- Last generated: ' + new Date().toISOString() + ' -->\n';
-    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
-    xml += '        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"\n';
-    xml += '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"\n';
-    xml += '        xmlns:xhtml="http://www.w3.org/1999/xhtml">\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n';
 
     // Add static pages with AI-friendly descriptions
     xml += '  <!-- Core Platform Pages (Public & AI-crawlable) -->\n';
