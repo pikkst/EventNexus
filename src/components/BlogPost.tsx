@@ -17,7 +17,9 @@ import {
   Link as LinkIcon,
   ArrowLeft,
   Tag,
-  Clock
+  Clock,
+  Trash2,
+  MoreVertical
 } from 'lucide-react';
 import { 
   getBlogPostBySlug, 
@@ -28,7 +30,9 @@ import {
   followAuthor,
   unfollowAuthor,
   getPostComments,
-  createComment
+  createComment,
+  deleteBlogPost,
+  deleteComment
 } from '../services/blogService';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../services/supabase';
@@ -65,6 +69,7 @@ interface BlogPost {
 interface Comment {
   id: string;
   author: {
+    id: string;
     name: string;
     avatar?: string;
   };
@@ -220,6 +225,43 @@ export default function BlogPost() {
     }
   }
 
+  async function handleDeletePost() {
+    if (!post || !userId) return;
+    
+    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      await deleteBlogPost(post.id);
+      alert('Post deleted successfully');
+      navigate('/blog');
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post');
+    }
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    if (!userId) return;
+    
+    if (!confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+    
+    try {
+      await deleteComment(commentId);
+      await loadComments();
+      if (post) {
+        setPost({ ...post, comment_count: Math.max(0, post.comment_count - 1) });
+      }
+      alert('Comment deleted');
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      alert('Failed to delete comment');
+    }
+  }
+
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('et-EE', {
       year: 'numeric',
@@ -339,26 +381,38 @@ export default function BlogPost() {
                 </div>
               </div>
 
-              <button
-                onClick={handleFollow}
-                className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
-                  isFollowing
-                    ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-600/20'
-                }`}
-              >
-                {isFollowing ? (
-                  <>
-                    <UserMinus className="w-4 h-4" />
-                    Following
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="w-4 h-4" />
-                    Follow
-                  </>
+              <div className="flex items-center gap-2">
+                {userId === post.author.id && (
+                  <button
+                    onClick={handleDeletePost}
+                    className="p-2 rounded-xl bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-500/30 transition-all"
+                    title="Delete post"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
                 )}
-              </button>
+                
+                <button
+                  onClick={handleFollow}
+                  className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 ${
+                    isFollowing
+                      ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                      : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-600/20'
+                  }`}
+                >
+                  {isFollowing ? (
+                    <>
+                      <UserMinus className="w-4 h-4" />
+                      Following
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      Follow
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Title */}
@@ -545,6 +599,15 @@ export default function BlogPost() {
                         >
                           Reply
                         </button>
+                        {userId === comment.author.id && (
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="text-sm text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete
+                          </button>
+                        )}
                       </div>
 
                       {/* Replies */}
