@@ -203,7 +203,7 @@ async function generateSitemap() {
       }
     }
 
-    xml += '</urlset>';
+    xml += '\n</urlset>\n';
 
     // Write to public directory
     const publicDir = path.join(process.cwd(), 'public');
