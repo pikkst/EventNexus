@@ -4,20 +4,20 @@
   <meta charset="utf-8">
   <title>EventNexus - Redirecting...</title>
   <script>
-    // GitHub Pages SPA redirect hack
-    // This file is served for all 404s on GitHub Pages
-    // We redirect to index.html with the path encoded in the URL
+    // GitHub Pages SPA redirect for BrowserRouter
+    // Store the full path and redirect to root
+    var path = window.location.pathname;
+    var search = window.location.search;
+    var hash = window.location.hash;
     
-    var pathSegmentsToKeep = 0;
+    // Remove /EventNexus/ prefix if present
+    var redirectPath = path.replace('/EventNexus', '');
     
-    var l = window.location;
-    l.replace(
-      l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-      l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-      l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-      l.hash
-    );
+    // Store in sessionStorage so index.html can restore it
+    sessionStorage.setItem('redirect', redirectPath + search + hash);
+    
+    // Redirect to root
+    window.location.replace('/EventNexus/');
   </script>
 </head>
 <body>
