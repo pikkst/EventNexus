@@ -22,8 +22,8 @@ interface BlogPost {
   cover_image_url?: string;
   author: {
     id: string;
-    full_name: string;
-    avatar_url?: string;
+    name: string;
+    avatar?: string;
   };
   category?: string;
   tags?: string[];
@@ -112,10 +112,10 @@ export default function BlogList() {
         {/* Meta info */}
         <div className="flex items-center gap-3 mb-3">
           <div className="flex items-center gap-2">
-            {post.author.avatar_url ? (
+            {post.author.avatar ? (
               <img
-                src={post.author.avatar_url}
-                alt={post.author.full_name}
+                src={post.author.avatar}
+                alt={post.author.name}
                 className="w-8 h-8 rounded-full border-2 border-indigo-500/30"
               />
             ) : (
@@ -124,7 +124,7 @@ export default function BlogList() {
               </div>
             )}
             <span className="text-sm font-medium text-slate-300">
-              {post.author.full_name}
+              {post.author.name}
             </span>
           </div>
           

@@ -16,7 +16,7 @@ DROP TABLE IF EXISTS public.blog_posts CASCADE;
 -- =============================================================================
 CREATE TABLE public.blog_posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   
   -- Post type (admin updates vs user posts)
   post_type TEXT NOT NULL DEFAULT 'user_post', -- admin_update, user_post, announcement
@@ -84,8 +84,8 @@ CREATE INDEX idx_blog_posts_search ON public.blog_posts USING GIN(to_tsvector('e
 -- =============================================================================
 CREATE TABLE public.blog_follows (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  follower_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  following_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  follower_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  following_user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   
   UNIQUE(follower_id, following_user_id),
@@ -101,7 +101,7 @@ CREATE INDEX idx_blog_follows_following ON public.blog_follows(following_user_id
 CREATE TABLE public.blog_comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID NOT NULL REFERENCES public.blog_posts(id) ON DELETE CASCADE,
-  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   parent_comment_id UUID REFERENCES public.blog_comments(id) ON DELETE CASCADE, -- for nested replies
   
   -- Content
@@ -131,7 +131,7 @@ CREATE INDEX idx_blog_comments_created ON public.blog_comments(created_at DESC);
 CREATE TABLE public.blog_post_likes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID NOT NULL REFERENCES public.blog_posts(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   
   UNIQUE(post_id, user_id)
@@ -146,7 +146,7 @@ CREATE INDEX idx_blog_post_likes_user ON public.blog_post_likes(user_id);
 CREATE TABLE public.blog_post_shares (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID NOT NULL REFERENCES public.blog_posts(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL, -- nullable for anonymous shares
+  user_id UUID REFERENCES public.users(id) ON DELETE SET NULL, -- nullable for anonymous shares
   
   -- Share tracking
   share_platform TEXT, -- twitter, facebook, linkedin, email, copy_link
@@ -427,8 +427,8 @@ BEGIN
     row_to_json(bp.*)::JSONB AS post,
     jsonb_build_object(
       'id', u.id,
-      'full_name', u.name,
-      'avatar_url', u.avatar,
+      'name', u.name,
+      'avatar', u.avatar,
       'role', u.role
     ) AS author,
     EXISTS (
@@ -476,8 +476,8 @@ BEGIN
     bp.excerpt,
     bp.cover_image_url,
     bp.author_id,
-    u.full_name AS author_name,
-    u.avatar_url AS author_avatar,
+    u.name AS author_name,
+    u.avatar AS author_avatar,
     bp.category,
     bp.tags,
     bp.published_at,

@@ -41,8 +41,8 @@ interface BlogPost {
   cover_image_url?: string;
   author: {
     id: string;
-    full_name: string;
-    avatar_url?: string;
+    name: string;
+    avatar?: string;
   };
   category?: string;
   tags?: string[];
@@ -64,8 +64,8 @@ interface BlogPost {
 interface Comment {
   id: string;
   author: {
-    full_name: string;
-    avatar_url?: string;
+    name: string;
+    avatar?: string;
   };
   content: string;
   created_at: string;
@@ -279,7 +279,7 @@ export default function BlogPost() {
         
         {/* Article metadata */}
         <meta property="article:published_time" content={post.published_at} />
-        <meta property="article:author" content={post.author.full_name} />
+        <meta property="article:author" content={post.author.name} />
         {post.tags?.map((tag) => (
           <meta key={tag} property="article:tag" content={tag} />
         ))}
@@ -300,10 +300,10 @@ export default function BlogPost() {
             {/* Author info */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                {post.author.avatar_url ? (
+                {post.author.avatar ? (
                   <img
-                    src={post.author.avatar_url}
-                    alt={post.author.full_name}
+                    src={post.author.avatar}
+                    alt={post.author.name}
                     className="w-12 h-12 rounded-full border-2 border-indigo-500/30"
                   />
                 ) : (
@@ -316,7 +316,7 @@ export default function BlogPost() {
                     to={`/profile/${post.author.id}`}
                     className="font-semibold text-slate-100 hover:text-indigo-400 transition-colors"
                   >
-                    {post.author.full_name}
+                    {post.author.name}
                   </Link>
                   <div className="flex items-center gap-2 text-sm text-slate-400">
                     <span>{formatDate(post.published_at)}</span>
@@ -503,10 +503,10 @@ export default function BlogPost() {
               {comments.map((comment) => (
                 <div key={comment.id} className="bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-slate-800 rounded-xl p-6">
                   <div className="flex items-start gap-3">
-                    {comment.author.avatar_url ? (
+                    {comment.author.avatar ? (
                       <img
-                        src={comment.author.avatar_url}
-                        alt={comment.author.full_name}
+                        src={comment.author.avatar}
+                        alt={comment.author.name}
                         className="w-10 h-10 rounded-full border-2 border-indigo-500/30"
                       />
                     ) : (
@@ -517,7 +517,7 @@ export default function BlogPost() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-semibold text-slate-200">
-                          {comment.author.full_name}
+                          {comment.author.name}
                         </span>
                         <span className="text-sm text-slate-500">
                           {formatDate(comment.created_at)}
@@ -542,10 +542,10 @@ export default function BlogPost() {
                         <div className="mt-4 space-y-4 pl-6 border-l-2 border-slate-700">
                           {comment.replies.map((reply) => (
                             <div key={reply.id} className="flex items-start gap-3">
-                              {reply.author.avatar_url ? (
+                              {reply.author.avatar ? (
                                 <img
-                                  src={reply.author.avatar_url}
-                                  alt={reply.author.full_name}
+                                  src={reply.author.avatar}
+                                  alt={reply.author.name}
                                   className="w-8 h-8 rounded-full border border-indigo-500/30"
                                 />
                               ) : (
@@ -556,7 +556,7 @@ export default function BlogPost() {
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className="font-medium text-slate-200 text-sm">
-                                    {reply.author.full_name}
+                                    {reply.author.name}
                                   </span>
                                   <span className="text-xs text-slate-500">
                                     {formatDate(reply.created_at)}

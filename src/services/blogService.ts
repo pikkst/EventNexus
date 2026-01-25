@@ -67,8 +67,8 @@ export interface BlogComment {
   updated_at: string;
   author?: {
     id: string;
-    full_name: string;
-    avatar_url?: string;
+    name: string;
+    avatar?: string;
   };
   replies?: BlogComment[];
 }
@@ -91,7 +91,7 @@ export async function getBlogPosts(filters?: {
 }) {
   let query = supabase
     .from('blog_posts')
-    .select('*, author:users(id, full_name, avatar_url)')
+    .select('*, author:users(id, name, avatar)')
     .eq('status', 'published')
     .lte('published_at', new Date().toISOString())
     .order('published_at', { ascending: false });
@@ -217,7 +217,7 @@ export async function getTrendingPosts(limit = 10) {
 export async function getFeaturedPosts(limit = 5) {
   const { data, error } = await supabase
     .from('blog_posts')
-    .select('*, author:users(id, full_name, avatar_url)')
+    .select('*, author:users(id, name, avatar)')
     .eq('status', 'published')
     .eq('is_featured', true)
     .lte('published_at', new Date().toISOString())
@@ -240,7 +240,7 @@ export async function getAdminUpdates(limit = 10) {
 export async function getPostComments(postId: string) {
   const { data, error } = await supabase
     .from('blog_comments')
-    .select('*, author:users(id, full_name, avatar_url)')
+    .select('*, author:users(id, name, avatar)')
     .eq('post_id', postId)
     .eq('is_deleted', false)
     .is('parent_comment_id', null)
@@ -253,7 +253,7 @@ export async function getPostComments(postId: string) {
     (data || []).map(async (comment) => {
       const { data: replies } = await supabase
         .from('blog_comments')
-        .select('*, author:users(id, full_name, avatar_url)')
+        .select('*, author:users(id, name, avatar)')
         .eq('parent_comment_id', comment.id)
         .eq('is_deleted', false)
         .order('created_at', { ascending: true });
@@ -277,7 +277,7 @@ export async function createComment(postId: string, content: string, parentComme
       parent_comment_id: parentCommentId,
       content
     })
-    .select('*, author:users(id, full_name, avatar_url)')
+    .select('*, author:users(id, name, avatar)')
     .single();
 
   if (error) throw error;

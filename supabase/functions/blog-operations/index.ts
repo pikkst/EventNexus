@@ -73,7 +73,7 @@ async function getFeaturedPosts(supabase: any, params: any) {
 
   const { data, error } = await supabase
     .from('blog_posts')
-    .select('*, author:users(id, full_name, avatar_url)')
+    .select('*, author:users(id, name, avatar)')
     .eq('status', 'published')
     .eq('is_featured', true)
     .lte('published_at', new Date().toISOString())
