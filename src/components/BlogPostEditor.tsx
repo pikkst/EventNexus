@@ -50,6 +50,8 @@ export default function BlogPostEditor() {
 
     try {
       setSeoOptimizing(true);
+      console.log('🔄 Starting SEO optimization...');
+      
       const metadata = await generateBlogSEOMetadata(
         formData.title[currentLang],
         formData.content[currentLang],
@@ -57,21 +59,32 @@ export default function BlogPostEditor() {
         currentLang
       );
 
+      console.log('✅ SEO metadata received:', metadata);
+
       if (metadata) {
-        setFormData({
+        // Update form data with new metadata
+        const updatedFormData = {
           ...formData,
           meta_title: { ...formData.meta_title, [currentLang]: metadata.meta_title },
           meta_description: { ...formData.meta_description, [currentLang]: metadata.meta_description },
           meta_keywords: metadata.keywords,
           tags: [...new Set([...formData.tags, ...metadata.tags])]
-        });
+        };
+        
+        console.log('📝 Updating form data:', updatedFormData);
+        setFormData(updatedFormData);
         setSeoScore(metadata.seo_score);
         setSeoSuggestions(metadata.suggestions);
-        alert(`✨ SEO optimized! Score: ${metadata.seo_score}/100`);
+        
+        console.log('✨ SEO optimization complete!');
+        alert(`✨ SEO Optimized!\n\nScore: ${metadata.seo_score}/100\n\nMeta Title: ${metadata.meta_title}\n\n${metadata.suggestions.length} suggestions generated.`);
+      } else {
+        console.warn('⚠️ No metadata returned from AI');
+        alert('AI optimization returned no results. Please try again.');
       }
     } catch (error) {
-      console.error('SEO optimization failed:', error);
-      alert('Failed to optimize SEO');
+      console.error('❌ SEO optimization failed:', error);
+      alert(`Failed to optimize SEO: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setSeoOptimizing(false);
     }
@@ -85,6 +98,8 @@ export default function BlogPostEditor() {
 
     try {
       setSeoAnalyzing(true);
+      console.log('🔍 Starting SEO analysis...');
+      
       const analysis = await analyzeBlogSEO(
         formData.title[currentLang],
         formData.content[currentLang],
@@ -92,13 +107,21 @@ export default function BlogPostEditor() {
         formData.meta_keywords
       );
 
+      console.log('✅ SEO analysis received:', analysis);
+
       if (analysis) {
         setSeoAnalysis(analysis);
         setSeoScore(analysis.score);
+        
+        console.log('📊 Analysis complete!');
+        alert(`📊 SEO Analysis Complete!\n\nScore: ${analysis.score}/100\n\n✅ Strengths: ${analysis.strengths.length}\n⚠️ Issues: ${analysis.issues.length}\n💡 Recommendations: ${analysis.recommendations.length}`);
+      } else {
+        console.warn('⚠️ No analysis returned from AI');
+        alert('AI analysis returned no results. Please try again.');
       }
     } catch (error) {
-      console.error('SEO analysis failed:', error);
-      alert('Failed to analyze SEO');
+      console.error('❌ SEO analysis failed:', error);
+      alert(`Failed to analyze SEO: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setSeoAnalyzing(false);
     }

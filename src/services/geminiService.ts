@@ -1216,15 +1216,20 @@ Return ONLY valid JSON:`,
 
     const text = response?.response?.text();
     if (!text) {
-      console.warn('No SEO metadata generated');
+      console.warn('⚠️ No SEO metadata generated from AI');
       return null;
     }
 
+    console.log('📝 Raw AI response:', text);
     const metadata = JSON.parse(text);
-    console.log('✅ SEO metadata generated:', metadata);
+    console.log('✅ Parsed SEO metadata:', metadata);
+    
     return metadata;
   } catch (error) {
-    console.error('SEO metadata generation failed:', error);
+    console.error('❌ SEO metadata generation failed:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message, error.stack);
+    }
     return null;
   }
 };
@@ -1311,9 +1316,16 @@ Return detailed analysis as JSON:`,
     const text = response?.response?.text();
     if (!text) return null;
 
-    return JSON.parse(text);
+    console.log('📝 Raw AI analysis:', text);
+    const analysis = JSON.parse(text);
+    console.log('✅ Parsed SEO analysis:', analysis);
+    
+    return analysis;
   } catch (error) {
-    console.error('SEO analysis failed:', error);
+    console.error('❌ SEO analysis failed:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message, error.stack);
+    }
     return null;
   }
 };
