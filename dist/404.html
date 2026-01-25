@@ -1,27 +1,299 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>EventNexus - Redirecting...</title>
-  <script>
-    // GitHub Pages SPA redirect for BrowserRouter
-    // Store the full path and redirect to root
-    var path = window.location.pathname;
-    var search = window.location.search;
-    var hash = window.location.hash;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    // Remove /EventNexus/ prefix if present
-    var redirectPath = path.replace('/EventNexus', '');
+    <!-- Performance Optimization: Resource Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://anlivujgkjmajkcgbaxw.supabase.co">
+    <link rel="dns-prefetch" href="https://tile.openstreetmap.org">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://www.google-analytics.com">
+    <!-- Preconnect to critical API services -->
+    <link rel="preconnect" href="https://generativelanguage.googleapis.com">
     
-    // Store in sessionStorage so index.html can restore it
-    sessionStorage.setItem('redirect', redirectPath + search + hash);
+    <title>EventNexus.eu - AI-Powered Event Discovery Across Europe</title>
     
-    // Redirect to root
-    window.location.replace('/EventNexus/');
-  </script>
+    <!-- SEO Meta Tags (English only for optimal Google ranking) -->
+    <meta name="description" content="EventNexus.eu: Europe's first AI-powered event platform. Discover concerts, conferences & local experiences with Gemini 3.0 multilingual translation. Find events near you.">
+    <meta name="keywords" content="events europe, event tickets, AI event discovery, concerts europe, conferences, workshops, multilingual events, book tickets, event management, event platform, gemini ai events">
+    <meta name="author" content="EventNexus">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://eventnexus.eu/">
+    
+    <!-- Sitemap for search engines -->
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="https://eventnexus.eu/sitemap.xml">
+    
+    <!-- RSS/Atom Feeds for AI crawlers and aggregators -->
+    <link rel="alternate" type="application/rss+xml" title="EventNexus - Upcoming Events (RSS)" href="https://eventnexus.eu/api/feed">
+    <link rel="alternate" type="application/atom+xml" title="EventNexus - Upcoming Events (Atom)" href="https://eventnexus.eu/api/feed?format=atom">
+    
+    <!-- Prevent caching of HTML to ensure users get latest asset references -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- Favicon - Browser address bar icon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.svg">
+    <link rel="shortcut icon" href="/favicon.svg">
+    
+    <!-- Apple Touch Icon - iOS home screen -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.svg">
+
+    <!-- PWA manifest for installable web scanner -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    
+    <!-- Theme color for browser UI -->
+    <meta name="theme-color" content="#4f46e5">
+    
+    <!-- Facebook Domain Verification -->
+    <meta name="facebook-domain-verification" content="371jna0dppnvc777sbvha7jfomtf4h" />
+    
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="EventNexus.eu">
+    <meta property="og:url" content="https://eventnexus.eu/">
+    <meta property="og:title" content="EventNexus.eu - AI-Powered Event Discovery Across Europe">
+    <meta property="og:description" content="Europe's first AI-powered event platform with Gemini 3.0 multilingual translation. Discover concerts, conferences & local experiences near you.">
+    <meta property="og:image" content="https://www.eventnexus.eu/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="EventNexus - Event Discovery Platform">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://www.eventnexus.eu/">
+    <meta name="twitter:title" content="EventNexus.eu - AI-Powered Event Discovery">
+    <meta name="twitter:description" content="Europe's first AI-powered event platform with Gemini 3.0 translation. Find concerts, conferences & local events near you.">
+    <meta name="twitter:image" content="https://www.eventnexus.eu/og-image.png">
+    <meta name="twitter:image:alt" content="EventNexus - Event Discovery Platform">
+    
+    <!-- AI Search Engine Optimization Meta Tags -->
+    <!-- Comprehensive content metadata for AI crawlers (GPTBot, Claude, Perplexity, etc.) -->
+    <meta name="content-language" content="en">
+    <meta name="content-type" content="text/html; charset=UTF-8">
+    <meta name="content-description" content="Global event discovery and ticketing platform with AI-powered event recommendations, ticket management, and organizer tools.">
+    <meta name="content-category" content="Events, Entertainment, Tickets, Event Management, Travel">
+    <meta name="content-security-policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; script-src 'self' https: 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;">
+    
+    <!-- Robots meta for comprehensive indexing -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="bingbot" content="index, follow">
+    
+    <!-- AI Crawler Accessibility -->
+    <meta name="AI-agent" content="Allow">
+    <meta name="allow-ai-indexing" content="true">
+    <meta name="claude-crawl-allowlist" content="*">
+    
+    <!-- Semantic Web Meta Tags for AI comprehension -->
+    <meta property="schema:name" content="EventNexus">
+    <meta property="schema:description" content="Discover and book amazing events near you with AI-powered recommendations">
+    <meta property="schema:url" content="https://www.eventnexus.eu/">
+    <meta property="schema:logo" content="https://www.eventnexus.eu/logo-optimized.svg">
+    <meta property="schema:type" content="WebApplication">
+    
+    <!-- Mobile App Support for AI crawlers -->
+    <meta name="apple-app-site-association" content="https://www.eventnexus.eu/.well-known/apple-app-site-association">
+    
+    <!-- Atom Feed for AI agents -->
+    <link rel="alternate" type="application/atom+xml" href="https://www.eventnexus.eu/feed.xml">
+    
+    <!-- JSON-LD Schema.org Markup for Organization and WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://www.eventnexus.eu/#organization",
+          "name": "EventNexus.eu",
+          "alternateName": "EventNexus Europe",
+          "url": "https://www.eventnexus.eu/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://www.eventnexus.eu/logo-optimized.svg"
+          },
+          "description": "Europe's first AI-powered event discovery platform using Gemini 3.0 for multilingual event translation and personalized recommendations.",
+          "foundingDate": "2025-10",
+          "founder": {
+            "@type": "Person",
+            "name": "Villu Künnap"
+          },
+          "sameAs": [
+            "https://www.facebook.com/eventnexus.eu",
+            "https://twitter.com/eventnexuseu"
+          ]
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://www.eventnexus.eu/#webapp",
+          "name": "EventNexus.eu",
+          "url": "https://www.eventnexus.eu/",
+          "applicationCategory": "EventManagementApplication",
+          "operatingSystem": "Web Browser",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR"
+          },
+          "featureList": "AI-powered event discovery, Multilingual translation (Gemini 3.0), Geospatial event search, Ticket booking, Event management tools"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.eventnexus.eu/#website",
+          "url": "https://www.eventnexus.eu/",
+          "name": "EventNexus.eu",
+          "publisher": {
+            "@id": "https://www.eventnexus.eu/#organization"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://www.eventnexus.eu/events?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
+    <!-- Dynamic Event Schema will be injected by EventDetail component -->
+    <script type="application/ld+json" id="event-schema"></script>
+    
+    <!-- Simple redirect restoration for BrowserRouter -->
+    <script>
+      (function() {
+        var redirect = sessionStorage.getItem('redirect');
+        if (redirect && redirect !== '/') {
+          sessionStorage.removeItem('redirect');
+          window.history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
+    
+    <!-- Google Analytics (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JD7P5ZKF4L"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-JD7P5ZKF4L');
+    </script>
+    <!-- Meta Pixel Code -->
+    <script>
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '843922238425309');
+      fbq('track', 'PageView');
+    </script>
+    <!-- End Meta Pixel Code -->    
+    <!-- Tailwind CSS is now built via PostCSS; CDN removed for production -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <style>
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px; /* Adjust base font size for mobile */
+            }
+            .map-gradient {
+                background: radial-gradient(circle at center, rgba(99, 102, 241, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
+            }
+            /* Ensure images are responsive */
+            img {
+                max-width: 100%;
+                height: auto;
+            }
+            /* Adjust layout for smaller screens */
+            .leaflet-container {
+                width: 100%;
+                height: 300px; /* Adjust height for mobile */
+            }
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .map-gradient {
+            background: radial-gradient(circle at center, rgba(99, 102, 241, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
+        }
+        /* Leaflet specific overrides to fit theme */
+        .leaflet-container {
+            background: #020617 !important;
+            width: 100%;
+            height: 100%;
+        }
+        .leaflet-vignette {
+            position: absolute;
+            inset: 0;
+            z-index: 400;
+            pointer-events: none;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.8);
+        }
+        .custom-marker {
+            background: none;
+            border: none;
+        }
+        .leaflet-popup-content-wrapper {
+            background: #0f172a !important;
+            color: white !important;
+            border: 1px solid #1e293b !important;
+            border-radius: 1rem !important;
+        }
+        .leaflet-popup-tip {
+            background: #0f172a !important;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react-router-dom": "https://esm.sh/react-router-dom@7.1.1?deps=react@19.0.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.460.0?deps=react@19.0.0",
+    "recharts": "https://esm.sh/recharts@2.13.3?deps=react@19.0.0",
+    "leaflet": "https://esm.sh/leaflet@1.9.4",
+    "react-leaflet": "https://esm.sh/react-leaflet@4.2.1?deps=react@19.0.0,leaflet@1.9.4",
+    "@google/genai": "https://esm.sh/@google/genai@1.3.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+
+<!-- GitHub Pages SPA redirect restore script -->
+<script>
+  // Restore the redirected path from 404.html
+  (function(){
+    var redirect = sessionStorage.redirect;
+    delete sessionStorage.redirect;
+    if (redirect && redirect != location.href) {
+      history.replaceState(null, null, redirect);
+    }
+    
+    // Handle query parameter redirect from 404.html
+    var l = window.location;
+    if (l.search[1] === '/' ) {
+      var decoded = l.search.slice(1).split('&').map(function(s) { 
+        return s.replace(/~and~/g, '&')
+      }).join('?');
+      window.history.replaceState(null, null,
+        l.pathname.slice(0, -1) + decoded + l.hash
+      );
+    }
+  }());
+</script>
+
 </head>
-<body>
-  <p>Redirecting...</p>
+<body class="bg-slate-950 text-slate-50 antialiased overflow-x-hidden">
+    <!-- Meta Pixel (noscript) -->
+    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=843922238425309&ev=PageView&noscript=1"/></noscript>
+    <!-- End Meta Pixel (noscript) -->
+    <div id="root"></div>
+<script type="module" src="/src/index.tsx"></script>
 </body>
 </html>
-

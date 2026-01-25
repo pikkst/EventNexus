@@ -188,18 +188,55 @@ serve(async (req) => {
     
     const closing = closings[language] || 'Best regards';
     
+    // Build comprehensive platform context from database
+    const platformFacts = stats?.reduce((acc: any, stat: any) => {
+      acc[stat.stat_key] = stat.stat_value;
+      return acc;
+    }, {});
+
     const prompt = `You are Villu Künnap, founder of EventNexus, writing a personalized B2B partnership email.
 
-**About EventNexus (Key Facts):**
-- Revolutionary AI-powered event platform
-- Platform fees: 1.5% - 5% (vs industry standard 10-15%)
-- Cost savings: Up to 80% compared to traditional ticketing platforms
-- Global reach: 1,169+ cities mapped worldwide
-- AI features: Gemini 3.0 translation (50+ languages), Imagen 3 poster generation
-- Technology: React 19, PostGIS mapping, QR ticketing, automated payouts
-- Current phase: Global expansion (Indiegogo campaign)
-- Stats: ${totalUsers} users, ${totalEvents} events
-- Recent features: ${recentFeatures}
+**CRITICAL - NO LYING:**
+⚠️ ONLY use FACTS from the platform data below. DO NOT invent or exaggerate features.
+⚠️ If information is missing, DO NOT make it up - use general benefits instead.
+⚠️ Translate ALL content accurately - no machine translation errors.
+
+**About EventNexus (VERIFIED FACTS - Use these ONLY):**
+- **Revolutionary AI-powered event platform** (Launched 2025)
+- **Platform fees: ${platformFacts?.platform_fee_range || '1.5% - 5%'}** (vs industry standard ${platformFacts?.industry_fee_avg || '10-15%'})
+- **Cost savings: ${platformFacts?.cost_savings || 'Up to 80%'}** compared to traditional ticketing platforms
+- **Global reach: ${platformFacts?.total_cities || '1,169+'}** cities mapped worldwide
+- **AI features:** 
+  * ${platformFacts?.ai_translation_model || 'Gemini 3.0'} translation (${platformFacts?.languages_supported || '50+'} languages)
+  * ${platformFacts?.ai_image_model || 'Imagen 3'} poster generation
+  * AI-powered event descriptions and social media content
+- **Technology stack:**
+  * React ${platformFacts?.react_version || '19'} + TypeScript
+  * ${platformFacts?.map_provider || 'PostGIS + OpenStreetMap'} for geospatial search
+  * ${platformFacts?.ticket_format || 'QR Code'} ticketing system
+  * ${platformFacts?.payment_provider || 'Stripe Connect'} automated payouts
+- **Current phase: ${platformFacts?.platform_phase || 'Beta Launch'}**
+- **Platform statistics:**
+  * ${platformFacts?.total_users || '5+'} active users
+  * ${platformFacts?.total_events || '1,600+'} events created
+  * Global expansion underway (Indiegogo campaign)
+- **Recent platform updates (VERIFIED):**
+${changelog?.map((c: any) => `  * ${c.title} (${c.version}) - ${c.description}`).join('\n') || '  * AI-powered marketing tools and automation'}
+
+**ESTONIAN MARKET SPECIFICS (ONLY for Estonian prospects):**
+${prospect.country === 'Estonia' || language === 'et' ? `
+- Direct founder support via phone/WhatsApp (common in Estonian business culture)
+- Local payment methods and Estonian language support
+- Understanding of Estonian event landscape and regulations
+- Preference for personal relationships over formal contracts
+- Multi-channel communication (email + calls + WhatsApp acceptable)
+` : ''}
+
+**INTERNATIONAL MARKET APPROACH (non-Estonian):**
+- Professional email-first communication
+- Video call for demos (Zoom/Google Meet)
+- Focus on scalability and automation
+- Emphasis on global features and multi-language support
 
 **Target Company:**
 - Name: ${prospect.name}
@@ -207,12 +244,14 @@ serve(async (req) => {
 - Description: ${prospect.description || 'N/A'}
 - Website: ${prospect.website || 'N/A'}
 - Country: ${prospect.country || 'N/A'}
+- Language: ${languageName}
 
 **Your Contact Info:**
 - Name: ${adminName} (Founder, EventNexus)
 - Email: ${adminEmail}
 - Phone: ${adminPhone}
 - Website: www.eventnexus.eu
+${prospect.country === 'Estonia' || language === 'et' ? `- WhatsApp: ${adminPhone} (preferred for quick questions)` : ''}
 
 **Template Strategy:**
 ${template.ai_prompt || 'Create a professional, value-focused partnership proposal'}
@@ -230,17 +269,48 @@ ${template.body_template}
 3. NO English words or phrases (except: company names, EventNexus, product names, email addresses, URLs)
 4. Use native ${languageName} expressions and idioms naturally
 5. Translate ALL technical terms and benefits to ${languageName}
-6. Use appropriate ${languageName} formal business tone
+6. Use appropriate ${languageName} formal business tone (Estonian: can use informal "sina" for startups, formal "teie" for corporates)
 
-**Content Rules:**
+**Content Rules - TRUTHFULNESS:**
+⚠️ CRITICAL: Use ONLY verified platform facts from above
+- DO NOT invent features that aren't listed
+- DO NOT exaggerate numbers beyond what's stated
+- If uncertain about a claim, use general benefit language instead
+- Cite specific numbers ONLY from verified facts (e.g., "1,169 cities", "1.5%-5% fees")
+
+**Content Rules - STRUCTURE:**
 - Start with "${greeting}," (or appropriate ${languageName} greeting)
 - Personalize with "${prospect.name}" and their specific "${prospect.category}" work
-- Show you researched them (mention their country/work)
+- Show you researched them (mention their country/work if relevant)
 - Lead with VALUE PROPOSITION not features:
-  * If large venue/festival → emphasize 80% cost savings (1.5%-5% vs 10-15%)
-  * If tourism/international → emphasize global reach and 50+ language translation
+  * If large venue/festival → emphasize ${platformFacts?.cost_savings || '80%'} cost savings (${platformFacts?.platform_fee_range || '1.5%-5%'} vs ${platformFacts?.industry_fee_avg || '10-15%'})
+  * If tourism/international → emphasize global reach and ${platformFacts?.languages_supported || '50+'} language translation
   * If agency/corporate → emphasize AI marketing automation and time savings
-- Use concrete numbers: "1.5%-5% fees vs 10-15% industry standard", "1,169 cities", "50+ languages"
+- Use concrete verified numbers from platform facts
+- Include 2-3 key benefits maximum (not a feature dump)
+- Low-pressure call-to-action:
+  ${prospect.country === 'Estonia' || language === 'et' ? `* Estonian prospects: "5-minute call/WhatsApp chat", "quick coffee meeting", "brief chat this week"` : `* International: "15-minute video call", "quick demo", "brief call this week"`}
+- Professional but warm tone (founder reaching out personally)
+- Keep subject under 60 characters
+- Keep body under 350 words (brevity = respect for their time)
+
+**Multi-Channel Communication (Estonian prospects ONLY):**
+${prospect.country === 'Estonia' || language === 'et' ? `
+- Mention WhatsApp/phone as alternative to email
+- Suggest flexible communication method (their choice)
+- Personal touch: offer coffee meeting if in same city
+- Use casual professional tone (Estonian business culture)
+` : `
+- Email-first approach
+- Offer video call for demo
+- Professional formal tone
+`}
+
+**Pricing Communication (translate to ${languageName}):**
+- Primary message: "Platform fees ${platformFacts?.platform_fee_range || '1.5% - 5%'} (industry standard is ${platformFacts?.industry_fee_avg || '10-15%'})"
+- Secondary: "${platformFacts?.cost_savings || 'Up to 80%'} savings on ticketing fees"
+- Tertiary: "Transparent pricing, no hidden costs"
+DO NOT list all tier prices unless specifically relevant to template strategy.
 - Include 2-3 key benefits maximum (not a feature dump)
 - Low-pressure call-to-action: "5-minute chat", "quick demo", "moment this week"
 - Professional but warm tone (founder reaching out personally)
