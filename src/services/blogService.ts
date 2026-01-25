@@ -147,21 +147,50 @@ export async function createBlogPost(post: Partial<BlogPost>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
+  console.log('📝 Creating blog post for user:', user.id);
+
+  // Verify user exists in public.users
+  const { data: publicUser, error: userError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('id', user.id)
+    .single();
+
+  if (userError || !publicUser) {
+    console.error('❌ User not found in public.users:', userError);
+    throw new Error('User profile not found. Please contact support.');
+  }
+
+  console.log('✅ User verified in public.users:', publicUser.id);
+
   // Generate slug from title
   const titleEn = post.title?.en || '';
   const { data: slugData } = await supabase.rpc('generate_blog_slug', { p_title: titleEn });
 
+  const insertData = {
+    ...post,
+    author_id: publicUser.id,
+    slug: slugData || titleEn.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  };
+
+  console.log('📤 Inserting blog post:', { 
+    author_id: insertData.author_id, 
+    slug: insertData.slug,
+    status: insertData.status 
+  });
+
   const { data, error } = await supabase
     .from('blog_posts')
-    .insert({
-      ...post,
-      author_id: user.id,
-      slug: slugData || titleEn.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    })
+    .insert(insertData)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Blog post insert error:', error);
+    throw error;
+  }
+
+  console.log('✅ Blog post created:', data.id);
   return data;
 }
 
