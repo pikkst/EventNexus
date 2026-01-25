@@ -1088,4 +1088,234 @@ export const generateOutreachEmail = async (
   }
 };
 
+/**
+ * Generate SEO-optimized metadata for blog posts
+ * Optimizes for Google, Bing, and AI search engines (ChatGPT, Perplexity, Claude)
+ */
+export const generateBlogSEOMetadata = async (
+  title: string,
+  content: string,
+  category?: string,
+  language: 'en' | 'et' | 'ru' = 'en'
+): Promise<{
+  meta_title: string;
+  meta_description: string;
+  keywords: string[];
+  tags: string[];
+  seo_score: number;
+  suggestions: string[];
+} | null> => {
+  try {
+    await initializeGemini();
+    const ai = getAI();
+
+    const languageContext = {
+      en: { name: 'English', market: 'international' },
+      et: { name: 'Estonian', market: 'Estonian' },
+      ru: { name: 'Russian', market: 'Russian-speaking' }
+    };
+
+    const lang = languageContext[language];
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `You are an expert SEO specialist for EventNexus, a premium event discovery platform.
+
+PLATFORM CONTEXT:
+- EventNexus (www.eventnexus.eu) is a map-first event discovery web platform
+- Serves ${lang.market} audiences
+- Features: event listings, ticketing, organizer tools, AI-powered marketing
+- Competes with Eventbrite, Facebook Events, Meetup
+
+BLOG POST TO OPTIMIZE:
+Title: ${title}
+Category: ${category || 'General'}
+Content Preview: ${content.substring(0, 500)}...
+Language: ${lang.name}
+
+SEO OPTIMIZATION GOALS:
+1. Google Search (traditional keyword-based)
+2. AI Search Engines (ChatGPT, Perplexity, Claude, Google Gemini)
+3. Voice Search optimization
+4. Featured snippets eligibility
+5. E-E-A-T signals (Experience, Expertise, Authoritativeness, Trust)
+
+GENERATE OPTIMIZED METADATA:
+
+1. Meta Title (50-60 characters):
+   - Include primary keyword
+   - Add brand name (EventNexus)
+   - Create urgency/value
+   - Natural language for AI search
+
+2. Meta Description (150-160 characters):
+   - Compelling summary
+   - Include 2-3 keywords naturally
+   - Call-to-action
+   - Answer search intent
+   - Conversational for AI
+
+3. Keywords (10-15):
+   - Mix of short-tail and long-tail
+   - Include LSI (Latent Semantic Indexing) keywords
+   - Event-related terms
+   - ${lang.market} market specific
+
+4. Content Tags (5-8):
+   - Categorization tags
+   - Trending topics
+   - Related event types
+
+5. SEO Score (0-100):
+   - Rate overall optimization
+   - Consider readability, keyword density, structure
+
+6. Improvement Suggestions (3-5):
+   - Specific actionable recommendations
+   - Technical SEO improvements
+   - Content structure tips
+
+Return ONLY valid JSON:`,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: TypeEnum.OBJECT,
+          properties: {
+            meta_title: {
+              type: TypeEnum.STRING,
+              description: 'SEO-optimized title (50-60 chars)'
+            },
+            meta_description: {
+              type: TypeEnum.STRING,
+              description: 'Compelling meta description (150-160 chars)'
+            },
+            keywords: {
+              type: TypeEnum.ARRAY,
+              items: { type: TypeEnum.STRING },
+              description: 'SEO keywords (10-15)'
+            },
+            tags: {
+              type: TypeEnum.ARRAY,
+              items: { type: TypeEnum.STRING },
+              description: 'Content tags (5-8)'
+            },
+            seo_score: {
+              type: TypeEnum.NUMBER,
+              description: 'SEO quality score (0-100)'
+            },
+            suggestions: {
+              type: TypeEnum.ARRAY,
+              items: { type: TypeEnum.STRING },
+              description: 'Improvement suggestions (3-5)'
+            }
+          },
+          required: ['meta_title', 'meta_description', 'keywords', 'tags', 'seo_score', 'suggestions']
+        }
+      }
+    });
+
+    const text = response?.response?.text();
+    if (!text) {
+      console.warn('No SEO metadata generated');
+      return null;
+    }
+
+    const metadata = JSON.parse(text);
+    console.log('✅ SEO metadata generated:', metadata);
+    return metadata;
+  } catch (error) {
+    console.error('SEO metadata generation failed:', error);
+    return null;
+  }
+};
+
+/**
+ * Analyze and score blog post SEO quality
+ */
+export const analyzeBlogSEO = async (
+  title: string,
+  content: string,
+  metaDescription?: string,
+  keywords?: string[]
+): Promise<{
+  score: number;
+  issues: Array<{ severity: 'critical' | 'warning' | 'info'; message: string }>;
+  strengths: string[];
+  recommendations: string[];
+} | null> => {
+  try {
+    await initializeGemini();
+    const ai = getAI();
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Analyze this blog post for SEO quality:
+
+Title: ${title}
+Content Length: ${content.length} characters
+Meta Description: ${metaDescription || 'Not set'}
+Keywords: ${keywords?.join(', ') || 'Not set'}
+
+Content Preview:
+${content.substring(0, 1000)}...
+
+Evaluate:
+1. Title optimization (length, keywords, CTR potential)
+2. Content structure (headings, paragraphs, readability)
+3. Keyword usage (density, placement, natural flow)
+4. Meta description quality
+5. Internal/external linking opportunities
+6. Image alt text suggestions
+7. Mobile-friendliness
+8. Page speed factors
+9. Schema markup recommendations
+10. AI search optimization (conversational, Q&A format)
+
+Return detailed analysis as JSON:`,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: TypeEnum.OBJECT,
+          properties: {
+            score: {
+              type: TypeEnum.NUMBER,
+              description: 'Overall SEO score (0-100)'
+            },
+            issues: {
+              type: TypeEnum.ARRAY,
+              items: {
+                type: TypeEnum.OBJECT,
+                properties: {
+                  severity: {
+                    type: TypeEnum.STRING,
+                    enum: ['critical', 'warning', 'info']
+                  },
+                  message: { type: TypeEnum.STRING }
+                }
+              }
+            },
+            strengths: {
+              type: TypeEnum.ARRAY,
+              items: { type: TypeEnum.STRING }
+            },
+            recommendations: {
+              type: TypeEnum.ARRAY,
+              items: { type: TypeEnum.STRING }
+            }
+          },
+          required: ['score', 'issues', 'strengths', 'recommendations']
+        }
+      }
+    });
+
+    const text = response?.response?.text();
+    if (!text) return null;
+
+    return JSON.parse(text);
+  } catch (error) {
+    console.error('SEO analysis failed:', error);
+    return null;
+  }
+};
+
 

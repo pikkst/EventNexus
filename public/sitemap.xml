@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-25T10:59:05.382Z -->
+<!-- Last generated: 2026-01-25T11:10:53.542Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
@@ -735,6 +735,21 @@
       <news:publication_date>2026-01-25T10:56:46.903806+00:00</news:publication_date>
       <news:title>Night Court (CAN) Matinee Show @ Cafe De Wacht</news:title>
       <news:keywords>Music</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/294d6f0a-3ae6-4d91-8e5b-c27b7faedeac</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:01:31.645218+00:00</news:publication_date>
+      <news:title>Cars and Coffee Westmeath</news:title>
+      <news:keywords>Automotive</news:keywords>
     </news:news>
   </url>
   <url>
@@ -2193,6 +2208,21 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/e3e38e6c-6912-4425-a28e-d610613ad650</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:01:36.055602+00:00</news:publication_date>
+      <news:title>Luan Gallery Exhibitions: &quot;MYTHOLOGIES OF THE PERSONAL AND THE LAND&quot; &amp; &quot;Moments in Focus&quot;</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/ea7f0d78-966b-4e02-a192-d4d9f1ab36fa</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -3597,6 +3627,21 @@
       <news:publication_date>2026-01-25T10:47:02.569655+00:00</news:publication_date>
       <news:title>BoekStart Voorleesuurtje (CODA Centrale Bibliotheek)</news:title>
       <news:keywords>Kids &amp; Family</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8e7c8703-43db-45c8-96d5-ce88550a0ba7</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:01:16.378433+00:00</news:publication_date>
+      <news:title>January Business After Hours – Wines Direct (Athlone Chamber)</news:title>
+      <news:keywords>Networking</news:keywords>
     </news:news>
   </url>
   <url>
@@ -5349,6 +5394,36 @@
       <news:publication_date>2026-01-25T10:56:35.970255+00:00</news:publication_date>
       <news:title>Gratis zaterdag in Museum Arnhem (January 31, 2026)</news:title>
       <news:keywords>Art &amp; Culture</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/96f329ae-7e82-431b-9cf6-6108992b34cf</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:01:12.066844+00:00</news:publication_date>
+      <news:title>Leinster Indoor Relay U20/Senior/Masters Championships Day 1</news:title>
+      <news:keywords>Sports</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/91d4ac62-e558-4fb3-9025-11a9d4f87293</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:01:47.988785+00:00</news:publication_date>
+      <news:title>Athlone RSC parkrun</news:title>
+      <news:keywords>Sports</news:keywords>
     </news:news>
   </url>
   <url>
@@ -7534,36 +7609,6 @@
       <news:title>Self-help Group for Families of the Deceased</news:title>
       <news:keywords>Support Group</news:keywords>
     </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a9cff271-3a88-4308-8fb9-6ad4297760e5</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/adc272fb-5ba5-48a4-95fd-cc86c593ffea</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/2a1f8e4c-2272-4991-b540-973dfb6021ee</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/59ba32fc-5298-4d31-a999-7302d97ed819</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/07a7d554-75c2-4a9a-bec2-554c18c7a0aa</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
   </url>
 
   <!-- User & Organizer Profiles (All registered users) -->
