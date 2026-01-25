@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Compass, Twitter, Instagram, Linkedin, Facebook, Github, Mail, Globe, ShieldCheck } from 'lucide-react';
+import { Compass, Twitter, Instagram, Linkedin, Facebook, Github, Mail, Globe, ShieldCheck, Rss } from 'lucide-react';
 
 // Define helper components before the main Footer component to ensure they are available
 // and use PropsWithChildren to explicitly allow children in the props type, fixing TS errors.
@@ -71,6 +71,31 @@ const Footer: React.FC = () => {
               <FooterLink to="/cookies">Cookie Settings</FooterLink>
               <FooterLink to="/gdpr">GDPR Compliance</FooterLink>
             </ul>
+            <div className="pt-4 border-t border-slate-900 space-y-3">
+              <h5 className="text-[9px] font-bold uppercase tracking-widest text-slate-500">RSS Feeds</h5>
+              <div className="flex flex-col gap-2">
+                <a 
+                  href="https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/feed" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-slate-400 hover:text-indigo-400 text-xs font-medium transition-colors"
+                  aria-label="RSS feed for events and blog posts"
+                >
+                  <Rss className="w-3.5 h-3.5" />
+                  <span>RSS 2.0</span>
+                </a>
+                <a 
+                  href="https://anlivujgkjmajkcgbaxw.supabase.co/functions/v1/feed?format=atom" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-slate-400 hover:text-indigo-400 text-xs font-medium transition-colors"
+                  aria-label="Atom feed for events and blog posts"
+                >
+                  <Rss className="w-3.5 h-3.5" />
+                  <span>Atom 1.0</span>
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* Contact / Newsletter */}
