@@ -139,8 +139,25 @@ export async function getBlogPostBySlug(slug: string, userId?: string) {
       p_user_id: userId || null
     });
 
-  if (error) throw error;
-  return data?.[0];
+  if (error) {
+    console.error('Error fetching blog post:', error);
+    throw error;
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error('Blog post not found');
+  }
+
+  const result = data[0];
+  
+  // Merge author into post object
+  return {
+    ...result,
+    post: {
+      ...result.post,
+      author: result.author
+    }
+  };
 }
 
 export async function createBlogPost(post: Partial<BlogPost>) {
