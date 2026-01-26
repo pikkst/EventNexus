@@ -320,12 +320,12 @@ const EventReviews: React.FC<EventReviewsProps> = ({ eventId, eventName, user, o
               <div className="flex items-start justify-between gap-4">
                 <div className="flex gap-3 flex-1 min-w-0">
                   <img
-                    src={review.user?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${review.user?.full_name || 'User'}`}
-                    alt={review.user?.full_name}
+                    src={review.user?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${review.user?.name || 'User'}`}
+                    alt={review.user?.name}
                     className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-white">{review.user?.full_name || 'Anonymous'}</h4>
+                    <h4 className="font-bold text-white">{review.user?.name || 'Anonymous'}</h4>
                     <p className="text-xs text-slate-500">{new Date(review.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>

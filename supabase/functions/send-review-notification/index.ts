@@ -27,8 +27,8 @@ Deno.serve(async (req) => {
       .from('event_reviews')
       .select(`
         *,
-        reviewer:user_id(id, full_name, email, avatar),
-        event:event_id(id, name, organizer_id, organizer:organizer_id(id, full_name, email))
+        reviewer:user_id(id, name, email, avatar),
+        event:event_id(id, name, organizer_id, organizer:organizer_id(id, name, email))
       `)
       .eq('id', reviewId)
       .single()
@@ -189,7 +189,7 @@ async function sendReviewEmailToOrganizer(supabase: any, review: any) {
             </div>
             
             <div class="content">
-              <p>Hi ${organizer.full_name},</p>
+              <p>Hi ${organizer.name},</p>
               
               <p>You received a new review on EventNexus!</p>
               
@@ -201,12 +201,12 @@ async function sendReviewEmailToOrganizer(supabase: any, review: any) {
               <div class="review-card">
                 <div class="reviewer-info">
                   <img 
-                    src="${reviewer.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${reviewer.full_name}`}" 
-                    alt="${reviewer.full_name}" 
+                    src="${reviewer.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${reviewer.name}`}" 
+                    alt="${reviewer.name}" 
                     class="avatar"
                   />
                   <div>
-                    <h4 style="margin: 0; color: #1f2937;">${reviewer.full_name}</h4>
+                    <h4 style="margin: 0; color: #1f2937;">${reviewer.name}</h4>
                     ${review.is_verified_attendee ? '<span class="badge">✓ Verified Attendee</span>' : ''}
                   </div>
                 </div>
@@ -299,13 +299,13 @@ async function createInAppNotification(supabase: any, review: any) {
       user_id: review.event.organizer_id,
       type: 'event_review',
       title: 'New Event Review',
-      message: `${review.reviewer.full_name} left a ${review.rating}-star review for ${review.event.name}`,
+      message: `${review.reviewer.name} left a ${review.rating}-star review for ${review.event.name}`,
       metadata: {
         review_id: review.id,
         event_id: review.event.id,
         event_name: review.event.name,
         reviewer_id: review.reviewer.id,
-        reviewer_name: review.reviewer.full_name,
+        reviewer_name: review.reviewer.name,
         rating: review.rating,
         is_verified: review.is_verified_attendee
       },

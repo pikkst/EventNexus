@@ -236,15 +236,15 @@ const BuddyMatching: React.FC<BuddyMatchingProps> = ({ user, onUpdate }) => {
                   {/* Avatar */}
                   <div className="flex-shrink-0">
                     <img
-                      src={friend?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${friend?.full_name || 'User'}`}
-                      alt={friend?.full_name}
+                      src={friend?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${friend?.name || 'User'}`}
+                      alt={friend?.name}
                       className="w-14 h-14 rounded-lg object-cover border-2 border-emerald-500/30"
                     />
                   </div>
 
                   {/* User Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-white text-lg">{friend?.full_name || 'User'}</h3>
+                    <h3 className="font-bold text-white text-lg">{friend?.name || 'User'}</h3>
                     
                     {buddy.common_interests.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 my-2">

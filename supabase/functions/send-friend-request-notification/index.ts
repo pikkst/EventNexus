@@ -27,9 +27,9 @@ Deno.serve(async (req) => {
       .from('user_buddies')
       .select(`
         *,
-        sender:initiated_by(id, full_name, email, avatar),
-        user1:user_id_1(id, full_name, email, avatar),
-        user2:user_id_2(id, full_name, email, avatar)
+        sender:initiated_by(id, name, email, avatar),
+        user1:user_id_1(id, name, email, avatar),
+        user2:user_id_2(id, name, email, avatar)
       `)
       .eq('id', buddyId)
       .single()
@@ -151,18 +151,18 @@ async function sendFriendRequestEmail(supabase: any, buddyRequest: any) {
             </div>
             
             <div class="content">
-              <p>Hi ${recipient.full_name},</p>
+              <p>Hi ${recipient.name},</p>
               
               <p>You have a new friend request on EventNexus!</p>
               
               <div class="user-card">
                 <img 
-                  src="${sender.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${sender.full_name}`}" 
-                  alt="${sender.full_name}" 
+                  src="${sender.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${sender.name}`}" 
+                  alt="${sender.name}" 
                   class="avatar"
                 />
                 <div>
-                  <h3 style="margin: 0; color: #667eea;">${sender.full_name}</h3>
+                  <h3 style="margin: 0; color: #667eea;">${sender.name}</h3>
                   <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 14px;">Wants to connect with you</p>
                 </div>
               </div>
@@ -197,7 +197,7 @@ async function sendFriendRequestEmail(supabase: any, buddyRequest: any) {
       body: JSON.stringify({
         from: 'EventNexus <notifications@mail.eventnexus.eu>',
         to: recipient.email,
-        subject: `${sender.full_name} wants to be your friend on EventNexus`,
+        subject: `${sender.name} wants to be your friend on EventNexus`,
         html: emailHtml
       })
     })

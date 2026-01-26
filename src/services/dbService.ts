@@ -5555,7 +5555,7 @@ export const getUserBuddies = async (userId: string): Promise<any[]> => {
   try {
     const { data, error } = await supabase
       .from('user_buddies')
-      .select('*, user1:user_id_1(id, full_name, avatar), user2:user_id_2(id, full_name, avatar)')
+      .select('*, user1:user_id_1(id, name, avatar), user2:user_id_2(id, name, avatar)')
       .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
       .eq('status', 'accepted');
 

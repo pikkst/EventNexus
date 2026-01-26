@@ -435,12 +435,12 @@ const Communities: React.FC<CommunitiesProps> = ({ user, onOpenAuth }) => {
                     {communityMembers.slice(0, 5).map(member => (
                       <div key={member.id} className="flex items-center gap-2">
                         <img
-                          src={member.user?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${member.user?.full_name}`}
-                          alt={member.user?.full_name}
+                          src={member.user?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${member.user?.name}`}
+                          alt={member.user?.name}
                           className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-white truncate">{member.user?.full_name}</p>
+                          <p className="text-sm font-semibold text-white truncate">{member.user?.name}</p>
                           {member.role !== 'member' && (
                             <p className="text-xs text-indigo-400 uppercase tracking-widest">{member.role}</p>
                           )}

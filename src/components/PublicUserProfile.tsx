@@ -55,7 +55,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ currentUser }) =>
           const profileUser: User = {
             id: firstEvent.organizerId,
             email: '',
-            full_name: firstEvent.organizerName || 'Event Organizer',
+            name: firstEvent.organizerName || 'Event Organizer',
             avatar: firstEvent.organizerAvatar || null,
             bio: '',
             location: '',
@@ -64,7 +64,6 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ currentUser }) =>
             // Add other required fields with defaults
             role: 'user',
             subscription_tier: 'free',
-            name: firstEvent.organizerName || 'Event Organizer',
             agency_slug: '',
             followedOrganizers: [],
             likedEvents: [],
@@ -137,7 +136,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ currentUser }) =>
         <Breadcrumbs 
           items={[
             { label: 'Events', path: '/map' },
-            { label: user.full_name || 'User Profile' }
+            { label: user.name || 'User Profile' }
           ]}
         />
       </div>
@@ -159,8 +158,8 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ currentUser }) =>
           {/* Avatar */}
           <div className="flex-shrink-0">
             <img
-              src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.full_name || user.email)}`}
-              alt={user.full_name || 'User'}
+              src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email)}`}
+              alt={user.name || 'User'}
               className="w-24 h-24 md:w-32 md:h-32 rounded-2xl object-cover border-2 border-indigo-500/30"
             />
           </div>
@@ -168,7 +167,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ currentUser }) =>
           {/* User Info */}
           <div className="flex-1 min-w-0">
             <h1 className="text-3xl md:text-4xl font-black text-white mb-2">
-              {user.full_name || 'Event Organizer'}
+              {user.name || 'Event Organizer'}
             </h1>
             
             <div className="space-y-2 text-slate-400">
