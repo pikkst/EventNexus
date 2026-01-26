@@ -117,21 +117,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   
-  // Initialize selected language: use user preference if logged in, otherwise guest language preference from localStorage
-  const [selectedLanguage, setSelectedLanguage] = useState(() => {
-    // Registered users: use their preference
-    if (user?.preferred_language) {
-      return user.preferred_language;
-    }
-    
-    // Guests: use their stored preference (saved from map language selector) or English
-    try {
-      const saved = localStorage.getItem('guest_language');
-      return saved || 'en';
-    } catch {
-      return 'en';
-    }
-  });
+  // Initialize selected language: will be set by useEffect after IP detection
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
+  const [languageDetected, setLanguageDetected] = useState(false);
   
   const [organizerName, setOrganizerName] = useState<string>('EventNexus User');
   const [organizerAvatar, setOrganizerAvatar] = useState<string | null>(null);
@@ -239,24 +227,35 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   useEventSEO(event);
 
   // Sync selected language with user preference when user loads or preference changes
+  // For guests: detect language from IP if not already stored
   useEffect(() => {
-    // Registered users: always use their preference
-    if (user?.preferred_language) {
-      setSelectedLanguage(user.preferred_language);
-      return;
-    }
-    
-    // Guests: use localStorage guest_language (saved from map)
-    if (!user) {
-      try {
-        const saved = localStorage.getItem('guest_language');
-        setSelectedLanguage(saved || 'en');
-      } catch {
-        setSelectedLanguage('en');
+    const detectAndSetLanguage = async () => {
+      if (languageDetected) return; // Already detected
+      
+      // Registered users: use their preference
+      if (user?.preferred_language) {
+        setSelectedLanguage(user.preferred_language);
+        setLanguageDetected(true);
+        console.log('👤 Using user language preference:', user.preferred_language);
+        return;
       }
-      return;
-    }
-  }, [user?.preferred_language, user]);
+      
+      // Guests: use getUserLanguagePreference which handles IP detection
+      try {
+        const { getUserLanguagePreference } = await import('../services/languageService');
+        const detectedLang = await getUserLanguagePreference(user);
+        setSelectedLanguage(detectedLang);
+        setLanguageDetected(true);
+        console.log('🌐 Language detected for guest:', detectedLang);
+      } catch (error) {
+        console.error('Error detecting language:', error);
+        setSelectedLanguage('en');
+        setLanguageDetected(true);
+      }
+    };
+    
+    detectAndSetLanguage();
+  }, [user?.preferred_language, user, languageDetected]);
 
   // Auto-translate event name and about text when language changes
   useEffect(() => {
@@ -266,6 +265,15 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
       const targetLang = selectedLanguage || 'en';
       const targetLabel = LANGUAGE_LABELS[targetLang] || targetLang;
       const key = `${event.id}:${targetLang}`;
+
+      // If target language matches event's original language, show original text (no translation)
+      if (event.original_language === targetLang) {
+        console.log(`✅ Event already in ${targetLang}, showing original text`);
+        setTranslatedName(event.name);
+        setTranslatedAboutText(event.aboutText || '');
+        setTranslatedDescription(event.description || '');
+        return;
+      }
 
       // If event has structured translations, prefer them
       const direct = event.translations?.[targetLang];

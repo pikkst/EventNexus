@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Users, ExternalLink, Search, Filter, Loader, Globe, X, Sparkles, Compass, ChevronDown } from 'lucide-react';
-import { EventNexusEvent } from '../types';
+import { EventNexusEvent, User } from '../types';
 import { trackPageView } from '../services/analyticsService';
 import { generateEventListStructuredData, injectStructuredData, removeStructuredData } from '../utils/structuredData';
+import { getUserLanguagePreference, batchTranslateEvents } from '../services/languageService';
 
 interface PublicEventsBrowseProps {
   onOpenAuth?: () => void;
+  user?: User | null;
 }
 
-const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) => {
+const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth, user }) => {
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
   const [displayCount, setDisplayCount] = useState(50); // How many to show
   const [loading, setLoading] = useState(true);
@@ -20,12 +22,62 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
   const [selectedCity, setSelectedCity] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [userLanguage, setUserLanguage] = useState<string>('en');
+  const [translatedEvents, setTranslatedEvents] = useState<Map<string, { name: string; description: string }>>(new Map());
   const EVENTS_PER_PAGE = 50;
 
   // Track page view for analytics (including AI crawlers)
   useEffect(() => {
     trackPageView(null, '/browse', document.referrer);
   }, []);
+
+  // Detect user language preference
+  useEffect(() => {
+    const detectLanguage = async () => {
+      const lang = await getUserLanguagePreference(user);
+      setUserLanguage(lang);
+      console.log('🌐 User language detected:', lang);
+    };
+    detectLanguage();
+  }, [user]);
+
+  // Translate events when language or events change
+  useEffect(() => {
+    const translateAllEvents = async () => {
+      if (events.length === 0 || !userLanguage) return;
+      
+      // Filter events that need translation (not in original language)
+      const eventsToTranslate = events.filter(e => e.original_language !== userLanguage);
+      
+      if (eventsToTranslate.length === 0) {
+        console.log('✅ All events already in user language, no translation needed');
+        return;
+      }
+      
+      console.log(`🔄 Translating ${eventsToTranslate.length} events to ${userLanguage}...`);
+      
+      try {
+        const translations = await batchTranslateEvents(
+          eventsToTranslate.map(e => ({
+            id: e.id,
+            name: e.name,
+            description: e.description || '',
+            aboutText: e.aboutText
+          })),
+          userLanguage,
+          user?.id,
+          user?.subscription_tier
+        );
+        
+        setTranslatedEvents(translations);
+        console.log(`✅ Translated ${translations.size} events`);
+      } catch (error) {
+        console.error('Error translating events:', error);
+      }
+    };
+    
+    translateAllEvents();
+  }, [events, userLanguage, user]);
 
   // Update SEO meta tags for /browse page
   useEffect(() => {
@@ -470,7 +522,13 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayedEvents.map(event => (
+            {displayedEvents.map(event => {
+              // Get translated content if available, otherwise use original
+              const translation = translatedEvents.get(event.id);
+              const displayName = translation?.name || event.name;
+              const displayDescription = translation?.description || event.description;
+              
+              return (
               <Link
                 key={event.id}
                 to={`/events/${event.id}`}
@@ -481,7 +539,7 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
                   <div className="aspect-video overflow-hidden bg-slate-800">
                     <img
                       src={event.image_url}
-                      alt={event.name}
+                      alt={displayName}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
@@ -498,13 +556,13 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
 
                   {/* Event Title */}
                   <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-indigo-400 transition-colors">
-                    {event.name}
+                    {displayName}
                   </h3>
 
                   {/* Event Description */}
-                  {event.description && (
+                  {displayDescription && (
                     <p className="text-slate-400 text-sm mb-4 line-clamp-2 font-medium">
-                      {event.description}
+                      {displayDescription}
                     </p>
                   )}
 
@@ -549,7 +607,8 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth }) =
                   </div>
                 </div>
               </Link>
-            ))}
+            );
+            })}
           </div>
         )}
 

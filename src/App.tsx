@@ -854,8 +854,8 @@ const App: React.FC = () => {
             <Suspense fallback={<DashboardSkeleton />}>
               <Routes>
               <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/browse" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/events" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/browse" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} user={user} />} />
+              <Route path="/events" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} user={user} />} />
               <Route path="/directory" element={<EventDirectory />} />
               <Route path="/directory/:category" element={<EventDirectory />} />
               <Route path="/events-in-:city" element={<CityLandingPage />} />

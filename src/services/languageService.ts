@@ -719,3 +719,90 @@ export const clearTranslationCache = (): void => {
   translationCache.clear();
   console.log('🗑️ Translation cache cleared');
 };
+
+/**
+ * Detect user language from IP address using ipapi.co
+ * Returns language code (e.g., 'et', 'fi', 'en') based on country
+ */
+export const detectLanguageFromIP = async (): Promise<string> => {
+  try {
+    const response = await fetch('https://ipapi.co/json/');
+    if (!response.ok) {
+      console.warn('Failed to fetch IP geolocation');
+      return 'en';
+    }
+    
+    const data = await response.json();
+    const countryCode = data.country_code?.toLowerCase();
+    
+    // Map country codes to language codes
+    const countryToLanguage: Record<string, string> = {
+      'ee': 'et', // Estonia → Estonian
+      'fi': 'fi', // Finland → Finnish
+      'se': 'sv', // Sweden → Swedish
+      'de': 'de', // Germany → German
+      'fr': 'fr', // France → French
+      'es': 'es', // Spain → Spanish
+      'ru': 'ru', // Russia → Russian
+      'pl': 'pl', // Poland → Polish
+      'it': 'it', // Italy → Italian
+      'nl': 'nl', // Netherlands → Dutch
+      'pt': 'pt', // Portugal → Portuguese
+      'gr': 'el', // Greece → Greek
+      'ua': 'uk', // Ukraine → Ukrainian
+      'cz': 'cs', // Czech Republic → Czech
+      'ro': 'ro', // Romania → Romanian
+      'hu': 'hu', // Hungary → Hungarian
+      'no': 'no', // Norway → Norwegian
+      'dk': 'dk', // Denmark → Danish
+      'bg': 'bg', // Bulgaria → Bulgarian
+      'sk': 'sk', // Slovakia → Slovak
+      'hr': 'hr', // Croatia → Croatian
+      'rs': 'sr', // Serbia → Serbian
+      'lt': 'lt', // Lithuania → Lithuanian
+      'lv': 'lv', // Latvia → Latvian
+      'si': 'sl', // Slovenia → Slovenian
+      'is': 'is', // Iceland → Icelandic
+    };
+    
+    const detectedLang = countryToLanguage[countryCode] || 'en';
+    console.log(`🌍 Detected language from IP: ${detectedLang} (country: ${countryCode})`);
+    return detectedLang;
+  } catch (error) {
+    console.warn('Error detecting language from IP:', error);
+    return 'en';
+  }
+};
+
+/**
+ * Get user's preferred language with fallback chain
+ * 1. Registered user: use preferred_language from profile
+ * 2. Guest with stored preference: use localStorage
+ * 3. Guest without preference: detect from IP
+ * 4. Fallback: English
+ */
+export const getUserLanguagePreference = async (
+  user?: { preferred_language?: string } | null
+): Promise<string> => {
+  // 1. Registered users: use their profile preference
+  if (user?.preferred_language) {
+    console.log('👤 Using user preference:', user.preferred_language);
+    return user.preferred_language;
+  }
+  
+  // 2. Guests: check localStorage first (if they manually changed language)
+  try {
+    const stored = localStorage.getItem('guest_language');
+    if (stored && isUILanguage(stored)) {
+      console.log('💾 Using stored guest preference:', stored);
+      return stored;
+    }
+  } catch (e) {
+    console.warn('Error accessing localStorage:', e);
+  }
+  
+  // 3. No stored preference: detect from IP
+  const ipLang = await detectLanguageFromIP();
+  console.log('🌐 Using IP-detected language:', ipLang);
+  return ipLang;
+};
