@@ -5721,7 +5721,7 @@ export const getCommunityMembers = async (communityId: string): Promise<any[]> =
   try {
     const { data, error } = await supabase
       .from('community_members')
-      .select('*, user:user_id(id, full_name, avatar)')
+      .select('*, user:user_id(id, name, avatar)')
       .eq('community_id', communityId);
 
     if (error) throw error;
@@ -5776,7 +5776,7 @@ export const getEventReviews = async (eventId: string, limit: number = 10): Prom
   try {
     const { data, error } = await supabase
       .from('event_reviews')
-      .select('*, user:user_id(id, full_name, avatar)')
+      .select('*, user:user_id(id, name, avatar)')
       .eq('event_id', eventId)
       .order('created_at', { ascending: false })
       .limit(limit);
