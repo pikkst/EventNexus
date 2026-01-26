@@ -351,9 +351,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         setEvent(foundEvent);
         setCurrentAttendees(foundEvent.attendeesCount);
         
-        // Load ticket templates
-        const templates = await getTicketTemplates(id);
-        setTicketTemplates(templates);
+        // TODO: Load ticket templates from event_template_selections table instead
+        // Ticket templates are now in a global gallery, linked via event_template_selections
+        // const templates = await getTicketTemplates(id);
+        // setTicketTemplates(templates);
         
         // Check if event is completed (either from DB status or from date/time)
         // Note: isEventCompleted RPC may not exist, so we do local check only

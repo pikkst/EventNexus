@@ -3783,10 +3783,33 @@ import { Ticket, TicketTemplate, TicketVerification, EventTicketStats, Organizer
 // Get ticket templates for an event
 export const getTicketTemplates = async (eventId: string): Promise<TicketTemplate[]> => {
   try {
+    // Get event's selected templates from event_template_selections
+    const { data: selection, error: selectionError } = await supabase
+      .from('event_template_selections')
+      .select('standard_ticket_template_id, vip_ticket_template_id, early_bird_ticket_template_id')
+      .eq('event_id', eventId)
+      .single();
+
+    if (selectionError || !selection) {
+      // No templates selected, return empty
+      return [];
+    }
+
+    // Get the actual template data
+    const templateIds = [
+      selection.standard_ticket_template_id,
+      selection.vip_ticket_template_id,
+      selection.early_bird_ticket_template_id
+    ].filter(Boolean); // Remove nulls
+
+    if (templateIds.length === 0) {
+      return [];
+    }
+
     const { data, error } = await supabase
       .from('ticket_templates')
       .select('*')
-      .eq('event_id', eventId)
+      .in('id', templateIds)
       .eq('is_active', true)
       .order('created_at', { ascending: true });
 
