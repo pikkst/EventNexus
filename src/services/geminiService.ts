@@ -849,12 +849,36 @@ Make each ad unique and platform-appropriate. Focus on ${campaignTheme}.`,
   }
 };
 
-export const createNexusChat = () => {
+export const createNexusChat = (options?: { userLanguage?: string; platformContext?: string }) => {
   const ai = getAI();
+
+  const userLanguage = options?.userLanguage?.trim().toLowerCase();
+  const languageNote = userLanguage
+    ? `Always respond in ${userLanguage}. If the user writes in a different language, briefly confirm the detected language and continue in ${userLanguage}.`
+    : 'Detect the user language from the last message and respond in that language.';
+
+  const platformContext = options?.platformContext || `
+Core facts about EventNexus:
+- Web-based platform at www.eventnexus.eu (Browser experience, not a native app).
+- Map-first discovery with geospatial search (PostGIS) and live events view.
+- Ticketing with Stripe payments, instant QR codes, and organizer payouts.
+- AI tools: descriptions, translations, marketing assets, ad images.
+- Roles: attendees, organizers/agency, and admins. Admins can assist live.
+- Routes are BrowserRouter-based; LandingPage is the unauthenticated entry.
+- No mock data; everything is backed by Supabase tables (events, users, notifications, tickets).
+- Use concise, action-oriented answers and offer next steps (open map, view events, start creating an event).
+`;
+
+  const systemInstruction = `You are NexusAI, a world-class event concierge and organizer assistant for EventNexus.
+${languageNote}
+Ground your answers in the platform facts below. Do not invent features or pricing.
+${platformContext}
+When unsure, ask a short clarifying question instead of guessing.`;
+
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: {
-      systemInstruction: 'You are NexusAI, a world-class event concierge and organizer assistant for EventNexus. You help attendees find the best vibes and help organizers create high-impact experiences.'
+      systemInstruction
     }
   });
 };

@@ -33,7 +33,8 @@ import {
   Users,
   Newspaper,
   Heart,
-  Trophy
+  Trophy,
+  MessageCircle
 } from 'lucide-react';
 
 // Lightweight components - load immediately
@@ -68,6 +69,7 @@ const NotificationSettings = lazy(() => import('./components/NotificationSetting
 const BetaInvitation = lazy(() => import('./components/BetaInvitation'));
 const OnboardingTutorial = lazy(() => import('./components/OnboardingTutorial'));
 const AdminCreditManager = lazy(() => import('./components/AdminCreditManager'));
+const AdminSupportDock = lazy(() => import('./components/AdminSupportDock'));
 const CodeRedemption = lazy(() => import('./components/CodeRedemption'));
 const PublicEventsBrowse = lazy(() => import('./components/PublicEventsBrowse'));
 const PublicUserProfile = lazy(() => import('./components/PublicUserProfile'));
@@ -236,6 +238,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [toast, setToast] = useState<null | { message: string; variant: 'success' | 'info' | 'error' }>(null);
+  const [supportUnread, setSupportUnread] = useState(0);
+  const [supportDockOpenSignal, setSupportDockOpenSignal] = useState(0);
   const [mapTheme, setMapTheme] = useState<'dark' | 'light'>(() => {
     // Restore map theme preference from localStorage
     try {
@@ -861,6 +865,8 @@ const App: React.FC = () => {
           sidebarOpen={sidebarOpen}
           user={user} 
           notifications={notifications}
+          supportUnread={supportUnread}
+          onOpenSupport={() => setSupportDockOpenSignal((s) => s + 1)}
           onMarkRead={handleMarkRead}
           onDelete={handleDeleteNotification}
           onLogout={handleLogout}
@@ -906,7 +912,7 @@ const App: React.FC = () => {
               <Route path="/blog/new" element={user ? <BlogPostEditor /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/press" element={<PressPage />} />
-              <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} supportUnread={supportUnread} onOpenSupport={() => setSupportDockOpenSignal((s) => s + 1)} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/ai-agents" element={user?.role === 'admin' ? <AIAgentDashboard user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/redeem" element={user ? <CodeRedemption user={user} onCreditsUpdated={handleRefreshUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
@@ -978,6 +984,16 @@ const App: React.FC = () => {
             }}
           />
         )}
+
+        {user?.role === 'admin' && (
+          <Suspense fallback={null}>
+            <AdminSupportDock
+              user={user}
+              openSignal={supportDockOpenSignal}
+              onUnreadChange={(count) => setSupportUnread(count)}
+            />
+          </Suspense>
+        )}
       </div>
     </BrowserRouter>
     </HelmetProvider>
@@ -992,7 +1008,7 @@ const ConditionalFooter = () => {
   return <Footer />;
 }
 
-const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLogout, onOpenAuth, sidebarOpen }: any) => {
+const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSupport, onMarkRead, onDelete, onLogout, onOpenAuth, sidebarOpen }: any) => {
   const [showNotifs, setShowNotifs] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
@@ -1042,6 +1058,19 @@ const Navbar = ({ toggleSidebar, user, notifications, onMarkRead, onDelete, onLo
         <div className="flex items-center gap-2 sm:gap-4">
           {user ? (
             <>
+              {user.role === 'admin' && (
+                <button
+                  onClick={onOpenSupport}
+                  className="p-2.5 bg-indigo-600/80 border border-indigo-500/50 rounded-xl hover:bg-indigo-600 transition-all relative text-white"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  {supportUnread > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-emerald-400 text-slate-900 text-[11px] font-black px-1.5 rounded-full min-w-[18px] text-center">
+                      {supportUnread > 99 ? '99+' : supportUnread}
+                    </span>
+                  )}
+                </button>
+              )}
               <div className="relative">
                 <button 
                   onClick={() => setShowNotifs(!showNotifs)}

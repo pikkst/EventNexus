@@ -509,6 +509,33 @@ export interface Notification {
   };
 }
 
+export type SupportMode = 'ai' | 'human';
+
+export interface SupportThread {
+  id: string;
+  status: 'open' | 'assigned' | 'closed';
+  mode: SupportMode;
+  user_id?: string | null;
+  guest_email?: string | null;
+  language?: string | null;
+  assigned_admin_id?: string | null;
+  last_message_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SupportMessage {
+  id: string;
+  thread_id: string;
+  author_type: 'visitor' | 'admin' | 'ai';
+  author_id?: string | null;
+  content_original: string;
+  content_en?: string | null;
+  content_lang?: string | null;
+  translated_to_user?: boolean;
+  created_at?: string;
+}
+
 export interface BrandMonitoringAlert {
   id: string;
   type: 'code' | 'domain' | 'brand' | 'search' | 'social' | 'competitor';

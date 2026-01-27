@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import logger from '../utils/logger';
 import { usePageSEO } from '../hooks/useSEO';
 import { Compass, Zap, Shield, Globe, Map as MapIcon, ChevronRight, Star, Plus, ArrowRight, Gift, Award, TrendingUp, Quote, Newspaper, ExternalLink, Users, Calendar, Ticket, Play, Check, Mail, Send, ChevronDown, DollarSign, Sparkles, Trophy, Heart, Target, Zap as ZapIcon, Bot, Languages, Paintbrush } from 'lucide-react';
+import ChatBot from './ChatBot';
 import { User, PlatformCampaign, SuccessStory, PressMention, PlatformMedia } from '../types';
 import { getCampaigns, getTopOrganizers, OrganizerRatingStats, getSuccessStories, getPressMentions, getPlatformStats, getPlatformMedia } from '../services/dbService';
 import { supabase } from '../services/supabase';
@@ -48,6 +49,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const [videoFailed, setVideoFailed] = useState(false);
   const [visitorCountry, setVisitorCountry] = useState<string | null>(null);
   const [cityLinks, setCityLinks] = useState<Array<{ label: string; lat: number; lng: number }>>(DEFAULT_CITY_LINKS);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // SEO optimization for AI crawlers
   usePageSEO({
@@ -1797,6 +1799,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           </div>
         </div>
       </section>
+      {/* Floating chat trigger */}
+      {!isChatOpen && (
+        <button
+          onClick={() => setIsChatOpen(true)}
+          className="fixed bottom-6 right-6 z-[1400] inline-flex items-center gap-3 bg-indigo-600 text-white px-5 py-4 rounded-full shadow-xl shadow-indigo-600/25 hover:bg-indigo-500 active:scale-95 transition-all"
+          aria-label="Open EventNexus chat assistant"
+        >
+          <Bot className="w-4 h-4" /> Chat with NexusAI
+        </button>
+      )}
+
+      <ChatBot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+
       {/* Exit-Intent Popup */}
       <ExitIntentPopup 
         isOpen={showExitIntentPopup} 

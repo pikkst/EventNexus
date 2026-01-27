@@ -10,7 +10,7 @@ import {
   RefreshCw, Plus, ChevronRight, Menu, Wallet,
   Loader2, Sparkles, CheckCircle2, Trash2, Globe2, MousePointer2,
   Target, MousePointerClick, TrendingDown, Layers, Terminal,
-  UserX, Ban, AlertTriangle, MessageSquare, Send, Bug, EyeOff,
+  UserX, Ban, AlertTriangle, MessageSquare, Send, Bug, EyeOff, MessageCircle,
   Lock, Unlock, KeyRound, AlertOctagon, Github, Cloud, Key, Link as LinkIcon,
   Wifi, Server, Code, Globe2 as MapIcon, HardDrive, Mail as MailIcon,
   MonitorOff, Power, ShieldX, Shield, Bot, Play, Flag, Calendar
@@ -77,7 +77,7 @@ const BUILD_ENV = import.meta.env.MODE === 'production' ? 'stable' : 'dev';
 const BUILD_DATE = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 const GIT_COMMIT = import.meta.env.VITE_GIT_COMMIT || 'unknown'; // Git commit hash
 
-const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
+const AdminCommandCenter: React.FC<{ user: User; supportUnread?: number; onOpenSupport?: () => void }> = ({ user, supportUnread = 0, onOpenSupport }) => {
   const [activeTab, setActiveTab] = useState('analytics');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -817,6 +817,7 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
     { id: 'autonomous', label: 'Autonomous Ops', icon: <Bot /> },
     { id: 'social-media', label: 'Social Media Hub', icon: <Share2 /> },
     { id: 'brand-protection', label: 'Brand Protection', icon: <Shield /> },
+    { id: 'support', label: 'Support Inbox', icon: <MessageCircle /> },
     { id: 'beta-invitations', label: 'Beta Invitations', icon: <Gift /> },
     { id: 'landing-content', label: 'Landing Content', icon: <Layout /> },
     { id: 'platform-media', label: 'Platform Media', icon: <Play /> },
@@ -894,6 +895,9 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
             <button 
               key={item.id} 
               onClick={() => {
+                if (item.id === 'support' && typeof onOpenSupport === 'function') {
+                  onOpenSupport();
+                }
                 setActiveTab(item.id);
                 setIsSidebarOpen(false); // Close sidebar on mobile after selection
               }} 
@@ -901,7 +905,14 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
               aria-label={`Navigate to ${item.label}`}
               aria-current={activeTab === item.id ? 'page' : undefined}
             >
-              {React.cloneElement(item.icon as React.ReactElement, { size: 18 })}
+              <div className="relative flex items-center gap-2">
+                {React.cloneElement(item.icon as React.ReactElement, { size: 18 })}
+                {item.id === 'support' && supportUnread > 0 && (
+                  <span className="absolute -top-2 -right-3 bg-emerald-400 text-slate-900 text-[10px] font-black px-1.5 rounded-full min-w-[18px] text-center">
+                    {supportUnread > 99 ? '99+' : supportUnread}
+                  </span>
+                )}
+              </div>
               <span className="text-sm">{item.label}</span>
             </button>
           ))}
@@ -1005,6 +1016,40 @@ const AdminCommandCenter: React.FC<{ user: User }> = ({ user }) => {
              </div>
           </div>
         </header>
+
+        {activeTab === 'support' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-black tracking-tight">Support Inbox</h3>
+                  <p className="text-sm text-slate-400">The live support dock sits bottom-right across the app. Open it to handle new threads.</p>
+                </div>
+                <button
+                  onClick={() => onOpenSupport && onOpenSupport()}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-500 flex items-center gap-2"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Open Inbox
+                </button>
+              </div>
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                  <p className="text-xs text-slate-500 uppercase font-black tracking-widest">Unread</p>
+                  <p className="text-3xl font-black text-white">{supportUnread}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                  <p className="text-xs text-slate-500 uppercase font-black tracking-widest">Mode</p>
+                  <p className="text-sm text-slate-200">AI + Human handoff live</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                  <p className="text-xs text-slate-500 uppercase font-black tracking-widest">Tip</p>
+                  <p className="text-sm text-slate-200">Keep dock open for realtime alerts.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {activeTab === 'analytics' && (
           <div className="space-y-8 animate-in fade-in duration-500">
