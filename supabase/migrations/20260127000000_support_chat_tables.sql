@@ -44,13 +44,21 @@ CREATE INDEX IF NOT EXISTS idx_support_messages_author ON support_messages(autho
 ALTER TABLE support_threads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE support_messages ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own threads" ON support_threads;
+DROP POLICY IF EXISTS "Anyone can create threads" ON support_threads;
+DROP POLICY IF EXISTS "Admins can update threads" ON support_threads;
+DROP POLICY IF EXISTS "Users can view messages in own threads" ON support_messages;
+DROP POLICY IF EXISTS "Anyone can create messages" ON support_messages;
+DROP POLICY IF EXISTS "Admins can update messages" ON support_messages;
+
 -- Threads: users can see their own threads, admins see all
 CREATE POLICY "Users can view own threads"
   ON support_threads FOR SELECT
   USING (
     auth.uid() = user_id 
-    OR guest_email = (SELECT email FROM auth.users WHERE id = auth.uid())
-    OR (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin'
+    OR (auth.uid() IS NULL AND guest_email IS NOT NULL)
+    OR (SELECT role FROM public.users WHERE id = auth.uid() LIMIT 1) = 'admin'
   );
 
 -- Threads: anyone can create (for guest support)
@@ -58,10 +66,13 @@ CREATE POLICY "Anyone can create threads"
   ON support_threads FOR INSERT
   WITH CHECK (true);
 
--- Threads: admins can update
+-- Threads: admins can update, service role can always update
 CREATE POLICY "Admins can update threads"
   ON support_threads FOR UPDATE
-  USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  USING (
+    auth.role() = 'service_role'
+    OR (SELECT role FROM public.users WHERE id = auth.uid() LIMIT 1) = 'admin'
+  );
 
 -- Messages: users can see messages in their threads, admins see all
 CREATE POLICY "Users can view messages in own threads"
@@ -72,8 +83,8 @@ CREATE POLICY "Users can view messages in own threads"
       WHERE support_threads.id = support_messages.thread_id
       AND (
         support_threads.user_id = auth.uid()
-        OR support_threads.guest_email = (SELECT email FROM auth.users WHERE id = auth.uid())
-        OR (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin'
+        OR (auth.uid() IS NULL AND support_threads.guest_email IS NOT NULL)
+        OR (SELECT role FROM public.users WHERE id = auth.uid() LIMIT 1) = 'admin'
       )
     )
   );
@@ -83,10 +94,13 @@ CREATE POLICY "Anyone can create messages"
   ON support_messages FOR INSERT
   WITH CHECK (true);
 
--- Messages: admins can update (for editing replies)
+-- Messages: admins and service role can update (for editing replies)
 CREATE POLICY "Admins can update messages"
   ON support_messages FOR UPDATE
-  USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  USING (
+    auth.role() = 'service_role'
+    OR (SELECT role FROM public.users WHERE id = auth.uid() LIMIT 1) = 'admin'
+  );
 
 -- Function to update thread timestamp on new message
 CREATE OR REPLACE FUNCTION update_thread_timestamp()
