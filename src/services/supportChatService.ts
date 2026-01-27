@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { createNexusChat } from './geminiService';
 import { SupportMode } from '../types';
 
 interface SendSupportMessageParams {
@@ -21,12 +20,13 @@ interface SupportReply {
 
 /**
  * Send a support message via Supabase Edge Function.
- * Falls back to direct Gemini chat if the function is unavailable.
+ * Admin/human modes require Edge Function (no local fallback).
+ * AI mode only: falls back to direct Gemini if Edge Function unavailable.
  */
 export const sendSupportMessage = async (params: SendSupportMessageParams): Promise<SupportReply> => {
   const { threadId, message, language, mode = 'ai', email, userId } = params;
 
-  // Try Edge Function first (preferred for human handoff and logging)
+  // Try Edge Function first (required for all modes)
   try {
     const { data, error } = await supabase.functions.invoke('ai-support-chat', {
       body: {
@@ -50,32 +50,51 @@ export const sendSupportMessage = async (params: SendSupportMessageParams): Prom
       };
     }
   } catch (err) {
-    console.warn('Edge Function ai-support-chat unavailable; falling back to direct Gemini.', err);
+    console.warn('Edge Function ai-support-chat error:', err);
+    
+    // For human/admin modes, don't fall back - Edge Function is required
+    if (mode === 'human') {
+      return {
+        threadId: threadId || 'error',
+        reply: 'Sorry, we could not connect to an admin right now. Please email support@mail.eventnexus.eu',
+        translatedReply: 'Sorry, we could not connect to an admin right now. Please email support@mail.eventnexus.eu',
+        mode: 'human',
+        adminNotified: false
+      };
+    }
+    
+    // Only for AI mode, try local fallback
+    console.warn('AI mode: attempting local Gemini fallback...');
   }
 
   // Fallback: direct Gemini chat (AI-only, no admin handoff)
-  try {
-    const chat = createNexusChat({ userLanguage: language, platformContext: undefined });
-    const stream = await chat.sendMessageStream({ message });
-    let text = '';
-    for await (const chunk of stream) {
-      text += chunk?.text || '';
+  if (mode === 'ai') {
+    try {
+      const { createNexusChat } = await import('./geminiService');
+      const chat = createNexusChat({ userLanguage: language, platformContext: undefined });
+      const stream = await chat.sendMessageStream({ message });
+      let text = '';
+      for await (const chunk of stream) {
+        text += chunk?.text || '';
+      }
+      return {
+        threadId: threadId || 'local-fallback',
+        reply: text,
+        translatedReply: text,
+        mode: 'ai',
+        adminNotified: false
+      };
+    } catch (err) {
+      console.error('AI mode fallback failed:', err);
     }
-    return {
-      threadId: threadId || 'local-fallback',
-      reply: text,
-      translatedReply: text,
-      mode: 'ai',
-      adminNotified: false
-    };
-  } catch (err) {
-    console.error('Support chat fallback failed:', err);
-    return {
-      threadId: threadId || 'error',
-      reply: 'Sorry, we could not process your request right now.',
-      translatedReply: 'Sorry, we could not process your request right now.',
-      mode: 'ai',
-      adminNotified: false
-    };
   }
+
+  // Final fallback response
+  return {
+    threadId: threadId || 'error',
+    reply: 'Sorry, we could not process your request right now. Please try again or email support@mail.eventnexus.eu',
+    translatedReply: 'Sorry, we could not process your request right now. Please try again or email support@mail.eventnexus.eu',
+    mode: mode,
+    adminNotified: false
+  };
 };

@@ -1799,8 +1799,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           </div>
         </div>
       </section>
-      {/* Floating chat trigger */}
-      {!isChatOpen && (
+      {/* Floating chat trigger - only for non-admins */}
+      {!isChatOpen && !user?.id && (
         <button
           onClick={() => setIsChatOpen(true)}
           className="fixed bottom-6 right-6 z-[1400] inline-flex items-center gap-3 bg-indigo-600 text-white px-5 py-4 rounded-full shadow-xl shadow-indigo-600/25 hover:bg-indigo-500 active:scale-95 transition-all"
@@ -1810,7 +1810,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
         </button>
       )}
 
-      <ChatBot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      <ChatBot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} user={user} />
 
       {/* Exit-Intent Popup */}
       <ExitIntentPopup 

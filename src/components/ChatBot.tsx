@@ -12,9 +12,12 @@ interface Message {
 interface ChatBotProps {
   isOpen: boolean;
   onClose: () => void;
+  user?: any;
 }
 
-const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
+const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose, user }) => {
+  // Admins use Support Inbox, not ChatBot
+  if (user?.role === 'admin') return null;
   const [messages, setMessages] = useState<Message[]>([
     { role: 'model', text: 'Hi! I\'m NexusAI. How can I help you discover or create amazing experiences today?' }
   ]);
