@@ -25,7 +25,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose, user }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [userLanguage, setUserLanguage] = useState('en');
-  const [mode, setMode] = useState<'ai' | 'admin'>('ai');
+  // Modes align with SupportMode schema: 'ai' or 'human'
+  const [mode, setMode] = useState<'ai' | 'human'>('ai');
   const [adminEmail, setAdminEmail] = useState('');
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -117,9 +118,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose, user }) => {
               <Bot className="w-3 h-3" /> NexusAI
             </button>
             <button
-              onClick={() => setMode('admin')}
+              onClick={() => setMode('human')}
               className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-bold transition-all ${
-                mode === 'admin' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
+                mode === 'human' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
               }`}
               aria-label="Ask a live admin"
             >
@@ -130,7 +131,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose, user }) => {
             </div>
           </div>
 
-          {mode === 'admin' && (
+          {mode === 'human' && (
             <div className="px-6 pt-2 flex items-center gap-2 text-[11px] text-slate-400">
               <Shield className="w-3 h-3 text-emerald-400" />
               <span>Leave an email so the admin can follow up:</span>
