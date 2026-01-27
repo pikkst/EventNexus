@@ -185,6 +185,13 @@ const AdminSupportDock: React.FC<AdminSupportDockProps> = ({ user, openSignal, o
     return 'bg-emerald-500/20 text-emerald-300';
   };
 
+  const displayMessage = (msg: SupportMessage) => {
+    if (msg.author_type === 'visitor' && msg.content_en) {
+      return msg.content_en;
+    }
+    return msg.content_original;
+  };
+
   return (
     <div className="fixed bottom-4 right-4 z-[1400]">
       <div className="flex flex-col items-end gap-3">
@@ -226,12 +233,6 @@ const AdminSupportDock: React.FC<AdminSupportDockProps> = ({ user, openSignal, o
                         {isThreadUnread(thread) && <span className="w-2 h-2 rounded-full bg-emerald-400" aria-label="Unread"></span>}
                         <span className={`text-[10px] px-2 py-1 rounded-full font-black uppercase tracking-widest ${statusBadge(thread)}`}>
                           {thread.status}
-                        const displayMessage = (msg: SupportMessage) => {
-                          if (msg.author_type === 'visitor' && msg.content_en) {
-                            return msg.content_en;
-                          }
-                          return msg.content_original;
-                        };
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-400 mt-1 truncate">
@@ -289,7 +290,7 @@ const AdminSupportDock: React.FC<AdminSupportDockProps> = ({ user, openSignal, o
                       <div className="text-[11px] uppercase tracking-widest font-black opacity-70 mb-1">
                         {msg.author_type}
                       </div>
-                      <div>{msg.content_original}</div>
+                      <div>{displayMessage(msg)}</div>
                       <div className="text-[10px] text-white/70 mt-1">{msg.created_at ? new Date(msg.created_at).toLocaleTimeString() : ''}</div>
                     </div>
                   ))}
