@@ -40,6 +40,18 @@ CREATE INDEX IF NOT EXISTS idx_support_threads_last_message ON support_threads(l
 CREATE INDEX IF NOT EXISTS idx_support_messages_thread ON support_messages(thread_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_support_messages_author ON support_messages(author_type, author_id);
 
+-- Helper: admin check (security definer to avoid cross-table permission issues)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'
+  );
+$$;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated;
+
 -- RLS Policies
 ALTER TABLE support_threads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE support_messages ENABLE ROW LEVEL SECURITY;
@@ -58,7 +70,7 @@ CREATE POLICY "Users can view own threads"
   USING (
     auth.uid() = user_id 
     OR (auth.uid() IS NULL AND guest_email IS NOT NULL)
-    OR (SELECT role FROM public.users WHERE id = auth.uid() LIMIT 1) = 'admin'
+    OR public.is_admin()
   );
 
 -- Threads: anyone can create (for guest support)
@@ -71,7 +83,7 @@ CREATE POLICY "Admins can update threads"
   ON support_threads FOR UPDATE
   USING (
     auth.role() = 'service_role'
-    OR (SELECT role FROM public.users WHERE id = auth.uid() LIMIT 1) = 'admin'
+    OR public.is_admin()
   );
 
 -- Messages: users can see messages in their threads, admins see all
@@ -84,7 +96,7 @@ CREATE POLICY "Users can view messages in own threads"
       AND (
         support_threads.user_id = auth.uid()
         OR (auth.uid() IS NULL AND support_threads.guest_email IS NOT NULL)
-        OR (SELECT role FROM public.users WHERE id = auth.uid() LIMIT 1) = 'admin'
+        OR public.is_admin()
       )
     )
   );
@@ -99,7 +111,7 @@ CREATE POLICY "Admins can update messages"
   ON support_messages FOR UPDATE
   USING (
     auth.role() = 'service_role'
-    OR (SELECT role FROM public.users WHERE id = auth.uid() LIMIT 1) = 'admin'
+    OR public.is_admin()
   );
 
 -- Function to update thread timestamp on new message
