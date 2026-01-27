@@ -8,43 +8,96 @@ import { retryWithBackoff, CircuitBreaker } from './pipelineRetryService';
 let aiInstance: any = null;
 let GoogleGenAIModule: any = null;
 let TypeEnum: any = null;
+let initializationPromise: Promise<any> | null = null;
 
 const loadGoogleGenAI = async () => {
-  if (!GoogleGenAIModule) {
+  // If already loaded, return immediately
+  if (GoogleGenAIModule) {
+    console.log('✅ GoogleGenAIModule already loaded, reusing instance');
+    return { GoogleGenAI: GoogleGenAIModule, Type: TypeEnum };
+  }
+
+  // If currently loading, wait for the promise
+  if (initializationPromise) {
+    console.log('⏳ GoogleGenAI module is already loading, waiting for promise...');
+    return initializationPromise;
+  }
+
+  // Start new initialization
+  console.log('🔄 Starting fresh GoogleGenAI module load...');
+  initializationPromise = (async () => {
     try {
+      console.log('🔄 Attempting dynamic import of @google/genai...');
       const module = await import("@google/genai");
+      console.log('✅ Dynamic import successful, checking for GoogleGenAI export...');
+      console.log('Module exports:', Object.keys(module).slice(0, 10), '...'); // Log first 10 exports
+      
+      if (!module.GoogleGenAI) {
+        console.error('❌ GoogleGenAI not found in module exports');
+        console.error('Available exports:', Object.keys(module).filter(k => k.includes('Google')));
+        throw new Error('GoogleGenAI not exported from @google/genai module');
+      }
+      
       GoogleGenAIModule = module.GoogleGenAI;
       TypeEnum = module.Type;
+      console.log('✅ @google/genai module loaded successfully');
+      console.log('GoogleGenAIModule type:', typeof GoogleGenAIModule);
+      console.log('GoogleGenAIModule constructor:', GoogleGenAIModule?.constructor?.name);
+      return { GoogleGenAI: GoogleGenAIModule, Type: TypeEnum };
     } catch (e: any) {
-      console.error('Failed to load @google/genai module:', e?.message || e);
+      console.error('❌ Failed to load @google/genai module:', {
+        message: e?.message || String(e),
+        stack: e?.stack,
+        name: e?.name
+      });
+      // Clear the promise so we can retry
+      initializationPromise = null;
       throw new Error(`Cannot load @google/genai: ${e?.message || String(e)}`);
     }
-  }
-  return { GoogleGenAI: GoogleGenAIModule, Type: TypeEnum };
+  })();
+
+  return initializationPromise;
 };
 
 // Circuit breaker for Gemini API to prevent cascading failures
 const geminiCircuitBreaker = new CircuitBreaker(5, 2, 30000);
 
 const getAI = (): any => {
+  console.log('getAI() called. aiInstance exists?', !!aiInstance, 'GoogleGenAIModule exists?', !!GoogleGenAIModule);
+  
   if (!aiInstance) {
     const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+    
     if (!apiKey) {
-      console.error('GEMINI_API_KEY is not set in environment variables');
+      console.error('❌ GEMINI_API_KEY not configured in environment');
+      console.log('process.env.API_KEY:', process.env.API_KEY ? '***set***' : 'NOT SET');
+      console.log('process.env.GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '***set***' : 'NOT SET');
       throw new Error('GEMINI_API_KEY is required but not configured');
     }
     
     if (!GoogleGenAIModule) {
-      throw new Error('GoogleGenAI module not yet loaded. This should not happen - please call initializeGemini() first');
+      console.error('❌ GoogleGenAI module not initialized');
+      console.log('GoogleGenAIModule:', GoogleGenAIModule);
+      console.log('initializationPromise:', initializationPromise ? 'pending...' : 'not started');
+      throw new Error(
+        'GoogleGenAI module not initialized. ' +
+        'This usually means initializeGemini() was not called or did not complete. ' +
+        'Check that App.tsx calls initializeGemini() in a useEffect on mount, ' +
+        'and that the dynamic import of @google/genai succeeds.'
+      );
     }
     
     try {
+      console.log('✅ Creating GoogleGenAI instance...');
       aiInstance = new GoogleGenAIModule({ apiKey });
+      console.log('✅ GoogleGenAI instance created successfully');
     } catch (e: any) {
-      console.error('Failed to instantiate GoogleGenAI:', e?.message || e);
-      throw new Error(`GoogleGenAI initialization failed: ${e?.message || String(e)}`);
+      console.error('❌ Failed to create GoogleGenAI instance:', e?.message || e);
+      throw new Error(`GoogleGenAI instantiation failed: ${e?.message || String(e)}`);
     }
   }
+  
+  console.log('✅ Returning AI instance');
   return aiInstance;
 };
 
@@ -58,7 +111,15 @@ const getType = () => {
 
 // Pre-initialize the module at startup (call this early in App component)
 export const initializeGemini = async () => {
-  await loadGoogleGenAI();
+  console.log('🔄 initializeGemini() called...');
+  try {
+    await loadGoogleGenAI();
+    console.log('✅ initializeGemini() completed successfully');
+  } catch (e: any) {
+    console.error('❌ initializeGemini() failed:', e?.message || e);
+    // Re-throw so App.tsx can log it, but set a flag that we tried
+    throw e;
+  }
 };
 
 // ADMIN TOOLS - NO CREDIT COST (Platform marketing tools)
@@ -625,17 +686,23 @@ export const translateDescriptionBatch = async (
     return texts;
   }
 
-  // Check if user needs to pay with credits (Free tier only)
-  // Charge once for the batch operation
-  if (userId && userTier === 'free') {
-    const creditsNeeded = AI_CREDIT_COSTS.TRANSLATION * Object.keys(texts).length;
-    const hasCredits = await checkUserCredits(userId, creditsNeeded);
-    if (!hasCredits) {
-      throw new Error(`Insufficient credits. Need ${creditsNeeded} credits (${creditsNeeded * 0.5}€ value)`);
-    }
-  }
-
   try {
+    // Ensure Gemini is initialized before use
+    if (!GoogleGenAIModule) {
+      console.log('🔄 Initializing Gemini in translateDescriptionBatch...');
+      await loadGoogleGenAI();
+    }
+
+    // Check if user needs to pay with credits (Free tier only)
+    // Charge once for the batch operation
+    if (userId && userTier === 'free') {
+      const creditsNeeded = AI_CREDIT_COSTS.TRANSLATION * Object.keys(texts).length;
+      const hasCredits = await checkUserCredits(userId, creditsNeeded);
+      if (!hasCredits) {
+        throw new Error(`Insufficient credits. Need ${creditsNeeded} credits (${creditsNeeded * 0.5}€ value)`);
+      }
+    }
+
     // Normalize target language: accept code (et) or name (Estonian)
     const lower = (targetLanguage || '').toLowerCase();
     const byCode = SUPPORTED_LANGUAGES.find(l => l.code.toLowerCase() === lower);

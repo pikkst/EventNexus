@@ -245,6 +245,8 @@ const App: React.FC = () => {
       return 'dark';
     }
   });
+  const [geminiReady, setGeminiReady] = useState(false);
+  const geminiInitializedRef = useRef(false);
  
   // Ensure GA script is present even if index.html is cached/stripped
   useEffect(() => {
@@ -271,14 +273,31 @@ const App: React.FC = () => {
     // Initialize performance optimizations after GA is set up
     initializePerformanceOptimizations();
     
-    // Initialize Gemini AI module early to avoid TDZ errors
-    // Use dynamic import to prevent module from being eagerly evaluated
-    import('./services/geminiService').then(({ initializeGemini }) => {
-      initializeGemini().catch(e => {
-        console.warn('Failed to pre-initialize Gemini:', e?.message || e);
-        // Don't throw - this is non-critical and can be retried on first use
-      });
-    });
+    // Initialize Gemini AI module (blocking to ensure it's ready)
+    // This prevents "GoogleGenAI module not yet loaded" errors in components
+    const initGemini = async () => {
+      // Prevent duplicate initialization
+      if (geminiInitializedRef.current) {
+        console.log('✅ Gemini AI already initialized');
+        return;
+      }
+      geminiInitializedRef.current = true;
+
+      try {
+        const { initializeGemini } = await import('./services/geminiService');
+        await initializeGemini();
+        console.log('✅ Gemini AI module pre-initialized successfully');
+        setGeminiReady(true);
+      } catch (e) {
+        console.error('❌ Failed to pre-initialize Gemini:', e?.message || e);
+        // Set ready anyway so components don't hang forever
+        // They'll get an error from getAI() but can handle it gracefully
+        setGeminiReady(true);
+      }
+    };
+    
+    // Call initialization immediately
+    initGemini();
   }, []);
 
   // Helper to cache user data
@@ -861,7 +880,7 @@ const App: React.FC = () => {
               <Route path="/events-in-:city" element={<CityLandingPage />} />
               <Route path="/data-source" element={<DataSourcePage />} />
               <Route path="/host" element={<OrganizerHubPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/map" element={<HomeMap theme={mapTheme} onToggleTheme={handleToggleMapTheme} events={events} />} />
+              <Route path="/map" element={<HomeMap theme={mapTheme} onToggleTheme={handleToggleMapTheme} events={events} user={user} />} />
               <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
               <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />

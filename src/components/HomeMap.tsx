@@ -10,12 +10,13 @@ import {
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import { CATEGORIES } from '../constants';
-import { EventNexusEvent } from '../types';
+import { EventNexusEvent, User, EventTranslation } from '../types';
 import { getEvents } from '../services/dbService';
 import { filterActiveEvents } from '../utils/eventUtils';
 import { generateMapSEO, updatePageMeta, cleanupSEO } from '../utils/seoUtils';
 import { supabase } from '../services/supabase';
 import { RecommendationFeed, TrendingEventsSection } from './RecommendationFeed';
+import { getUserLanguagePreference, batchTranslateEvents } from '../services/languageService';
 
 interface MapEffectsProps {
   center: [number, number];
@@ -73,9 +74,10 @@ interface HomeMapProps {
   theme?: 'dark' | 'light';
   onToggleTheme?: () => void;
   events?: EventNexusEvent[]; // Optional: use events from parent if provided
+  user?: User | null; // User object for language preferences
 }
 
-const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events: propEvents }) => {
+const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events: propEvents, user }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [events, setEvents] = useState<EventNexusEvent[]>([]);
@@ -85,6 +87,10 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   // Date filter and sorting state for map events
   const [selectedDate, setSelectedDate] = useState<string>(''); // ISO format yyyy-mm-dd
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  
+  // Auto-detected language preference (IP-based for guests, profile for registered users)
+  const [userLanguage, setUserLanguage] = useState<string>('en');
+  const [translatedEvents, setTranslatedEvents] = useState<Map<string, EventTranslation>>(new Map());
 
   // Normalize event date strings to ISO yyyy-mm-dd (supports dd.mm.yyyy and ISO)
   const normalizeDate = useCallback((dateStr: string): string => {
@@ -110,20 +116,21 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     return '';
   }, []);
 
-  // Guest language preference - for unregistered visitors
-  const [guestLanguage, setGuestLanguage] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem('guest_language');
-      return saved || 'en';
-    } catch {
-      return 'en';
-    }
-  });
-
-  const handleGuestLanguageChange = (lang: string) => {
-    setGuestLanguage(lang);
-    localStorage.setItem('guest_language', lang);
-  };
+  // Detect user language preference on mount (IP-based for guests, profile for registered users)
+  useEffect(() => {
+    const detectLanguage = async () => {
+      try {
+        console.log('🔍 Detecting language for user:', user ? `${user.id} (preferred: ${user.preferred_language})` : 'guest');
+        const lang = await getUserLanguagePreference(user);
+        setUserLanguage(lang);
+        console.log('🌐 User language detected:', lang);
+      } catch (error) {
+        console.error('Error detecting language:', error);
+        setUserLanguage('en');
+      }
+    };
+    detectLanguage();
+  }, [user]);
 
   // Update SEO meta tags on mount
   useEffect(() => {
@@ -463,6 +470,59 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     }
   }, [allEvents]); // Only depend on allEvents, not newEventIds or bounds
 
+  // Translate events when language or events change
+  useEffect(() => {
+    const translateAllEvents = async () => {
+      if (events.length === 0 || !userLanguage) {
+        console.log('⏭️ Skipping translation:', events.length === 0 ? 'no events' : 'no language');
+        return;
+      }
+      
+      // Ensure Gemini is initialized
+      try {
+        const { initializeGemini } = await import('../services/geminiService');
+        await initializeGemini();
+      } catch (e) {
+        console.warn('⚠️ Gemini initialization in HomeMap:', e);
+      }
+      
+      // Filter events that need translation (not in original language)
+      const eventsToTranslate = events.filter(e => e.original_language !== userLanguage);
+      
+      console.log(`📊 Translation check: ${events.length} total, ${eventsToTranslate.length} need translation to ${userLanguage}`);
+      console.log('Sample event original_language:', events[0]?.original_language, 'vs userLanguage:', userLanguage);
+      
+      if (eventsToTranslate.length === 0) {
+        console.log('✅ All events already in user language, no translation needed');
+        return;
+      }
+      
+      console.log(`🔄 Translating ${eventsToTranslate.length} events to ${userLanguage}...`);
+      
+      try {
+        const translations = await batchTranslateEvents(
+          eventsToTranslate.map(e => ({
+            id: e.id,
+            name: e.name,
+            description: e.description || '',
+            aboutText: e.aboutText
+          })),
+          userLanguage,
+          user?.id,
+          user?.subscription_tier
+        );
+        
+        setTranslatedEvents(translations);
+        console.log(`✅ Translated ${translations.size} events to ${userLanguage}`);
+        console.log('Sample translation:', Array.from(translations.entries())[0]);
+      } catch (error) {
+        console.error('Batch translation failed:', error);
+      }
+    };
+    
+    translateAllEvents();
+  }, [events, userLanguage, user]);
+
 
   // Fetch current user ID for recommendations + IP geolocation for guests
   useEffect(() => {
@@ -475,13 +535,15 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           
           // For authenticated users, try to get their saved location from profile
           try {
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
               .from('users')
               .select('home_location')
               .eq('id', user.id)
-              .single();
+              .maybeSingle();
             
-            if (profile?.home_location?.lat && profile?.home_location?.lng) {
+            if (profileError) {
+              console.warn('Profile query error:', profileError);
+            } else if (profile?.home_location?.lat && profile?.home_location?.lng) {
               setUserLocation([profile.home_location.lat, profile.home_location.lng]);
               console.log(`📍 Using saved location from profile: [${profile.home_location.lat}, ${profile.home_location.lng}]`);
             }
@@ -864,22 +926,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
     const doTranslate = async () => {
       if (!selectedEvent) { setTranslatedTitle(null); setTranslatedDesc(null); return; }
 
-      // Determine target language: user preference → browser locale → default 'en'
-      let targetLang = 'en';
-      try {
-        const cached = localStorage.getItem('eventnexus-user-cache');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          const pref = parsed?.user?.preferred_language;
-          if (typeof pref === 'string' && pref.length >= 2) {
-            targetLang = pref.toLowerCase();
-          }
-        }
-      } catch {}
-      if (!targetLang || targetLang.length < 2) {
-        const navLang = (navigator.language || 'en').toLowerCase();
-        targetLang = navLang.split('-')[0];
-      }
+      // Use the auto-detected user language
+      const targetLang = userLanguage;
 
       // If event has structured translations, prefer them
       const direct = selectedEvent.translations?.[targetLang];
@@ -1072,26 +1120,30 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                         </div>
                         <div className="border-t border-slate-200 dark:border-slate-800 pt-2">
                           <div className="flex flex-col gap-1 max-h-64 overflow-auto pr-1">
-                            {group.events.map((ev, i) => (
+                            {group.events.map((ev, i) => {
+                              const translatedName = translatedEvents.get(ev.id)?.name || ev.name;
+                              return (
                               <button
                                 key={ev.id}
                                 onClick={() => { setSelectedEvent(ev); setIsFollowingUser(false); navigate(`/event/${ev.id}`); }}
                                 className="text-left text-[11px] bg-slate-100 dark:bg-slate-800/70 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-lg px-2 py-1.5 transition"
                               >
-                                <span className="font-semibold text-slate-800 dark:text-slate-100 block">{ev.name}</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-100 block">{translatedName}</span>
                                 <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
                                   <Calendar className="w-3 h-3" />
                                   {ev.date} {ev.time}
                                 </span>
                               </button>
-                            ))}
+                            )})}
                           </div>
                         </div>
                       </>
                     ) : (
                       /* Single event - show normal popup */
                       <>
-                        <div className="font-black text-base text-slate-900 dark:text-white leading-tight">{primary.name}</div>
+                        <div className="font-black text-base text-slate-900 dark:text-white leading-tight">
+                          {translatedEvents.get(primary.id)?.name || primary.name}
+                        </div>
                         <div className="text-xs text-slate-500 flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           <span>{primary.date} {primary.time}</span>
@@ -1129,7 +1181,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                  ? 'bg-white border-slate-200 hover:border-indigo-400'
                  : 'bg-slate-900 border-slate-800 hover:border-indigo-500'
              } border p-3 md:p-4 rounded-2xl md:rounded-[32px] shadow-2xl flex items-center gap-3 md:gap-4 group transition-all`}
-             aria-label={`View nearby event: ${nearestEvent.name}`}
+             aria-label={`View nearby event: ${translatedEvents.get(nearestEvent.id)?.name || nearestEvent.name}`}
            >
               <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white relative">
                  <Radar className="w-6 h-6 animate-pulse" aria-hidden="true" />
@@ -1287,9 +1339,13 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           ].map((lang) => (
             <button
               key={lang.code}
-              onClick={() => handleGuestLanguageChange(lang.code)}
+              onClick={async () => {
+                setUserLanguage(lang.code);
+                localStorage.setItem('guest_language', lang.code);
+                console.log('🌐 Language changed to:', lang.code);
+              }}
               className={`px-3 md:px-4 py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border shrink-0 ${
-                guestLanguage === lang.code
+                userLanguage === lang.code
                   ? theme === 'light'
                     ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
                     : 'bg-white border-white text-slate-950 shadow-lg'
@@ -1298,7 +1354,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
                     : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-600'
               }`}
               aria-label={`Select ${lang.label} language`}
-              aria-pressed={guestLanguage === lang.code}
+              aria-pressed={userLanguage === lang.code}
             >
               {lang.label}
             </button>
