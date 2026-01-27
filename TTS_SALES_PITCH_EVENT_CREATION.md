@@ -22,10 +22,10 @@ Give your event a memorable name that captures attention. Whether it's a confere
 Select from our comprehensive category system: Music, Sports, Technology, Arts & Culture, Business, Food & Drink, Health & Wellness, Education, Community, and Entertainment. This ensures your event reaches the right audience through intelligent search algorithms.
 
 **Craft Your Description**  
-Tell your story. Describe what makes your event special. Our platform automatically optimizes your description for search engines and AI discoverability. Every word you write is indexed for Google, Bing, and next-generation AI search engines like ChatGPT and Perplexity. Our AI analyzes your full description to understand context, identify key themes, and extract relevant keywords.
+Tell your story. Describe what makes your event special. Our on-page SEO helper checks your description and surfaces keyword cues so public events are easier to discover. Public pages include structured metadata for Google and Bing, but indexing depends on the search engines (we do not auto-submit or force AI search ingestion).
 
 **AI-Powered Tagline Generation**  
-Not sure how to capture your event in one line? Click the sparkle icon and watch Gemini AI analyze your event name, category, and description to generate professional, SEO-optimized marketing taglines instantly. Our AI doesn't just create catchy phrases – it crafts taglines designed for maximum discoverability across traditional search engines and AI-powered search platforms. Choose the perfect hook that sells your event and ranks in search results.
+Not sure how to capture your event in one line? Click the sparkle icon to trigger Gemini AI (available after the event is unlocked or on paid tiers) and generate a professional, SEO-aware tagline from your name, category, and description. Choose the hook you like best and drop it straight into your listing.
 
 **About Section**  
 Add rich details about your event. Share the story, the speakers, the agenda, or the experience attendees can expect. This section is fully multilingual-ready for global reach.
@@ -88,7 +88,7 @@ Define your maximum attendees. Our system automatically prevents overselling and
 Want to increase prices as you approach sell-out? Edit ticket templates at any time. Early bird pricing? Create limited-quantity discounted tickets that expire automatically.
 
 **Revenue Projections**  
-See instant calculations of potential revenue based on ticket prices and quantities. Plan your event budget with confidence.
+See instant calculations of potential revenue inside the ticket builder (price x quantity for every ticket type). Plan your event budget with confidence.
 
 ---
 
@@ -188,7 +188,7 @@ Have your own artwork? Upload images up to five megabytes. We support JPG, PNG, 
 For Pro, Premium, and Enterprise users, enable multilingual mode. Your event name, description, and about section are automatically translated into English, German, French, Spanish, and Russian. Five languages, zero effort, global reach.
 
 **SEO & Quality Scoring**  
-Our AI analyzes your event in real-time. See your SEO score from zero to one hundred. Above eighty? You're optimized for Google and AI search engines. Below sixty? We show instant recommendations: add more description length, include location details, upload an image. Fix issues before publishing.
+Get a live SEO score (0–100) and checklist from our on-page validator. Above eighty means the basics look solid; below sixty shows immediate tips like “add location details” or “include an image.” AI-powered guidance is planned; current scoring is rule-based and client-side.
 
 **Quality Validation**  
 We check for missing required fields, invalid dates, empty descriptions, and quality issues. No broken events. No embarrassing mistakes. Only professional, polished event pages go live.
@@ -210,7 +210,7 @@ What you've just experienced isn't just an event creation form. It's a professio
 
 **AI Integration** – Gemini powers tagline generation, image creation, multilingual translation, and intelligent recommendations. Your events are smarter because of it.
 
-**Search Optimization** – Every event is automatically structured for Google, Bing, and AI search engines. Semantic metadata, schema markup, and knowledge graph integration ensure maximum discoverability.
+**Search Optimization** – Public events ship with schema.org Event JSON-LD plus Open Graph and meta tags to help Google and Bing crawl them. Knowledge-graph enrichment and AI-search integrations are planned, not live today.
 
 **Proximity Radar** – Our PostGIS-powered backend sends notifications to nearby users when your event goes live. Local discovery happens automatically.
 
