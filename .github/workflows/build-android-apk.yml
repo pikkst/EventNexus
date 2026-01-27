@@ -1,0 +1,59 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'mobile/android/EventNexusAdminSupport/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+    
+    - name: Grant execute permission for gradlew
+      run: chmod +x mobile/android/EventNexusAdminSupport/gradlew
+    
+    - name: Build Debug APK
+      run: |
+        cd mobile/android/EventNexusAdminSupport
+        ./gradlew assembleDebug
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: eventnexus-admin-support-debug
+        path: mobile/android/EventNexusAdminSupport/app/build/outputs/apk/debug/app-debug.apk
+    
+    - name: Create Release
+      if: github.event_name == 'push'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: Admin Support App v1.0.${{ github.run_number }}
+        files: mobile/android/EventNexusAdminSupport/app/build/outputs/apk/debug/app-debug.apk
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

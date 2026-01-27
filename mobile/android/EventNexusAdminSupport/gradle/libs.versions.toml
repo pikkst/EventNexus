@@ -1,0 +1,60 @@
+[versions]
+agp = "8.7.3"
+kotlin = "2.0.0"
+compose = "1.7.5"
+composeBom = "2024.12.01"
+coreKtx = "1.15.0"
+lifecycleRuntimeKtx = "2.8.7"
+activityCompose = "1.9.3"
+navigation = "2.8.5"
+supabaseKt = "3.0.3"
+ktorClient = "3.0.2"
+coroutines = "1.10.1"
+serialization = "1.7.3"
+security = "1.1.0-alpha06"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+
+# Compose
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+
+# Supabase
+supabase-postgrest-kt = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt", version.ref = "supabaseKt" }
+supabase-realtime-kt = { group = "io.github.jan-tennert.supabase", name = "realtime-kt", version.ref = "supabaseKt" }
+supabase-gotrue-kt = { group = "io.github.jan-tennert.supabase", name = "gotrue-kt", version.ref = "supabaseKt" }
+
+# Ktor (required by Supabase)
+ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktorClient" }
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktorClient" }
+ktor-client-serialization = { group = "io.ktor", name = "ktor-client-serialization", version.ref = "ktorClient" }
+ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktorClient" }
+
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version = "34.8.0" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
+
+# Coroutines
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+
+# Serialization
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+
+# Security
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "security" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

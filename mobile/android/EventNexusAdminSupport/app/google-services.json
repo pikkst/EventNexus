@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1072186331356",
+    "project_id": "eu-eventnexus-adminsupport",
+    "storage_bucket": "eu-eventnexus-adminsupport.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1072186331356:android:e4655858a9a948be67a419",
+        "android_client_info": {
+          "package_name": "eu.eventnexus.adminsupport"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCt5ccpssG2hNWF7MLNjFobU8Z9xvnHbi4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
