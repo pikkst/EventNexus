@@ -403,6 +403,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 <p className="text-lg sm:text-xl md:text-2xl text-slate-200 leading-relaxed mb-6 font-medium">
                   We solve the problem of high platform fees and language barriers. EventNexus uses AI to discover and translate {platformStats?.eventsLast24h || 500}+ daily events into 50+ languages.
                 </p>
+                <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 md:p-5">
+                  <p className="text-sm font-bold text-indigo-200 mb-2">📋 Sign up to unlock:</p>
+                  <ul className="space-y-1 text-sm text-slate-300">
+                    <li>✓ Personalized event recommendations based on your interests</li>
+                    <li>✓ Save favorite events to your wishlist</li>
+                    <li>✓ One-click ticket booking with instant QR codes</li>
+                  </ul>
+                </div>
                 <div className="flex flex-col gap-3">
                   <p className="text-base md:text-lg text-slate-300 flex items-center gap-3">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-emerald-500/20 rounded-full text-emerald-400 flex-shrink-0 font-bold">✓</span>
@@ -419,28 +427,30 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 </div>
               </div>
 
-              {/* Primary CTA - DOMINANT - Focus on MAP (for humans) */}
+              {/* Primary CTA - DOMINANT - SIGN UP FOR PERSONALIZATION */}
               <div className="space-y-4 pt-6">
+                <button 
+                  onClick={() => {
+                    trackCTAClick('hero_signup');
+                    onOpenAuth();
+                  }}
+                  className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-700 px-10 py-6 rounded-3xl font-black text-lg text-white transition-all shadow-2xl shadow-indigo-600/40 group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300"
+                  aria-label="Create your free EventNexus account"
+                >
+                  <Sparkles className="w-6 h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
+                  Get Started Free
+                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                {/* Secondary CTA - Explore as Guest */}
                 <Link 
                   to="/map" 
-                  onClick={() => trackCTAClick('explore_map')}
-                  className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-700 px-10 py-6 rounded-3xl font-black text-lg text-white transition-all shadow-2xl shadow-indigo-600/40 group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300"
-                  aria-label="Start exploring events on interactive map"
-                >
-                  <MapIcon className="w-6 h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
-                  Start Exploring Now
-                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-
-                {/* Secondary CTA - Browse (more for SEO/crawlers) */}
-                <Link 
-                  to="/browse" 
-                  onClick={() => trackCTAClick('browse_events')}
+                  onClick={() => trackCTAClick('explore_map_guest')}
                   className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-white/5 backdrop-blur-2xl border border-white/10 hover:bg-white/10 hover:border-white/20 text-white px-10 py-6 rounded-3xl font-bold text-lg transition-all animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500"
-                  aria-label="Browse full event catalog"
+                  aria-label="Browse events on interactive map as guest"
                 >
-                  <Calendar className="w-5 h-5" aria-hidden="true" /> 
-                  View All Events
+                  <MapIcon className="w-5 h-5" aria-hidden="true" /> 
+                  Explore the Map
                 </Link>
               </div>
             </div>
@@ -909,16 +919,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             <div className="mt-20 text-center animate-in fade-in duration-700 delay-500">
               <p className="text-slate-300 mb-8 text-xl font-medium">Ready to experience the difference?</p>
               <div className="flex flex-col sm:flex-row gap-5 justify-center">
-                <Link
-                  to="/browse"
-                  onClick={() => trackCTAClick('why_choose_browse')}
+                <button
+                  onClick={() => {
+                    trackCTAClick('why_signup_cta');
+                    onOpenAuth();
+                  }}
                   className="inline-flex items-center gap-3 px-12 py-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-700 rounded-[28px] text-white font-black text-xl transition-all shadow-2xl shadow-indigo-600/40 group"
+                  aria-label="Sign up now to start enjoying EventNexus"
                 >
-                  <Calendar className="w-6 h-6 group-hover:scale-110 transition-transform" /> Browse Events
-                </Link>
+                  <Sparkles className="w-6 h-6 group-hover:scale-110 transition-transform" /> Create Your Account
+                </button>
                 <button
                   onClick={handleCreateEvent}
-                  className="inline-flex items-center gap-3 px-12 py-6 bg-white/5 backdrop-blur-2xl border border-white/10 hover:bg-white/10 hover:border-white/20 rounded-[28px] text-white font-black text-xl transition-all"
+                  className="inline-flex items-center gap-3 px-12 py-6 bg-white/5 backdrop-blur-2xl border border-white/10 hover:bg-white/10 hover:border-white/20 rounded-[28px] text-white font-black text-xl transition-all hover:border-orange-500/50"
+                  aria-label="Become an event organizer"
                 >
                   <Plus className="w-6 h-6" /> Create Event
                 </button>
@@ -947,15 +961,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
               <div className="space-y-3">
                 <button 
                   onClick={() => {
-                    trackCTAClick('explore_map');
-                    navigate('/map');
+                    trackCTAClick('urgency_signup');
+                    onOpenAuth();
                   }}
                   className="w-full bg-white text-indigo-600 px-8 py-4 rounded-2xl font-black text-lg hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 shadow-xl"
-                  aria-label="Explore events on the map"
+                  aria-label="Join EventNexus to discover your next experience"
                 >
-                  <MapIcon className="w-5 h-5" /> Explore Events Now
+                  <Users className="w-5 h-5" /> Join {platformStats?.totalActiveUsers?.toLocaleString() || '10,000'}+ Attendees
                 </button>
-                <p className="text-indigo-100/70 text-sm text-center">👉 No sign-up needed to browse</p>
+                <p className="text-indigo-100/70 text-sm text-center">Create your free account in 30 seconds</p>
               </div>
             </div>
 
