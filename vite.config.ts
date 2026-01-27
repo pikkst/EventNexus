@@ -22,6 +22,8 @@ export default defineConfig(({ mode }) => {
     const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY;
     const ticketHashSecret = process.env.TICKET_HASH_SECRET || env.TICKET_HASH_SECRET || env.VITE_TICKET_HASH_SECRET;
+    const adsenseLeftSlot = process.env.VITE_ADSENSE_SLOT_LEFT || env.VITE_ADSENSE_SLOT_LEFT || '';
+    const adsenseRightSlot = process.env.VITE_ADSENSE_SLOT_RIGHT || env.VITE_ADSENSE_SLOT_RIGHT || '';
     
     return {
       base: '/',
@@ -39,6 +41,8 @@ export default defineConfig(({ mode }) => {
         'process.env.GEMINI_API_KEY': JSON.stringify(geminiApiKey),
         'process.env.TICKET_HASH_SECRET': JSON.stringify(ticketHashSecret),
         'import.meta.env.VITE_GIT_COMMIT': JSON.stringify(gitCommit),
+        'import.meta.env.VITE_ADSENSE_SLOT_LEFT': JSON.stringify(adsenseLeftSlot),
+        'import.meta.env.VITE_ADSENSE_SLOT_RIGHT': JSON.stringify(adsenseRightSlot),
       },
       resolve: {
         alias: {

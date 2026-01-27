@@ -43,6 +43,7 @@ import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import { DashboardSkeleton, PageSkeleton } from './components/LoadingSkeleton';
 import { initializePerformanceOptimizations } from './utils/performanceOptimization';
+import { AdRails } from './components/AdSlot';
 
 // Heavy components - lazy load on demand
 const HomeMap = lazy(() => import('./components/HomeMap'));
@@ -108,6 +109,8 @@ import { filterActiveEvents } from './utils/eventUtils';
 import logger from './utils/logger';
 
 const GA_MEASUREMENT_ID = 'G-JD7P5ZKF4L';
+const AD_LEFT_SLOT = import.meta.env.VITE_ADSENSE_SLOT_LEFT || '';
+const AD_RIGHT_SLOT = import.meta.env.VITE_ADSENSE_SLOT_RIGHT || '';
 
 // Redirect legacy hash URLs to clean URLs
 // Track page views for BrowserRouter routes in Google Analytics
@@ -849,6 +852,7 @@ const App: React.FC = () => {
     <HelmetProvider>
       <BrowserRouter>
         <AnalyticsTracker user={user} />
+        <AdRails leftSlotId={AD_LEFT_SLOT} rightSlotId={AD_RIGHT_SLOT} />
         <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
           {/* Loading overlay for initial authentication */}
           {isLoading && (
@@ -874,7 +878,7 @@ const App: React.FC = () => {
         />
         <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} user={user} />
         
-        <main className="pt-16 flex-grow">
+        <main className="pt-16 flex-grow relative xl:px-6 2xl:px-12">
           <ErrorBoundary>
             <Suspense fallback={<DashboardSkeleton />}>
               <Routes>
