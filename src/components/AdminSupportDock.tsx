@@ -168,7 +168,7 @@ const AdminSupportDock: React.FC<AdminSupportDockProps> = ({ user, openSignal, o
   const handleSend = async () => {
     if (!selectedThreadId || !input.trim()) return;
     setIsSending(true);
-    const ok = await postAdminMessage(selectedThreadId, input.trim(), user?.id);
+    const ok = await postAdminMessage(selectedThreadId, input.trim(), user?.id, selectedThread?.language || 'en');
     if (!ok) {
       setIsSending(false);
       return;
@@ -226,6 +226,12 @@ const AdminSupportDock: React.FC<AdminSupportDockProps> = ({ user, openSignal, o
                         {isThreadUnread(thread) && <span className="w-2 h-2 rounded-full bg-emerald-400" aria-label="Unread"></span>}
                         <span className={`text-[10px] px-2 py-1 rounded-full font-black uppercase tracking-widest ${statusBadge(thread)}`}>
                           {thread.status}
+                        const displayMessage = (msg: SupportMessage) => {
+                          if (msg.author_type === 'visitor' && msg.content_en) {
+                            return msg.content_en;
+                          }
+                          return msg.content_original;
+                        };
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-400 mt-1 truncate">

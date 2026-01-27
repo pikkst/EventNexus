@@ -6,6 +6,38 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Simple helper to translate text to a target language for admin readability
+const translateText = async (text: string, targetLanguage: string, apiKey: string) => {
+  try {
+    const response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `Translate to ${targetLanguage}. Return only the translated text.\n\n${text}` }]
+            }
+          ]
+        })
+      }
+    );
+
+    if (!response.ok) return text;
+    const data = await response.json();
+    const translated = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    return translated || text;
+  } catch (err) {
+    console.error('Translation error:', err);
+    return text;
+  }
+};
+
 interface SupportRequest {
   threadId?: string;
   message: string;
@@ -47,13 +79,24 @@ serve(async (req) => {
       currentThreadId = newThread.id;
     }
 
-    // Store visitor message
+    const adminLanguage = 'Estonian';
+
+    // Translate visitor message for admin readability (store in content_en)
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!geminiApiKey) {
+      throw new Error('GEMINI_API_KEY not configured');
+    }
+
+    const translatedForAdmin = await translateText(message, adminLanguage, geminiApiKey);
+
+    // Store visitor message with translated variant for admins
     await supabase.from('support_messages').insert({
       thread_id: currentThreadId,
       author_type: 'visitor',
       author_id: userId || null,
       content_original: message,
-      content_lang: language || 'en'
+      content_en: translatedForAdmin,
+      content_lang: language || 'unknown'
     });
 
     // Update thread timestamp
@@ -84,11 +127,6 @@ serve(async (req) => {
     }
 
     // AI mode: call Gemini with platform context
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!geminiApiKey) {
-      throw new Error('GEMINI_API_KEY not configured');
-    }
-
     // Build platform context with RAG
     let ragContext = '';
     

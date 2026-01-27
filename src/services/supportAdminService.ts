@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { SupportMessage, SupportThread } from '../types';
 import logger from '../utils/logger';
+import { translateDescription } from './geminiService';
 
 export const fetchSupportThreads = async (): Promise<SupportThread[]> => {
   const { data, error } = await supabase
@@ -36,20 +37,36 @@ export const fetchSupportMessages = async (threadId: string): Promise<SupportMes
 export const postAdminMessage = async (
   threadId: string,
   content: string,
-  adminId?: string
+  adminId: string | undefined,
+  userLanguage: string | undefined
 ): Promise<boolean> => {
-  const { error } = await supabase.from('support_messages').insert({
+  const { data, error } = await supabase.from('support_messages').insert({
     thread_id: threadId,
     author_type: 'admin',
     author_id: adminId || null,
     content_original: content,
-    content_lang: 'en',
+    content_lang: 'et',
     translated_to_user: false
-  });
+  }).select('id').single();
 
   if (error) {
     logger.error('Failed to post admin message', error);
     return false;
+  }
+
+  // Translate admin message back to the user's language so the client can display it
+  if (data?.id && userLanguage) {
+    try {
+      const translated = await translateDescription(content, userLanguage);
+      if (translated) {
+        await supabase
+          .from('support_messages')
+          .update({ content_en: translated, translated_to_user: true })
+          .eq('id', data.id);
+      }
+    } catch (err) {
+      logger.warn('Admin reply translation failed (non-blocking)', err);
+    }
   }
 
   const { error: updateError } = await supabase
