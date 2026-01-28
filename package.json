@@ -13,8 +13,9 @@
   "homepage": "https://eventnexus.eu",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run generate-sitemap",
+    "build": "vite build && npm run generate-sitemap && npm run generate-404",
     "generate-sitemap": "node scripts/generate-sitemap.js",
+    "generate-404": "node scripts/generate-404.js",
     "preview": "vite preview",
     "populate-db": "node populate-db.js"
   },
