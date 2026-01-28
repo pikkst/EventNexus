@@ -82,11 +82,32 @@ export interface UITranslations {
       getStarted: string;
     };
     footer: {
-      about: string;
-      contact: string;
+      tagline: string;
+      platform: string;
+      browseEvents: string;
+      eventMap: string;
+      hostEvent: string;
+      pricingPlans: string;
+      organizerHub: string;
+      blogNews: string;
+      governance: string;
+      helpCenter: string;
       terms: string;
       privacy: string;
+      cookieSettings: string;
+      gdprCompliance: string;
+      rssFeeds: string;
+      rss: string;
+      atom: string;
+      nexusUpdates: string;
+      subscribeText: string;
+      emailPlaceholder: string;
+      joinButton: string;
       allRightsReserved: string;
+      addressLabel: string;
+      language: string;
+      contactEmail: string;
+      responseTime: string;
     };
   };
   
@@ -283,11 +304,32 @@ export const translations: Record<string, UITranslations> = {
         getStarted: 'Get Started',
       },
       footer: {
-        about: 'About',
-        contact: 'Contact',
+        tagline: 'Discover, Create, and Experience Events — Anywhere, Anytime. The world\'s first map-first discovery engine.',
+        platform: 'Platform',
+        browseEvents: 'Browse Events',
+        eventMap: 'Event Map',
+        hostEvent: 'Host an Event',
+        pricingPlans: 'Pricing & Plans',
+        organizerHub: 'Organizer Hub',
+        blogNews: 'Blog & News',
+        governance: 'Governance',
+        helpCenter: 'Help Center',
         terms: 'Terms of Service',
         privacy: 'Privacy Policy',
-        allRightsReserved: 'All rights reserved',
+        cookieSettings: 'Cookie Settings',
+        gdprCompliance: 'GDPR Compliance',
+        rssFeeds: 'RSS Feeds',
+        rss: 'RSS 2.0',
+        atom: 'Atom 1.0',
+        nexusUpdates: 'Nexus Updates',
+        subscribeText: 'Subscribe for early access to secret events and organizer tips.',
+        emailPlaceholder: 'email@nexus.com',
+        joinButton: 'Join',
+        allRightsReserved: '© 2026 EventNexus OÜ. All Rights Reserved.',
+        addressLabel: 'Address: Põltsamaa, Estonia',
+        language: 'English (US)',
+        contactEmail: 'villu@mail.eventnexus.eu',
+        responseTime: 'Response time: Within 24 hours',
       },
     },
     common: {
