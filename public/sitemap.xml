@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-28T07:16:25.796Z -->
+<!-- Last generated: 2026-01-28T07:24:56.825Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Core Platform Pages (Public & AI-crawlable) -->
   <url>
@@ -1053,6 +1053,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/40ceb416-bc81-4f98-96aa-c7aa3e7de1e4</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:16:58.174779+00:00</news:publication_date>
+      <news:title>Photo Exhibition &quot;Form of the Common&quot;</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/095e5afd-0eda-4c85-9a0c-9a58e85a595f</loc>
     <lastmod>2026-01-20</lastmod>
     <changefreq>weekly</changefreq>
@@ -1063,6 +1078,21 @@
     <lastmod>2026-01-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/ad19a91f-528b-43ad-aedb-868b63553915</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:17:35.697402+00:00</news:publication_date>
+      <news:title>Documentary Photo Exhibition &quot;Khartia: Heat. 11 Views on War&quot;</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/9ddabd3b-b85e-446d-8872-8669fefecde0</loc>
@@ -2088,6 +2118,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/6918414a-2252-43e1-912f-4417cf49d9bf</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:16:41.894696+00:00</news:publication_date>
+      <news:title>Historical Memory &quot;Kruty: Living Memory of Generations&quot;</news:title>
+      <news:keywords>History, Remembrance, Education</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/8de0a74b-1a9e-415b-be64-95fbafec0c61</loc>
     <lastmod>2026-01-19</lastmod>
     <changefreq>weekly</changefreq>
@@ -2098,6 +2143,21 @@
     <lastmod>2026-01-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/2c7840af-7f59-489f-ac20-c85b3dd438d9</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:16:44.532454+00:00</news:publication_date>
+      <news:title>Lesson of Sorrow &quot;The Candle That Does Not Go Out&quot;</news:title>
+      <news:keywords>History, Remembrance, Education</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/3b60b133-8573-4d65-9941-07d71a6aa3bb</loc>
@@ -3235,6 +3295,21 @@
     <lastmod>2026-01-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/95c99ebe-bea3-4c29-abe1-667697a0d5c1</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:16:39.244948+00:00</news:publication_date>
+      <news:title>Historical Memory &quot;Kruty: Living Memory of Generations&quot;</news:title>
+      <news:keywords>History, Remembrance, Education</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/8e9c082e-d013-4439-8401-7bce5feddbb0</loc>
@@ -4476,10 +4551,55 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/3f309d31-fcd7-482b-bc4e-74f00dd9150b</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:16:36.542342+00:00</news:publication_date>
+      <news:title>Historical Memory &quot;Kruty: Living Memory of Generations&quot;</news:title>
+      <news:keywords>History, Remembrance, Education</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/3a972d40-2062-4c37-9400-47077c1e02f5</loc>
     <lastmod>2026-01-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/4f5f155a-d1c1-4cc7-bc79-029e64355d0c</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:17:13.009492+00:00</news:publication_date>
+      <news:title>Interactive Weekend at &quot;French Boulevard&quot; Mall</news:title>
+      <news:keywords>Family, Entertainment</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/28db5cb6-22ef-447e-b61b-2d1969930c8d</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:17:17.172786+00:00</news:publication_date>
+      <news:title>Charity Master Class: Street Culture Workshops (DJing, Breaking, Calligraphy, Workout)</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/ad79fd95-bc1a-43f0-92fc-ca59258875b3</loc>
@@ -7177,54 +7297,6 @@
   </url>
   <url>
     <loc>https://eventnexus.eu/event/915af7c7-3f7c-422c-8d0a-07b7dd7e200a</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/8676177f-6301-4435-acd2-0ccff8a6d0c6</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c6d93fed-8dd2-45fc-bd7a-f780fe4bd18e</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/89faf885-f255-4e63-a8e3-04d1549391d4</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/4a275067-09c2-4f30-8f78-096a5fb03f39</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/51cc986f-1a2d-4fbb-ba89-10b8ff9bd912</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/59fab650-39b9-4cef-b559-68964f7260b6</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/9b02572e-d7b7-40b6-a84e-769bbebaff26</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/14040261-700b-4a61-b052-94e09860e606</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

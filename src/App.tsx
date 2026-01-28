@@ -45,6 +45,7 @@ import { DashboardSkeleton, PageSkeleton } from './components/LoadingSkeleton';
 import { initializePerformanceOptimizations } from './utils/performanceOptimization';
 import { AdRails } from './components/AdSlot';
 import { UILanguageSelector } from './components/UILanguageSelector';
+import { useTranslation } from './i18n/useTranslation';
 
 // Heavy components - lazy load on demand
 const HomeMap = lazy(() => import('./components/HomeMap'));
@@ -1014,6 +1015,7 @@ const ConditionalFooter = () => {
 }
 
 const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSupport, onMarkRead, onDelete, onLogout, onOpenAuth, sidebarOpen }: any) => {
+  const t = useTranslation();
   const [showNotifs, setShowNotifs] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
@@ -1046,16 +1048,16 @@ const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSuppo
           {/* Desktop Quick Links */}
           <div className="hidden lg:flex items-center gap-1 ml-8">
             <Link to="/map" className="px-4 py-2 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
-              Explore
+              {t.nav.map}
             </Link>
             <Link to="/browse" className="px-4 py-2 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
-              Events
+              {t.nav.events}
             </Link>
             <Link to="/blog" className="px-4 py-2 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
-              Blog
+              {t.nav.blog}
             </Link>
             <Link to="/pricing" className="px-4 py-2 text-sm font-bold text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
-              Pricing
+              {t.nav.pricing}
             </Link>
           </div>
         </div>
@@ -1092,12 +1094,12 @@ const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSuppo
                 {showNotifs && (
                   <div className="fixed sm:absolute top-16 sm:top-full sm:mt-4 right-0 sm:right-0 left-0 sm:left-auto w-full sm:w-96 bg-slate-900 border-x-0 sm:border-x border-t-0 sm:border-t border-b border-slate-800 sm:rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in sm:zoom-in-95 slide-in-from-top-4 sm:slide-in-from-top-0 duration-200 max-h-[calc(100vh-4rem)] sm:max-h-[80vh]">
                     <div className="p-4 sm:p-5 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
-                      <h4 className="font-black text-xs sm:text-xs uppercase tracking-[0.15em] sm:tracking-[0.2em] text-indigo-400">Notifications</h4>
+                      <h4 className="font-black text-xs sm:text-xs uppercase tracking-[0.15em] sm:tracking-[0.2em] text-indigo-400">{t.notifications.title}</h4>
                       <button onClick={() => setShowNotifs(false)} className="p-2 hover:bg-slate-800 rounded-lg transition-colors"><X className="w-4 h-4 text-slate-500" /></button>
                     </div>
                     <div className="max-h-[calc(100vh-12rem)] sm:max-h-[400px] overflow-y-auto divide-y divide-slate-800 scrollbar-hide">
                       {notifications.length === 0 ? (
-                        <div className="p-10 text-center text-slate-600 italic text-sm">No notifications yet.</div>
+                        <div className="p-10 text-center text-slate-600 italic text-sm">{t.notifications.noNotifications}</div>
                       ) : (
                         notifications.map((n: any) => (
                           <div 
@@ -1173,20 +1175,23 @@ const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSuppo
                     <div className="p-2">
                       <ProfileMenuItem 
                         icon={<UserIcon />} 
-                        label="My Profile" 
+                        label={t.nav.profile} 
                         onClick={() => { setShowProfileMenu(false); navigate('/profile'); }} 
+                        t={t}
                       />
                       <ProfileMenuItem 
                         icon={<Settings />} 
-                        label="Settings" 
+                        label={t.nav.settings} 
                         onClick={() => { setShowProfileMenu(false); navigate('/notifications'); }} 
+                        t={t}
                       />
                       <div className="h-px bg-slate-800 my-2 mx-4" />
                       <ProfileMenuItem 
                         icon={<LogOut />} 
-                        label="Log Out" 
+                        label={t.nav.signOut} 
                         variant="danger"
                         onClick={() => { setShowProfileMenu(false); onLogout(); navigate('/'); }} 
+                        t={t}
                       />
                     </div>
                   </div>
@@ -1198,7 +1203,7 @@ const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSuppo
               onClick={onOpenAuth}
               className="bg-indigo-600 hover:bg-indigo-700 px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all shadow-xl active:scale-95"
             >
-              Sign In
+              {t.nav.signIn}
             </button>
           )}
           
@@ -1212,7 +1217,7 @@ const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSuppo
   );
 };
 
-const ProfileMenuItem = ({ icon, label, onClick, variant }: any) => (
+const ProfileMenuItem = ({ icon, label, onClick, variant, t }: any) => (
   <button 
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 sm:py-3 min-h-[48px] sm:min-h-0 rounded-2xl transition-all text-sm font-bold active:scale-98 ${
@@ -1225,6 +1230,7 @@ const ProfileMenuItem = ({ icon, label, onClick, variant }: any) => (
 );
 
 const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
+  const t = useTranslation();
   return (
     <>
       {isOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1050]" onClick={closeSidebar} />}
@@ -1239,15 +1245,15 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
           </button>
         </div>
         <nav className="p-4 space-y-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 97px)', scrollbarWidth: 'thin', scrollbarColor: '#475569 #1e293b' }}>
-          <SidebarItem icon={<MapIcon />} label="Explore Map" to="/map" onClick={closeSidebar} />
+          <SidebarItem icon={<MapIcon />} label={t.nav.map} to="/map" onClick={closeSidebar} />
           <SidebarItem icon={<Radar />} label="Live Map" to="/live-map" onClick={closeSidebar} />
           <SidebarItem icon={<Globe />} label="Event Directory" to="/directory" onClick={closeSidebar} />
-          <SidebarItem icon={<PlusCircle />} label="Create Event" to="/create" onClick={closeSidebar} />
-          <SidebarItem icon={<TicketIcon />} label="My Tickets" to="/profile" onClick={closeSidebar} />
+          <SidebarItem icon={<PlusCircle />} label={t.nav.createEvent} to="/create" onClick={closeSidebar} />
+          <SidebarItem icon={<TicketIcon />} label={t.nav.tickets} to="/profile" onClick={closeSidebar} />
           <SidebarItem icon={<Radar />} label="Nexus Radar" to="/notifications" onClick={closeSidebar} />
           <SidebarItem icon={<Gift />} label="Redeem Code" to="/redeem" onClick={closeSidebar} />
           <SidebarItem icon={<Smartphone />} label="Mobile Apps" to="/mobile" onClick={closeSidebar} />
-          <SidebarItem icon={<Zap />} label="Pricing" to="/pricing" onClick={closeSidebar} />
+          <SidebarItem icon={<Zap />} label={t.nav.pricing} to="/pricing" onClick={closeSidebar} />
           
           <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">Social</div>
           <SidebarItem icon={<Users />} label="Social Feed" to="/feed" onClick={closeSidebar} />
@@ -1255,11 +1261,11 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
           <SidebarItem icon={<Trophy />} label="Achievements" to="/achievements" onClick={closeSidebar} />
           
           <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">Resources</div>
-          <SidebarItem icon={<Newspaper />} label="Blog" to="/blog" onClick={closeSidebar} />
+          <SidebarItem icon={<Newspaper />} label={t.nav.blog} to="/blog" onClick={closeSidebar} />
           
           <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">User</div>
-          <SidebarItem icon={<Settings />} label="Settings" to="/notifications" onClick={closeSidebar} />
-          <SidebarItem icon={<LayoutDashboard />} label="Organizer Hub" to="/dashboard" onClick={closeSidebar} />
+          <SidebarItem icon={<Settings />} label={t.nav.settings} to="/notifications" onClick={closeSidebar} />
+          <SidebarItem icon={<LayoutDashboard />} label={t.nav.dashboard} to="/dashboard" onClick={closeSidebar} />
 
           {user?.role === 'admin' && (
             <>
