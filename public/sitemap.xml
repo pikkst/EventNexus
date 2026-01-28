@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-28T08:03:02.800Z -->
+<!-- Last generated: 2026-01-28T08:08:42.006Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Core Platform Pages (Public & AI-crawlable) -->
   <url>
@@ -1384,6 +1384,21 @@
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/194e0a90-676d-4630-bf4b-3530139e9f28</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T08:06:54.396673+00:00</news:publication_date>
+      <news:title>Book Launch / Inkbound: Meticulous Jones and the Shadow Compass</news:title>
+      <news:keywords>Book Launch</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/7094e78f-6cfa-4f8d-bd35-f608370b9d66</loc>
@@ -3702,6 +3717,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/68a311d4-b43a-49fa-ad7d-a92c6e6230ca</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T08:06:49.694519+00:00</news:publication_date>
+      <news:title>Energy Clinic (Marina Court)</news:title>
+      <news:keywords>Business/Sustainability Clinic</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/25c138bd-a4e5-468e-a24e-130c9f866ed5</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -5023,6 +5053,21 @@
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/0c9820f8-89a7-4db1-af2f-197e40791f9c</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T08:03:47.950961+00:00</news:publication_date>
+      <news:title>Free Guided Tour of The Alasdair Gray Archive and The Agnes Owens Archive</news:title>
+      <news:keywords>Tour</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/5df6ff7e-df60-46c4-a382-4fb751261a6b</loc>
@@ -7487,24 +7532,6 @@
   <url>
     <loc>https://eventnexus.eu/event/b5262334-d7d8-4784-80e8-d9a9e110bc05</loc>
     <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c8671b11-f90e-43ba-b7b2-eddf8a8f84b8</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/06e30e24-33de-4b0c-b8f1-d0f81abfd69f</loc>
-    <lastmod>2026-01-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b9d61c3c-2b9e-4e86-952e-62a2340c5f40</loc>
-    <lastmod>2026-01-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

@@ -45,6 +45,77 @@ export interface UITranslations {
       freeEvents: string;
       activeNow: string;
     };
+    liveStats: {
+      badge: string;
+      title: string;
+      subtitle: string;
+      newEventsDaily: string;
+      constantlyUpdated: string;
+      citiesWorldwide: string;
+      everywhereYouNeed: string;
+      freeEventsActive: string;
+      startAttending: string;
+      attendeeSatisfaction: string;
+      ratingAverage: string;
+    };
+    howItWorks: {
+      badge: string;
+      title: string;
+      subtitle: string;
+      step1Title: string;
+      step1Description: string;
+      step1Tip: string;
+      step2Title: string;
+      step2Description: string;
+      step2Safe: string;
+      step3Title: string;
+      step3Description: string;
+      step3Rate: string;
+      ctaReady: string;
+      ctaButton: string;
+    };
+    newThisWeek: {
+      title: string;
+      subtitle: string;
+      exploreAll: string;
+      freshDescription: string;
+    };
+    popularEvents: {
+      title: string;
+      subtitle: string;
+      concertsTitle: string;
+      concertsDescription: string;
+      concertsCta: string;
+      conferencesTitle: string;
+      conferencesDescription: string;
+      conferencesCta: string;
+      sportsTitle: string;
+      sportsDescription: string;
+      sportsCta: string;
+      citiesTitle: string;
+    };
+    whyCards: {
+      title: string;
+      subtitle: string;
+      visualTitle: string;
+      visualDescription: string;
+      globalTitle: string;
+      globalDescription: string;
+      gamifiedTitle: string;
+      gamifiedDescription: string;
+      communityTitle: string;
+      communityDescription: string;
+      aiEverythingTitle: string;
+      aiEverythingDescription: string;
+      securityTitle: string;
+      securityDescription: string;
+      instantTitle: string;
+      instantDescription: string;
+      pricingTitle: string;
+      pricingDescription: string;
+      ctaReady: string;
+      ctaButton: string;
+    };
     features: {
       title: string;
       subtitle: string;
@@ -80,6 +151,97 @@ export interface UITranslations {
       pro: string;
       perMonth: string;
       getStarted: string;
+    };
+    cta: {
+      seeWhatsHappening: string;
+      subtitle: string;
+      joinAttendees: string;
+      createAccount: string;
+      eventsIn24h: string;
+      citiesCovered: string;
+      freeEvents: string;
+      securePayment: string;
+      watchDemo: string;
+      platformWalkthrough: string;
+      feature1: string;
+      feature2: string;
+      feature3: string;
+      getStartedFree: string;
+    };
+    story: {
+      title: string;
+      paragraph1: string;
+      paragraph2: string;
+      paragraph3: string;
+      founded: string;
+      technology: string;
+      headquarters: string;
+    };
+    transparentPricing: {
+      badge: string;
+      title: string;
+      subtitle: string;
+      viewFullDetails: string;
+    };
+    powerfulFeatures: {
+      badge: string;
+      title: string;
+      subtitle: string;
+      mapTitle: string;
+      mapDescription: string;
+      translationTitle: string;
+      translationDescription: string;
+      ticketingTitle: string;
+      ticketingDescription: string;
+      gamificationBadge: string;
+      gamificationTitle: string;
+      gamificationDescription: string;
+      communitiesBadge: string;
+      communitiesTitle: string;
+      communitiesDescription: string;
+      assistantTitle: string;
+      assistantDescription: string;
+      marketingTitle: string;
+      marketingDescription: string;
+      languagesTitle: string;
+      languagesDescription: string;
+      recommendationsTitle: string;
+      recommendationsDescription: string;
+    };
+    faqs: {
+      title: string;
+      subtitle: string;
+      stillHaveQuestions: string;
+      visitHelpCenter: string;
+    };
+    newsletter: {
+      title: string;
+      description: string;
+      subscribers: string;
+      weeklyUpdates: string;
+      unsubscribeAnytime: string;
+      placeholder: string;
+      subscribeFree: string;
+      privacyNote: string;
+      trustedBy: string;
+      rating: string;
+      reviews: string;
+    };
+    blog: {
+      badge: string;
+      title: string;
+      subtitle: string;
+      discoverArticles: string;
+      description: string;
+      visitBlog: string;
+    };
+    finalCta: {
+      exploreTitle: string;
+      exploreSubtitle: string;
+      exploreCta: string;
+      hostTitle: string;
+      hostSubtitle: string;
+      hostCta: string;
     };
     footer: {
       tagline: string;
@@ -302,6 +464,168 @@ export const translations: Record<string, UITranslations> = {
         pro: 'Pro',
         perMonth: '/month',
         getStarted: 'Get Started',
+      },
+      liveStats: {
+        badge: 'Live Statistics',
+        title: 'Trusted by Thousands',
+        subtitle: 'Real numbers. Real growth. Real communities discovering events.',
+        newEventsDaily: 'New Events Daily',
+        constantlyUpdated: 'Constantly updated, always fresh',
+        citiesWorldwide: 'Cities Worldwide',
+        everywhereYouNeed: 'Everywhere you need to be',
+        freeEventsActive: 'Free Events Active',
+        startAttending: 'Start attending today, zero cost',
+        attendeeSatisfaction: 'Attendee Satisfaction',
+        ratingAverage: 'Rating: 4.8/5 stars average',
+      },
+      howItWorks: {
+        badge: 'Simple & Fast',
+        title: 'Get to Your Next Event',
+        subtitle: 'in 3 Minutes',
+        step1Title: 'Open the Map',
+        step1Description: 'Tap "Explore Events" to see all live events on the interactive map. Use filters for category, date, or radius search.',
+        step1Tip: 'Tip: Use "Near Me" to find events within your radius',
+        step2Title: 'Buy Instantly',
+        step2Description: 'Click on any event to see details. Secure checkout powered by Stripe. Receive your fraud-proof QR code in seconds.',
+        step2Safe: 'Safe: PCI-compliant, encrypted payments',
+        step3Title: 'Enjoy!',
+        step3Description: 'Show your QR code at entry. Instant validation. No lines, no paper—just pure event magic.',
+        step3Rate: 'Rate the organizer after to help the community',
+        ctaReady: 'Ready to explore?',
+        ctaButton: 'Start Exploring Now',
+      },
+      newThisWeek: {
+        title: 'New This Week',
+        subtitle: 'Freshly added events and launches',
+        exploreAll: 'Explore All',
+        freshDescription: 'These events were just published and start soon—grab a spot while they are fresh',
+      },
+      popularEvents: {
+        title: 'Popular Events Happening Now',
+        subtitle: 'Discover concerts, conferences, workshops, and festivals near you. EventNexus.eu connects you with unique experiences across Estonia and Europe.',
+        concertsTitle: 'Concerts & Festivals',
+        concertsDescription: 'Live music events from underground indie bands to major international artists. Find concerts in Tallinn, Tartu, Pärnu, and across Estonia.',
+        concertsCta: 'Explore concerts',
+        conferencesTitle: 'Conferences & Workshops',
+        conferencesDescription: 'Professional development events, tech conferences, business networking. Join industry leaders and learn new skills.',
+        conferencesCta: 'Find conferences',
+        sportsTitle: 'Sports & Community',
+        sportsDescription: 'Local sports events, marathons, fitness classes, and community gatherings. Stay active and meet new people.',
+        sportsCta: 'Discover sports events',
+        citiesTitle: 'Find Events in Major Cities',
+      },
+      whyCards: {
+        title: 'Why EventNexus',
+        subtitle: 'Built for Modern Event Discovery',
+        visualTitle: 'Visual, Not Lists',
+        visualDescription: 'See events on an interactive map, not in boring lists. Filter by radius, category, date—discover events intuitively.',
+        globalTitle: 'Global Reach, Local Feel',
+        globalDescription: 'AI-powered translation in 50+ languages. Host in Estonian, reach audiences in Finnish, Swedish, German, and beyond.',
+        gamifiedTitle: 'Gamified Experience',
+        gamifiedDescription: 'Earn badges, level up, compete on leaderboards. Make attending events fun and rewarding with our achievement system.',
+        communityTitle: 'Community-Driven',
+        communityDescription: 'Join communities, connect with like-minded people, discover events through your network. Social discovery at its best.',
+        aiEverythingTitle: 'AI-Powered Everything',
+        aiEverythingDescription: 'From marketing materials to personalized recommendations—our AI does the heavy lifting so you can focus on what matters.',
+        securityTitle: 'Bank-Level Security',
+        securityDescription: 'Fraud-proof QR codes, Stripe-powered payments, encrypted storage. Your data and money are always protected.',
+        instantTitle: 'Instant Everything',
+        instantDescription: 'Buy tickets, get QR codes, check in—all in seconds. No printing, no hassle, no delays. Just seamless experiences.',
+        pricingTitle: 'Fair Pricing, Always',
+        pricingDescription: 'Platform fees as low as 1.5%. No hidden costs. What you see is what you pay. Start free, upgrade when you grow.',
+        ctaReady: 'Ready to experience the difference?',
+        ctaButton: 'Create Your Account',
+      },
+      cta: {
+        seeWhatsHappening: 'See What\'s Happening Around You',
+        subtitle: 'new events discovered daily across 1694 cities. Don\'t miss out—find your next experience in real-time.',
+        joinAttendees: 'Join 10,000+ Attendees',
+        createAccount: 'Create your free account in 30 seconds',
+        eventsIn24h: 'Events in 24h',
+        citiesCovered: 'Cities covered',
+        freeEvents: 'Free events',
+        securePayment: 'Secure payment',
+        watchDemo: 'Watch Demo',
+        platformWalkthrough: 'Platform Walkthrough',
+        feature1: 'Interactive map-based discovery',
+        feature2: 'Instant ticket purchasing & QR codes',
+        feature3: 'AI-powered event translation',
+        getStartedFree: 'Get Started Free',
+      },
+      story: {
+        title: 'Our Story',
+        paragraph1: 'EventNexus was founded in October 2025 by Villu Künnap, an AI developer and tech visionary. After years of experimenting with Large Language Models, Villu saw a gap in how local events are discovered globally.',
+        paragraph2: 'Our mission is to remove language barriers and high fees using cutting-edge AI (Gemini 3.0) and geospatial technology.',
+        paragraph3: 'Based in Põltsamaa, Estonia, we are building a world where every local experience is just one click away.',
+        founded: 'Founded',
+        technology: 'Technology',
+        headquarters: 'Headquarters',
+      },
+      transparentPricing: {
+        badge: 'Transparent Pricing',
+        title: 'Choose Your Plan',
+        subtitle: 'Start free, upgrade when you grow. No hidden fees.',
+        viewFullDetails: 'View Full Pricing Details',
+      },
+      powerfulFeatures: {
+        badge: 'Powerful Features',
+        title: 'Everything You Need, Built In',
+        subtitle: 'From discovery to gamification—EventNexus is your all-in-one events platform',
+        mapTitle: 'Map-First Discovery',
+        mapDescription: 'Forget lists. Explore events exactly where they are. Radius search and smart filters built-in.',
+        translationTitle: 'AI Translation',
+        translationDescription: 'Powered by Gemini. Host events in any language; reach a global audience automatically.',
+        ticketingTitle: 'Secure Ticketing',
+        ticketingDescription: 'Fraud-proof QR codes and instant validation. Secure payments via Stripe.',
+        gamificationBadge: 'NEW',
+        gamificationTitle: 'Gamification & Badges',
+        gamificationDescription: 'Earn achievements, level up, and climb the leaderboard. Compete with friends and unlock exclusive rewards.',
+        communitiesBadge: 'NEW',
+        communitiesTitle: 'Communities & Groups',
+        communitiesDescription: 'Join event communities, connect with like-minded people, and discover events together with your tribe.',
+        assistantTitle: 'AI Event Assistant',
+        assistantDescription: 'NexusBot helps you find the perfect events, answers questions, and provides personalized recommendations 24/7.',
+        marketingTitle: 'AI Marketing Suite',
+        marketingDescription: 'Auto-generate posters, social ads, and campaigns with Gemini + Imagen. Professional designs in seconds.',
+        languagesTitle: '50+ Languages',
+        languagesDescription: 'AI-powered translation for your events. Reach audiences in Estonian, Finnish, German, Swedish, and 40+ more.',
+        recommendationsTitle: 'Smart Recommendations',
+        recommendationsDescription: 'Our AI learns your preferences and suggests events you\'ll love. Personalized discovery at its finest.',
+      },
+      faqs: {
+        title: 'Frequently Asked Questions',
+        subtitle: 'Everything you need to know about EventNexus',
+        stillHaveQuestions: 'Still have questions?',
+        visitHelpCenter: 'Visit Help Center',
+      },
+      newsletter: {
+        title: 'Never Miss an Event Again',
+        description: 'Get personalized event recommendations delivered to your inbox. Be the first to know about new features, exclusive organizer tips, and limited-time offers.',
+        subscribers: '13,000+ subscribers',
+        weeklyUpdates: 'Weekly updates',
+        unsubscribeAnytime: 'Unsubscribe anytime',
+        placeholder: 'your.email@example.com',
+        subscribeFree: 'Subscribe Free',
+        privacyNote: 'No spam ever. We respect your privacy. By subscribing, you agree to our Privacy Policy.',
+        trustedBy: 'Trusted by event lovers worldwide',
+        rating: '4.9/5',
+        reviews: '(2,400+ reviews)',
+      },
+      blog: {
+        badge: 'Latest Updates',
+        title: 'EventNexus Blog',
+        subtitle: 'Industry insights, platform updates, and event management tips from our team',
+        discoverArticles: 'Discover Our Latest Articles',
+        description: 'Stay updated with industry trends, platform features, success stories, and expert tips for creating unforgettable events.',
+        visitBlog: 'Visit Blog',
+      },
+      finalCta: {
+        exploreTitle: 'Ready to Explore?',
+        exploreSubtitle: 'Discover 1,300+ live events on the map. Find exactly what\'s happening in your area right now.',
+        exploreCta: 'Explore the Map',
+        hostTitle: 'Ready to Host?',
+        hostSubtitle: 'Create events, manage tickets, reach global audiences. Start your free plan today.',
+        hostCta: 'Start Hosting',
       },
       footer: {
         tagline: 'Discover, Create, and Experience Events — Anywhere, Anytime. The world\'s first map-first discovery engine.',
