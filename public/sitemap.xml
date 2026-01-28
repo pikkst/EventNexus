@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-28T08:08:42.006Z -->
+<!-- Last generated: 2026-01-28T08:28:30.080Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Core Platform Pages (Public & AI-crawlable) -->
   <url>
@@ -1473,6 +1473,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/89febeab-a56f-4d35-a7ac-89b942b0e681</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T08:16:08.265483+00:00</news:publication_date>
+      <news:title>Canary Wharf Winter Lights</news:title>
+      <news:keywords>Art Festival</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/63ed509f-889a-40f0-a29f-4ea58ae40640</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -1495,6 +1510,21 @@
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6fb0861f-46bf-4faf-bbb6-0d6d9c9d4c35</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T08:20:13.917645+00:00</news:publication_date>
+      <news:title>The Manchester College Business Innovation Hub – AI Workshop &amp; Networking</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/776f63f5-e17a-4dab-a35f-1600a5246c60</loc>
@@ -2673,6 +2703,51 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/2d1308ce-730a-4534-b0b1-f534b283379d</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T08:19:54.477216+00:00</news:publication_date>
+      <news:title>42nd Street: Senior Leadership Trauma Training (Day 1 of 2)</news:title>
+      <news:keywords>Training</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/552f0640-a856-4767-a889-f7d8273fe0df</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T08:19:58.638597+00:00</news:publication_date>
+      <news:title>Tea, Toast and Talk at Aviva Studios</news:title>
+      <news:keywords>Community</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8f89bbf1-95e7-45cf-a992-e9f6101d6fb9</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T08:19:27.562745+00:00</news:publication_date>
+      <news:title>42nd Street: Using Creative Approaches with a Trauma-Informed Lens</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/0464ee3d-d117-4f69-912d-c112e85163d0</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -3784,6 +3859,21 @@
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/e3df0d3a-3803-406c-8a3a-4be6e97e8a96</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T08:19:22.924577+00:00</news:publication_date>
+      <news:title>Intersectional Feminism: Resistance, Community Power and Transformative Justice</news:title>
+      <news:keywords>Lecture</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/d7a414d1-ca2a-49ad-a0e8-24012c62fa03</loc>
@@ -5164,6 +5254,21 @@
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/14f31e0a-6ec2-48ec-afdc-ef8ade05fa5a</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T08:18:42.22576+00:00</news:publication_date>
+      <news:title>Onsite Records: Vinyl Pop-Up at Stage and Radio</news:title>
+      <news:keywords>Market</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/56cc27f0-2585-424d-ad5f-6d8281b7f368</loc>
@@ -7472,66 +7577,6 @@
   <url>
     <loc>https://eventnexus.eu/event/6a708b9d-f4e6-4427-bbd3-a71feb072d09</loc>
     <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/2c2f8fdd-18ba-4616-a1d2-1f104147d748</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/fcec6ee4-6ad7-4080-b258-4319836e5183</loc>
-    <lastmod>2026-01-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-27T21:22:16.55074+00:00</news:publication_date>
-      <news:title>Întâlnire cu lectura (Reading Meeting)</news:title>
-      <news:keywords>Book Club</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/475d0fec-f064-4572-a795-fc6593061d48</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/031663ff-5184-495b-9a80-044de4edb4cd</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a0f93c21-2f9a-4f13-b6fe-e16082da2afc</loc>
-    <lastmod>2026-01-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-27T21:29:04.246477+00:00</news:publication_date>
-      <news:title>Toastmasters București - Ședința săptămânală de vorbit în public</news:title>
-      <news:keywords>Public Speaking / Workshop</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/e22dcaf9-3d7b-4238-9a46-ffccbf334f2b</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b5262334-d7d8-4784-80e8-d9a9e110bc05</loc>
-    <lastmod>2026-01-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
