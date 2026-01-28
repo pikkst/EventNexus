@@ -1,14 +1,16 @@
 
 import React from 'react';
 import { Shield, Eye, Download, Trash2, Edit3, Lock } from 'lucide-react';
+import { useTranslation } from '../i18n/useTranslation';
 
 const GDPRCompliance: React.FC = () => {
+  const { t } = useTranslation();
   const rights = [
-    { icon: <Eye />, title: 'Right to Access', desc: 'You can request a full copy of all personal data we store about you.' },
-    { icon: <Edit3 />, title: 'Right to Rectification', desc: 'Easily update your profile and event data at any time via settings.' },
-    { icon: <Download />, title: 'Data Portability', desc: 'Download your ticket history and activity in machine-readable JSON format.' },
-    { icon: <Trash2 />, title: 'Right to Erasure', desc: 'Request total deletion of your account and all associated personal records.' },
-    { icon: <Lock />, title: 'Restriction of Processing', desc: 'Limit how your data is used for marketing or analytics purposes.' }
+    { icon: <Eye />, title: t.gdpr.rightAccess, desc: t.gdpr.rightAccessDesc },
+    { icon: <Edit3 />, title: t.gdpr.rightRectification, desc: t.gdpr.rightRectificationDesc },
+    { icon: <Download />, title: t.gdpr.rightPortability, desc: t.gdpr.rightPortabilityDesc },
+    { icon: <Trash2 />, title: t.gdpr.rightErasure, desc: t.gdpr.rightErasureDesc },
+    { icon: <Lock />, title: t.gdpr.rightRestriction, desc: t.gdpr.rightRestrictionDesc }
   ];
 
   return (
@@ -17,9 +19,9 @@ const GDPRCompliance: React.FC = () => {
         <div className="w-16 h-16 bg-emerald-600/10 rounded-2xl flex items-center justify-center text-emerald-500 mx-auto border border-emerald-500/20">
           <Shield className="w-8 h-8" />
         </div>
-        <h1 className="text-5xl font-black tracking-tighter text-white">GDPR <span className="text-emerald-500">Compliance</span></h1>
+        <h1 className="text-5xl font-black tracking-tighter text-white">{t.gdpr.title.split(' ')[0]} <span className="text-emerald-500">{t.gdpr.title.split(' ')[1]}</span></h1>
         <p className="text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
-          EventNexus is fully committed to the General Data Protection Regulation (GDPR). We believe in total transparency and empower our users with full control over their digital footprint.
+          {t.gdpr.subtitle}
         </p>
       </div>
 
@@ -37,11 +39,11 @@ const GDPRCompliance: React.FC = () => {
 
       <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-12 flex flex-col md:flex-row items-center justify-between gap-10">
         <div className="space-y-4 text-center md:text-left">
-          <h2 className="text-2xl font-black text-white">Exercise Your Rights</h2>
-          <p className="text-slate-400 text-sm max-w-md font-medium">To submit a Data Subject Access Request (DSAR) or request account erasure, please contact our Data Protection Officer.</p>
+          <h2 className="text-2xl font-black text-white">{t.gdpr.exerciseTitle}</h2>
+          <p className="text-slate-400 text-sm max-w-md font-medium">{t.gdpr.exerciseSubtitle}</p>
         </div>
         <button className="bg-emerald-600 hover:bg-emerald-700 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-xl shadow-emerald-600/20 active:scale-95 transition-all">
-          Contact DPO
+          {t.gdpr.contactDPO}
         </button>
       </div>
     </div>
