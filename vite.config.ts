@@ -54,6 +54,10 @@ export default defineConfig(({ mode }) => {
         sourcemap: false, // Disable sourcemaps for production (saves bandwidth)
         reportCompressedSize: true,
         rollupOptions: {
+          input: {
+            main: path.resolve(__dirname, 'index.html'),
+            blog: path.resolve(__dirname, 'public/blog/index.html'),
+          },
           output: {
             manualChunks: {
               // Vendor libraries split for parallel loading

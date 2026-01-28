@@ -1,1732 +1,118 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-26T10:40:04.559Z -->
+<!-- Last generated: 2026-01-27T16:42:29.799Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Core Platform Pages (Public & AI-crawlable) -->
   <url>
     <loc>https://eventnexus.eu/</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>1</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/map</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/browse</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/events</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/directory</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/blog</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/press</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/host</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/data-source</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/pricing</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/beta</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/beta-signup</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/mobile</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/help</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/privacy</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/terms</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/cookies</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/gdpr</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <!-- Published Public Events (Live Data) -->
-  <url>
-    <loc>https://eventnexus.eu/event/8f96b17c-457a-4438-a06b-27d41d0ae611</loc>
-    <lastmod>2026-01-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/cdaff846-b8f4-4b9e-b09d-b112b2e05d91</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/5babb620-7189-4693-a862-14e96ddba79b</loc>
-    <lastmod>2026-01-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/5030c748-e043-4f86-9ec2-678c123b986f</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/4bcdac6e-2a4d-408f-b274-29224e0cbd28</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/6ddc9a28-f4a2-4157-9c9f-5c8f167ffe93</loc>
-    <lastmod>2026-01-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/d447d9f7-50c9-458f-a8f4-3f42863379e4</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/af9bd6ca-2197-4d35-b94e-63dc693359d8</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/3a99bc99-524e-4f26-bfcc-08713cea0f7e</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/97e30650-11b8-4815-aaac-334aed408d8e</loc>
-    <lastmod>2026-01-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b05add98-4979-4888-8efe-8028404fcce8</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/6748bd21-5013-4fef-b93b-58686a417ed3</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/9c25e9a8-46dd-4336-8ece-6fa7984a1568</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/5056a171-4b58-4c11-a1b6-a42d9b3dc30a</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/8cd97609-e4f9-4073-a91b-a7d05422ed42</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a41ec542-acfd-4d41-85be-c2f55f5bdf57</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/bc33e2df-2009-401a-b5be-b77a148a2773</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/8f38d41a-b668-475a-b697-49bd1ac0466c</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/813692cc-9467-48da-bbd0-ddbcbe01ae7c</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/bd02ea4d-a06d-4429-a739-7c5407133d1f</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/6397e1bb-36fc-4544-93af-c75566aa5e10</loc>
-    <lastmod>2026-01-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b28daeea-3d10-4a5c-9798-5093852176d4</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/2e289c87-b444-4336-8bae-e5b201a93bb4</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/08c9dbf7-aa21-41b5-8309-5d960ea61cb2</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/958896bb-8968-4e31-b236-802aaaadbd3d</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T09:38:00.325632+00:00</news:publication_date>
-      <news:title>Strik og hygge (Knit and Cozy)</news:title>
-      <news:keywords>Social</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/9113a6c6-0523-42a8-a565-5dfdb91456a5</loc>
-    <lastmod>2026-01-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/d9430a3b-9378-472f-876a-f9aedbfe2502</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/62db929d-6750-4504-821a-ff6cb9297fc3</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/3426b372-a55f-4a2e-870e-fe01ae0558ca</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/ee8b3a8f-e1c4-4294-83d6-e9c80355f6e2</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/854fbeb1-8ed0-47ad-938b-9ba8332cdb52</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/58ef6887-2c38-473a-8b22-baab86d84226</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/4dd1f8d6-0d94-496c-a39f-3b7ceb29b953</loc>
-    <lastmod>2026-01-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/710c20a5-6ab6-435e-9aed-34c025f8380e</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/7a885318-2153-49c6-a050-6a2b4da643e9</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/8c760534-e1e8-4fdb-899f-66f4b47c8aa8</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/8c462c6d-c556-4631-870a-dd41a869499d</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/127a0e3c-ded8-477f-a10e-c4eb76e809ff</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/527c4f11-1992-4324-b4ef-bdb7d65ae43f</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/126ceaa1-2b44-41cb-aa73-bc75d2f0bfd6</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/25dd2ab0-42ac-4399-a449-f5dd0e180d8b</loc>
-    <lastmod>2026-01-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/444d048b-153b-4028-af34-897ed4b098ea</loc>
-    <lastmod>2026-01-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/ebaf2741-3dac-4d3d-b2ca-5509dd8c9440</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/71ec4f48-52db-4d4e-a8c6-aa5cd1e76fc4</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/073d3dfd-4472-4326-a23a-e84c3bf3e959</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/019e1b95-a674-435d-98d9-8bffc0367171</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/64dbc86a-7d82-4251-80a8-e9aa7a192c8c</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/0d3385c5-71cd-4990-bb89-47cd594b0f7a</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/15221471-cda8-45a9-ace3-124925804d4b</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/bb038b6a-9986-4d74-9f2d-c35e8782a083</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/82c4345e-5426-4a97-aa43-206e379850b2</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/3c65ee81-2087-40fa-82c4-4be54a3285c8</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/bafd53c4-20f9-41b9-bfd2-424786ec77ff</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/56a7f118-1b0c-43b5-9bd4-f00165c6deb4</loc>
-    <lastmod>2026-01-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b4a20693-f4d8-4bc1-9078-a3e31316bf30</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/7c80a2f6-7589-4527-a8c5-a9bcee4f04eb</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/1b06c0e4-992b-45d2-aea8-040e1a3f1fe7</loc>
-    <lastmod>2026-01-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/ba3c1028-ca37-4dbc-8536-234c560506ec</loc>
-    <lastmod>2026-01-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c643b2f6-6d3c-47b3-9232-482e891297bc</loc>
-    <lastmod>2026-01-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/8190c686-778a-44ff-a0ff-b10df8b354f3</loc>
-    <lastmod>2026-01-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/8e963e1f-4a90-46f2-b0a7-23f7633e7f65</loc>
-    <lastmod>2026-01-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/416aac30-9ee3-46fd-ad2c-517cadb5e11c</loc>
-    <lastmod>2026-01-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/e7e36b7b-4f66-408b-9e94-8cf53e9f1238</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/fbc9e101-9d27-411e-bbe6-8f468f8eeaf5</loc>
-    <lastmod>2026-01-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/2544dfdf-a9e8-4ddf-b809-99a5f70a1430</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f6ea1ff6-ef46-4d05-9a44-d5a641a37107</loc>
-    <lastmod>2026-01-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/e120ff37-e091-48d9-994e-4f9e98ba484b</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b1f7dccb-b1d1-47a2-970b-0308f26288a0</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/178364a6-9142-4558-8227-e7fa3222944a</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c7d18af8-d73d-491b-914b-891daa88d92a</loc>
-    <lastmod>2026-01-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/3f20c5fd-b80a-4031-a684-4087da3059d5</loc>
-    <lastmod>2026-01-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a753055f-34db-4afe-927e-608680d25bbc</loc>
-    <lastmod>2026-01-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/237eb906-7b62-49b4-b8fb-ef739f43898f</loc>
-    <lastmod>2026-01-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b1ad31c6-9bee-4b73-8376-d93f3321055c</loc>
-    <lastmod>2026-01-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/68c3f96f-afed-4bcb-9317-bb8db08c6a57</loc>
-    <lastmod>2026-01-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b50043f8-5bc9-4274-b474-847ef54b0e97</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T09:38:03.097821+00:00</news:publication_date>
-      <news:title>Soloist Concert – Kristin Yr Jonsdottir, flute</news:title>
-      <news:keywords>Music</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/03602d03-f1b0-4b13-96ab-2a05e9e4039f</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T09:58:21.857918+00:00</news:publication_date>
-      <news:title>Leksehjelp for vaksne</news:title>
-      <news:keywords>Education</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/5b61318c-cb02-4eaf-843e-8c878484c2b2</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T10:11:12.614038+00:00</news:publication_date>
-      <news:title>Novadpētniecības interesentu tikšanās (Meeting for Local History Enthusiasts)</news:title>
-      <news:keywords>Community</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/3fff11eb-4f2d-4519-82f6-40d4ef799917</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T10:24:59.595116+00:00</news:publication_date>
-      <news:title>Tertúlia “Não tem cura e agora?”</news:title>
-      <news:keywords>Discussion</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/795506f0-7915-4e1d-b87a-4f467b9dc0e1</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T10:25:27.71661+00:00</news:publication_date>
-      <news:title>Exposição &quot;Amor&quot; de Filipa Beleza</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/7a0fb401-457d-4719-90d4-91f24a038417</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T10:51:26.578399+00:00</news:publication_date>
-      <news:title>ISMF Comapedrosa Andorra World Cup - Sprint Race</news:title>
-      <news:keywords>Sports Competition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/ed66e142-12bc-4340-abef-78b61e9c82ed</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T11:25:26.10869+00:00</news:publication_date>
-      <news:title>Campanie de donare de sânge la Baia Mare, inițiată de USR Tineret</news:title>
-      <news:keywords>Health</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/60d53879-3a4e-44f2-b661-0ac309c24f2d</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T11:41:53.353503+00:00</news:publication_date>
-      <news:title>Izložba „Život i djelo Nikole Tesle“</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/75e54145-45d9-4920-bae4-b41012da717a</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T11:44:51.503534+00:00</news:publication_date>
-      <news:title>School of Comics for Children and Youth</news:title>
-      <news:keywords>Workshop</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/8bd477fb-5e5d-482e-8f0c-6894e431d156</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T11:53:18.208335+00:00</news:publication_date>
-      <news:title>Evening with Tourism: Jubilee Year in Rome (Večer s turistikou: Jubilejný rok v Ríme)</news:title>
-      <news:keywords>Lecture</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c7f5f3f0-611f-4b07-ac05-e8445b917abb</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T11:55:27.190165+00:00</news:publication_date>
-      <news:title>La Memoria e il Presente – Incontro con Anna Foa</news:title>
-      <news:keywords>Culture/Education</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a5834f1d-63dc-4b8c-96af-095ae0ac4b6c</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T11:59:46.043058+00:00</news:publication_date>
-      <news:title>Çocuk Tiyatrosu: Süper Robot (Children&apos;s Theatre: Super Robot)</news:title>
-      <news:keywords>Theatre</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/4a627bf4-9e2a-4aad-b03c-7d5baf5aa6c5</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:00:13.71606+00:00</news:publication_date>
-      <news:title>Batman Çocuk Şenlikleri (Batman Children&apos;s Festival)</news:title>
-      <news:keywords>Festival</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/64fa3e6f-7224-45e5-841f-8c5a8ef77b5c</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:06:17.45995+00:00</news:publication_date>
-      <news:title>„Csabai polgárok” – Márai mentén (Citizens of Csaba – Along Márai)</news:title>
-      <news:keywords>Program</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/84e67db6-f558-47b3-8eae-bc0cee6fa6f8</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:06:20.477388+00:00</news:publication_date>
-      <news:title>ADY ENDRE VALÓDI ARCA (The True Face of Endre Ady)</news:title>
-      <news:keywords>Lecture</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b9775bfb-4c77-4232-b920-b7ec46e513f2</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:19:42.851399+00:00</news:publication_date>
-      <news:title>Språkkafé norsk-engelsk-spansk (Language Cafe Norwegian-English-Spanish)</news:title>
-      <news:keywords>Language</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/442d9d7d-86b6-4f15-8ea4-884eb3c8f79c</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:11:29.546292+00:00</news:publication_date>
-      <news:title>Besplatne ture za decu u Muzeju Nikole Tesle (Free Tours for Children at Nikola Tesla Museum)</news:title>
-      <news:keywords>Tour</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/e947d3cf-2220-4919-a059-0e6a95a9a4dc</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:19:08.502879+00:00</news:publication_date>
-      <news:title>Hva skjer i Venezuela? (What&apos;s happening in Venezuela?)</news:title>
-      <news:keywords>Lecture</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/51e8612f-3161-42ea-b9de-73850858d073</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:19:22.745878+00:00</news:publication_date>
-      <news:title>Åpent barnerom! (Open Children&apos;s Room!)</news:title>
-      <news:keywords>Children&apos;s Activities</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f68d8737-0ccb-42b4-9a3f-380f21fbf55f</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:19:25.30268+00:00</news:publication_date>
-      <news:title>Mandagsfilmen med Winter of Soul (Monday Film with Winter of Soul)</news:title>
-      <news:keywords>Film</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/df2510e4-43e6-427f-8be6-458975af6cfb</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:19:27.872992+00:00</news:publication_date>
-      <news:title>Mandagsfilmen matiné med Winter of Soul: Shaft (Monday Film Matinee with Winter of Soul: Shaft)</news:title>
-      <news:keywords>Film</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/4cc53309-13bd-4b9e-8aa3-38ba89044c34</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:23:31.890964+00:00</news:publication_date>
-      <news:title>Berner Generationenhaus - Free Admission for Children and Young People (under 16 years)</news:title>
-      <news:keywords>Community</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/36068f2e-f893-4ba4-b3c9-118952efa603</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:34:34.956948+00:00</news:publication_date>
-      <news:title>Was ist die &apos;Weltordnung&apos; - und gibt es eine? (Lecture)</news:title>
-      <news:keywords>Lecture</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f6462906-7b98-4c21-96f1-7f5c691223e3</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:34:42.274749+00:00</news:publication_date>
-      <news:title>Wochenmärkte (Various Locations)</news:title>
-      <news:keywords>Market</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b7c99ad2-d3b2-4c9a-91cc-783e937e6d71</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T12:42:19.783492+00:00</news:publication_date>
-      <news:title>Deke Dickerson in Bilbao</news:title>
-      <news:keywords>Concert</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a7cbb312-8d11-4bcf-a9f3-676ac68931d8</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:05:26.993669+00:00</news:publication_date>
-      <news:title>Malen für innere Balance (Painting for Inner Balance)</news:title>
-      <news:keywords>Workshop/Art</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/5f4446ab-a6e8-4f6b-ac9a-ccbb756f2577</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:05:37.45329+00:00</news:publication_date>
-      <news:title>Orientierungskurs - Integrationskurs</news:title>
-      <news:keywords>Course/Education</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/408d3e87-3e0e-4c81-8904-5cb863e8e3e9</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:08:29.578174+00:00</news:publication_date>
-      <news:title>Kinderkleider-Tauschbörse (Children&apos;s Clothes Exchange)</news:title>
-      <news:keywords>Market</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/1a78a972-629c-4c93-95c9-fba685f98f1d</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:42:01.060187+00:00</news:publication_date>
-      <news:title>Italian Language Cafe (Jazyková kaviareň – Taliančina)</news:title>
-      <news:keywords>Social</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/6ab2a525-b530-4f08-9d58-a22dea057d63</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T13:58:53.523873+00:00</news:publication_date>
-      <news:title>Giorno della Memoria 2026 (Diocesan Archive Documents)</news:title>
-      <news:keywords>Exhibition/Commemoration</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/72774c81-08b8-4983-9b64-6b9999a600e8</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:16:09.403734+00:00</news:publication_date>
-      <news:title>Place du Jeu de Balle Flea Market</news:title>
-      <news:keywords>Market, Flea Market</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/ff049741-bd69-4008-b9b6-e50019d04ebe</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:26:03.029642+00:00</news:publication_date>
-      <news:title>Cocktail Cabinet (Free Event)</news:title>
-      <news:keywords>Party</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/613d46f5-0054-44de-995f-1c26afcf7465</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:48:40.243884+00:00</news:publication_date>
-      <news:title>Canillo Brilla 2025</news:title>
-      <news:keywords>Festival</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c5df9872-1600-408a-bcfb-8e4edb06ebe5</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T14:54:12.296633+00:00</news:publication_date>
-      <news:title>Expoziție de fotografie „Careiul prin ochii Gabrielei” – Negrea Gabriela</news:title>
-      <news:keywords>Art Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/de0f201a-17fc-421b-801c-ae1d239e70f0</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T15:34:04.419049+00:00</news:publication_date>
-      <news:title>Shared Reading</news:title>
-      <news:keywords>Literature</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/d3bd4b2a-9ec6-4494-b2ef-8e588a111afd</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T15:41:06.980706+00:00</news:publication_date>
-      <news:title>Cuentos y Canciones (Spanish Story Time)</news:title>
-      <news:keywords>Kids &amp; Family</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/1575a1eb-8fac-4994-b2b2-406ee0838140</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:06:06.278248+00:00</news:publication_date>
-      <news:title>Free Visit to the Mosque-Catedral de Córdoba</news:title>
-      <news:keywords>Sightseeing</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/7a040c64-2206-4410-a977-33d4281691f4</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:06:45.198399+00:00</news:publication_date>
-      <news:title>Medieval Market (Mercado Temático) of Córdoba</news:title>
-      <news:keywords>Market</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/d58cb93b-9584-4ef1-9573-c93ae0230c01</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:21:44.319103+00:00</news:publication_date>
-      <news:title>Svéd társalgási klub</news:title>
-      <news:keywords>Club</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/0ae4d35e-45de-433b-8e60-cc2777941b3d</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:21:46.877231+00:00</news:publication_date>
-      <news:title>Mini-exhibition with music and book recommendations on the occasion of Elvis Presley&apos;s birthday</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/6564f597-b79e-4494-ba7e-0c7ec0e92237</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:21:49.471982+00:00</news:publication_date>
-      <news:title>Renoir művészete könyvekben – Minikiállítás és kvíz</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/fb89ee7b-b7e4-4b07-9990-2e5eb89cd612</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:25:15.818006+00:00</news:publication_date>
-      <news:title>Pamukkale Semester Festival for Children</news:title>
-      <news:keywords>Festival</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/5286fbb2-a163-4571-ae80-2899a62e4602</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:25:25.189041+00:00</news:publication_date>
-      <news:title>Denizli Metropolitan Municipality Children&apos;s Festival</news:title>
-      <news:keywords>Festival</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b846e1fe-905a-485a-95f6-3c5e59278d96</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:47:45.777423+00:00</news:publication_date>
-      <news:title>Exhibition &quot;Life as a Mosaic&quot; (IZSTĀDE “DZĪVE KĀ MOZAĪKA”)</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/cfb4d481-2986-4f1f-91c7-49699545370e</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:47:48.378333+00:00</news:publication_date>
-      <news:title>Competition &quot;Recognize Raimonds Pauls&apos; Songs!&quot; (Konkurss “Atpazīsti Raimonda Paula dziesmas!”)</news:title>
-      <news:keywords>Competition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/af5cece1-9185-469b-b540-7b5090ef83ba</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:47:50.9099+00:00</news:publication_date>
-      <news:title>Mandalas – Dace Ruba&apos;s Mandala Exhibition (Mandalas – Daces Rubas Mandalu izstāde)</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/0616f6d2-0149-4c28-b996-d591f9f0ea6c</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:47:53.440248+00:00</news:publication_date>
-      <news:title>Grieta Terzena&apos;s Solo Exhibition &quot;In Shoes&quot; (Grietas Terzenas personālizstāde “KURPĒS”)</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/1a98996f-5174-468d-b3bf-57a47e6607de</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T16:55:55.468207+00:00</news:publication_date>
-      <news:title>Alfried Längle – Leben zum Gelingen bringen. Sinnfindung heute.</news:title>
-      <news:keywords>Lecture</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/ec5430b9-7bca-40d2-b900-540ab8d5b043</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T17:14:00.56093+00:00</news:publication_date>
-      <news:title>Oldbridge junior parkrun</news:title>
-      <news:keywords>Community</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/69a8bcee-927c-47dc-a66c-0a46f32adaff</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T17:16:59.544203+00:00</news:publication_date>
-      <news:title>Orientacinis pasivaikščiojimo žaidimas SENIEJI DRUSKININKAI</news:title>
-      <news:keywords>Outdoor Activity/Game</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/0b0628da-31bd-4d6c-b1ef-f76e679417ec</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T17:18:07.076831+00:00</news:publication_date>
-      <news:title>Ședințele comisiilor de specialitate ale Consiliului Raional Dubăsari</news:title>
-      <news:keywords>Public Meeting</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/cc8f40fa-dcac-4e6e-83a5-a1f97dc9e347</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T17:28:06.214593+00:00</news:publication_date>
-      <news:title>Kneipenquiz (Pub Quiz)</news:title>
-      <news:keywords>Quiz / Social</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/105f2be1-654b-4c5c-a89c-b37dd847d1dd</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T17:28:19.491027+00:00</news:publication_date>
-      <news:title>WOODWALKERS-Spurensuche (Scavenger Hunt for Kids)</news:title>
-      <news:keywords>Kids / Scavenger Hunt</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f376315c-9825-4866-b6be-57d192918213</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T17:37:21.418535+00:00</news:publication_date>
-      <news:title>Exposition &quot;Batteries&quot;</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f8c0ea30-ad60-49d0-8866-c11e0aa5b5e2</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T17:37:24.612047+00:00</news:publication_date>
-      <news:title>Vitrines des archives - Les trouvailles du récolement</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b8f34dd4-c12f-486e-91d3-fb697608c169</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T17:45:55.239299+00:00</news:publication_date>
-      <news:title>Free Kids Coding Workshop: Make Your Own Emoji</news:title>
-      <news:keywords>Workshop</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/32562779-e8c7-4958-8636-2e634ffdca44</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:27:58.045723+00:00</news:publication_date>
-      <news:title>Bingosize with Carla at Capital City Activity Center</news:title>
-      <news:keywords>Fitness</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c2662476-0901-49e7-92c5-e7310657428d</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T17:49:58.384407+00:00</news:publication_date>
-      <news:title>Armenian Apostolic Church – Sunday Divine Liturgy (Patarag)</news:title>
-      <news:keywords>Religious</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/dbb4c29d-32c4-4b5f-b098-e66ab2a79c13</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:07:07.806941+00:00</news:publication_date>
-      <news:title>Kitap Mezatları (Mahfil Sahne)</news:title>
-      <news:keywords>Literature</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/9f6d470c-3166-4586-a6b5-03d3dddd798d</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:07:21.014594+00:00</news:publication_date>
-      <news:title>Eskişehir Masal Şatosu Gezisi</news:title>
-      <news:keywords>Attraction</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/0f6dee2b-668d-40ed-9bdd-ccf96aa480d3</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:07:53.635085+00:00</news:publication_date>
-      <news:title>GSB Gençlik Kış Kulübü Atölyeleri</news:title>
-      <news:keywords>Workshop</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/4cb19472-2899-4ea6-aab8-98a4f289ca62</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:21:05.799424+00:00</news:publication_date>
-      <news:title>Exposição &quot;ImpulsionArt&quot;</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/1fe330da-d780-4658-ae7f-96a6bc1ba62c</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:27:55.323399+00:00</news:publication_date>
-      <news:title>Exercise with Karen at Capital City Activity Center</news:title>
-      <news:keywords>Fitness</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/db7f69ea-c046-4a8e-805a-aca4fad9d3d3</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:28:14.285026+00:00</news:publication_date>
-      <news:title>Me + YOUth (Youth Advisory Council Meeting)</news:title>
-      <news:keywords>Community Meeting</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/ab11038b-143f-43d5-8393-188150c9de48</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:32:11.767923+00:00</news:publication_date>
-      <news:title>Blå Kors åpen barnehage</news:title>
-      <news:keywords>Community/Children</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/8a13e67f-d094-4f63-9d51-5f4ae8b8b341</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:36:38.98933+00:00</news:publication_date>
-      <news:title>Mercado dos Lavradores (Farmers&apos; Market)</news:title>
-      <news:keywords>Market</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/3ac7c834-fb65-4bc9-a9c9-7dd550647a39</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:49:42.216607+00:00</news:publication_date>
-      <news:title>Yapay Zeka Okuryazarlığı Eğitimi (AI Literacy Training) - 30-45 Age Group (Adults)</news:title>
-      <news:keywords>Workshop</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c3ef6cbb-d01b-42e9-adb3-55f50d1413af</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:49:44.94522+00:00</news:publication_date>
-      <news:title>Masal Dinletisi (Storytelling) - Children&apos;s Festival</news:title>
-      <news:keywords>Storytelling</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c856ddfa-53b2-41e6-ad11-caf07d1775af</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T18:54:53.421839+00:00</news:publication_date>
-      <news:title>Plainpalais Flea Market (Marché aux Puces de Plainpalais)</news:title>
-      <news:keywords>Market</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/e2242aa8-313a-42bb-aed1-8b3f5506f08a</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T19:35:47.197997+00:00</news:publication_date>
-      <news:title>Музейна година «Голокост. Памʼятаємо» (Museum hour &quot;Holocaust. We Remember&quot;)</news:title>
-      <news:keywords>History/Commemoration</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/ea636997-203a-4478-8adf-b12c37090c93</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T19:38:17.073297+00:00</news:publication_date>
-      <news:title>Free Ukrainian Language Courses at Central Public Library</news:title>
-      <news:keywords>Educational</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/0a629d51-1c45-4467-af89-1bea4cee5109</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T19:38:19.96756+00:00</news:publication_date>
-      <news:title>Exhibition-Sale of Works by Kamianske Craftswomen in Support of the Armed Forces of Ukraine</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f3a7aabb-9a52-4e8d-b52a-6eb237aeead3</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T19:38:24.328535+00:00</news:publication_date>
-      <news:title>Kamianske Rosary (Кам&apos;янський розарій)</news:title>
-      <news:keywords>Outdoor Attraction</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/d30060bc-298e-4c3e-8b74-6ba0bbcfeb1c</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T19:38:28.694924+00:00</news:publication_date>
-      <news:title>МУЗЕЙ — ШКОЛІ 2026: ІСТОРІЯ, ЩО ОЖИВАЄ! (Museum to School 2026: History Comes Alive!)</news:title>
-      <news:keywords>Educational</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f03c760c-c9cb-4f46-96cd-82d85a587f02</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T19:38:33.067226+00:00</news:publication_date>
-      <news:title>Permanent Exhibitions at the Museum of History of Kamianske</news:title>
-      <news:keywords>Exhibition</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/7991dffe-a142-4c20-b6d1-2359e76b3ef9</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T19:53:33.051009+00:00</news:publication_date>
-      <news:title>New Year&apos;s Illumination Park at Emily Resort (Парк Новорічних Ілюмінацій в Emily Resort)</news:title>
-      <news:keywords>Festival</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/b69e7697-c8d0-4b44-a345-0f9a1f054a32</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-25T19:53:37.336475+00:00</news:publication_date>
-      <news:title>Theatrical performance &quot;Farewell to Koliada&quot; (Театралізована вистава «Прощання з колядою»)</news:title>
-      <news:keywords>Performance</news:keywords>
-    </news:news>
-  </url>
   <url>
     <loc>https://eventnexus.eu/event/1d7b45d8-f172-41ba-afc9-0bd35206aef8</loc>
     <lastmod>2026-01-13</lastmod>
@@ -3192,6 +1578,261 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/d8c93dc5-b359-4c26-a806-2b06c0ddb379</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:13:38.192982+00:00</news:publication_date>
+      <news:title>Trinity Monastery Complex</news:title>
+      <news:keywords>Attraction</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c71840ba-e151-413a-8a15-35283048b500</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:13:41.31806+00:00</news:publication_date>
+      <news:title>Transfiguration Cathedral (Ancient Orthodox Churches and Cathedrals)</news:title>
+      <news:keywords>Attraction</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/77278ee0-90d0-4c59-812b-890139ed919f</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:13:44.314707+00:00</news:publication_date>
+      <news:title>Detynets Park (Chernihiv Ramparts)</news:title>
+      <news:keywords>Attraction</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/443e0c7e-f46b-4229-b1ab-301f74cfa651</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:32:12.687502+00:00</news:publication_date>
+      <news:title>Museum Cinema Platform: Documentary Film &quot;Path to Nazi Genocide&quot;</news:title>
+      <news:keywords>Film</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/36f8e5e7-8470-435c-b8e3-53bf1ec792ad</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:51:16.816143+00:00</news:publication_date>
+      <news:title>Музей Міхая Мункачі (Mihály Munkácsy Museum)</news:title>
+      <news:keywords>Museum</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/998fa4bf-82dc-45e6-bbcd-6ad2e3e5d0b1</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:56:31.158007+00:00</news:publication_date>
+      <news:title>Modern children&apos;s interactive space in Novoyavorivsk library</news:title>
+      <news:keywords>Children&apos;s Activities</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/43fadc95-1e6f-4b24-af5f-7932e95f3f26</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:02:29.343958+00:00</news:publication_date>
+      <news:title>Suguvõsauurimise infotund (Genealogy information session)</news:title>
+      <news:keywords>Information Session</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c61e0b7b-b21b-47c1-a356-5d57087fe5e2</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:07:04.923865+00:00</news:publication_date>
+      <news:title>Jõhvi Music Quiz #79</news:title>
+      <news:keywords>Quiz</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/abd2f4c8-2451-4748-a000-a179d6a680fa</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:21:44.044717+00:00</news:publication_date>
+      <news:title>CONVERSATION CLUB (English Conversation Club)</news:title>
+      <news:keywords>Club/Meeting</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/bc2f148e-abf3-403d-9b92-55aa8438070c</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:25:25.821985+00:00</news:publication_date>
+      <news:title>Näitus „Kunst läbi puudutuse“ (Exhibition &quot;Art Through Touch&quot;)</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/5e9b8d10-71a2-4e5d-8bc1-fde8f287f4f1</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:28:34.215676+00:00</news:publication_date>
+      <news:title>Loovkampsiku klubi rakuke (Creative Sweater Club Cell)</news:title>
+      <news:keywords>Community/Hobby</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6374be6a-db46-49a3-b1e3-8169832a83fc</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:21:49.998251+00:00</news:publication_date>
+      <news:title>Wernisaż: Karnawał w Wenecji - Grzegorz Bogojło</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/4987c76b-704a-40f9-8d1e-ef2819110b63</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:58:47.053616+00:00</news:publication_date>
+      <news:title>Popołudnie z planszówkami (Afternoon with board games)</news:title>
+      <news:keywords>Community Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/d08c8c9b-642e-4943-aba0-dabb0cdcba44</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:10:20.449455+00:00</news:publication_date>
+      <news:title>Spotkanie grupy rękodzieła Poplątane (Meeting of the &quot;Poplątane&quot; handicraft group)</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/be24af09-9fe3-4580-8f91-0b0af3aba954</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:15:02.523481+00:00</news:publication_date>
+      <news:title>SZTUCZKI ze SZTUKĄ i NAUKĄ (Tricks with Art and Science)</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/11fb3819-57c7-4107-a83b-eaa2e6818493</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:15:05.227257+00:00</news:publication_date>
+      <news:title>Pisemne bazgroty - literackie pieszczoty (Literary caresses - writing scribbles)</news:title>
+      <news:keywords>Literary Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/70d5b253-8b71-4e5c-9d21-3b5d35865123</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:15:35.531778+00:00</news:publication_date>
+      <news:title>Bawimy się z dziećmi - zabawy ruchowo-plastyczne (Movement and art games for children)</news:title>
+      <news:keywords>Children&apos;s Activities</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/ea7f0d78-966b-4e02-a192-d4d9f1ab36fa</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -4425,6 +3066,96 @@
       <news:publication_date>2026-01-25T19:55:59.223577+00:00</news:publication_date>
       <news:title>Meeting of the Administrative Commission of Mukachevo City Council</news:title>
       <news:keywords>Civic</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8a8d86a0-0726-44b8-9825-4d180d44ead9</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:16:29.969514+00:00</news:publication_date>
+      <news:title>Polish Language for Beginners</news:title>
+      <news:keywords>Language Course</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c1bcb024-f6eb-4029-b5cf-58888fcbfba7</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:33:18.386026+00:00</news:publication_date>
+      <news:title>Award Ceremony for Finalists of the City Stage &quot;Shoulder to Shoulder&quot;</news:title>
+      <news:keywords>Sports</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/d0aa031a-b149-48dc-b90f-00d978a7b6c2</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:15:16.444184+00:00</news:publication_date>
+      <news:title>Maad katab valge lumevaip</news:title>
+      <news:keywords>Community Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/714ba30f-3046-4b76-9506-17b13d93c169</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:33:46.84191+00:00</news:publication_date>
+      <news:title>Exhibition: &quot;Nieznana Częstochowa – projekty kamienic sprzed 1914 roku&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/cdd1ba5d-7bd6-4b96-af59-7fe85f5d758d</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:38:21.967198+00:00</news:publication_date>
+      <news:title>Spotkanie Podróżnicze z Robertem Neumannem pn. &quot;Jordania&quot;</news:title>
+      <news:keywords>Meeting/Travel</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8596edf4-ae9b-43ad-bfc9-a5c4ffb2ccdd</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:14:23.747957+00:00</news:publication_date>
+      <news:title>Dyskusyjny Klub Książki (Book Discussion Club)</news:title>
+      <news:keywords>Book Club</news:keywords>
     </news:news>
   </url>
   <url>
@@ -5787,6 +4518,201 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/2c04bf33-87ba-4b08-9ef1-f8228b69d8e6</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:06:58.094554+00:00</news:publication_date>
+      <news:title>Cultural Cafe COSMOS Black Box Opening Party</news:title>
+      <news:keywords>Party/Opening</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/35c92ce5-89f2-4714-8c00-123e5a136788</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:07:00.763933+00:00</news:publication_date>
+      <news:title>Travel Stories: Indrek Kõverik in France</news:title>
+      <news:keywords>Talk/Lecture</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/a8b83684-4409-4cb2-b1bb-f7f01cff727e</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:23:27.43775+00:00</news:publication_date>
+      <news:title>Drawing Day (Joonistuspäev)</news:title>
+      <news:keywords>Arts &amp; Culture</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/bc1b5b92-ad23-48d4-9693-1da647a6b56e</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:23:37.908139+00:00</news:publication_date>
+      <news:title>Loksa City Council 11th Composition 5th Session (Loksa Linnavolikogu XI koosseisu 5. istung)</news:title>
+      <news:keywords>Government/Civic</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/82cc6465-6ae8-4e4b-a185-01fc6fe986d8</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:26:02.346876+00:00</news:publication_date>
+      <news:title>Klasyczne Czwartki Filmowe (styczeń) - &quot;Matrix&quot;</news:title>
+      <news:keywords>Film Screening</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/26256a34-0fdf-4009-8233-78ef6ffdc2bf</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:33:44.316527+00:00</news:publication_date>
+      <news:title>Exhibition: &quot;Nieznana Częstochowa – projekty kamienic sprzed 1914 roku&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/d51527b0-01a7-4a7a-b44f-d9d9e668461f</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:38:17.205739+00:00</news:publication_date>
+      <news:title>Tajemnice Historii – Sesja naukowa poświęcona późnemu średniowieczu</news:title>
+      <news:keywords>Scientific Session/History</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/7f00fb69-71a3-40c4-84ff-009480dc1039</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:46:56.570889+00:00</news:publication_date>
+      <news:title>Turniej brydżowy na IMP</news:title>
+      <news:keywords>Tournament</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/d1ed479c-b497-4c68-bc96-6e8ae8f8f5b9</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:46:59.293533+00:00</news:publication_date>
+      <news:title>Wernisaż wystawy „Wacław II, król czeski i polski”</news:title>
+      <news:keywords>Exhibition Opening</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/722bd22a-0aa7-4594-991b-ae61d8c6a4b5</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:48:05.639091+00:00</news:publication_date>
+      <news:title>Wystawa “Wacław II, Król Czeski i Polski”</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/9a656184-37cc-435d-9c78-12c6da5d5bef</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:01:02.495368+00:00</news:publication_date>
+      <news:title>BADAJ, WYKRYWAJ, ŻYJ! (Examine, Detect, Live!)</news:title>
+      <news:keywords>Health Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/08df225f-f9e7-4fe4-9f99-e079c0d2b535</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:14:00.30444+00:00</news:publication_date>
+      <news:title>Zima, zima fajna jest… (Winter, winter is fun…)</news:title>
+      <news:keywords>Children&apos;s Activities</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/dcefbd02-8592-4378-a73d-edc7e1ecd66d</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:14:16.727325+00:00</news:publication_date>
+      <news:title>Wojciecha Morawca gawędy o… Piastach Legnickich (Wojciech Morawiec&apos;s talks about the Legnica Piasts)</news:title>
+      <news:keywords>Historical Talk</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/d20bab5d-4b5b-489f-bae7-0d53b5893f3d</loc>
     <lastmod>2026-01-21</lastmod>
     <changefreq>weekly</changefreq>
@@ -6900,6 +5826,201 @@
       <news:publication_date>2026-01-25T19:32:50.86428+00:00</news:publication_date>
       <news:title>Культурологічний проєкт «Кіносеанс в музеї» з переглядом відеофільму «МИКОЛА, ВНУК ЯКОВА»</news:title>
       <news:keywords>Cultural</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/3adc1fad-f873-40a1-82c3-10fccfd4f86d</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:18:19.550744+00:00</news:publication_date>
+      <news:title>Медленные чтения (Slow Readings)</news:title>
+      <news:keywords>Literary</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/90c06f5e-13ba-45c3-97b0-bece2955b856</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:19:06.184719+00:00</news:publication_date>
+      <news:title>Workshop on making a Sretenka ribbon (Майстерка з виготовлення стрітенської стрічки)</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/87c44a9f-d11d-4e24-a4fb-d06bf5af00cf</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:33:15.759964+00:00</news:publication_date>
+      <news:title>Bench Press and Darts Competition</news:title>
+      <news:keywords>Sports</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/665a81be-b2db-430a-a0ce-c0905c1a3df6</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:09:12.023993+00:00</news:publication_date>
+      <news:title>Opening of the Illustration Exhibition &quot;Little Rhombus&quot;</news:title>
+      <news:keywords>Exhibition Opening</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/b9b2bde2-25ca-43a9-8cff-03aa4501a2ea</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:23:24.446603+00:00</news:publication_date>
+      <news:title>Game and Dance Evenings at Loksa Cultural Centre (Mängu- ja tantsuõhtud Loksa Kultuurikeskuses)</news:title>
+      <news:keywords>Community/Social</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6c6008fb-4c24-4baf-b644-63a967ed7c5c</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:25:28.922507+00:00</news:publication_date>
+      <news:title>Maardu Kunstide Kooli klaverikontsert (Maardu Art School Piano Concert)</news:title>
+      <news:keywords>Music/Concert</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/deff4dd0-a428-463a-9555-a5958c450941</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:27:59.331105+00:00</news:publication_date>
+      <news:title>Otepää OTT Taluturg (Otepää OTT Farmers&apos; Market)</news:title>
+      <news:keywords>Market</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8c48dac0-7802-48af-bf10-cc87bf4196b3</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:31:37.28409+00:00</news:publication_date>
+      <news:title>Czytanki w piątkowe poranki (Reading on Friday Mornings)</news:title>
+      <news:keywords>Kids &amp; Family</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/3f9cd9ca-318a-43e0-87bc-f1cfe1b0b350</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:33:41.780306+00:00</news:publication_date>
+      <news:title>Exhibition: &quot;Nieznana Częstochowa – projekty kamienic sprzed 1914 roku&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/b82a3695-1179-4ff5-84db-08483a004712</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:38:12.638058+00:00</news:publication_date>
+      <news:title>Wystawa fotografii Jolanty Rycerskiej pt. POSAG</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c8aa41a6-c81c-4f63-b584-23fef7bc8b7a</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:01:15.992824+00:00</news:publication_date>
+      <news:title>Spotkanie autorskie z Jackiem Hołubem (Author meeting with Jacek Hołub)</news:title>
+      <news:keywords>Literary Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6d726572-52eb-47d1-9dff-a71f7f7605fe</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:12:53.632951+00:00</news:publication_date>
+      <news:title>Taneczna klasówka Studia Tańca Towarzyskiego TAKT (Dance class show of TAKT Ballroom Dance Studio)</news:title>
+      <news:keywords>Dance Performance</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/87722130-6498-467e-a704-5903c9ab1991</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:13:27.959578+00:00</news:publication_date>
+      <news:title>SZTUCZKI ze SZTUKĄ i NAUKĄ (Tricks with Art and Science)</news:title>
+      <news:keywords>Workshop</news:keywords>
     </news:news>
   </url>
   <url>
@@ -8427,10 +7548,220 @@
     </news:news>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/a9b377a4-e56e-459b-a44e-26c05f5d104d</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:16:27.361549+00:00</news:publication_date>
+      <news:title>Ukrainian Language Club «My Ukrainian»</news:title>
+      <news:keywords>Language Club</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/4942f4a9-97f2-4a29-aba4-1d2007996564</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:32:51.154012+00:00</news:publication_date>
+      <news:title>Open Championship of Kamianske in Taekwondo WTF</news:title>
+      <news:keywords>Sports</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/4186a05e-d4c2-48c1-87fd-24f53143fc8e</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:34:16.912399+00:00</news:publication_date>
+      <news:title>Заходи у ТРЦ «Французький бульвар» (Events at French Boulevard Shopping Mall)</news:title>
+      <news:keywords>Community Events</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/e649bab2-68e7-466e-9b40-7ad1f470f9c6</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:23:11.248927+00:00</news:publication_date>
+      <news:title>Winter Evening Songs (Talveõhtu laulud)</news:title>
+      <news:keywords>Arts &amp; Culture</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/f9d1b670-3402-4a23-9b64-7d7d8b568f8d</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:23:21.826839+00:00</news:publication_date>
+      <news:title>Loksa City Ski Competition (Loksa linna suusavõistlus)</news:title>
+      <news:keywords>Sports</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6fc25374-12d6-44ea-825c-1f5fbedbbcbf</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:25:14.283959+00:00</news:publication_date>
+      <news:title>Maardu Talvepäev (Maardu Winter Day)</news:title>
+      <news:keywords>Community Event/Winter Festival</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/75228cf5-a264-454f-9f4e-989d36455ca3</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:31:39.862334+00:00</news:publication_date>
+      <news:title>Biblioteka dla Mężczyzn: Spotkanie z chorzowskim schroniskiem Psikot</news:title>
+      <news:keywords>Community</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/65331532-d17b-4edb-b55c-7092fbb08bf7</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:33:39.26499+00:00</news:publication_date>
+      <news:title>Exhibition: &quot;Nieznana Częstochowa – projekty kamienic sprzed 1914 roku&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/f27ba3bd-70a1-4413-a129-f83b7d6741d4</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:52:53.036712+00:00</news:publication_date>
+      <news:title>Miejskie Centrum Kultury – Nowe otwarcie (Behind-the-scenes tour)</news:title>
+      <news:keywords>Tour</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/440ec487-a116-4a94-8b35-d9f13dcd0bb3</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:08:38.458783+00:00</news:publication_date>
+      <news:title>Klub Gier Planszowych z Lemurem (Board Game Club with Lemur)</news:title>
+      <news:keywords>Games</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/91d73057-3cba-4651-a6ac-ea617ad43f46</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:08:41.269043+00:00</news:publication_date>
+      <news:title>Klub Maluszkowo (Toddler Club)</news:title>
+      <news:keywords>Children</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/f09b4ade-e01e-4086-8f0b-d62f0ed0c79f</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:08:43.90624+00:00</news:publication_date>
+      <news:title>Klub Miłośników Książki (Book Lovers&apos; Club)</news:title>
+      <news:keywords>Literary</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/71065d58-584e-4a98-9924-d442bf7c4658</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:12:51.060185+00:00</news:publication_date>
+      <news:title>Wystawa Henryka Jana Bacy „Jeżeli vs. Ponieważ” (Henryk Jan Baca&apos;s exhibition &quot;If vs. Because&quot;)</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/f7a2c3b4-b863-4658-8dc6-71a75e444efe</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/bda031bf-bbdf-4980-b3be-816796923c37</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:49:38.471872+00:00</news:publication_date>
+      <news:title>Lviv Museum of the History of Religion - Family Day</news:title>
+      <news:keywords>Museum</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/aa000378-58bf-44c0-a462-208ca980d354</loc>
@@ -9101,6 +8432,1188 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://eventnexus.eu/event/780ebbf9-2315-43da-b790-250a91811164</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/7567d495-2a31-4bd4-bc94-9ddcb0edf249</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8ddecebb-29c9-42a2-aa7f-c327c8c6e963</loc>
+    <lastmod>2026-01-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/f3820893-a148-40e0-8365-bfa1d5748af0</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/fd7f8c17-22d4-4512-82fe-f4b780edbb87</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6ae42e02-8b02-4c2d-9481-738018e0898d</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/f9e0d4b5-438e-48ae-8096-0ccc6e0b1864</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T10:39:37.230325+00:00</news:publication_date>
+      <news:title>Vogelenmarkt (Bird Market)</news:title>
+      <news:keywords>Market</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/e5a89f9f-52d9-4c6e-bcac-25e3b876b3dc</loc>
+    <lastmod>2026-01-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/0f1c0465-01fb-4b04-8a23-44f770fe7407</loc>
+    <lastmod>2026-01-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6226bc0a-6df3-4f31-b6cd-38512f80f7c7</loc>
+    <lastmod>2026-01-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/aba1897a-6015-4e3d-9990-226ef8d81923</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/cfbd5d6c-b88b-44cd-bb60-c00399a7277a</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/90a94caf-6e68-42ec-83aa-998eaad28f84</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6fb2fcd6-2f0c-4aef-8569-23cddc702a04</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T10:01:30.884527+00:00</news:publication_date>
+      <news:title>Δωρεάν είσοδος σε Μουσεία και Αρχαιολογικούς Χώρους</news:title>
+      <news:keywords>Cultural</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/e88b6ca2-4c24-4c85-948a-48878e1fc723</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T10:37:46.601989+00:00</news:publication_date>
+      <news:title>Tsooru mälumängur 2025-2026 (Tsooru Quizzer 2025-2026)</news:title>
+      <news:keywords>Quiz</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c10ff36f-3bbe-4229-9a90-9c8631e68ca7</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T10:39:51.051611+00:00</news:publication_date>
+      <news:title>ROMMELANT WEEKEND (Flea Market)</news:title>
+      <news:keywords>Market</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c3126723-468b-47d1-bf2b-bc65ea2adf40</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T10:46:57.620708+00:00</news:publication_date>
+      <news:title>Celine Rae | Muziekcafé at GIGANT</news:title>
+      <news:keywords>Music</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/ef0528fd-bb3b-4a7a-b876-fab1702c2d21</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:27:40.251371+00:00</news:publication_date>
+      <news:title>La Retropical DJ La Sagesse</news:title>
+      <news:keywords>Concert</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/3cb16941-6bfd-4ba4-89c5-343a072ce7dd</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:40:22.66429+00:00</news:publication_date>
+      <news:title>&quot;Sing-Cafè&quot;</news:title>
+      <news:keywords>Social Gathering / Music</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/f584ba5b-32e4-4dfd-a3a1-6d87a5af443a</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:47:44.300177+00:00</news:publication_date>
+      <news:title>Free Admission Day: Exhibition &quot;Enjoyment for the Soul&quot; (Larisa Matyushenkova)</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/a09cb3c7-82cb-4bf0-b9d9-2765702f5da7</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:47:11.464043+00:00</news:publication_date>
+      <news:title>Free Visit to the Open-Air Railway Equipment Exposition</news:title>
+      <news:keywords>Outdoor Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/d345bcc6-a436-45dc-9014-f9b7b3678fd2</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:47:49.381441+00:00</news:publication_date>
+      <news:title>Free Admission Day: Exhibition &quot;Creators of Baranovichi Land&quot; (Zoya Tsvilevich)</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/0041897c-701e-40ea-8a6e-c89afef22a14</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:47:46.811896+00:00</news:publication_date>
+      <news:title>Free Admission Day: Exhibition &quot;Unforgettable&quot; (Genocide Victims)</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6d6d1f69-d18f-45b1-87e1-ea52040e31f0</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T11:55:03.107258+00:00</news:publication_date>
+      <news:title>Domenica al Museo: Ingresso Gratuito</news:title>
+      <news:keywords>Culture/Museum</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c0295216-7ce2-44f6-8d85-515938f8e9ff</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T12:23:35.013891+00:00</news:publication_date>
+      <news:title>Zentrum Paul Klee - Free Admission for Children and Adolescents (up to 16 years)</news:title>
+      <news:keywords>Museum</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/7f3a74bc-8b21-4817-835a-d4b33fa628d5</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T12:42:14.565724+00:00</news:publication_date>
+      <news:title>CLAUSURA DE LA EXPOSICIÓN: Encuentro con Juan Mayorga</news:title>
+      <news:keywords>Exhibition Closing Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/9e8a25cf-e2e1-4f8c-8d0e-e7f2913d4d4d</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T12:50:56.576705+00:00</news:publication_date>
+      <news:title>Outdoor Ice Skating Social at Hillside Park</news:title>
+      <news:keywords>Outdoor Activity</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/2e6567aa-5962-46fc-a5cb-9906ef1aba17</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T12:51:29.720172+00:00</news:publication_date>
+      <news:title>Free Public Ice Skating - VFW Sports Center</news:title>
+      <news:keywords>Outdoor Activity</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/64fc64dd-9b68-4f6e-b6f5-d1c6f5d9c19d</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:00:03.4591+00:00</news:publication_date>
+      <news:title>Sport: 5kmRun</news:title>
+      <news:keywords>Sport</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/0b2d0ec5-ad5c-45cf-b0f5-5472811e8f8c</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:04:10.905525+00:00</news:publication_date>
+      <news:title>Wilde Familie in Bochum-Mitte</news:title>
+      <news:keywords>Family/Nature</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/a4b42480-6007-4932-9f99-e665c20ac7f3</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:04:15.14586+00:00</news:publication_date>
+      <news:title>HOWWEEEEE PARADE</news:title>
+      <news:keywords>Parade/Performance</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c316ab7a-464f-4d94-8b22-fe151cd31301</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:22:46.732526+00:00</news:publication_date>
+      <news:title>Origami Class</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/008966b7-9c07-44cf-a8d7-dea5895fc847</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:32:09.672519+00:00</news:publication_date>
+      <news:title>Exposition &quot;Images d&apos;une exposition : un centenaire pour l&apos;Art déco&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/acbf78b1-92ad-41f7-8303-e63b0e41ef75</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:35:29.997492+00:00</news:publication_date>
+      <news:title>Campeonatos Nacionais de Pentatlo - Veteranos (National Pentathlon Championships - Veterans)</news:title>
+      <news:keywords>Sports</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/761a110d-811b-4587-81c7-1ce22b6124a1</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:42:34.951797+00:00</news:publication_date>
+      <news:title>Farmers&apos; Markets &amp; Bratislava Book Exchange</news:title>
+      <news:keywords>Market</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/fdf4fbaf-e7a9-427d-a1e9-a5b0a7359f42</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:44:56.873173+00:00</news:publication_date>
+      <news:title>Bray junior parkrun</news:title>
+      <news:keywords>Sports</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/5f0dcb9b-fac2-4dba-9a93-ccf853f20f3f</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T13:54:56.382574+00:00</news:publication_date>
+      <news:title>2. Internationales Festival der Inklusion</news:title>
+      <news:keywords>Festival/Performance</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/a3381f02-8a7d-4ba8-ba2c-cfb12636c0eb</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:05:45.933866+00:00</news:publication_date>
+      <news:title>Clifton Suspension Bridge - Free Weekend Bridge Tour</news:title>
+      <news:keywords>Tour</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/adec179a-04d3-4a43-97b6-1ceb5956b57b</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:05:55.613963+00:00</news:publication_date>
+      <news:title>Family Activity: Story Sunday at M Shed</news:title>
+      <news:keywords>Family</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/1dbffb49-3d5f-4013-80f7-4bc5eb31c2f6</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:12:41.126108+00:00</news:publication_date>
+      <news:title>La Copie at the Museum (Exhibition)</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/eac2dda3-a60a-4e16-ba39-a4ee77be7e52</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:15:32.498459+00:00</news:publication_date>
+      <news:title>Place du Grand Sablon Antiques Market</news:title>
+      <news:keywords>Market, Antiques</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c1c672a1-d816-4bfc-974b-3de0c6ec2e58</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:15:47.606992+00:00</news:publication_date>
+      <news:title>La Copie at the Museum</news:title>
+      <news:keywords>Art Exhibition, Museum</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/549cc8a0-d55d-45f3-a4bd-b69b1bb4d5a1</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:15:50.305342+00:00</news:publication_date>
+      <news:title>Free Museum Sunday</news:title>
+      <news:keywords>Museum, Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/4c4f2cce-513e-4c6d-9db9-e9fe9a974206</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:15:54.478746+00:00</news:publication_date>
+      <news:title>FOSDEM 2026 (Day 2)</news:title>
+      <news:keywords>Conference, Technology</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/cf15feea-100b-459f-823c-0ed2a9b5c258</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:26:59.239687+00:00</news:publication_date>
+      <news:title>Pre-premiere of the film &quot;Kloshar&quot;</news:title>
+      <news:keywords>Film Screening</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/b2b98e82-08f3-4300-a821-f49809f63d85</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:44:13.85197+00:00</news:publication_date>
+      <news:title>Voyage surprenant à dos de Varan (Surprising Journey on the back of the Varan)</news:title>
+      <news:keywords>Tour</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/a52774c5-0cc1-4a3d-b8e2-0aca314ec423</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T14:48:25.045087+00:00</news:publication_date>
+      <news:title>Canillo Brilla 2025</news:title>
+      <news:keywords>Festival</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/33e4a865-2830-42a5-8873-8425f56be9fa</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:01:12.228132+00:00</news:publication_date>
+      <news:title>Le domeniche a Palazzo degli Elefanti: Visite Guidate e Musica</news:title>
+      <news:keywords>Guided Tour, Concert</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/49439785-81de-4e3f-baf5-50af82d104da</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:01:28.588031+00:00</news:publication_date>
+      <news:title>Domenica al Museo (Free Museum Entry) - Chiesa di San Nicolò l&apos;Arena</news:title>
+      <news:keywords>Museum</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6e5b7b78-a0e7-4d11-8645-69c3f1d904ad</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:01:35.076457+00:00</news:publication_date>
+      <news:title>Domenica al Museo (Free Museum Entry) - Museo Emilio Greco</news:title>
+      <news:keywords>Museum</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/19b96f26-b84d-4664-9a68-0d8181870cd4</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:01:48.809184+00:00</news:publication_date>
+      <news:title>Domenica al Museo (Free Museum Entry) - Museo Vincenzo Bellini</news:title>
+      <news:keywords>Museum</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/0a383443-0a48-4b18-a818-590e8f22ea1c</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:02:04.431794+00:00</news:publication_date>
+      <news:title>Domenica al Museo (Free Museum Entry) - Teatro Romano e Odeon di Catania</news:title>
+      <news:keywords>Archaeological Site</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/3bd7628a-8c83-49be-90f1-3381b81ca259</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:02:08.608852+00:00</news:publication_date>
+      <news:title>Domenica al Museo (Free Museum Entry) - Museo Civico Castello Ursino</news:title>
+      <news:keywords>Museum</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/b257812f-1466-4c54-8981-b894f9d9fcf1</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:05:00.661259+00:00</news:publication_date>
+      <news:title>Cavalcade du Carnaval de Cayenne (Cayenne Carnival Parade)</news:title>
+      <news:keywords>Carnival</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/1d5b7010-aba6-49cd-a746-1b73571fafa3</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:16:41.60575+00:00</news:publication_date>
+      <news:title>Le Petit Musée - &quot;Comme beau te semble&quot; (BPS22)</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/5357c29a-7949-4e1b-8210-1a8936676600</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:16:52.962086+00:00</news:publication_date>
+      <news:title>Légende du Corbeau et autres histoires contées</news:title>
+      <news:keywords>Storytelling</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/a8f483c5-7468-43d0-93e0-32fd489d71b8</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:17:01.140149+00:00</news:publication_date>
+      <news:title>Permanent Exhibitions at Musée des Beaux-Arts (Free on 1st Sunday of the month)</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/62d2d623-5129-4d32-9ff4-296303ba0317</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:17:05.358757+00:00</news:publication_date>
+      <news:title>Permanent Exhibitions at Musée de la Photographie (Free on 1st Sunday of the month)</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/14cdc920-1e25-48a4-9da2-8561c6b71d07</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:17:39.534558+00:00</news:publication_date>
+      <news:title>Marché dominical de Charleroi (Sunday Market of Charleroi)</news:title>
+      <news:keywords>Market</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/12270962-975a-4910-bd24-939598afd064</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T15:45:01.42539+00:00</news:publication_date>
+      <news:title>Angelus Prayer with Pope Leo XIV</news:title>
+      <news:keywords>Religious Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/53cb0a41-2a50-4757-9c08-bc7d34c392b6</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T16:25:20.019727+00:00</news:publication_date>
+      <news:title>International Madagascar Circus (Pamukkale Semester Festival)</news:title>
+      <news:keywords>Circus</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8683f217-a9f3-438f-8835-bef56534ae9f</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T16:25:22.624155+00:00</news:publication_date>
+      <news:title>International Madagascar Circus (Pamukkale Semester Festival) - Final Performance</news:title>
+      <news:keywords>Circus</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/e2923820-3b77-4eef-a2b3-4feacdc0b2b6</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T16:40:56.491103+00:00</news:publication_date>
+      <news:title>Assemblée générale : Wanderfrënn Differdange</news:title>
+      <news:keywords>Meeting</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/a3ca8eb2-4958-4d59-9682-f2d035474f74</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T16:44:00.81217+00:00</news:publication_date>
+      <news:title>Fontaine-lès-Dijon – Exposition de Jean-Daniel Hutter, « Sous enveloppe ! »</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/73a889c2-e79f-4648-849a-36369b4e222e</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T16:44:10.229761+00:00</news:publication_date>
+      <news:title>Week-end jeux géants</news:title>
+      <news:keywords>Games</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/2ed0577c-621d-4a75-abe0-9d166bfed25c</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T16:55:46.059211+00:00</news:publication_date>
+      <news:title>Freier Sonntag (Free Sunday) at Stadtmuseum Dornbirn</news:title>
+      <news:keywords>Museum Admission</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/73dc6d72-1b6d-43aa-85fe-a6190f8565d7</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T17:07:26.480609+00:00</news:publication_date>
+      <news:title>Sächsische Märchenparodien von &amp; mit „dor Märchnmaad aus Johannstadt“ (Family Performance)</news:title>
+      <news:keywords>Performance</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/32db24ae-436c-41be-afb7-2297a53251f6</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T17:13:57.857272+00:00</news:publication_date>
+      <news:title>Oldbridge junior parkrun</news:title>
+      <news:keywords>Community</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/0a670e9d-1acd-4fbb-af94-1cd7f244dacd</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T17:51:37.670625+00:00</news:publication_date>
+      <news:title>Friends &amp; Family</news:title>
+      <news:keywords>Après-ski / Music</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/ac25e6ce-80b1-4841-88d3-940fb85b6aab</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T18:20:33.497832+00:00</news:publication_date>
+      <news:title>Exposição &quot;Modernismo e Regionalismo&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/9c665e8f-e0ac-42f8-8a7b-4273a572c7be</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T18:20:38.993338+00:00</news:publication_date>
+      <news:title>Exposição &quot;Soluço&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8b501b7c-1d58-4225-8de0-d4c5202c2ac3</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T18:48:40.692626+00:00</news:publication_date>
+      <news:title>Çocuk Tiyatrosu Şenliği: &quot;İpucu Dedektifleri&quot;</news:title>
+      <news:keywords>Theater</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/2509c56f-b436-4e4b-9df6-41eb9e5dc300</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T18:57:44.524835+00:00</news:publication_date>
+      <news:title>Domenica al Museo (Palazzo Reale)</news:title>
+      <news:keywords>Museum/Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/63a5c324-ba6e-43c9-a297-a7d6ba70d36a</loc>
+    <lastmod>2026-01-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-25T19:49:22.502414+00:00</news:publication_date>
+      <news:title>Dnipro Hills Toastmasters Club Meetings (English Public Speaking)</news:title>
+      <news:keywords>Club Meeting</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/77aa26e3-4056-4878-abbd-07ced175941d</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:16:24.675771+00:00</news:publication_date>
+      <news:title>Polish Language for Beginners</news:title>
+      <news:keywords>Language Course</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8cec3cef-1394-4e00-ad06-28188695d010</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:32:35.794757+00:00</news:publication_date>
+      <news:title>Team Mixed Tennis Tournament &quot;Battle of Captains&quot;</news:title>
+      <news:keywords>Sports</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/4b5d70eb-06ae-407e-940e-30df5a5a43d9</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:49:35.61613+00:00</news:publication_date>
+      <news:title>Book Quiz &quot;A Horse&apos;s Good Family&quot; &amp; Master Class &quot;Magic Unicorn&quot;</news:title>
+      <news:keywords>Children&apos;s Event, Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/01ea3ff1-1bc5-42a4-b16c-194a12f186ed</loc>
+    <lastmod>2026-01-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-26T21:53:06.272654+00:00</news:publication_date>
+      <news:title>Книжкова вікторина «Гарна в коника родина». Майстер-клас «Чарівний єдиноріг».</news:title>
+      <news:keywords>Workshop, Quiz</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/1af2e9ed-8b45-43d1-b705-b48aeb2387a4</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:06:47.729194+00:00</news:publication_date>
+      <news:title>History of Songs and Living Tradition – Workshop and Concert // Duo Kaarin Aamer and Sten Aamer</news:title>
+      <news:keywords>Workshop/Concert</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c0e003c7-cebd-4b6c-aaa6-40757d7a9807</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T08:09:09.101291+00:00</news:publication_date>
+      <news:title>Nordic Walking Joint Training on Kärdla Hiking Trail</news:title>
+      <news:keywords>Sports Training</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/e512af85-17aa-4937-845c-67e3ecb511ea</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:33:36.655935+00:00</news:publication_date>
+      <news:title>Exhibition: &quot;Nieznana Częstochowa – projekty kamienic sprzed 1914 roku&quot;</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/17521122-904f-49df-aecf-00fa23a92a01</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T09:46:10.950933+00:00</news:publication_date>
+      <news:title>Dla Najmłodszych. Wszystkie Ruchy Dozwolone – sensoplastyka</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/1755db18-a441-4a6f-9596-f4e7af73e6f6</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:09:55.219821+00:00</news:publication_date>
+      <news:title>Bezpłatny wstęp do Muzeum Regionalnego (Free admission to the Regional Museum)</news:title>
+      <news:keywords>Culture</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/5f4a47c9-34a0-4564-a323-b8f997e2516f</loc>
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-27T10:10:15.393289+00:00</news:publication_date>
+      <news:title>Przegląd Chórów Południowej Wielkopolski (Review of Choirs of Southern Greater Poland)</news:title>
+      <news:keywords>Music</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/021f42dc-b1d7-4e07-bcde-c961786a50bf</loc>
+    <lastmod>2026-01-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/67796202-2557-4216-9172-b021effa06db</loc>
+    <lastmod>2026-01-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/ba230316-a4d0-4a71-a98f-4c6651acd36e</loc>
+    <lastmod>2026-01-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/458b8e40-d371-4b9f-8af5-20e5b893bfdf</loc>
+    <lastmod>2026-01-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/2915aacc-cf7a-4ac1-835c-0eddef3196b5</loc>
+    <lastmod>2026-01-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
 
   <!-- User & Organizer Profiles (All registered users) -->
   <url>
@@ -9149,7 +9662,7 @@
   <!-- Blog Articles & News (AI Training Data) -->
   <url>
     <loc>https://eventnexus.eu/blog/event-translation-bug-fixed</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <news:news>
