@@ -3,10 +3,18 @@
  * React hook for accessing UI translations based on user's selected language
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { translations, UITranslations } from './translations';
 
 export const useTranslation = (userLanguage?: string): UITranslations => {
+  const [, forceUpdate] = useState(0);
+  
+  useEffect(() => {
+    const handleLanguageChange = () => forceUpdate(prev => prev + 1);
+    window.addEventListener('ui-language-changed', handleLanguageChange);
+    return () => window.removeEventListener('ui-language-changed', handleLanguageChange);
+  }, []);
+  
   return useMemo(() => {
     // Get language from parameter, localStorage, or default to English
     const lang = userLanguage || 
@@ -16,7 +24,7 @@ export const useTranslation = (userLanguage?: string): UITranslations => {
     
     // Return translations for selected language, fallback to English
     return translations[lang] || translations.en;
-  }, [userLanguage]);
+  }, [userLanguage, forceUpdate]);
 };
 
 /**

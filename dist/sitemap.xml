@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-28T07:45:52.381Z -->
+<!-- Last generated: 2026-01-28T07:53:25.302Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Core Platform Pages (Public & AI-crawlable) -->
   <url>
@@ -1122,6 +1122,96 @@
       <news:publication_date>2026-01-28T07:37:30.917894+00:00</news:publication_date>
       <news:title>Ukrainian Speaking Club</news:title>
       <news:keywords>Language Exchange</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/6d3c1bfe-68a7-485f-be41-8e80af2e06f5</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:47:09.559119+00:00</news:publication_date>
+      <news:title>JobStart Apprenticeship Pathway Jobs Fair</news:title>
+      <news:keywords>Jobs Fair</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/1c409aa2-6be8-4e8c-9c34-7a8e9a302544</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:50:27.314912+00:00</news:publication_date>
+      <news:title>Record Fair at Bristol Beacon (Bridgehouse)</news:title>
+      <news:keywords>Market</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/ab9306f5-249a-42e2-9013-cc7bfa5d2082</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:50:30.495216+00:00</news:publication_date>
+      <news:title>Guided Tour of St Mary Redcliffe Church</news:title>
+      <news:keywords>Tour</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/601c9676-d1b2-46c7-bea8-cf3deb340e29</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:50:36.921354+00:00</news:publication_date>
+      <news:title>Bristol&apos;s Dinosaurs Tour at Bristol Museum &amp; Art Gallery</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/1480fb3a-449b-4d6a-869f-4ddcf70baa1d</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:50:33.703731+00:00</news:publication_date>
+      <news:title>Cosmos: The Art of Observing Space at Royal West of England Academy (RWA)</news:title>
+      <news:keywords>Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/71176025-6464-4723-8a79-a1bbadf2db6f</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:50:43.530373+00:00</news:publication_date>
+      <news:title>Bristol Museum &amp; Art Gallery</news:title>
+      <news:keywords>Museum</news:keywords>
     </news:news>
   </url>
   <url>
@@ -4701,6 +4791,51 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/2b47a2ac-f7ee-4b22-aef1-ce335c1b9f00</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:50:53.944886+00:00</news:publication_date>
+      <news:title>Free Weekly Tours of Clifton Suspension Bridge</news:title>
+      <news:keywords>Tour</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/18d4fddf-1238-4402-9e17-22bcbae4922f</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:51:15.251746+00:00</news:publication_date>
+      <news:title>Parkrun - Blaise Castle Estate</news:title>
+      <news:keywords>Sporting Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/ac626d34-2093-4fce-b6b4-c7434baf6785</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:51:04.64357+00:00</news:publication_date>
+      <news:title>Parkrun - Eastville Park</news:title>
+      <news:keywords>Sporting Event</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/fd0ccce4-3bc5-4177-8a18-8912b9a74bae</loc>
     <lastmod>2026-01-23</lastmod>
     <changefreq>weekly</changefreq>
@@ -7288,60 +7423,6 @@
   </url>
   <url>
     <loc>https://eventnexus.eu/event/8e02ddab-ef9a-4196-8730-dbf37a7f8d81</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a61b37aa-2c6e-4472-a9ad-42c003319dcf</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/4ca1898a-d92c-4335-833c-5bd302a5ea97</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/a2f0257b-8a82-4b3f-9210-d2dd8e01ade3</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/9b817238-cae4-4aac-943d-b02368c8c069</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/3d9e9858-5992-480d-abdd-7c2a386eab83</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/963d3d0f-55e8-4700-b2a0-17d457bee40c</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/60207d1f-1d65-46e7-b40d-a072673acdd8</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c36aac3b-8cab-440f-8e6b-05b6d53065ab</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c5b8ded9-51d4-4463-9602-041cf8023ac7</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
