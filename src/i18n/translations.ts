@@ -494,6 +494,116 @@ export interface UITranslations {
     guestLimit: string;
     unlockLanguages: string;
   };
+
+  // Legal Pages
+  terms: {
+    title: string;
+    lastUpdated: string;
+    section1Title: string;
+    section1Content: string;
+    section2Title: string;
+    section2Content: string;
+    section3Title: string;
+    section3Content: string;
+    section4Title: string;
+    section4Content: string;
+  };
+
+  privacy: {
+    title: string;
+    lastUpdated: string;
+    section1Title: string;
+    section1Content: string;
+    section2Title: string;
+    section2Content: string;
+    section3Title: string;
+    section3Content: string;
+    section4Title: string;
+    section4Content: string;
+    section5Title: string;
+    section5Content: string;
+    section6Title: string;
+    section6Content: string;
+    section7Title: string;
+    section7Content: string;
+    section8Title: string;
+    section8Content: string;
+    section9Title: string;
+    section9Content: string;
+    section10Title: string;
+    section10Content: string;
+    section11Title: string;
+    section11Content: string;
+    section12Title: string;
+    section12Content: string;
+  };
+
+  help: {
+    title: string;
+    subtitle: string;
+    searchPlaceholder: string;
+    categories: {
+      attendee: string;
+      attendeeDesc: string;
+      organizer: string;
+      organizerDesc: string;
+      billing: string;
+      billingDesc: string;
+      safety: string;
+      safetyDesc: string;
+    };
+    faqTitle: string;
+    faq1Q: string;
+    faq1A: string;
+    faq2Q: string;
+    faq2A: string;
+    faq3Q: string;
+    faq3A: string;
+    faq4Q: string;
+    faq4A: string;
+    faq5Q: string;
+    faq5A: string;
+    faq6Q: string;
+    faq6A: string;
+    contactTitle: string;
+    contactSubtitle: string;
+    liveChat: string;
+    emailSupport: string;
+  };
+
+  cookies: {
+    title: string;
+    subtitle: string;
+    essential: string;
+    essentialDesc: string;
+    analytics: string;
+    analyticsDesc: string;
+    functional: string;
+    functionalDesc: string;
+    marketing: string;
+    marketingDesc: string;
+    savePreferences: string;
+    acceptAll: string;
+    infoText: string;
+  };
+
+  gdpr: {
+    title: string;
+    subtitle: string;
+    rightAccess: string;
+    rightAccessDesc: string;
+    rightRectification: string;
+    rightRectificationDesc: string;
+    rightPortability: string;
+    rightPortabilityDesc: string;
+    rightErasure: string;
+    rightErasureDesc: string;
+    rightRestriction: string;
+    rightRestrictionDesc: string;
+    exerciseTitle: string;
+    exerciseSubtitle: string;
+    contactDPO: string;
+  };
 }
 
 export const translations: Record<string, UITranslations> = {
@@ -967,6 +1077,110 @@ export const translations: Record<string, UITranslations> = {
       guestLimit: 'Limited selection for guests',
       unlockLanguages: 'Register to unlock 100+ languages',
     },
+    terms: {
+      title: 'Terms of Service',
+      lastUpdated: 'January 20, 2026',
+      section1Title: '1. Acceptance of Terms',
+      section1Content: 'By accessing or using EventNexus, you agree to be bound by these Terms of Service. If you do not agree to all terms, you may not access the platform. We reserve the right to update these terms at any time.',
+      section2Title: '2. User Accounts',
+      section2Content: 'You must be at least 18 years old to create an account. You are responsible for maintaining the security of your account and password. EventNexus cannot and will not be liable for any loss or damage from your failure to comply with this security obligation.',
+      section3Title: '3. Ticket Purchases and Refunds',
+      section3Content: 'All ticket purchases are final, subject to the refund policy set by the event organizer. EventNexus acts as an intermediary; we are not responsible for event cancellations, though we facilitate refunds when authorized by the organizer.',
+      section4Title: '4. Content and Conduct',
+      section4Content: 'You may not use the platform for any illegal or unauthorized purpose. You are solely responsible for the content you upload, including event descriptions, images, and reviews. We reserve the right to remove any content that violates our community standards.',
+    },
+    privacy: {
+      title: 'Privacy Policy',
+      lastUpdated: 'January 20, 2026',
+      section1Title: '1. Introduction',
+      section1Content: 'At EventNexus, we prioritize your data security. This Privacy Policy explains how we collect, use, and protect your personal information. We are committed to transparency and GDPR compliance for all our users, especially those in the European Union.',
+      section2Title: '2. Data Collection',
+      section2Content: 'We collect minimal data to provide personalized event recommendations via our AI engine. Information collected includes: email address (required for account creation and event updates), name and profile information (optional), location data via GPS for map-based discovery (with your permission), usage statistics and device information (automatically collected), and payment information processed securely through Stripe (we do not store your credit card information).',
+      section3Title: '3. How We Use Data',
+      section3Content: 'Your data is used to: provide the map-first discovery service and personalized event recommendations powered by our AI engine (Google Gemini), process ticket transactions securely via Stripe, send event updates and notifications about events you\'re interested in, improve platform performance through analytics and AI-driven insights, and ensure security and prevent fraud.',
+      section4Title: '4. Data Sharing',
+      section4Content: 'We share your contact information with event organizers only for events you have purchased tickets for. We do not sell your personal data to third parties for marketing purposes. We use trusted service providers: Google Cloud Infrastructure (hosting and AI services), Stripe (payment processing), and Supabase (secure database with PostgreSQL). All service providers are contractually bound to protect your data and comply with GDPR standards.',
+      section5Title: '5. Infrastructure & Security',
+      section5Content: 'EventNexus uses Google Cloud Infrastructure to host our services, ensuring enterprise-level security and reliability. All data is encrypted in transit and at rest. We implement robust security protocols including Row Level Security (RLS) policies in our database, PCI DSS Level 1 compliant payment processing through Stripe, and regular security audits and monitoring. We are fully GDPR compliant to protect our EU users.',
+      section6Title: '6. Your Rights (GDPR)',
+      section6Content: 'Under GDPR, you have the right to: access your personal data, correct inaccurate data, request deletion of your data (right to be forgotten), object to data processing, request data portability, and withdraw consent at any time. To exercise these rights, contact us at support@eventnexus.eu with response time within 24 hours.',
+      section7Title: '7. Data Retention',
+      section7Content: 'We retain your personal data only as long as necessary to provide our services and comply with legal obligations. Account data is kept while your account is active. Transaction records are retained for 7 years for tax and legal compliance. Marketing communications data is kept until you unsubscribe.',
+      section8Title: '8. Cookies & Tracking',
+      section8Content: 'We use essential cookies for authentication and session management. Analytics cookies help us understand how you use our platform (you can opt-out). We do not use third-party advertising cookies. You can manage cookie preferences in your browser settings.',
+      section9Title: '9. International Data Transfers',
+      section9Content: 'Your data may be processed in countries outside the EU, including the United States (Google Cloud, Stripe). We ensure adequate protection through: Standard Contractual Clauses (SCCs) approved by the European Commission, and service providers certified under EU-US Data Privacy Framework where applicable.',
+      section10Title: '10. Children\'s Privacy',
+      section10Content: 'EventNexus is not intended for users under 16 years of age. We do not knowingly collect data from children. If you believe we have collected data from a child, contact us immediately.',
+      section11Title: '11. Changes to This Policy',
+      section11Content: 'We may update this Privacy Policy from time to time. We will notify you of significant changes via email or prominent notice on our platform. Continued use after changes constitutes acceptance.',
+      section12Title: '12. Contact Us',
+      section12Content: 'For privacy-related questions or to exercise your rights, contact us at: Email: support@eventnexus.eu, Response time: Within 24 hours, Address: Põltsamaa, Estonia, Legal Entity: EventNexus OÜ',
+    },
+    help: {
+      title: 'How can we help?',
+      subtitle: 'Search for articles, guides, or solutions...',
+      searchPlaceholder: 'Search for articles, guides, or solutions...',
+      categories: {
+        attendee: 'Attendee Support',
+        attendeeDesc: 'Finding events, buying tickets, and account help.',
+        organizer: 'Organizer Hub',
+        organizerDesc: 'Creating events, managing sales, and promotion.',
+        billing: 'Billing & Payouts',
+        billingDesc: 'Fees, refunds, and revenue management.',
+        safety: 'Trust & Safety',
+        safetyDesc: 'Privacy, security, and verification.',
+      },
+      faqTitle: 'Frequently Asked Questions',
+      faq1Q: 'How do I get my ticket after purchase?',
+      faq1A: 'Once your payment is confirmed, your digital ticket with a unique QR code is instantly available in your \'My Tickets\' section within your user profile. You will also receive a confirmation email with a link to your ticket.',
+      faq2Q: 'What is the refund policy for events?',
+      faq2A: 'Refund policies are set by individual organizers. Generally, you can request a full refund up to 24 hours before the event starts. Check the event detail page for specific terms.',
+      faq3Q: 'How do I create a private, invite-only event?',
+      faq3A: 'During the event creation flow (Step 3), select \'Private / Invite Only\'. This will hide your event from the map. You can then share a secret link or access code with your guests.',
+      faq4Q: 'How does the AI translation work?',
+      faq4A: 'EventNexus uses Gemini AI to automatically translate your event name and description into over 12 languages. This happens automatically when you publish, ensuring global reach without extra work.',
+      faq5Q: 'Why does my first payout have a waiting period?',
+      faq5A: 'Stripe requires a mandatory 7-14 day waiting period for your first payout as part of their risk mitigation process. This cannot be waived under any circumstances. Any changes to your payout method or schedule during this time will take effect after the waiting period ends. You can check your estimated payout date in your Stripe Dashboard.',
+      faq6Q: 'When will I receive my payout after an event?',
+      faq6A: 'Payouts are processed automatically 2 days after your event completes. This allows time for refund requests and ensures secure transactions. Your first payout will include the 7-14 day Stripe waiting period. After that, subsequent payouts follow the standard 2-day schedule from Supabase.',
+      contactTitle: 'Still need help?',
+      contactSubtitle: 'Our global support team is available 24/7 to help you with any issues or questions about the platform.',
+      liveChat: 'Live AI Chat',
+      emailSupport: 'Email Support',
+    },
+    cookies: {
+      title: 'Cookie Settings',
+      subtitle: 'Manage how we use cookies and similar technologies to enhance your EventNexus experience.',
+      essential: 'Essential Cookies',
+      essentialDesc: 'Required for basic platform functionality, security, and ticket processing. These cannot be disabled.',
+      analytics: 'Performance & Analytics',
+      analyticsDesc: 'Helps us understand how users interact with our global map and event listings so we can improve the UI/UX.',
+      functional: 'Functional Cookies',
+      functionalDesc: 'Remembers your preferences like language, currency, and search radius.',
+      marketing: 'Marketing & Targeted Ads',
+      marketingDesc: 'Used to show you events on other platforms that match your interests. Helps organizers reach the right audience.',
+      savePreferences: 'Save My Preferences',
+      acceptAll: 'Accept All Cookies',
+      infoText: 'Your preferences are stored locally on your device. Clearing your browser cache will reset these settings to their default values. For more details, see our Privacy Policy.',
+    },
+    gdpr: {
+      title: 'GDPR Compliance',
+      subtitle: 'EventNexus is fully committed to the General Data Protection Regulation (GDPR). We believe in total transparency and empower our users with full control over their digital footprint.',
+      rightAccess: 'Right to Access',
+      rightAccessDesc: 'You can request a full copy of all personal data we store about you.',
+      rightRectification: 'Right to Rectification',
+      rightRectificationDesc: 'Easily update your profile and event data at any time via settings.',
+      rightPortability: 'Data Portability',
+      rightPortabilityDesc: 'Download your ticket history and activity in machine-readable JSON format.',
+      rightErasure: 'Right to Erasure',
+      rightErasureDesc: 'Request total deletion of your account and all associated personal records.',
+      rightRestriction: 'Restriction of Processing',
+      rightRestrictionDesc: 'Limit how your data is used for marketing or analytics purposes.',
+      exerciseTitle: 'Exercise Your Rights',
+      exerciseSubtitle: 'To submit a Data Subject Access Request (DSAR) or request account erasure, please contact our Data Protection Officer.',
+      contactDPO: 'Contact DPO',
+    },
   },
   
   et: {
@@ -1439,6 +1653,110 @@ export const translations: Record<string, UITranslations> = {
       guestLimit: 'Külalistele piiratud valik',
       unlockLanguages: 'Registreeru, et avada 100+ keelt',
     },
+    terms: {
+      title: 'Kasutustingimused',
+      lastUpdated: '20. jaanuar 2026',
+      section1Title: '1. Tingimuste aktsepteerimine',
+      section1Content: 'EventNexusi kasutades nõustute olema seotud nende kasutustingimustega. Kui te ei nõustu kõigi tingimustega, ei tohi te platvormi kasutada. Jätame endale õiguse neid tingimusi igal ajal uuendada.',
+      section2Title: '2. Kasutajakontod',
+      section2Content: 'Konto loomiseks peate olema vähemalt 18-aastane. Olete vastutav oma konto ja parooli turvalisuse eest. EventNexus ei vastuta kahju eest, mis tuleneb teie turvakohustuse täitmata jätmisest.',
+      section3Title: '3. Piletite ostmine ja tagastamine',
+      section3Content: 'Kõik piletite ostud on lõplikud, sõltuvalt ürituse korraldaja tagastuspoliitikast. EventNexus tegutseb vahendajana; me ei vastuta ürituste tühistamise eest, kuigi me hõlbustame tagastusi, kui korraldaja on selle autoriseerinud.',
+      section4Title: '4. Sisu ja käitumine',
+      section4Content: 'Te ei tohi platvormi kasutada ebaseaduslikel või volitamata eesmärkidel. Olete ainuvastutav üles laaditud sisu eest, sealhulgas ürituste kirjeldused, pildid ja arvustused. Jätame endale õiguse eemaldada sisu, mis rikub meie kogukonna standardeid.',
+    },
+    privacy: {
+      title: 'Privaatsuspoliitika',
+      lastUpdated: '20. jaanuar 2026',
+      section1Title: '1. Sissejuhatus',
+      section1Content: 'EventNexusis on teie andmete turvalisus meie prioriteet. See privaatsuspoliitika selgitab, kuidas me kogume, kasutame ja kaitseme teie isikuandmeid. Oleme pühendunud läbipaistvusele ja GDPR nõuetele kõigi meie kasutajate jaoks, eriti Euroopa Liidus.',
+      section2Title: '2. Andmete kogumine',
+      section2Content: 'Kogume minimaalset hulka andmeid, et pakkuda isikupärastatud ürituste soovitusi meie AI mootori kaudu. Kogutav teave hõlmab: e-posti aadress (vajalik konto loomiseks ja ürituste uuendusteks), nimi ja profiili info (valikuline), asukoha andmed GPS kaudu kaardipõhise avastamise jaoks (teie loal), kasutusstatistika ja seadme info (automaatselt kogutud) ning makseteave, mida töödeldakse turvaliselt Stripe\'i kaudu (me ei salvesta teie krediitkaardi infot).',
+      section3Title: '3. Kuidas me andmeid kasutame',
+      section3Content: 'Teie andmeid kasutatakse: kaardipõhise avastamise teenuse ja isikupärastatud ürituste soovituste pakkumiseks, mida toetab meie AI mootor (Google Gemini), piletite tehingute turvaliseks töötlemiseks Stripe\'i kaudu, ürituste uuenduste ja teavituste saatmiseks, mis teid huvitavad, platvormi jõudluse parandamiseks läbi analüütika ja AI-põhiste teadmiste ning turvalisuse tagamiseks ja pettuse ennetamiseks.',
+      section4Title: '4. Andmete jagamine',
+      section4Content: 'Jagame teie kontakti infot ürituste korraldajatega ainult nende ürituste puhul, millele olete pileteid ostnud. Me ei müü teie isikuandmeid kolmandatele osapooltele turunduse eesmärkidel. Kasutame usaldusväärseid teenusepakkujaid: Google Cloud Infrastructure (hosting ja AI teenused), Stripe (maksete töötlemine) ja Supabase (turvaline andmebaas PostgreSQL-iga). Kõik teenusepakkujad on lepinguliselt kohustatud kaitsma teie andmeid ja järgima GDPR standardeid.',
+      section5Title: '5. Infrastruktuur ja turvalisus',
+      section5Content: 'EventNexus kasutab Google Cloud Infrastructure\'i meie teenuste hostimiseks, tagades ettevõtte taseme turvalisuse ja usaldusväärsuse. Kõik andmed on krüpteeritud nii edastamisel kui ka salvestamisel. Rakendame tugevaid turvaprotokolle, sealhulgas Row Level Security (RLS) poliitikad meie andmebaasis, PCI DSS Level 1 nõuetele vastav maksete töötlemine Stripe\'i kaudu ning regulaarsed turvalisuse auditid ja monitooring. Oleme täielikult GDPR nõuetele vastavad, et kaitsta meie EL kasutajaid.',
+      section6Title: '6. Teie õigused (GDPR)',
+      section6Content: 'GDPR alusel on teil õigus: juurdepääseda oma isikuandmetele, parandada ebatäpseid andmeid, taotleda oma andmete kustutamist (õigus olla unustatud), vastuväiteid esitada andmete töötlemisele, taotleda andmete ülekantavust ning igal ajal nõusolek tagasi võtta. Nende õiguste teostamiseks võtke meiega ühendust aadressil support@eventnexus.eu, vastamisaeg 24 tunni jooksul.',
+      section7Title: '7. Andmete säilitamine',
+      section7Content: 'Säilitame teie isikuandmeid ainult nii kaua, kui see on vajalik meie teenuste pakkumiseks ja seaduslike kohustuste täitmiseks. Konto andmeid säilitatakse kuni teie konto on aktiivne. Tehingu kirjeid säilitatakse 7 aastat maksu- ja õiguslike nõuete täitmiseks. Turundussõnumite andmeid säilitatakse kuni te loobute.',
+      section8Title: '8. Küpsised ja jälgimine',
+      section8Content: 'Kasutame olulisi küpsiseid autentimise ja seansihalduse jaoks. Analüütikaküpsised aitavad meil mõista, kuidas te meie platvormi kasutate (võite loobuda). Me ei kasuta kolmandate osapoolte reklaamiküpsiseid. Saate hallata küpsiste eelistusi oma brauseri seadetes.',
+      section9Title: '9. Rahvusvahelised andmeedastused',
+      section9Content: 'Teie andmeid võidakse töödelda EL-ist väljapool asuvates riikides, sealhulgas Ameerika Ühendriikides (Google Cloud, Stripe). Tagame piisava kaitse läbi: Euroopa Komisjoni heakskiidetud standardsed lepingulised klauslid (SCC) ja teenusepakkujad, kes on sertifitseeritud EL-USA andmekaitsealase raamistiku alusel, kus see on kohaldatav.',
+      section10Title: '10. Laste privaatsus',
+      section10Content: 'EventNexus ei ole mõeldud alla 16-aastastele kasutajatele. Me ei kogu teadlikult andmeid lastelt. Kui arvate, et oleme kogunud andmeid lapselt, võtke meiega viivitamatult ühendust.',
+      section11Title: '11. Muudatused selles poliitikas',
+      section11Content: 'Võime aeg-ajalt seda privaatsuspoliitikat uuendada. Teavitame teid olulistest muudatustest e-posti või silmapaistva teate kaudu meie platvormil. Jätkuv kasutamine pärast muudatusi tähendab nõustumist.',
+      section12Title: '12. Võtke meiega ühendust',
+      section12Content: 'Privaatsusega seotud küsimuste või oma õiguste teostamiseks võtke meiega ühendust: E-post: support@eventnexus.eu, Vastamisaeg: 24 tunni jooksul, Aadress: Põltsamaa, Eesti, Juriidiline isik: EventNexus OÜ',
+    },
+    help: {
+      title: 'Kuidas saame aidata?',
+      subtitle: 'Otsi artikleid, juhendeid või lahendusi...',
+      searchPlaceholder: 'Otsi artikleid, juhendeid või lahendusi...',
+      categories: {
+        attendee: 'Osaleja tugi',
+        attendeeDesc: 'Ürituste leidmine, piletite ostmine ja konto abi.',
+        organizer: 'Korraldaja keskus',
+        organizerDesc: 'Ürituste loomine, müügi haldamine ja edendamine.',
+        billing: 'Arveldamine ja väljamaksed',
+        billingDesc: 'Tasud, tagastused ja tulu haldamine.',
+        safety: 'Usaldus ja turvalisus',
+        safetyDesc: 'Privaatsus, turvalisus ja verifitseerimine.',
+      },
+      faqTitle: 'Korduma kippuvad küsimused',
+      faq1Q: 'Kuidas ma saan oma pileti pärast ostu?',
+      faq1A: 'Kui teie makse on kinnitatud, on teie digitaalne pilet koos ainulaadse QR-koodiga kohe saadaval teie kasutajaprofiili jaotises "Minu piletid". Saate ka kinnituse e-kirja koos lingiga oma piletile.',
+      faq2Q: 'Milline on ürituste tagastuspoliitika?',
+      faq2A: 'Tagastuspoliitikad määravad individuaalsed korraldajad. Üldiselt saate taotleda täielikku tagastust kuni 24 tundi enne ürituse algust. Kontrollige konkreetsete tingimuste jaoks ürituse detailide lehte.',
+      faq3Q: 'Kuidas luua privaatset, ainult kutsega üritust?',
+      faq3A: 'Ürituse loomise voo ajal (Samm 3) valige "Privaatne / Ainult kutsega". See peidab teie ürituse kaardilt. Seejärel saate jagada salalinki või juurdepääsukoodi oma külalistega.',
+      faq4Q: 'Kuidas AI tõlge töötab?',
+      faq4A: 'EventNexus kasutab Gemini AI-d, et automaatselt tõlkida teie ürituse nime ja kirjeldust üle 12 keelde. See toimub automaatselt avaldamisel, tagades globaalse ulatuse ilma lisatööta.',
+      faq5Q: 'Miks on minu esimesel väljamaksel ooteperiood?',
+      faq5A: 'Stripe nõuab kohustuslikku 7-14-päevast ooteperioodi teie esimese väljamakse jaoks osana nende riskide maandamise protsessist. Seda ei saa ühelgi juhul loobuda. Kõik muudatused teie väljamakse meetodis või ajakavas selle aja jooksul jõustuvad pärast ooteperioodi lõppu. Saate kontrollida oma eeldatavat väljamakse kuupäeva oma Stripe\'i juhtpaneelil.',
+      faq6Q: 'Millal ma saan oma väljamakse pärast üritust?',
+      faq6A: 'Väljamaksed töödeldakse automaatselt 2 päeva pärast teie ürituse lõppu. See annab aega tagastuspalvetele ja tagab turvalised tehingud. Teie esimene väljamakse sisaldab 7-14-päevast Stripe\'i ooteperioodi. Pärast seda järgivad järgnevad väljamaksed standardset 2-päevast ajakava Supabase\'ist.',
+      contactTitle: 'Kas vajate veel abi?',
+      contactSubtitle: 'Meie ülemaailmne tugimeeskond on saadaval 24/7, et aidata teid mis tahes probleemide või küsimustega platvormi kohta.',
+      liveChat: 'Live AI vestlus',
+      emailSupport: 'E-posti tugi',
+    },
+    cookies: {
+      title: 'Küpsiste seaded',
+      subtitle: 'Hallake, kuidas me kasutame küpsiseid ja sarnaseid tehnoloogiaid teie EventNexusi kogemuse parandamiseks.',
+      essential: 'Olulised küpsised',
+      essentialDesc: 'Vajalik platvormi põhifunktsionaalsuse, turvalisuse ja piletite töötlemise jaoks. Neid ei saa keelata.',
+      analytics: 'Jõudlus ja analüütika',
+      analyticsDesc: 'Aitab meil mõista, kuidas kasutajad suhtlevad meie globaalse kaardi ja ürituste loetelutega, et saaksime UI/UX-i parandada.',
+      functional: 'Funktsionaalsed küpsised',
+      functionalDesc: 'Mäletab teie eelistusi nagu keel, valuuta ja otsinguradius.',
+      marketing: 'Turundus ja sihitud reklaamid',
+      marketingDesc: 'Kasutatakse teile ürituste näitamiseks teistel platvormidel, mis vastavad teie huvidele. Aitab korraldajatel jõuda õige publikuni.',
+      savePreferences: 'Salvesta minu eelistused',
+      acceptAll: 'Aktsepteeri kõiki küpsiseid',
+      infoText: 'Teie eelistused on salvestatud teie seadmele lokaalselt. Brauseri vahemälu tühjendamine lähtestab need seaded vaikeväärtustele. Lisateabe saamiseks vaadake meie privaatsuspoliitikat.',
+    },
+    gdpr: {
+      title: 'GDPR vastavus',
+      subtitle: 'EventNexus on täielikult pühendunud Üldisele Andmekaitse Määrusele (GDPR). Usume täielikku läbipaistvust ja anname meie kasutajatele täieliku kontrolli nende digitaalse jalajälje üle.',
+      rightAccess: 'Õigus juurdepääsule',
+      rightAccessDesc: 'Võite taotleda täielikku koopiat kõigist teie kohta salvestatud isikuandmetest.',
+      rightRectification: 'Õigus parandamisele',
+      rightRectificationDesc: 'Uuendage hõlpsalt oma profiili ja ürituse andmeid igal ajal seadete kaudu.',
+      rightPortability: 'Andmete ülekantavus',
+      rightPortabilityDesc: 'Laadige alla oma piletite ajalugu ja tegevus masinloetavas JSON vormingus.',
+      rightErasure: 'Õigus kustutamisele',
+      rightErasureDesc: 'Taotlege oma konto ja kõigi seotud isiklike kirjete täielikku kustutamist.',
+      rightRestriction: 'Töötlemise piiramine',
+      rightRestrictionDesc: 'Piirange, kuidas teie andmeid kasutatakse turunduse või analüütika eesmärkidel.',
+      exerciseTitle: 'Teostage oma õigusi',
+      exerciseSubtitle: 'Andmesubjekti juurdepääsutaotluse (DSAR) esitamiseks või konto kustutamise taotlemiseks võtke palun ühendust meie andmekaitsevolitatud isikuga.',
+      contactDPO: 'Võtke ühendust DPO-ga',
+    },
   },
   
   ru: {
@@ -1805,6 +2123,110 @@ export const translations: Record<string, UITranslations> = {
       registeredUsers: 'Зарегистрированные пользователи могут выбрать из более чем 100 языков!',
       guestLimit: 'Ограниченный выбор для гостей',
       unlockLanguages: 'Зарегистрируйтесь, чтобы разблокировать 100+ языков',
+    },
+    terms: {
+      title: 'Условия использования',
+      lastUpdated: '20 января 2026',
+      section1Title: '1. Принятие условий',
+      section1Content: 'Используя EventNexus, вы соглашаетесь с настоящими Условиями использования. Если вы не согласны со всеми условиями, вы не можете использовать платформу. Мы оставляем за собой право обновлять эти условия в любое время.',
+      section2Title: '2. Учетные записи пользователей',
+      section2Content: 'Вам должно быть не менее 18 лет для создания учетной записи. Вы несете ответственность за безопасность вашей учетной записи и пароля. EventNexus не несет ответственности за любые убытки или ущерб, возникшие из-за несоблюдения вами этих обязательств по безопасности.',
+      section3Title: '3. Покупка билетов и возвраты',
+      section3Content: 'Все покупки билетов являются окончательными, в соответствии с политикой возврата, установленной организатором мероприятия. EventNexus выступает в качестве посредника; мы не несем ответственности за отмену мероприятий, но мы облегчаем возврат средств, когда это авторизовано организатором.',
+      section4Title: '4. Контент и поведение',
+      section4Content: 'Вы не можете использовать платформу в незаконных или несанкционированных целях. Вы несете полную ответственность за загружаемый вами контент, включая описания мероприятий, изображения и отзывы. Мы оставляем за собой право удалить любой контент, нарушающий наши стандарты сообщества.',
+    },
+    privacy: {
+      title: 'Политика конфиденциальности',
+      lastUpdated: '20 января 2026',
+      section1Title: '1. Введение',
+      section1Content: 'В EventNexus мы приоритизируем безопасность ваших данных. Эта Политика конфиденциальности объясняет, как мы собираем, используем и защищаем вашу личную информацию. Мы привержены прозрачности и соответствию GDPR для всех наших пользователей, особенно в Европейском Союзе.',
+      section2Title: '2. Сбор данных',
+      section2Content: 'Мы собираем минимальные данные для предоставления персонализированных рекомендаций мероприятий через наш AI движок. Собираемая информация включает: адрес электронной почты (требуется для создания учетной записи и обновлений мероприятий), имя и информация профиля (по желанию), данные о местоположении через GPS для поиска на карте (с вашего разрешения), статистика использования и информация об устройстве (собирается автоматически), и платежная информация, обрабатываемая безопасно через Stripe (мы не храним информацию о вашей кредитной карте).',
+      section3Title: '3. Как мы используем данные',
+      section3Content: 'Ваши данные используются для: предоставления сервиса поиска на карте и персонализированных рекомендаций мероприятий, поддерживаемых нашим AI движком (Google Gemini), безопасной обработки билетных транзакций через Stripe, отправки обновлений мероприятий и уведомлений о мероприятиях, которые вас интересуют, улучшения производительности платформы через аналитику и AI-инсайты, а также обеспечения безопасности и предотвращения мошенничества.',
+      section4Title: '4. Обмен данными',
+      section4Content: 'Мы делимся вашей контактной информацией с организаторами мероприятий только для мероприятий, на которые вы купили билеты. Мы не продаем ваши личные данные третьим лицам в маркетинговых целях. Мы используем доверенных поставщиков услуг: Google Cloud Infrastructure (хостинг и AI сервисы), Stripe (обработка платежей) и Supabase (безопасная база данных с PostgreSQL). Все поставщики услуг договорно обязаны защищать ваши данные и соответствовать стандартам GDPR.',
+      section5Title: '5. Инфраструктура и безопасность',
+      section5Content: 'EventNexus использует Google Cloud Infrastructure для размещения наших сервисов, обеспечивая безопасность и надежность корпоративного уровня. Все данные шифруются при передаче и хранении. Мы реализуем надежные протоколы безопасности, включая политики Row Level Security (RLS) в нашей базе данных, обработку платежей, соответствующую PCI DSS Level 1, через Stripe, а также регулярные аудиты безопасности и мониторинг. Мы полностью соответствуем GDPR для защиты наших пользователей в ЕС.',
+      section6Title: '6. Ваши права (GDPR)',
+      section6Content: 'В соответствии с GDPR, у вас есть право: получить доступ к своим личным данным, исправить неточные данные, запросить удаление своих данных (право быть забытым), возразить против обработки данных, запросить переносимость данных и отозвать согласие в любое время. Для реализации этих прав свяжитесь с нами по адресу support@eventnexus.eu, время ответа в течение 24 часов.',
+      section7Title: '7. Хранение данных',
+      section7Content: 'Мы храним ваши личные данные только столько, сколько необходимо для предоставления наших услуг и соблюдения юридических обязательств. Данные учетной записи хранятся, пока ваша учетная запись активна. Записи о транзакциях хранятся в течение 7 лет для соблюдения налоговых и юридических требований. Данные маркетинговых коммуникаций хранятся до тех пор, пока вы не откажетесь от подписки.',
+      section8Title: '8. Cookies и отслеживание',
+      section8Content: 'Мы используем необходимые cookies для аутентификации и управления сеансами. Аналитические cookies помогают нам понять, как вы используете нашу платформу (вы можете отказаться). Мы не используем сторонние рекламные cookies. Вы можете управлять настройками cookies в настройках вашего браузера.',
+      section9Title: '9. Международные передачи данных',
+      section9Content: 'Ваши данные могут обрабатываться в странах за пределами ЕС, включая Соединенные Штаты (Google Cloud, Stripe). Мы обеспечиваем адекватную защиту через: Стандартные договорные оговорки (SCC), одобренные Европейской комиссией, и поставщиков услуг, сертифицированных в рамках EU-US Data Privacy Framework, где это применимо.',
+      section10Title: '10. Конфиденциальность детей',
+      section10Content: 'EventNexus не предназначен для пользователей младше 16 лет. Мы сознательно не собираем данные от детей. Если вы считаете, что мы собрали данные от ребенка, немедленно свяжитесь с нами.',
+      section11Title: '11. Изменения в этой политике',
+      section11Content: 'Мы можем время от времени обновлять эту Политику конфиденциальности. Мы уведомим вас о значительных изменениях по электронной почте или заметным уведомлением на нашей платформе. Продолжение использования после изменений означает принятие.',
+      section12Title: '12. Свяжитесь с нами',
+      section12Content: 'По вопросам конфиденциальности или для реализации ваших прав свяжитесь с нами: Email: support@eventnexus.eu, Время ответа: В течение 24 часов, Адрес: Põltsamaa, Эстония, Юридическое лицо: EventNexus OÜ',
+    },
+    help: {
+      title: 'Как мы можем помочь?',
+      subtitle: 'Поиск статей, руководств или решений...',
+      searchPlaceholder: 'Поиск статей, руководств или решений...',
+      categories: {
+        attendee: 'Поддержка участников',
+        attendeeDesc: 'Поиск мероприятий, покупка билетов и помощь с учетной записью.',
+        organizer: 'Центр организатора',
+        organizerDesc: 'Создание мероприятий, управление продажами и продвижение.',
+        billing: 'Биллинг и выплаты',
+        billingDesc: 'Сборы, возвраты и управление доходами.',
+        safety: 'Доверие и безопасность',
+        safetyDesc: 'Конфиденциальность, безопасность и верификация.',
+      },
+      faqTitle: 'Часто задаваемые вопросы',
+      faq1Q: 'Как я получу свой билет после покупки?',
+      faq1A: 'После подтверждения оплаты ваш цифровой билет с уникальным QR-кодом мгновенно становится доступным в разделе "Мои билеты" в вашем профиле. Вы также получите подтверждающее письмо со ссылкой на ваш билет.',
+      faq2Q: 'Какова политика возврата для мероприятий?',
+      faq2A: 'Политика возврата устанавливается отдельными организаторами. Обычно вы можете запросить полный возврат до 24 часов до начала мероприятия. Проверьте страницу с деталями мероприятия для конкретных условий.',
+      faq3Q: 'Как создать частное мероприятие только по приглашениям?',
+      faq3A: 'Во время процесса создания мероприятия (Шаг 3) выберите "Частное / Только по приглашениям". Это скроет ваше мероприятие с карты. Затем вы можете поделиться секретной ссылкой или кодом доступа с вашими гостями.',
+      faq4Q: 'Как работает AI перевод?',
+      faq4A: 'EventNexus использует Gemini AI для автоматического перевода названия и описания вашего мероприятия на более чем 12 языков. Это происходит автоматически при публикации, обеспечивая глобальный охват без дополнительной работы.',
+      faq5Q: 'Почему у моей первой выплаты есть период ожидания?',
+      faq5A: 'Stripe требует обязательный период ожидания в 7-14 дней для вашей первой выплаты в рамках их процесса снижения рисков. Это не может быть отменено ни при каких обстоятельствах. Любые изменения в вашем методе выплаты или расписании в это время вступят в силу после окончания периода ожидания. Вы можете проверить предполагаемую дату выплаты в вашей панели Stripe.',
+      faq6Q: 'Когда я получу свою выплату после мероприятия?',
+      faq6A: 'Выплаты обрабатываются автоматически через 2 дня после завершения вашего мероприятия. Это позволяет время для запросов на возврат и обеспечивает безопасные транзакции. Ваша первая выплата будет включать период ожидания Stripe в 7-14 дней. После этого последующие выплаты следуют стандартному 2-дневному расписанию от Supabase.',
+      contactTitle: 'Все еще нужна помощь?',
+      contactSubtitle: 'Наша глобальная команда поддержки доступна 24/7, чтобы помочь вам с любыми вопросами или проблемами на платформе.',
+      liveChat: 'Live AI чат',
+      emailSupport: 'Поддержка по электронной почте',
+    },
+    cookies: {
+      title: 'Настройки cookies',
+      subtitle: 'Управляйте тем, как мы используем cookies и аналогичные технологии для улучшения вашего опыта EventNexus.',
+      essential: 'Необходимые cookies',
+      essentialDesc: 'Требуются для основной функциональности платформы, безопасности и обработки билетов. Их нельзя отключить.',
+      analytics: 'Производительность и аналитика',
+      analyticsDesc: 'Помогает нам понять, как пользователи взаимодействуют с нашей глобальной картой и списками мероприятий, чтобы мы могли улучшить UI/UX.',
+      functional: 'Функциональные cookies',
+      functionalDesc: 'Запоминает ваши предпочтения, такие как язык, валюта и радиус поиска.',
+      marketing: 'Маркетинг и таргетированная реклама',
+      marketingDesc: 'Используется для показа вам мероприятий на других платформах, которые соответствуют вашим интересам. Помогает организаторам достичь нужной аудитории.',
+      savePreferences: 'Сохранить мои предпочтения',
+      acceptAll: 'Принять все cookies',
+      infoText: 'Ваши предпочтения хранятся локально на вашем устройстве. Очистка кеша браузера сбросит эти настройки до значений по умолчанию. Для получения дополнительной информации см. нашу Политику конфиденциальности.',
+    },
+    gdpr: {
+      title: 'Соответствие GDPR',
+      subtitle: 'EventNexus полностью привержен Общему регламенту по защите данных (GDPR). Мы верим в полную прозрачность и даем нашим пользователям полный контроль над их цифровым следом.',
+      rightAccess: 'Право на доступ',
+      rightAccessDesc: 'Вы можете запросить полную копию всех личных данных, которые мы храним о вас.',
+      rightRectification: 'Право на исправление',
+      rightRectificationDesc: 'Легко обновляйте свой профиль и данные о мероприятиях в любое время через настройки.',
+      rightPortability: 'Переносимость данных',
+      rightPortabilityDesc: 'Загрузите историю ваших билетов и активности в машиночитаемом формате JSON.',
+      rightErasure: 'Право на удаление',
+      rightErasureDesc: 'Запросите полное удаление вашей учетной записи и всех связанных личных записей.',
+      rightRestriction: 'Ограничение обработки',
+      rightRestrictionDesc: 'Ограничьте, как ваши данные используются для маркетинга или аналитики.',
+      exerciseTitle: 'Реализуйте свои права',
+      exerciseSubtitle: 'Для подачи запроса на доступ к данным субъекта (DSAR) или запроса удаления учетной записи, пожалуйста, свяжитесь с нашим сотрудником по защите данных.',
+      contactDPO: 'Связаться с DPO',
     },
     create: {
       breadcrumb: 'Создать событие',

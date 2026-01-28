@@ -1,28 +1,31 @@
 
 import React from 'react';
 import LegalPage from './LegalPage';
+import { useTranslation } from '../i18n/useTranslation';
 
 const TermsOfService: React.FC = () => {
+  const { t } = useTranslation();
+  
   const sections = [
     {
-      title: '1. Acceptance of Terms',
-      content: 'By accessing or using EventNexus, you agree to be bound by these Terms of Service. If you do not agree to all terms, you may not access the platform. We reserve the right to update these terms at any time.'
+      title: t.terms.section1Title,
+      content: t.terms.section1Content
     },
     {
-      title: '2. User Accounts',
-      content: 'You must be at least 18 years old to create an account. You are responsible for maintaining the security of your account and password. EventNexus cannot and will not be liable for any loss or damage from your failure to comply with this security obligation.'
+      title: t.terms.section2Title,
+      content: t.terms.section2Content
     },
     {
-      title: '3. Ticket Purchases and Refunds',
-      content: 'All ticket purchases are final, subject to the refund policy set by the event organizer. EventNexus acts as an intermediary; we are not responsible for event cancellations, though we facilitate refunds when authorized by the organizer.'
+      title: t.terms.section3Title,
+      content: t.terms.section3Content
     },
     {
-      title: '4. Content and Conduct',
-      content: 'You may not use the platform for any illegal or unauthorized purpose. You are solely responsible for the content you upload, including event descriptions, images, and reviews. We reserve the right to remove any content that violates our community standards.'
+      title: t.terms.section4Title,
+      content: t.terms.section4Content
     }
   ];
 
-  return <LegalPage title="Terms of Service" lastUpdated="January 20, 2026" sections={sections} />;
+  return <LegalPage title={t.terms.title} lastUpdated={t.terms.lastUpdated} sections={sections} />;
 };
 
 export default TermsOfService;
