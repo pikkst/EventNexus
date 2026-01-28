@@ -272,6 +272,113 @@ export interface UITranslations {
       responseTime: string;
     };
   };
+
+  // Event Creation Flow
+  create: {
+    breadcrumb: string;
+    stepProgress: string; // "Step {current} of {total}"
+    steps: {
+      basics: string;
+      location: string;
+      image: string;
+      details: string;
+      tickets: string;
+      review: string;
+    };
+    step1: {
+      title: string;
+      subtitle: string;
+      clearDraft: string;
+      nameLabel: string;
+      namePlaceholder: string;
+      categoryLabel: string;
+      categoryPlaceholder: string;
+      taglineLabel: string;
+      taglinePlaceholder: string;
+      taglineHelp: string;
+      generateTagline: string;
+      generating: string;
+      creditCost: string;
+      dateLabel: string;
+      timeLabel: string;
+      next: string;
+    };
+    step2: {
+      title: string;
+      subtitle: string;
+      startDateLabel: string;
+      startTimeLabel: string;
+      endDateLabel: string;
+      endTimeLabel: string;
+      optional: string;
+      venueLabel: string;
+      addressPlaceholder: string;
+      searchButton: string;
+      searching: string;
+      mapLabel: string;
+      mapHelp: string;
+      previous: string;
+      next: string;
+    };
+    step3: {
+      title: string;
+      subtitle: string;
+      uploadImage: string;
+      uploadHelp: string;
+      uploadLimit: string;
+      generateAI: string;
+      generating: string;
+      aiHelp: string;
+      creditCost: string;
+      removeImage: string;
+      previous: string;
+      next: string;
+    };
+    step4: {
+      title: string;
+      subtitle: string;
+      descriptionLabel: string;
+      descriptionPlaceholder: string;
+      priceLabel: string;
+      pricePlaceholder: string;
+      capacityLabel: string;
+      capacityPlaceholder: string;
+      previous: string;
+      next: string;
+    };
+    step5: {
+      title: string;
+      subtitle: string;
+      enableTicketing: string;
+      ticketingHelp: string;
+      addTemplate: string;
+      noTemplates: string;
+      previous: string;
+      next: string;
+    };
+    step6: {
+      title: string;
+      subtitle: string;
+      reviewDetails: string;
+      name: string;
+      category: string;
+      date: string;
+      time: string;
+      location: string;
+      price: string;
+      capacity: string;
+      publishing: string;
+      publish: string;
+      previous: string;
+    };
+    alerts: {
+      fillAllFields: string;
+      selectCategory: string;
+      selectLocation: string;
+      eventCreated: string;
+      creationFailed: string;
+    };
+  };
   
   // Common UI Elements
   common: {
@@ -656,6 +763,111 @@ export const translations: Record<string, UITranslations> = {
         responseTime: 'Response time: Within 24 hours',
       },
     },
+    create: {
+      breadcrumb: 'Create Event',
+      stepProgress: 'Step {current} of {total}',
+      steps: {
+        basics: 'Basics',
+        location: 'Location',
+        image: 'Image',
+        details: 'Details',
+        tickets: 'Tickets',
+        review: 'Review',
+      },
+      step1: {
+        title: 'Event Basics',
+        subtitle: 'Let\'s start with the fundamentals',
+        clearDraft: 'Clear Draft',
+        nameLabel: 'Event Name',
+        namePlaceholder: 'e.g. Neon nights music festival',
+        categoryLabel: 'Category',
+        categoryPlaceholder: 'Select a category',
+        taglineLabel: 'Catchy Tagline',
+        taglinePlaceholder: 'Let AI create an engaging tagline for your event...',
+        taglineHelp: 'A short, memorable phrase that captures the essence of your event',
+        generateTagline: 'AI Generate',
+        generating: 'Gemini is thinking...',
+        creditCost: '2 credits',
+        dateLabel: 'Date',
+        timeLabel: 'Time',
+        next: 'Next Step',
+      },
+      step2: {
+        title: 'When & Where',
+        subtitle: 'Set your event date, time, and venue',
+        startDateLabel: 'Start Date',
+        startTimeLabel: 'Start Time',
+        endDateLabel: 'End Date',
+        endTimeLabel: 'End Time',
+        optional: '(optional)',
+        venueLabel: 'Venue Location',
+        addressPlaceholder: 'Search address or venue name (e.g., Põltsamaa lossi 61)',
+        searchButton: 'Search',
+        searching: 'Searching...',
+        mapLabel: 'Drag pin or click on map to select location',
+        mapHelp: 'Click to select or drag the pin to adjust location',
+        previous: 'Previous',
+        next: 'Next Step',
+      },
+      step3: {
+        title: 'Event Image',
+        subtitle: 'Add a compelling visual to attract attendees',
+        uploadImage: 'Upload Image',
+        uploadHelp: 'Click to browse files',
+        uploadLimit: 'Max 10MB, auto-compressed',
+        generateAI: 'AI Generate Image',
+        generating: 'Generating...',
+        aiHelp: 'AI will create a professional event poster',
+        creditCost: '5 credits',
+        removeImage: 'Remove',
+        previous: 'Previous',
+        next: 'Next Step',
+      },
+      step4: {
+        title: 'Venue Seating Layout (Optional)',
+        subtitle: 'Skip this step if you don\'t need assigned seating. Perfect for concerts, theaters, and conferences with specific seat selection.',
+        descriptionLabel: 'Description',
+        descriptionPlaceholder: 'Describe your event...',
+        priceLabel: 'Price',
+        pricePlaceholder: '0',
+        capacityLabel: 'Capacity',
+        capacityPlaceholder: '100',
+        previous: 'Previous',
+        next: 'Next Step',
+      },
+      step5: {
+        title: 'Tickets & Pricing',
+        subtitle: 'Configure ticket types and pricing',
+        enableTicketing: 'Enable Ticketing',
+        ticketingHelp: 'Create ticket templates for different attendee types',
+        addTemplate: 'Add Ticket Template',
+        noTemplates: 'No ticket templates yet',
+        previous: 'Previous',
+        next: 'Review',
+      },
+      step6: {
+        title: 'Review & Publish',
+        subtitle: 'Double-check your event before going live',
+        reviewDetails: 'Review your event details',
+        name: 'Name',
+        category: 'Category',
+        date: 'Date',
+        time: 'Time',
+        location: 'Location',
+        price: 'Price',
+        capacity: 'Capacity',
+        publishing: 'Publishing...',
+        publish: 'Publish Event',
+        previous: 'Previous',
+      },
+      alerts: {
+        fillAllFields: 'Please fill in all required fields',
+        selectCategory: 'Please select a category',
+        selectLocation: 'Please select a location on the map',
+        eventCreated: 'Event created successfully!',
+        creationFailed: 'Failed to create event. Please try again.',
+      },
+    },
     common: {
       loading: 'Loading...',
       save: 'Save',
@@ -1021,6 +1233,111 @@ export const translations: Record<string, UITranslations> = {
         language: 'Eesti',
         contactEmail: 'villu@mail.eventnexus.eu',
         responseTime: 'Vastamise aeg: 24 tunni jooksul',
+      },
+    },
+    create: {
+      breadcrumb: 'Loo üritus',
+      stepProgress: 'Samm {current} / {total}',
+      steps: {
+        basics: 'Põhiinfo',
+        location: 'Asukoht',
+        image: 'Pilt',
+        details: 'Detailid',
+        tickets: 'Piletid',
+        review: 'Ülevaade',
+      },
+      step1: {
+        title: 'Ürituse põhiinfo',
+        subtitle: 'Alustame põhilistega',
+        clearDraft: 'Tühjenda mustand',
+        nameLabel: 'Ürituse nimi',
+        namePlaceholder: 'nt. Neon Nights muusikafestival',
+        categoryLabel: 'Kategooria',
+        categoryPlaceholder: 'Vali kategooria',
+        taglineLabel: 'Tabav slogan',
+        taglinePlaceholder: 'Lase AI-l luua köitev slogan...',
+        taglineHelp: 'Lühike ja meeldejääv fraas, mis kajastab ürituse olemust',
+        generateTagline: 'AI genereeri',
+        generating: 'Gemini mõtleb...',
+        creditCost: '2 krediiti',
+        dateLabel: 'Kuupäev',
+        timeLabel: 'Kellaaeg',
+        next: 'Järgmine samm',
+      },
+      step2: {
+        title: 'Millal ja kus',
+        subtitle: 'Määra ürituse kuupäev, kellaaeg ja toimumiskoht',
+        startDateLabel: 'Algus kuupäev',
+        startTimeLabel: 'Algus kellaaeg',
+        endDateLabel: 'Lõpu kuupäev',
+        endTimeLabel: 'Lõpu kellaaeg',
+        optional: '(valikuline)',
+        venueLabel: 'Toimumise koht',
+        addressPlaceholder: 'Otsi aadressi või koha nime (nt. Põltsamaa lossi 61)',
+        searchButton: 'Otsi',
+        searching: 'Otsib...',
+        mapLabel: 'Lohista nõela või kliki kaardil asukoha valimiseks',
+        mapHelp: 'Kliki valimiseks või lohista nõela asukoha täpsustamiseks',
+        previous: 'Eelmine',
+        next: 'Järgmine samm',
+      },
+      step3: {
+        title: 'Ürituse pilt',
+        subtitle: 'Lisa köitev visuaal osalejate meelitamiseks',
+        uploadImage: 'Lae pilt üles',
+        uploadHelp: 'Kliki failide sirvimiseks',
+        uploadLimit: 'Max 10MB, automaatselt pakitud',
+        generateAI: 'AI genereeri pilt',
+        generating: 'Genereerib...',
+        aiHelp: 'AI loob professionaalse ürituste plakatit',
+        creditCost: '5 krediiti',
+        removeImage: 'Eemalda',
+        previous: 'Eelmine',
+        next: 'Järgmine samm',
+      },
+      step4: {
+        title: 'Asukoha istumiskorraldus (valikuline)',
+        subtitle: 'Jäta see samm vahele, kui sa ei vaja määratud istekohti. Ideaalne kontsertidele, teatritele ja konverentsidele.',
+        descriptionLabel: 'Kirjeldus',
+        descriptionPlaceholder: 'Kirjelda oma üritust...',
+        priceLabel: 'Hind',
+        pricePlaceholder: '0',
+        capacityLabel: 'Mahtuvus',
+        capacityPlaceholder: '100',
+        previous: 'Eelmine',
+        next: 'Järgmine samm',
+      },
+      step5: {
+        title: 'Piletid ja hinnad',
+        subtitle: 'Seadista piletite tüübid ja hinnad',
+        enableTicketing: 'Luba piletimüük',
+        ticketingHelp: 'Loo piletimallid erinevatele osalejate tüüpidele',
+        addTemplate: 'Lisa piletimall',
+        noTemplates: 'Piletimalle pole veel',
+        previous: 'Eelmine',
+        next: 'Ülevaade',
+      },
+      step6: {
+        title: 'Kontrolli ja avalda',
+        subtitle: 'Kontrolli kõike enne avaldamist',
+        reviewDetails: 'Vaata üle oma ürituse detailid',
+        name: 'Nimi',
+        category: 'Kategooria',
+        date: 'Kuupäev',
+        time: 'Kellaaeg',
+        location: 'Asukoht',
+        price: 'Hind',
+        capacity: 'Mahtuvus',
+        publishing: 'Avaldab...',
+        publish: 'Avalda üritus',
+        previous: 'Eelmine',
+      },
+      alerts: {
+        fillAllFields: 'Palun täida kõik nõutavad väljad',
+        selectCategory: 'Palun vali kategooria',
+        selectLocation: 'Palun vali asukoht kaardil',
+        eventCreated: 'Üritus edukalt loodud!',
+        creationFailed: 'Ürituse loomine ebaõnnestus. Palun proovi uuesti.',
       },
     },
     common: {
@@ -1489,6 +1806,106 @@ export const translations: Record<string, UITranslations> = {
       guestLimit: 'Ограниченный выбор для гостей',
       unlockLanguages: 'Зарегистрируйтесь, чтобы разблокировать 100+ языков',
     },
+    create: {
+      breadcrumb: 'Создать событие',
+      stepProgress: 'Шаг {current} из {total}',
+      steps: {
+        basics: 'Основное',
+        location: 'Место',
+        image: 'Изображение',
+        details: 'Детали',
+        tickets: 'Билеты',
+        review: 'Обзор',
+      },
+      step1: {
+        title: 'Основная информация о событии',
+        subtitle: 'Начнём с основ',
+        clearDraft: 'Очистить черновик',
+        nameLabel: 'Название события',
+        namePlaceholder: 'например, Neon Nights музыкальный фестиваль',
+        categoryLabel: 'Категория',
+        categoryPlaceholder: 'Выберите категорию',
+        taglineLabel: 'Привлекающий слоган',
+        taglinePlaceholder: 'Позвольте ИИ создать привлекательный слоган...',
+        taglineHelp: 'Короткая запоминающаяся фраза, передающая суть вашего события',
+        generateTagline: 'ИИ генерация',
+        generating: 'Gemini думает...',
+        creditCost: '2 кредита',
+        dateLabel: 'Дата',
+        timeLabel: 'Время',
+        next: 'Следующий шаг',
+      },
+      step2: {
+        title: 'Когда и где',
+        subtitle: 'Укажите дату, время и место проведения события',
+        startDateLabel: 'Дата начала',
+        startTimeLabel: 'Время начала',
+        endDateLabel: 'Дата окончания',
+        endTimeLabel: 'Время окончания',
+        optional: '(необязательно)',
+        venueLabel: 'Место проведения',
+        addressPlaceholder: 'Поиск адреса или названия места (например, Põltsamaa lossi 61)',
+        searchButton: 'Искать',
+        searching: 'Поиск...',
+        mapLabel: 'Переместите маркер или щёлкните на карте, чтобы выбрать место',
+        mapHelp: 'Щёлкните для выбора или перетащите маркер для уточнения местоположения',
+        previous: 'Назад',
+        next: 'Следующий шаг',
+      },
+      step3: {
+        title: 'Изображение события',
+        subtitle: 'Добавьте привлекательный визуальный элемент для привлечения участников',
+        uploadImage: 'Загрузить изображение',
+        uploadHelp: 'Нажмите для выбора файлов',
+        uploadLimit: 'Макс. 10MB, автоматическое сжатие',
+        generateAI: 'ИИ генерация изображения',
+        generating: 'Генерация...',
+        aiHelp: 'ИИ создаст профессиональный постер события',
+        creditCost: '5 кредитов',
+        removeImage: 'Удалить',
+        previous: 'Назад',
+        next: 'Следующий шаг',
+      },
+      step4: {
+        title: 'Схема рассадки (необязательно)',
+        subtitle: 'Пропустите этот шаг, если вам не нужны закреплённые места. Идеально для концертов, театров и конференций.',
+        descriptionLabel: 'Описание',
+        descriptionPlaceholder: 'Расскажите участникам о вашем событии...',
+        priceLabel: 'Цена',
+        capacityLabel: 'Максимальная вместимость',
+        visibilityLabel: 'Видимость',
+        public: 'Публичное',
+        private: 'Частное',
+        previous: 'Назад',
+        next: 'Следующий шаг',
+      },
+      step5: {
+        title: 'Билеты и цены',
+        subtitle: 'Настройте типы и цены билетов',
+        addTicket: 'Добавить тип билета',
+        ticketName: 'Название билета',
+        ticketType: 'Тип билета',
+        ticketPrice: 'Цена',
+        ticketQuantity: 'Количество',
+        previous: 'Назад',
+        next: 'Следующий шаг',
+      },
+      step6: {
+        title: 'Проверка и публикация',
+        subtitle: 'Проверьте всё перед публикацией',
+        reviewInfo: 'Пожалуйста, проверьте детали вашего события',
+        publishButton: 'Опубликовать событие',
+        publishing: 'Публикация...',
+        previous: 'Назад',
+      },
+      alerts: {
+        success: 'Событие успешно создано!',
+        error: 'Ошибка при создании события',
+        fillRequired: 'Пожалуйста, заполните все обязательные поля',
+        uploadError: 'Ошибка загрузки изображения',
+        generateError: 'Ошибка генерации ИИ',
+      },
+    },
   },
   
   fi: {
@@ -1855,6 +2272,106 @@ export const translations: Record<string, UITranslations> = {
       registeredUsers: 'Rekisteröityneenä käyttäjänä voit valita yli 100 kieltä!',
       guestLimit: 'Rajoitettu valinta vieraille',
       unlockLanguages: 'Rekisteröidy avataksesi 100+ kieltä',
+    },
+    create: {
+      breadcrumb: 'Luo tapahtuma',
+      stepProgress: 'Vaihe {current} / {total}',
+      steps: {
+        basics: 'Perustiedot',
+        location: 'Sijainti',
+        image: 'Kuva',
+        details: 'Tiedot',
+        tickets: 'Liput',
+        review: 'Esikatselu',
+      },
+      step1: {
+        title: 'Tapahtuman perustiedot',
+        subtitle: 'Aloitetaan perusasioista',
+        clearDraft: 'Tyhjennä luonnos',
+        nameLabel: 'Tapahtuman nimi',
+        namePlaceholder: 'esim. Neon Nights musiikkifestivaali',
+        categoryLabel: 'Kategoria',
+        categoryPlaceholder: 'Valitse kategoria',
+        taglineLabel: 'Tarttuva tunnuslause',
+        taglinePlaceholder: 'Anna AI:n luoda houkutteleva tunnuslause...',
+        taglineHelp: 'Lyhyt, mieleenpainuva lause, joka kuvaa tapahtumasi olemusta',
+        generateTagline: 'AI-generointi',
+        generating: 'Gemini miettii...',
+        creditCost: '2 krediittiä',
+        dateLabel: 'Päivämäärä',
+        timeLabel: 'Aika',
+        next: 'Seuraava vaihe',
+      },
+      step2: {
+        title: 'Milloin ja missä',
+        subtitle: 'Aseta tapahtuman päivämäärä, aika ja paikka',
+        startDateLabel: 'Alkamispäivä',
+        startTimeLabel: 'Alkamisaika',
+        endDateLabel: 'Päättymispäivä',
+        endTimeLabel: 'Päättymisaika',
+        optional: '(valinnainen)',
+        venueLabel: 'Tapahtumap aikka',
+        addressPlaceholder: 'Hae osoitetta tai paikan nimeä (esim. Põltsamaa lossi 61)',
+        searchButton: 'Hae',
+        searching: 'Haetaan...',
+        mapLabel: 'Vedä nastalliikuttaaksesi tai klikkaa kartalle valitaksesi sijainnin',
+        mapHelp: 'Klikkaa valitaksesi tai vedä nastaa säätääksesi sijaintia',
+        previous: 'Edellinen',
+        next: 'Seuraava vaihe',
+      },
+      step3: {
+        title: 'Tapahtuman kuva',
+        subtitle: 'Lisää houkutteleva visuaalinen elementti houkutellaksesi osallistujia',
+        uploadImage: 'Lataa kuva',
+        uploadHelp: 'Klikkaa selataksesi tiedostoja',
+        uploadLimit: 'Maks. 10MB, automaattinen pakkaus',
+        generateAI: 'AI-generoi kuva',
+        generating: 'Generoidaan...',
+        aiHelp: 'AI luo ammattimaisen tapahtumajulisteen',
+        creditCost: '5 krediittiä',
+        removeImage: 'Poista',
+        previous: 'Edellinen',
+        next: 'Seuraava vaihe',
+      },
+      step4: {
+        title: 'Tapahtumapaikan istuimasujettelu (valinnainen)',
+        subtitle: 'Ohita tämä vaihe, jos et tarvitse varattuja paikkoja. Täydellinen konserteille, teattereille ja konferensseille.',
+        descriptionLabel: 'Kuvaus',
+        descriptionPlaceholder: 'Kerro osallistujille tapahtumastasi...',
+        priceLabel: 'Hinta',
+        capacityLabel: 'Maksimiosallistujamäärä',
+        visibilityLabel: 'Näkyvyys',
+        public: 'Julkinen',
+        private: 'Yksityinen',
+        previous: 'Edellinen',
+        next: 'Seuraava vaihe',
+      },
+      step5: {
+        title: 'Liput ja hinnoittelu',
+        subtitle: 'Määritä lipputyypit ja hinnat',
+        addTicket: 'Lisää lipputyyppi',
+        ticketName: 'Lipun nimi',
+        ticketType: 'Lipputyyppi',
+        ticketPrice: 'Hinta',
+        ticketQuantity: 'Määrä',
+        previous: 'Edellinen',
+        next: 'Seuraava vaihe',
+      },
+      step6: {
+        title: 'Tarkista ja julkaise',
+        subtitle: 'Tarkista kaikki ennen julkaisua',
+        reviewInfo: 'Ole hyvä ja tarkista tapahtumasi tiedot',
+        publishButton: 'Julkaise tapahtuma',
+        publishing: 'Julkaistaan...',
+        previous: 'Edellinen',
+      },
+      alerts: {
+        success: 'Tapahtuma luotiin onnistuneesti!',
+        error: 'Virhe tapahtuman luonnissa',
+        fillRequired: 'Täytä kaikki vaaditut kentät',
+        uploadError: 'Kuvan latausvirhe',
+        generateError: 'AI-generointivirhe',
+      },
     },
   },
   
@@ -2223,6 +2740,106 @@ export const translations: Record<string, UITranslations> = {
       guestLimit: 'Begrenzte Auswahl für Gäste',
       unlockLanguages: 'Registrieren Sie sich, um 100+ Sprachen freizuschalten',
     },
+    create: {
+      breadcrumb: 'Veranstaltung erstellen',
+      stepProgress: 'Schritt {current} von {total}',
+      steps: {
+        basics: 'Grundlagen',
+        location: 'Ort',
+        image: 'Bild',
+        details: 'Details',
+        tickets: 'Tickets',
+        review: 'Überprüfung',
+      },
+      step1: {
+        title: 'Veranstaltungsgrundlagen',
+        subtitle: 'Beginnen wir mit den Grundlagen',
+        clearDraft: 'Entwurf löschen',
+        nameLabel: 'Veranstaltungsname',
+        namePlaceholder: 'z.B. Neon Nights Musikfestival',
+        categoryLabel: 'Kategorie',
+        categoryPlaceholder: 'Kategorie wählen',
+        taglineLabel: 'Einprägsamer Slogan',
+        taglinePlaceholder: 'Lassen Sie die KI einen ansprechenden Slogan erstellen...',
+        taglineHelp: 'Ein kurzer, einprägsamer Satz, der die Essenz Ihrer Veranstaltung einfängt',
+        generateTagline: 'KI-Generierung',
+        generating: 'Gemini denkt...',
+        creditCost: '2 Credits',
+        dateLabel: 'Datum',
+        timeLabel: 'Uhrzeit',
+        next: 'Nächster Schritt',
+      },
+      step2: {
+        title: 'Wann und wo',
+        subtitle: 'Legen Sie Datum, Uhrzeit und Veranstaltungsort fest',
+        startDateLabel: 'Startdatum',
+        startTimeLabel: 'Startzeit',
+        endDateLabel: 'Enddatum',
+        endTimeLabel: 'Endzeit',
+        optional: '(optional)',
+        venueLabel: 'Veranstaltungsort',
+        addressPlaceholder: 'Adresse oder Ortsnamen suchen (z.B. Põltsamaa lossi 61)',
+        searchButton: 'Suchen',
+        searching: 'Suche läuft...',
+        mapLabel: 'Pin ziehen oder auf Karte klicken, um Standort auszuwählen',
+        mapHelp: 'Klicken Sie zum Auswählen oder ziehen Sie den Pin, um den Standort anzupassen',
+        previous: 'Zurück',
+        next: 'Nächster Schritt',
+      },
+      step3: {
+        title: 'Veranstaltungsbild',
+        subtitle: 'Fügen Sie ein ansprechendes Bild hinzu, um Teilnehmer anzuziehen',
+        uploadImage: 'Bild hochladen',
+        uploadHelp: 'Klicken Sie, um Dateien zu durchsuchen',
+        uploadLimit: 'Max. 10MB, automatische Komprimierung',
+        generateAI: 'KI-Bildgenerierung',
+        generating: 'Wird generiert...',
+        aiHelp: 'KI erstellt ein professionelles Veranstaltungsplakat',
+        creditCost: '5 Credits',
+        removeImage: 'Entfernen',
+        previous: 'Zurück',
+        next: 'Nächster Schritt',
+      },
+      step4: {
+        title: 'Saalplan (Optional)',
+        subtitle: 'Überspringen Sie diesen Schritt, wenn Sie keine zugewiesenen Sitzplätze benötigen. Perfekt für Konzerte, Theater und Konferenzen.',
+        descriptionLabel: 'Beschreibung',
+        descriptionPlaceholder: 'Erzählen Sie den Teilnehmern von Ihrer Veranstaltung...',
+        priceLabel: 'Preis',
+        capacityLabel: 'Maximale Kapazität',
+        visibilityLabel: 'Sichtbarkeit',
+        public: 'Öffentlich',
+        private: 'Privat',
+        previous: 'Zurück',
+        next: 'Nächster Schritt',
+      },
+      step5: {
+        title: 'Tickets und Preise',
+        subtitle: 'Tickettypen und Preise konfigurieren',
+        addTicket: 'Tickettyp hinzufügen',
+        ticketName: 'Ticketname',
+        ticketType: 'Tickettyp',
+        ticketPrice: 'Preis',
+        ticketQuantity: 'Menge',
+        previous: 'Zurück',
+        next: 'Nächster Schritt',
+      },
+      step6: {
+        title: 'Überprüfen und veröffentlichen',
+        subtitle: 'Überprüfen Sie alles vor der Veröffentlichung',
+        reviewInfo: 'Bitte überprüfen Sie die Details Ihrer Veranstaltung',
+        publishButton: 'Veranstaltung veröffentlichen',
+        publishing: 'Wird veröffentlicht...',
+        previous: 'Zurück',
+      },
+      alerts: {
+        success: 'Veranstaltung erfolgreich erstellt!',
+        error: 'Fehler beim Erstellen der Veranstaltung',
+        fillRequired: 'Bitte füllen Sie alle erforderlichen Felder aus',
+        uploadError: 'Fehler beim Hochladen des Bildes',
+        generateError: 'KI-Generierungsfehler',
+      },
+    },
   },
   sv: {
     nav: {
@@ -2585,6 +3202,106 @@ export const translations: Record<string, UITranslations> = {
       registeredUsers: 'Som registrerad användare kan du välja från 100+ språk!',
       guestLimit: 'Begränsat urval för gäster',
       unlockLanguages: 'Registrera dig för att låsa upp 100+ språk',
+    },
+    create: {
+      breadcrumb: 'Skapa evenemang',
+      stepProgress: 'Steg {current} av {total}',
+      steps: {
+        basics: 'Grundläggande',
+        location: 'Plats',
+        image: 'Bild',
+        details: 'Detaljer',
+        tickets: 'Biljetter',
+        review: 'Granska',
+      },
+      step1: {
+        title: 'Evenemangsgrunder',
+        subtitle: 'Låt oss börja med grunderna',
+        clearDraft: 'Rensa utkast',
+        nameLabel: 'Evenemangsnamn',
+        namePlaceholder: 't.ex. Neon Nights musikfestival',
+        categoryLabel: 'Kategori',
+        categoryPlaceholder: 'Välj kategori',
+        taglineLabel: 'Fängslande slogan',
+        taglinePlaceholder: 'Låt AI skapa en engagerande slogan...',
+        taglineHelp: 'En kort, minnesvärd fras som fångar essensen av ditt evenemang',
+        generateTagline: 'AI-generering',
+        generating: 'Gemini tänker...',
+        creditCost: '2 krediter',
+        dateLabel: 'Datum',
+        timeLabel: 'Tid',
+        next: 'Nästa steg',
+      },
+      step2: {
+        title: 'När och var',
+        subtitle: 'Ange datum, tid och plats för ditt evenemang',
+        startDateLabel: 'Startdatum',
+        startTimeLabel: 'Starttid',
+        endDateLabel: 'Slutdatum',
+        endTimeLabel: 'Sluttid',
+        optional: '(valfritt)',
+        venueLabel: 'Evenemangsplats',
+        addressPlaceholder: 'Sök adress eller platsnamn (t.ex. Põltsamaa lossi 61)',
+        searchButton: 'Sök',
+        searching: 'Söker...',
+        mapLabel: 'Dra nål eller klicka på kartan för att välja plats',
+        mapHelp: 'Klicka för att välja eller dra nålen för att justera platsen',
+        previous: 'Föregående',
+        next: 'Nästa steg',
+      },
+      step3: {
+        title: 'Evenemangsbild',
+        subtitle: 'Lägg till ett fängslande visuellt element för att locka deltagare',
+        uploadImage: 'Ladda upp bild',
+        uploadHelp: 'Klicka för att bläddra bland filer',
+        uploadLimit: 'Max 10MB, automatisk komprimering',
+        generateAI: 'AI-generera bild',
+        generating: 'Genererar...',
+        aiHelp: 'AI skapar en professionell evenemangsaffisch',
+        creditCost: '5 krediter',
+        removeImage: 'Ta bort',
+        previous: 'Föregående',
+        next: 'Nästa steg',
+      },
+      step4: {
+        title: 'Platsschema (Valfritt)',
+        subtitle: 'Hoppa över detta steg om du inte behöver tilldelade platser. Perfekt för konserter, teatrar och konferenser.',
+        descriptionLabel: 'Beskrivning',
+        descriptionPlaceholder: 'Berätta för deltagarna om ditt evenemang...',
+        priceLabel: 'Pris',
+        capacityLabel: 'Maximal kapacitet',
+        visibilityLabel: 'Synlighet',
+        public: 'Offentlig',
+        private: 'Privat',
+        previous: 'Föregående',
+        next: 'Nästa steg',
+      },
+      step5: {
+        title: 'Biljetter och priser',
+        subtitle: 'Konfigurera biljettyper och priser',
+        addTicket: 'Lägg till biljetttyp',
+        ticketName: 'Biljettnamn',
+        ticketType: 'Biljetttyp',
+        ticketPrice: 'Pris',
+        ticketQuantity: 'Antal',
+        previous: 'Föregående',
+        next: 'Nästa steg',
+      },
+      step6: {
+        title: 'Granska och publicera',
+        subtitle: 'Kontrollera allt innan publicering',
+        reviewInfo: 'Granska detaljerna för ditt evenemang',
+        publishButton: 'Publicera evenemang',
+        publishing: 'Publicerar...',
+        previous: 'Föregående',
+      },
+      alerts: {
+        success: 'Evenemang skapat framgångsrikt!',
+        error: 'Fel vid skapande av evenemang',
+        fillRequired: 'Fyll i alla obligatoriska fält',
+        uploadError: 'Fel vid bilduppladdning',
+        generateError: 'AI-genereringsfel',
+      },
     },
   },
   fr: {
@@ -2949,6 +3666,106 @@ export const translations: Record<string, UITranslations> = {
       guestLimit: 'Sélection limitée pour les invités',
       unlockLanguages: 'Inscrivez-vous pour débloquer 100+ langues',
     },
+    create: {
+      breadcrumb: 'Créer un événement',
+      stepProgress: 'Étape {current} sur {total}',
+      steps: {
+        basics: 'Informations de base',
+        location: 'Lieu',
+        image: 'Image',
+        details: 'Détails',
+        tickets: 'Billets',
+        review: 'Vérification',
+      },
+      step1: {
+        title: 'Informations de base de l\'événement',
+        subtitle: 'Commençons par les fondamentaux',
+        clearDraft: 'Effacer le brouillon',
+        nameLabel: 'Nom de l\'événement',
+        namePlaceholder: 'par ex. Festival de musique Neon Nights',
+        categoryLabel: 'Catégorie',
+        categoryPlaceholder: 'Sélectionner une catégorie',
+        taglineLabel: 'Slogan accrocheur',
+        taglinePlaceholder: 'Laissez l\'IA créer un slogan engageant...',
+        taglineHelp: 'Une phrase courte et mémorable qui capte l\'essence de votre événement',
+        generateTagline: 'Générer par IA',
+        generating: 'Gemini réfléchit...',
+        creditCost: '2 crédits',
+        dateLabel: 'Date',
+        timeLabel: 'Heure',
+        next: 'Étape suivante',
+      },
+      step2: {
+        title: 'Quand et où',
+        subtitle: 'Définissez la date, l\'heure et le lieu de votre événement',
+        startDateLabel: 'Date de début',
+        startTimeLabel: 'Heure de début',
+        endDateLabel: 'Date de fin',
+        endTimeLabel: 'Heure de fin',
+        optional: '(facultatif)',
+        venueLabel: 'Lieu de l\'événement',
+        addressPlaceholder: 'Rechercher une adresse ou un nom de lieu (par ex. Põltsamaa lossi 61)',
+        searchButton: 'Rechercher',
+        searching: 'Recherche en cours...',
+        mapLabel: 'Faire glisser l\'épingle ou cliquer sur la carte pour sélectionner l\'emplacement',
+        mapHelp: 'Cliquez pour sélectionner ou faites glisser l\'épingle pour ajuster l\'emplacement',
+        previous: 'Précédent',
+        next: 'Étape suivante',
+      },
+      step3: {
+        title: 'Image de l\'événement',
+        subtitle: 'Ajoutez un visuel attrayant pour attirer les participants',
+        uploadImage: 'Télécharger une image',
+        uploadHelp: 'Cliquez pour parcourir les fichiers',
+        uploadLimit: 'Max 10MB, compression automatique',
+        generateAI: 'Générer une image par IA',
+        generating: 'Génération en cours...',
+        aiHelp: 'L\'IA créera une affiche d\'événement professionnelle',
+        creditCost: '5 crédits',
+        removeImage: 'Supprimer',
+        previous: 'Précédent',
+        next: 'Étape suivante',
+      },
+      step4: {
+        title: 'Plan de salle (Facultatif)',
+        subtitle: 'Passez cette étape si vous n\'avez pas besoin de places attribuées. Parfait pour les concerts, théâtres et conférences.',
+        descriptionLabel: 'Description',
+        descriptionPlaceholder: 'Parlez aux participants de votre événement...',
+        priceLabel: 'Prix',
+        capacityLabel: 'Capacité maximale',
+        visibilityLabel: 'Visibilité',
+        public: 'Public',
+        private: 'Privé',
+        previous: 'Précédent',
+        next: 'Étape suivante',
+      },
+      step5: {
+        title: 'Billets et tarifs',
+        subtitle: 'Configurez les types et les prix des billets',
+        addTicket: 'Ajouter un type de billet',
+        ticketName: 'Nom du billet',
+        ticketType: 'Type de billet',
+        ticketPrice: 'Prix',
+        ticketQuantity: 'Quantité',
+        previous: 'Précédent',
+        next: 'Étape suivante',
+      },
+      step6: {
+        title: 'Vérifier et publier',
+        subtitle: 'Vérifiez tout avant de publier',
+        reviewInfo: 'Veuillez vérifier les détails de votre événement',
+        publishButton: 'Publier l\'événement',
+        publishing: 'Publication en cours...',
+        previous: 'Précédent',
+      },
+      alerts: {
+        success: 'Événement créé avec succès!',
+        error: 'Erreur lors de la création de l\'événement',
+        fillRequired: 'Veuillez remplir tous les champs obligatoires',
+        uploadError: 'Erreur lors du téléchargement de l\'image',
+        generateError: 'Erreur de génération IA',
+      },
+    },
   },
   es: {
     nav: {
@@ -3312,6 +4129,106 @@ export const translations: Record<string, UITranslations> = {
       guestLimit: 'Selección limitada para invitados',
       unlockLanguages: 'Regístrate para desbloquear 100+ idiomas',
     },
+    create: {
+      breadcrumb: 'Crear evento',
+      stepProgress: 'Paso {current} de {total}',
+      steps: {
+        basics: 'Básico',
+        location: 'Ubicación',
+        image: 'Imagen',
+        details: 'Detalles',
+        tickets: 'Entradas',
+        review: 'Revisar',
+      },
+      step1: {
+        title: 'Información básica del evento',
+        subtitle: 'Comencemos con lo fundamental',
+        clearDraft: 'Borrar borrador',
+        nameLabel: 'Nombre del evento',
+        namePlaceholder: 'ej. Festival de música Neon Nights',
+        categoryLabel: 'Categoría',
+        categoryPlaceholder: 'Seleccionar categoría',
+        taglineLabel: 'Eslogan atractivo',
+        taglinePlaceholder: 'Deja que la IA cree un eslogan atractivo...',
+        taglineHelp: 'Una frase corta y memorable que capture la esencia de tu evento',
+        generateTagline: 'Generar con IA',
+        generating: 'Gemini está pensando...',
+        creditCost: '2 créditos',
+        dateLabel: 'Fecha',
+        timeLabel: 'Hora',
+        next: 'Siguiente paso',
+      },
+      step2: {
+        title: 'Cuándo y dónde',
+        subtitle: 'Establece la fecha, hora y lugar de tu evento',
+        startDateLabel: 'Fecha de inicio',
+        startTimeLabel: 'Hora de inicio',
+        endDateLabel: 'Fecha de finalización',
+        endTimeLabel: 'Hora de finalización',
+        optional: '(opcional)',
+        venueLabel: 'Lugar del evento',
+        addressPlaceholder: 'Buscar dirección o nombre del lugar (ej. Põltsamaa lossi 61)',
+        searchButton: 'Buscar',
+        searching: 'Buscando...',
+        mapLabel: 'Arrastra el pin o haz clic en el mapa para seleccionar la ubicación',
+        mapHelp: 'Haz clic para seleccionar o arrastra el pin para ajustar la ubicación',
+        previous: 'Anterior',
+        next: 'Siguiente paso',
+      },
+      step3: {
+        title: 'Imagen del evento',
+        subtitle: 'Añade un visual atractivo para atraer asistentes',
+        uploadImage: 'Subir imagen',
+        uploadHelp: 'Haz clic para buscar archivos',
+        uploadLimit: 'Máx. 10MB, compresión automática',
+        generateAI: 'Generar imagen con IA',
+        generating: 'Generando...',
+        aiHelp: 'La IA creará un póster profesional del evento',
+        creditCost: '5 créditos',
+        removeImage: 'Eliminar',
+        previous: 'Anterior',
+        next: 'Siguiente paso',
+      },
+      step4: {
+        title: 'Plano de asientos (Opcional)',
+        subtitle: 'Omita este paso si no necesita asientos asignados. Perfecto para conciertos, teatros y conferencias.',
+        descriptionLabel: 'Descripción',
+        descriptionPlaceholder: 'Cuéntale a los asistentes sobre tu evento...',
+        priceLabel: 'Precio',
+        capacityLabel: 'Capacidad máxima',
+        visibilityLabel: 'Visibilidad',
+        public: 'Público',
+        private: 'Privado',
+        previous: 'Anterior',
+        next: 'Siguiente paso',
+      },
+      step5: {
+        title: 'Entradas y precios',
+        subtitle: 'Configura tipos y precios de entradas',
+        addTicket: 'Añadir tipo de entrada',
+        ticketName: 'Nombre de la entrada',
+        ticketType: 'Tipo de entrada',
+        ticketPrice: 'Precio',
+        ticketQuantity: 'Cantidad',
+        previous: 'Anterior',
+        next: 'Siguiente paso',
+      },
+      step6: {
+        title: 'Revisar y publicar',
+        subtitle: 'Verifica todo antes de publicar',
+        reviewInfo: 'Por favor, revisa los detalles de tu evento',
+        publishButton: 'Publicar evento',
+        publishing: 'Publicando...',
+        previous: 'Anterior',
+      },
+      alerts: {
+        success: '¡Evento creado exitosamente!',
+        error: 'Error al crear el evento',
+        fillRequired: 'Por favor, completa todos los campos obligatorios',
+        uploadError: 'Error al subir la imagen',
+        generateError: 'Error de generación IA',
+      },
+    },
   },
   pl: {
     nav: {
@@ -3674,6 +4591,106 @@ export const translations: Record<string, UITranslations> = {
       registeredUsers: 'Jako zarejestrowany użytkownik możesz wybierać spośród 100+ języków!',
       guestLimit: 'Ograniczony wybór dla gości',
       unlockLanguages: 'Zarejestruj się, aby odblokować 100+ języków',
+    },
+    create: {
+      breadcrumb: 'Utwórz wydarzenie',
+      stepProgress: 'Krok {current} z {total}',
+      steps: {
+        basics: 'Podstawy',
+        location: 'Lokalizacja',
+        image: 'Obraz',
+        details: 'Szczegóły',
+        tickets: 'Bilety',
+        review: 'Przegląd',
+      },
+      step1: {
+        title: 'Podstawy wydarzenia',
+        subtitle: 'Zacznijmy od podstaw',
+        clearDraft: 'Wyczyść szkic',
+        nameLabel: 'Nazwa wydarzenia',
+        namePlaceholder: 'np. Festiwal muzyczny Neon Nights',
+        categoryLabel: 'Kategoria',
+        categoryPlaceholder: 'Wybierz kategorię',
+        taglineLabel: 'Chwytliwe hasło',
+        taglinePlaceholder: 'Pozwól AI stworzyć angażujące hasło...',
+        taglineHelp: 'Krótkie, zapadające w pamięć zdanie, które oddaje istotę twojego wydarzenia',
+        generateTagline: 'Generuj AI',
+        generating: 'Gemini myśli...',
+        creditCost: '2 kredyty',
+        dateLabel: 'Data',
+        timeLabel: 'Godzina',
+        next: 'Następny krok',
+      },
+      step2: {
+        title: 'Kiedy i gdzie',
+        subtitle: 'Ustaw datę, godzinę i miejsce wydarzenia',
+        startDateLabel: 'Data rozpoczęcia',
+        startTimeLabel: 'Godzina rozpoczęcia',
+        endDateLabel: 'Data zakończenia',
+        endTimeLabel: 'Godzina zakończenia',
+        optional: '(opcjonalnie)',
+        venueLabel: 'Miejsce wydarzenia',
+        addressPlaceholder: 'Szukaj adresu lub nazwy miejsca (np. Põltsamaa lossi 61)',
+        searchButton: 'Szukaj',
+        searching: 'Wyszukiwanie...',
+        mapLabel: 'Przeciągnij pinezkę lub kliknij na mapę, aby wybrać lokalizację',
+        mapHelp: 'Kliknij, aby wybrać lub przeciągnij pinezkę, aby dostosować lokalizację',
+        previous: 'Poprzedni',
+        next: 'Następny krok',
+      },
+      step3: {
+        title: 'Obraz wydarzenia',
+        subtitle: 'Dodaj atrakcyjny element wizualny, aby przyciągnąć uczestników',
+        uploadImage: 'Prześlij obraz',
+        uploadHelp: 'Kliknij, aby przeglądać pliki',
+        uploadLimit: 'Maks. 10MB, automatyczna kompresja',
+        generateAI: 'Wygeneruj obraz AI',
+        generating: 'Generowanie...',
+        aiHelp: 'AI stworzy profesjonalny plakat wydarzenia',
+        creditCost: '5 kredytów',
+        removeImage: 'Usuń',
+        previous: 'Poprzedni',
+        next: 'Następny krok',
+      },
+      step4: {
+        title: 'Układ miejsc (Opcjonalnie)',
+        subtitle: 'Pomiń ten krok, jeśli nie potrzebujesz przypisanych miejsc. Idealny na koncerty, teatry i konferencje.',
+        descriptionLabel: 'Opis',
+        descriptionPlaceholder: 'Opowiedz uczestnikom o swoim wydarzeniu...',
+        priceLabel: 'Cena',
+        capacityLabel: 'Maksymalna pojemność',
+        visibilityLabel: 'Widoczność',
+        public: 'Publiczne',
+        private: 'Prywatne',
+        previous: 'Poprzedni',
+        next: 'Następny krok',
+      },
+      step5: {
+        title: 'Bilety i ceny',
+        subtitle: 'Skonfiguruj typy i ceny biletów',
+        addTicket: 'Dodaj typ biletu',
+        ticketName: 'Nazwa biletu',
+        ticketType: 'Typ biletu',
+        ticketPrice: 'Cena',
+        ticketQuantity: 'Ilość',
+        previous: 'Poprzedni',
+        next: 'Następny krok',
+      },
+      step6: {
+        title: 'Przejrzyj i opublikuj',
+        subtitle: 'Sprawdź wszystko przed opublikowaniem',
+        reviewInfo: 'Proszę sprawdzić szczegóły swojego wydarzenia',
+        publishButton: 'Opublikuj wydarzenie',
+        publishing: 'Publikowanie...',
+        previous: 'Poprzedni',
+      },
+      alerts: {
+        success: 'Wydarzenie zostało pomyślnie utworzone!',
+        error: 'Błąd podczas tworzenia wydarzenia',
+        fillRequired: 'Proszę wypełnić wszystkie wymagane pola',
+        uploadError: 'Błąd przesyłania obrazu',
+        generateError: 'Błąd generowania AI',
+      },
     },
   },
 };

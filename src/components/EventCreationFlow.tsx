@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Breadcrumbs from './Breadcrumbs';
 import { MapLocationPicker } from './MapLocationPicker';
+import { useTranslation } from '../i18n/useTranslation';
 import { 
   ChevronRight, 
   ChevronLeft,
@@ -67,6 +68,8 @@ interface EventCreationFlowProps {
 }
 
 const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUser, onEventCreated }) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -190,8 +193,6 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
   // Collapse states for ticket sections
   const [isVenueTicketsExpanded, setIsVenueTicketsExpanded] = useState(true);
   const [isAdditionalTicketsExpanded, setIsAdditionalTicketsExpanded] = useState(true);
-
-  const navigate = useNavigate();
 
   // Update SEO meta tags on mount
   useEffect(() => {
@@ -1230,32 +1231,32 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">The Basics</h2>
+              <h2 className="text-2xl font-bold">{t.create.step1.title}</h2>
               {(formData.name || formData.description || formData.category) && (
                 <button
                   onClick={handleClearDraft}
                   className="text-xs text-slate-500 hover:text-red-400 transition-colors flex items-center gap-1"
-                  title="Clear saved draft and start fresh"
+                  title={t.create.step1.clearDraft}
                 >
-                  <span>Clear Draft</span>
+                  <span>{t.create.step1.clearDraft}</span>
                 </button>
               )}
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1.5">Event Name</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1.5">{t.create.step1.nameLabel}</label>
                 <input 
                   type="text" 
-                  aria-label="Event name"
+                  aria-label={t.create.step1.nameLabel}
                   aria-required="true"
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all outline-none" 
-                  placeholder="e.g. Neon nights music festival"
+                  placeholder={t.create.step1.namePlaceholder}
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1.5">Category</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1.5">{t.create.step1.categoryLabel}</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {CATEGORIES.map(cat => (
                     <button 
@@ -1274,30 +1275,30 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1.5">
-                  <label className="block text-sm font-medium text-slate-400">Catchy Tagline</label>
+                  <label className="block text-sm font-medium text-slate-400">{t.create.step1.taglineLabel}</label>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">2 credits</span>
+                    <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">{t.create.step1.creditCost}</span>
                     <button 
                       onClick={handleGeminiTagline}
                       disabled={isGenerating || !formData.name || !formData.category}
-                      aria-label="Generate AI tagline"
+                      aria-label={t.create.step1.generateTagline}
                       className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 disabled:opacity-50"
-                      title="AI will generate a catchy tagline based on your event name and category"
+                      title={t.create.step1.generateTagline}
                     >
-                      <Sparkles className="w-3 h-3" aria-hidden="true" /> AI Generate
+                      <Sparkles className="w-3 h-3" aria-hidden="true" /> {t.create.step1.generateTagline}
                     </button>
                   </div>
                 </div>
                 <input 
                   type="text" 
-                  aria-label="Event tagline"
+                  aria-label={t.create.step1.taglineLabel}
                   aria-readonly="true"
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 transition-all outline-none" 
-                  placeholder="Let AI create an engaging tagline for your event..."
-                  value={isGenerating ? "Gemini is thinking..." : formData.tagline}
+                  placeholder={t.create.step1.taglinePlaceholder}
+                  value={isGenerating ? t.create.step1.generating : formData.tagline}
                   readOnly
                 />
-                <p className="text-xs text-slate-500 mt-1.5">A short, memorable phrase that captures the essence of your event</p>
+                <p className="text-xs text-slate-500 mt-1.5">{t.create.step1.taglineHelp}</p>
               </div>
             </div>
           </div>
@@ -1305,16 +1306,16 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       case 2:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-2xl font-bold">When & Where</h2>
+            <h2 className="text-2xl font-bold">{t.create.step2.title}</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-400 mb-1.5">Start Date</label>
+                  <label className="block text-sm font-medium text-slate-400 mb-1.5">{t.create.step2.startDateLabel}</label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
                     <input 
                       type="date" 
-                      aria-label="Event start date"
+                      aria-label={t.create.step2.startDateLabel}
                       aria-required="true"
                       value={formData.date}
                       onChange={(e) => setFormData({...formData, date: e.target.value})}
@@ -1323,12 +1324,12 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   </div>
                 </div>
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-400 mb-1.5">Start Time</label>
+                  <label className="block text-sm font-medium text-slate-400 mb-1.5">{t.create.step2.startTimeLabel}</label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
                     <input 
                       type="time" 
-                      aria-label="Event start time"
+                      aria-label={t.create.step2.startTimeLabel}
                       aria-required="true"
                       value={formData.time}
                       onChange={(e) => setFormData({...formData, time: e.target.value})}
@@ -1340,12 +1341,12 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-400 mb-1.5">End Date <span className="text-slate-600">(optional)</span></label>
+                  <label className="block text-sm font-medium text-slate-400 mb-1.5">{t.create.step2.endDateLabel} <span className="text-slate-600">{t.create.step2.optional}</span></label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
                     <input 
                       type="date" 
-                      aria-label="Event end date (optional)"
+                      aria-label={`${t.create.step2.endDateLabel} ${t.create.step2.optional}`}
                       value={formData.end_date}
                       onChange={(e) => setFormData({...formData, end_date: e.target.value})}
                       min={formData.date}
@@ -1354,12 +1355,12 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   </div>
                 </div>
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-400 mb-1.5">End Time <span className="text-slate-600">(optional)</span></label>
+                  <label className="block text-sm font-medium text-slate-400 mb-1.5">{t.create.step2.endTimeLabel} <span className="text-slate-600">{t.create.step2.optional}</span></label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
                     <input 
                       type="time" 
-                      aria-label="Event end time (optional)"
+                      aria-label={`${t.create.step2.endTimeLabel} ${t.create.step2.optional}`}
                       value={formData.end_time}
                       onChange={(e) => setFormData({...formData, end_time: e.target.value})}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 focus:border-indigo-500 outline-none" 
@@ -1369,14 +1370,14 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1.5">Venue Location</label>
+                <label className="block text-sm font-medium text-slate-400 mb-1.5">{t.create.step2.venueLabel}</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" aria-hidden="true" />
                   <input 
                     type="text" 
-                    aria-label="Venue location"
+                    aria-label={t.create.step2.venueLabel}
                     aria-required="true"
-                    placeholder="Search address or venue name (e.g., Põltsamaa lossi 61)" 
+                    placeholder={t.create.step2.addressPlaceholder}
                     value={formData.location}
                     onChange={(e) => setFormData({...formData, location: e.target.value})}
                     onKeyDown={(e) => {
@@ -1391,11 +1392,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                     type="button"
                     onClick={() => geocodeAddress(formData.location)}
                     disabled={isGeocoding}
-                    aria-label="Search for location"
+                    aria-label={t.create.step2.searchButton}
                     className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                   >
                     <Search className="w-3.5 h-3.5" aria-hidden="true" />
-                    {isGeocoding ? 'Searching...' : 'Search'}
+                    {isGeocoding ? t.create.step2.searching : t.create.step2.searchButton}
                   </button>
                 </div>
                 {formData.locationAddress && (
@@ -1408,7 +1409,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             
             {/* Interactive Map Location Picker */}
             <div>
-              <label className="block text-sm font-medium mb-2 text-slate-200">Drag pin or click on map to select location</label>
+              <label className="block text-sm font-medium mb-2 text-slate-200">{t.create.step2.mapLabel}</label>
               <MapLocationPicker
                 initialLat={formData.locationLat}
                 initialLng={formData.locationLng}
@@ -1434,8 +1435,8 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       case 3:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-2xl font-bold">Event Image</h2>
-            <p className="text-sm text-slate-400">Add a compelling visual to attract attendees</p>
+            <h2 className="text-2xl font-bold">{t.create.step3.title}</h2>
+            <p className="text-sm text-slate-400">{t.create.step3.subtitle}</p>
             
             {/* Image Preview */}
             {imagePreview && (
@@ -1469,9 +1470,9 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                       <Upload className="w-8 h-8 text-indigo-400" />
                     </div>
                     <div className="text-center">
-                      <p className="font-bold text-sm">Upload Image</p>
-                      <p className="text-xs text-slate-500 mt-1">Click to browse files</p>
-                      <p className="text-xs text-slate-600 mt-1">Max 10MB, auto-compressed</p>
+                      <p className="font-bold text-sm">{t.create.step3.uploadImage}</p>
+                      <p className="text-xs text-slate-500 mt-1">{t.create.step3.uploadHelp}</p>
+                      <p className="text-xs text-slate-600 mt-1">{t.create.step3.uploadLimit}</p>
                     </div>
                   </div>
                 </label>
@@ -1485,7 +1486,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 >
                   {/* Credit Cost Badge */}
                   <div className="absolute top-3 right-3 bg-orange-600/20 border border-orange-600/50 px-2 py-1 rounded text-xs font-semibold text-orange-400">
-                    5 credits
+                    {t.create.step3.creditCost}
                   </div>
 
                   <div className="w-16 h-16 bg-orange-600/10 rounded-2xl flex items-center justify-center">
@@ -1497,7 +1498,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   </div>
                   <div className="text-center">
                     <p className="font-bold text-sm">
-                      {isGeneratingImage ? 'Generating...' : 'AI Generate Image'}
+                      {isGeneratingImage ? t.create.step3.generating : t.create.step3.generateAI}
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
                       {!formData.name || !formData.category 
@@ -1526,9 +1527,9 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       case 4:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-2xl font-bold">Venue Seating Layout (Optional)</h2>
+            <h2 className="text-2xl font-bold">{t.create.step4.title}</h2>
             <p className="text-sm text-slate-400">
-              Skip this step if you don't need assigned seating. Perfect for concerts, theaters, and conferences with specific seat selection.
+              {t.create.step4.subtitle}
             </p>
 
             {venueLayout ? (
@@ -1605,7 +1606,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       case 5:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-2xl font-bold">Tickets & Pricing</h2>
+            <h2 className="text-2xl font-bold">{t.create.step5.title}</h2>
             <p className="text-sm text-slate-400">
               {venueLayout ? 'Your venue layout tickets will be generated automatically. You can add additional general admission tickets below.' : 'Create different ticket types for your event'}
             </p>
@@ -2003,7 +2004,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       case 6:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-2xl font-bold">Review & Publish</h2>
+            <h2 className="text-2xl font-bold">{t.create.step6.title}</h2>
             
             {/* Event Preview Card */}
             <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
@@ -2192,7 +2193,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               className="w-full bg-indigo-600 hover:bg-indigo-700 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Sparkles className="w-5 h-5" /> 
-              {isCreating ? 'Publishing...' : isUploadingImage ? 'Uploading Image...' : 'Publish Event'}
+              {isCreating ? t.create.step6.publishing : isUploadingImage ? 'Uploading Image...' : t.create.step6.publish}
             </button>
           </div>
         );
@@ -2272,7 +2273,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       <Breadcrumbs 
         items={[
           { label: 'Dashboard', path: '/dashboard' },
-          { label: 'Create Event' }
+          { label: t.create.breadcrumb }
         ]}
       />
       
@@ -2283,8 +2284,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
               {step}
             </div>
             <div>
-              <h1 className="text-xl font-bold">Create New Event</h1>
-              <p className="text-xs text-slate-400">Step {step} of 6</p>
+              <h1 className="text-xl font-bold">{t.create.breadcrumb}</h1>
+              <p className="text-xs text-slate-400">
+                {t.create.stepProgress.replace('{current}', String(step)).replace('{total}', '6')}
+              </p>
             </div>
           </div>
         </div>
