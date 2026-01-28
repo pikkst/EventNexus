@@ -44,6 +44,7 @@ import AuthModal from './components/AuthModal';
 import { DashboardSkeleton, PageSkeleton } from './components/LoadingSkeleton';
 import { initializePerformanceOptimizations } from './utils/performanceOptimization';
 import { AdRails } from './components/AdSlot';
+import { UILanguageSelector } from './components/UILanguageSelector';
 
 // Heavy components - lazy load on demand
 const HomeMap = lazy(() => import('./components/HomeMap'));
@@ -1200,6 +1201,11 @@ const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSuppo
               Sign In
             </button>
           )}
+          
+          {/* Language Selector - Always visible */}
+          <div className="ml-2">
+            <UILanguageSelector compact={true} theme="dark" />
+          </div>
         </div>
       </div>
     </nav>

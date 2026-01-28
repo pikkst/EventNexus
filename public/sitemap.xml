@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-28T06:28:56.153Z -->
+<!-- Last generated: 2026-01-28T07:16:25.796Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Core Platform Pages (Public & AI-crawlable) -->
   <url>
@@ -921,16 +921,106 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/78e45212-597a-4cfd-b9cc-584b8e680a17</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:04:29.442527+00:00</news:publication_date>
+      <news:title>Виставка творів Миколи Жулінського &quot;Вузли&quot; (Exhibition of works by Mykola Zhulinsky &quot;Knots&quot;)</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/afb1bc0a-0272-497a-98d8-5ee96ec5e497</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:12:52.307647+00:00</news:publication_date>
+      <news:title>Арт-майстерка</news:title>
+      <news:keywords>Workshop/Art</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/a56dc84b-25d0-4f11-8d1d-9fab7c09bb6c</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:12:56.630329+00:00</news:publication_date>
+      <news:title>Виставка дитячої творчості «Зима-чарівниця-2025»</news:title>
+      <news:keywords>Exhibition/Museum</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/0bcfba6b-e681-4bf2-af12-7872358609e9</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:12:59.693104+00:00</news:publication_date>
+      <news:title>Виставка «Від прадавнього Степу до Кам&apos;янського» (археологічна виставка)</news:title>
+      <news:keywords>Exhibition/Museum</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/c26ab3e4-5352-41a7-906a-8988b5f307f7</loc>
     <lastmod>2026-01-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/57480648-f9c8-4feb-bc7a-b2e64fc1c143</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:13:52.865108+00:00</news:publication_date>
+      <news:title>Виставка-продаж виробів кам&apos;янських майстринь на підтримку ЗСУ</news:title>
+      <news:keywords>Exhibition/Sale</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/8f77a0a1-abf7-4b5c-a2a2-becb02afaeab</loc>
     <lastmod>2026-01-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c6facc38-bc25-4f9b-ba6a-c36435efcc94</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:13:55.59159+00:00</news:publication_date>
+      <news:title>Урочиста церемонія нагородження фіналістів міського етапу «Пліч – о – пліч»</news:title>
+      <news:keywords>Sports/Award Ceremony</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/24491dd3-1d4f-45fa-9fd2-966b40191089</loc>
@@ -3096,6 +3186,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/44965a23-05d2-42f3-9a2f-13aa0567fff7</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:13:38.258237+00:00</news:publication_date>
+      <news:title>Змагання з жиму лежачі та дарцу</news:title>
+      <news:keywords>Sports Competition</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/991db638-13b1-4564-9670-f678de269a87</loc>
     <lastmod>2026-01-23</lastmod>
     <changefreq>weekly</changefreq>
@@ -4348,6 +4453,21 @@
     <lastmod>2026-01-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/2d0f87dc-59af-40ef-a7f1-90eef82540be</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:13:22.347397+00:00</news:publication_date>
+      <news:title>Відкритий чемпіонат міста Кам&apos;янське з тхеквондо ВТФ</news:title>
+      <news:keywords>Sports Competition</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/ec2f28cd-918a-42f8-b7a7-fecdb2e7d13c</loc>
@@ -5640,6 +5760,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/9aecf8d1-19ce-49b3-a2c7-a912352fe916</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:13:19.508089+00:00</news:publication_date>
+      <news:title>Командний змішаний турнір з тенісу «Битва капітанів»</news:title>
+      <news:keywords>Sports Competition</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/8ddecebb-29c9-42a2-aa7f-c327c8c6e963</loc>
     <lastmod>2026-01-19</lastmod>
     <changefreq>weekly</changefreq>
@@ -6378,6 +6513,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/974ff64a-c974-4578-8e86-6733567ccd01</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T06:50:15.845681+00:00</news:publication_date>
+      <news:title>Час славы «Сталинградская высота» (Hour of Glory &quot;Stalingrad Height&quot;)</news:title>
+      <news:keywords>History</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/70000116-6348-4584-b4e8-419f5cb87d5b</loc>
     <lastmod>2026-01-19</lastmod>
     <changefreq>weekly</changefreq>
@@ -7078,93 +7228,6 @@
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/680cc03b-2bb7-43c4-8d01-1ea81f1cabd1</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/99aee494-a2e7-4620-a1f9-012392d18d8c</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/880821fa-31fe-47d9-9b14-83936068ed63</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/07d9ea6f-9c59-4753-b53d-c146dbc233ac</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/ce47eb60-af71-469a-89b7-a03b10b085cf</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/93207749-6ca9-486b-8a05-a6e4533faaef</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/66071211-7e21-42b0-b4c3-c5f8c5cb5f52</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/41cc531b-1ec7-4fb1-9e89-e6f3b7083450</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-26T21:49:04.027425+00:00</news:publication_date>
-      <news:title>Creative Activity &quot;Game Library for Everyone&quot;</news:title>
-      <news:keywords>Creative Activity</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/5f6fa416-b2af-4855-87d3-9addfa52ce3f</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-26T21:49:08.760512+00:00</news:publication_date>
-      <news:title>Art Therapy &quot;Snow-snowflake! Snow-snowflake! Bird tracks in the snow&quot;</news:title>
-      <news:keywords>Art, Therapy</news:keywords>
-    </news:news>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/d22dac7c-942b-43d6-bc47-ae1be72b07d3</loc>
-    <lastmod>2026-01-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-01-26T21:53:03.593568+00:00</news:publication_date>
-      <news:title>Арт-терапія від художниці Олександри Гусєвої «Сніг-сніжок! Сніг-сніжок! На снігу сліди пташок»</news:title>
-      <news:keywords>Art Therapy</news:keywords>
-    </news:news>
   </url>
 
   <!-- User & Organizer Profiles (All registered users) -->
