@@ -14,6 +14,7 @@ import { resetToHomepageSEO } from '../utils/seoUtils';
 import { trackLandingPageView, trackCTAClick, trackScrollDepth, trackTimeOnPage, trackOrganizerClick, trackNewsletterSignup } from '../utils/conversionTracking';
 import { FeaturedEventsCarousel } from './FeaturedEventsCarousel';
 import { ExitIntentPopup } from './ExitIntentPopup';
+import { useTranslation } from '../i18n/useTranslation';
 
 const DEFAULT_CITY_LINKS = [
   { label: 'Tallinn', lat: 59.437, lng: 24.7536 },
@@ -33,6 +34,7 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const navigate = useNavigate();
+  const t = useTranslation();
   const [activeBanner, setActiveBanner] = useState<PlatformCampaign | null>(null);
   const [hasTrackedView, setHasTrackedView] = useState(false);
   const [topOrganizers, setTopOrganizers] = useState<OrganizerRatingStats[]>([]);
@@ -396,35 +398,34 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             <div className="space-y-8 text-left animate-in fade-in slide-in-from-left duration-1000">
               <div>
                 <h1 className="text-6xl sm:text-7xl md:text-8xl font-black tracking-tighter leading-[0.95] mb-6 text-white">
-                  Stop Missing Out
+                  {t.landing.hero.title}
                 </h1>
                 <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-tight mb-8">
-                  <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Find Local Events</span><br />
-                  <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">in Your Language</span>
+                  <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">{t.landing.hero.title}</span>
                 </h2>
                 <p className="text-lg sm:text-xl md:text-2xl text-slate-200 leading-relaxed mb-6 font-medium">
-                  We solve the problem of high platform fees and language barriers. EventNexus uses AI to discover and translate {platformStats?.eventsLast24h || 500}+ daily events into 50+ languages.
+                  {t.landing.hero.subtitle}
                 </p>
                 <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 md:p-5">
-                  <p className="text-sm font-bold text-indigo-200 mb-2">📋 Sign up to unlock:</p>
+                  <p className="text-sm font-bold text-indigo-200 mb-2">📋 {t.landing.hero.signupBenefitsTitle}</p>
                   <ul className="space-y-1 text-sm text-slate-300">
-                    <li>✓ Personalized event recommendations based on your interests</li>
-                    <li>✓ Save favorite events to your wishlist</li>
-                    <li>✓ One-click ticket booking with instant QR codes</li>
+                    <li>✓ {t.landing.hero.benefit1}</li>
+                    <li>✓ {t.landing.hero.benefit2}</li>
+                    <li>✓ {t.landing.hero.benefit3}</li>
                   </ul>
                 </div>
                 <div className="flex flex-col gap-3">
                   <p className="text-base md:text-lg text-slate-300 flex items-center gap-3">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-emerald-500/20 rounded-full text-emerald-400 flex-shrink-0 font-bold">✓</span>
-                    <span><strong className="text-white">13,000+</strong> attendees discovering events right now</span>
+                    <span><strong className="text-white">{platformStats?.totalUsers?.toLocaleString() || '13,000'}+</strong> {t.landing.hero.stat1}</span>
                   </p>
                   <p className="text-base md:text-lg text-slate-300 flex items-center gap-3">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-indigo-500/20 rounded-full text-indigo-400 flex-shrink-0 font-bold">✓</span>
-                    <span><strong className="text-white">Zero</strong> platform fees for attendees</span>
+                    <span><strong className="text-white">{t.landing.hero.stat2Label}</strong> {t.landing.hero.stat2}</span>
                   </p>
                   <p className="text-base md:text-lg text-slate-300 flex items-center gap-3">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-500/20 rounded-full text-purple-400 flex-shrink-0 font-bold">✓</span>
-                    <span><strong className="text-white">50+</strong> languages supported by AI</span>
+                    <span><strong className="text-white">50+</strong> {t.landing.hero.stat3}</span>
                   </p>
                 </div>
               </div>
@@ -440,7 +441,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                   aria-label="Create your free EventNexus account"
                 >
                   <Sparkles className="w-6 h-6 group-hover:scale-110 transition-transform" aria-hidden="true" /> 
-                  Get Started Free
+                  {t.landing.hero.ctaPrimary}
                   <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -452,7 +453,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                   aria-label="Browse events on interactive map as guest"
                 >
                   <MapIcon className="w-5 h-5" aria-hidden="true" /> 
-                  Explore the Map
+                  {t.landing.hero.ctaSecondary}
                 </Link>
               </div>
             </div>
@@ -474,8 +475,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                     <Globe className="w-6 h-6 text-emerald-400" />
                   </div>
                   <div className="text-4xl font-black text-white mb-2">{platformStats?.totalCities?.toLocaleString() || '1169'}</div>
-                  <div className="text-sm text-slate-300 font-bold">Cities</div>
-                  <div className="text-xs text-slate-400 mt-1">Worldwide</div>
+                  <div className="text-sm text-slate-300 font-bold">{t.landing.stats.cities}</div>
+                  <div className="text-xs text-slate-400 mt-1">{t.landing.stats.worldwide}</div>
                 </div>
 
                 <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 hover:bg-white/10 hover:scale-105 transition-all group">
@@ -483,8 +484,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                     <Gift className="w-6 h-6 text-orange-400" />
                   </div>
                   <div className="text-4xl font-black text-white mb-2">{platformStats?.freeEventsActive?.toLocaleString() || '592'}</div>
-                  <div className="text-sm text-slate-300 font-bold">Free Events</div>
-                  <div className="text-xs text-slate-400 mt-1">Active now</div>
+                  <div className="text-sm text-slate-300 font-bold">{t.landing.stats.freeEvents}</div>
+                  <div className="text-xs text-slate-400 mt-1">{t.landing.stats.activeNow}</div>
                 </div>
 
                 <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 hover:bg-white/10 hover:scale-105 transition-all group">
@@ -499,14 +500,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
 
               {/* Featured Benefits */}
               <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 space-y-3">
-                <h3 className="text-lg font-black text-white mb-4">Why EventNexus?</h3>
+                <h3 className="text-lg font-black text-white mb-4">{t.landing.features.whyTitle}</h3>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Languages className="w-4 h-4 text-indigo-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white">AI Translation</p>
-                    <p className="text-xs text-slate-400">50+ languages supported</p>
+                    <p className="text-sm font-bold text-white">{t.landing.features.aiTranslation}</p>
+                    <p className="text-xs text-slate-400">{t.landing.features.languagesSupported}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -514,8 +515,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                     <Shield className="w-4 h-4 text-emerald-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white">Secure Payments</p>
-                    <p className="text-xs text-slate-400">PCI-compliant checkout</p>
+                    <p className="text-sm font-bold text-white">{t.landing.features.securePayments}</p>
+                    <p className="text-xs text-slate-400">{t.landing.features.pciCompliant}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -523,8 +524,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                     <DollarSign className="w-4 h-4 text-orange-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white">Zero Fees</p>
-                    <p className="text-xs text-slate-400">Free for attendees</p>
+                    <p className="text-sm font-bold text-white">{t.landing.features.zeroFees}</p>
+                    <p className="text-xs text-slate-400">{t.landing.features.freeForAttendees}</p>
                   </div>
                 </div>
               </div>

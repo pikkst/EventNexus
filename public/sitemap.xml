@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-01-28T07:24:56.825Z -->
+<!-- Last generated: 2026-01-28T07:42:53.133Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Core Platform Pages (Public & AI-crawlable) -->
   <url>
@@ -1092,6 +1092,36 @@
       <news:publication_date>2026-01-28T07:17:35.697402+00:00</news:publication_date>
       <news:title>Documentary Photo Exhibition &quot;Khartia: Heat. 11 Views on War&quot;</news:title>
       <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/e397f4f2-8715-4b33-ad0c-cd109f3a97b6</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:26:18.430318+00:00</news:publication_date>
+      <news:title>Offline event &quot;Practice of using AI: life hacks 2026 from Oleksiy Vinogradov&quot;</news:title>
+      <news:keywords>Career Development</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/b79f4433-6731-47b0-a7bb-79fc7115a95f</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:37:30.917894+00:00</news:publication_date>
+      <news:title>Ukrainian Speaking Club</news:title>
+      <news:keywords>Language Exchange</news:keywords>
     </news:news>
   </url>
   <url>
@@ -2196,10 +2226,55 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/0ceb27df-09e4-40c6-adc1-78c347e1caa5</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:29:03.627017+00:00</news:publication_date>
+      <news:title>Film Screening &quot;Heroes of the Ukrainian People&quot;</news:title>
+      <news:keywords>Film Screening</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c5648436-c5bc-487d-86dc-bcbccd4b7194</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:29:08.071836+00:00</news:publication_date>
+      <news:title>Requiem Hour &quot;From the Heroes of Kruty to the Heroes of Today - Cyborgs&quot;</news:title>
+      <news:keywords>Commemorative</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/33237531-cfe4-4d57-84c4-b10e196e38fd</loc>
     <lastmod>2026-01-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c8b2a2dd-69ab-4474-a4cd-9d4e18ffaafb</loc>
+    <lastmod>2026-01-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-01-28T07:29:18.038247+00:00</news:publication_date>
+      <news:title>History Hour &quot;Kruty - Battle for the Future&quot;</news:title>
+      <news:keywords>Educational</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/93545af1-e85d-457f-8002-006b78f86775</loc>
@@ -7267,36 +7342,6 @@
   </url>
   <url>
     <loc>https://eventnexus.eu/event/c5b8ded9-51d4-4463-9602-041cf8023ac7</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/3412662c-e276-49a7-a66d-694123323e2f</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/d35b97ad-21f2-41c3-ba57-747f9069f1ca</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/53f62d7c-1f10-4f95-88ed-e7c2b71b54b5</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/7692bdb3-f458-408f-8396-44f5285fe830</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/915af7c7-3f7c-422c-8d0a-07b7dd7e200a</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

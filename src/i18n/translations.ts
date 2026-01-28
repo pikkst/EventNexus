@@ -30,10 +30,31 @@ export interface UITranslations {
       subtitle: string;
       ctaPrimary: string;
       ctaSecondary: string;
+      signupBenefitsTitle: string;
+      benefit1: string;
+      benefit2: string;
+      benefit3: string;
+      stat1: string;
+      stat2Label: string;
+      stat2: string;
+      stat3: string;
+    };
+    stats: {
+      cities: string;
+      worldwide: string;
+      freeEvents: string;
+      activeNow: string;
     };
     features: {
       title: string;
       subtitle: string;
+      whyTitle: string;
+      aiTranslation: string;
+      languagesSupported: string;
+      securePayments: string;
+      pciCompliant: string;
+      zeroFees: string;
+      freeForAttendees: string;
       liveMap: {
         title: string;
         description: string;
@@ -206,14 +227,35 @@ export const translations: Record<string, UITranslations> = {
     },
     landing: {
       hero: {
-        title: 'Discover Your Next Experience',
-        subtitle: 'Find amazing events near you. From concerts to conferences, discover and book tickets for unforgettable experiences.',
+        title: 'Stop Missing Out',
+        subtitle: 'We solve the problem of high platform fees and language barriers. EventNexus uses AI to discover and translate events into 50+ languages.',
         ctaPrimary: 'Get Started Free',
-        ctaSecondary: 'Explore Events',
+        ctaSecondary: 'Explore the Map',
+        signupBenefitsTitle: 'Sign up to unlock:',
+        benefit1: 'Personalized event recommendations based on your interests',
+        benefit2: 'Save favorite events to your wishlist',
+        benefit3: 'One-click ticket booking with instant QR codes',
+        stat1: 'attendees discovering events right now',
+        stat2Label: 'Zero',
+        stat2: 'platform fees for attendees',
+        stat3: 'languages supported by AI',
+      },
+      stats: {
+        cities: 'Cities',
+        worldwide: 'Worldwide',
+        freeEvents: 'Free Events',
+        activeNow: 'Active now',
       },
       features: {
         title: 'Why EventNexus?',
         subtitle: 'The all-in-one platform for discovering and managing events',
+        whyTitle: 'Why EventNexus?',
+        aiTranslation: 'AI Translation',
+        languagesSupported: '50+ languages supported',
+        securePayments: 'Secure Payments',
+        pciCompliant: 'PCI-compliant checkout',
+        zeroFees: 'Zero Fees',
+        freeForAttendees: 'Free for attendees',
         liveMap: {
           title: 'Live Event Map',
           description: 'See events on an interactive map. Filter by radius, category, date—discover events intuitively.',
@@ -369,14 +411,35 @@ export const translations: Record<string, UITranslations> = {
     },
     landing: {
       hero: {
-        title: 'Avasta oma järgmine elamus',
-        subtitle: 'Leia hämmastav üritusi enda lähedal. Kontsertidest konverentsideni - avasta ja broneeri pileteid unustamatuteks kogemusteks.',
+        title: 'Ära jää enam ilma',
+        subtitle: 'Lahendame kõrgete platvormitasude ja keelebarjääride probleemi. EventNexus kasutab AI-d ürituste leidmiseks ja tõlkimiseks üle 50 keelde.',
         ctaPrimary: 'Alusta tasuta',
-        ctaSecondary: 'Uuri üritusi',
+        ctaSecondary: 'Uuri kaarti',
+        signupBenefitsTitle: 'Registreeru ja saa juurdepääs:',
+        benefit1: 'Isikupärastatud ürituste soovitused sinu huvide põhjal',
+        benefit2: 'Salvesta lemmiküritused oma soovide nimekirja',
+        benefit3: 'Ühe klõpsuga piletite broneerimine koos koheste QR-koodidega',
+        stat1: 'osalejat avastavad üritusi praegu',
+        stat2Label: 'Null',
+        stat2: 'platvormitasusid osalejatele',
+        stat3: 'AI toetatud keelt',
+      },
+      stats: {
+        cities: 'Linnad',
+        worldwide: 'Üle maailma',
+        freeEvents: 'Tasuta üritused',
+        activeNow: 'Aktiivsed praegu',
       },
       features: {
         title: 'Miks EventNexus?',
         subtitle: 'Kõik-ühes platvorm ürituste avastamiseks ja haldamiseks',
+        whyTitle: 'Miks EventNexus?',
+        aiTranslation: 'AI tõlge',
+        languagesSupported: '50+ toetatud keelt',
+        securePayments: 'Turvalised maksed',
+        pciCompliant: 'PCI-nõuetele vastav kassasüsteem',
+        zeroFees: 'Null tasusid',
+        freeForAttendees: 'Tasuta osalejatele',
         liveMap: {
           title: 'Reaalajas ürituste kaart',
           description: 'Vaata üritusi interaktiivsel kaardil. Filtreeri raadiuse, kategooria, kuupäeva järgi - avasta üritusi intuitiivselt.',
@@ -532,14 +595,35 @@ export const translations: Record<string, UITranslations> = {
     },
     landing: {
       hero: {
-        title: 'Откройте для себя новые впечатления',
-        subtitle: 'Найдите удивительные события рядом с вами. От концертов до конференций - открывайте и бронируйте билеты на незабываемые впечатления.',
+        title: 'Не упускайте возможности',
+        subtitle: 'Мы решаем проблему высоких комиссий платформ и языковых барьеров. EventNexus использует ИИ для поиска и перевода событий на более 50 языков.',
         ctaPrimary: 'Начать бесплатно',
-        ctaSecondary: 'Искать события',
+        ctaSecondary: 'Изучить карту',
+        signupBenefitsTitle: 'Зарегистрируйтесь, чтобы получить:',
+        benefit1: 'Персонализированные рекомендации событий на основе ваших интересов',
+        benefit2: 'Сохраните избранные события в список желаний',
+        benefit3: 'Бронирование билетов одним кликом с мгновенными QR-кодами',
+        stat1: 'участников открывают события прямо сейчас',
+        stat2Label: 'Ноль',
+        stat2: 'комиссий платформы для участников',
+        stat3: 'языков поддерживается ИИ',
+      },
+      stats: {
+        cities: 'Города',
+        worldwide: 'По всему миру',
+        freeEvents: 'Бесплатные события',
+        activeNow: 'Активны сейчас',
       },
       features: {
         title: 'Почему EventNexus?',
         subtitle: 'Универсальная платформа для поиска и управления событиями',
+        whyTitle: 'Почему EventNexus?',
+        aiTranslation: 'Перевод ИИ',
+        languagesSupported: '50+ поддерживаемых языков',
+        securePayments: 'Безопасные платежи',
+        pciCompliant: 'Платёжная система PCI-совместимая',
+        zeroFees: 'Нулевые комиссии',
+        freeForAttendees: 'Бесплатно для участников',
         liveMap: {
           title: 'Карта событий в реальном времени',
           description: 'Просматривайте события на интерактивной карте. Фильтруйте по радиусу, категории, дате - находите события интуитивно.',
@@ -695,14 +779,35 @@ export const translations: Record<string, UITranslations> = {
     },
     landing: {
       hero: {
-        title: 'Löydä seuraava kokemuksesi',
-        subtitle: 'Löydä hämmästyttäviä tapahtumia läheltäsi. Konserteista konferensseihin - löydä ja varaa lippuja unohtumattomiin kokemuksiin.',
+        title: 'Älä jää paitsi',
+        subtitle: 'Ratkaisemme korkeiden alustamaksujen ja kieliesteiden ongelmat. EventNexus käyttää tekoälyä tapahtumien löytämiseen ja kääntämiseen yli 50 kielelle.',
         ctaPrimary: 'Aloita ilmaiseksi',
-        ctaSecondary: 'Selaa tapahtumia',
+        ctaSecondary: 'Tutki karttaa',
+        signupBenefitsTitle: 'Rekisteröidy avataksesi:',
+        benefit1: 'Henkilökohtaiset tapahtumasuositukset kiinnostuksiesi perusteella',
+        benefit2: 'Tallenna suosikkitapahtumat toivelistallesi',
+        benefit3: 'Yhdellä napsautuksella lippuvaraus välittömillä QR-koodeilla',
+        stat1: 'osallistujaa löytää tapahtumia juuri nyt',
+        stat2Label: 'Nolla',
+        stat2: 'alustamaksuja osallistujille',
+        stat3: 'tekoälyn tukemaa kieltä',
+      },
+      stats: {
+        cities: 'Kaupungit',
+        worldwide: 'Maailmanlaajuisesti',
+        freeEvents: 'Ilmaiset tapahtumat',
+        activeNow: 'Aktiiviset nyt',
       },
       features: {
         title: 'Miksi EventNexus?',
         subtitle: 'Kaikki-yhdessä-alusta tapahtumien löytämiseen ja hallintaan',
+        whyTitle: 'Miksi EventNexus?',
+        aiTranslation: 'Tekoälykäännös',
+        languagesSupported: '50+ tuettua kieltä',
+        securePayments: 'Turvalliset maksut',
+        pciCompliant: 'PCI-yhteensopiva kassa',
+        zeroFees: 'Nolla maksuja',
+        freeForAttendees: 'Ilmainen osallistujille',
         liveMap: {
           title: 'Reaaliaikainen tapahtumakartta',
           description: 'Katso tapahtumia interaktiivisella kartalla. Suodata säteen, kategorian, päivämäärän mukaan - löydä tapahtumia intuitiivisesti.',
@@ -858,14 +963,35 @@ export const translations: Record<string, UITranslations> = {
     },
     landing: {
       hero: {
-        title: 'Entdecken Sie Ihr nächstes Erlebnis',
-        subtitle: 'Finden Sie tolle Veranstaltungen in Ihrer Nähe. Von Konzerten bis Konferenzen - entdecken und buchen Sie Tickets für unvergessliche Erlebnisse.',
+        title: 'Verpassen Sie nichts mehr',
+        subtitle: 'Wir lösen das Problem hoher Plattformgebühren und Sprachbarrieren. EventNexus nutzt KI, um Veranstaltungen zu finden und in über 50 Sprachen zu übersetzen.',
         ctaPrimary: 'Kostenlos starten',
-        ctaSecondary: 'Veranstaltungen erkunden',
+        ctaSecondary: 'Karte erkunden',
+        signupBenefitsTitle: 'Registrieren Sie sich, um freizuschalten:',
+        benefit1: 'Personalisierte Veranstaltungsempfehlungen basierend auf Ihren Interessen',
+        benefit2: 'Speichern Sie Lieblingsveranstaltungen in Ihrer Wunschliste',
+        benefit3: 'Ein-Klick-Ticketbuchung mit sofortigen QR-Codes',
+        stat1: 'Teilnehmer entdecken gerade Veranstaltungen',
+        stat2Label: 'Null',
+        stat2: 'Plattformgebühren für Teilnehmer',
+        stat3: 'von KI unterstützte Sprachen',
+      },
+      stats: {
+        cities: 'Städte',
+        worldwide: 'Weltweit',
+        freeEvents: 'Kostenlose Veranstaltungen',
+        activeNow: 'Aktuell aktiv',
       },
       features: {
         title: 'Warum EventNexus?',
         subtitle: 'Die All-in-One-Plattform zum Entdecken und Verwalten von Veranstaltungen',
+        whyTitle: 'Warum EventNexus?',
+        aiTranslation: 'KI-Übersetzung',
+        languagesSupported: '50+ unterstützte Sprachen',
+        securePayments: 'Sichere Zahlungen',
+        pciCompliant: 'PCI-konforme Kasse',
+        zeroFees: 'Null Gebühren',
+        freeForAttendees: 'Kostenlos für Teilnehmer',
         liveMap: {
           title: 'Live-Veranstaltungskarte',
           description: 'Sehen Sie Veranstaltungen auf einer interaktiven Karte. Filtern Sie nach Radius, Kategorie, Datum - entdecken Sie Veranstaltungen intuitiv.',
