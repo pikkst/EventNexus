@@ -68,7 +68,7 @@ interface EventCreationFlowProps {
 }
 
 const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUser, onEventCreated }) => {
-  const { t } = useTranslation();
+  const t = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);

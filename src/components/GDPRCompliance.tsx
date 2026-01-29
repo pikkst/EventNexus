@@ -4,7 +4,7 @@ import { Shield, Eye, Download, Trash2, Edit3, Lock } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 const GDPRCompliance: React.FC = () => {
-  const { t } = useTranslation();
+  const t = useTranslation();
   const rights = [
     { icon: <Eye />, title: t.gdpr.rightAccess, desc: t.gdpr.rightAccessDesc },
     { icon: <Edit3 />, title: t.gdpr.rightRectification, desc: t.gdpr.rightRectificationDesc },

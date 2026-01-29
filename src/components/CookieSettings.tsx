@@ -4,7 +4,7 @@ import { Shield, Check, Info } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 
 const CookieSettings: React.FC = () => {
-  const { t } = useTranslation();
+  const t = useTranslation();
   const [preferences, setPreferences] = useState({
     essential: true,
     analytics: true,

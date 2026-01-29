@@ -4,7 +4,7 @@ import LegalPage from './LegalPage';
 import { useTranslation } from '../i18n/useTranslation';
 
 const TermsOfService: React.FC = () => {
-  const { t } = useTranslation();
+  const t = useTranslation();
   
   const sections = [
     {

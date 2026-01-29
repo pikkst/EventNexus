@@ -5,7 +5,7 @@ import ChatBot from './ChatBot';
 import { useTranslation } from '../i18n/useTranslation';
 
 const HelpCenter: React.FC = () => {
-  const { t } = useTranslation();
+  const t = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
