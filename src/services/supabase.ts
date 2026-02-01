@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import logger from '../utils/logger';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -14,12 +15,12 @@ if (typeof window !== 'undefined') {
     const oldKeys = ['sb-anlivujgkjmajkcgbaxw-auth-token', 'supabase.auth.token'];
     oldKeys.forEach(key => {
       if (localStorage.getItem(key)) {
-        console.log('Removing old session key:', key);
+        logger.debug('Removing old session key:', key);
         localStorage.removeItem(key);
       }
     });
   } catch (e) {
-    console.warn('Could not clean old session data:', e);
+    logger.warn('Could not clean old session data:', e);
   }
 }
 
@@ -45,6 +46,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-console.log('Supabase client initialized successfully');
+logger.log('Supabase client initialized successfully');
 
 export default supabase;

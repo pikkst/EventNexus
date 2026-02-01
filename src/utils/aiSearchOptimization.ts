@@ -204,7 +204,8 @@ export function sanitizeURLForCrawler(url: string): string {
       parsed.searchParams.delete(param);
     });
     return parsed.toString();
-  } catch {
+  } catch (error) {
+    // Invalid URL format, return as-is
     return url;
   }
 }

@@ -1,53 +1,48 @@
 import { supabase } from './supabase';
+import logger from '../utils/logger';
 import { deductUserCredits, checkUserCredits } from './dbService';
 import { SUPPORTED_LANGUAGES } from './languageService';
 import { retryWithBackoff, CircuitBreaker } from './pipelineRetryService';
 
-// Dynamically import Google GenAI to avoid TDZ issues
-// This prevents minification bugs where 'Ge' (minified class) is accessed before initialization
+// Google GenAI module reference
+let GoogleGenAI: any = null;
 let aiInstance: any = null;
-let GoogleGenAIModule: any = null;
-let TypeEnum: any = null;
 let initializationPromise: Promise<any> | null = null;
 
 const loadGoogleGenAI = async () => {
   // If already loaded, return immediately
-  if (GoogleGenAIModule) {
-    console.log('✅ GoogleGenAIModule already loaded, reusing instance');
-    return { GoogleGenAI: GoogleGenAIModule, Type: TypeEnum };
+  if (GoogleGenAI) {
+    logger.log('✅ GoogleGenAI already available');
+    return GoogleGenAI;
   }
 
   // If currently loading, wait for the promise
   if (initializationPromise) {
-    console.log('⏳ GoogleGenAI module is already loading, waiting for promise...');
+    logger.log('⏳ GoogleGenAI is already loading, waiting for promise...');
     return initializationPromise;
   }
 
-  // Start new initialization
-  console.log('🔄 Starting fresh GoogleGenAI module load...');
+  // Start new initialization with dynamic import
+  logger.log('🔄 Starting GoogleGenAI module load...');
   initializationPromise = (async () => {
     try {
-      console.log('🔄 Attempting dynamic import of @google/genai...');
-      const module = await import("@google/genai");
-      console.log('✅ Dynamic import successful, checking for GoogleGenAI export...');
-      console.log('Module exports:', Object.keys(module).slice(0, 10), '...'); // Log first 10 exports
+      console.log('[GEMINI] Attempting to import @google/genai');
       
-      if (!module.GoogleGenAI) {
-        console.error('❌ GoogleGenAI not found in module exports');
-        console.error('Available exports:', Object.keys(module).filter(k => k.includes('Google')));
-        throw new Error('GoogleGenAI not exported from @google/genai module');
+      // Dynamic import of Google GenAI  
+      const { GoogleGenAI: GoogleGenAIClass } = await import("@google/genai");
+      
+      if (!GoogleGenAIClass) {
+        throw new Error('GoogleGenAI class not found in @google/genai module');
       }
       
-      GoogleGenAIModule = module.GoogleGenAI;
-      TypeEnum = module.Type;
-      console.log('✅ @google/genai module loaded successfully');
-      console.log('GoogleGenAIModule type:', typeof GoogleGenAIModule);
-      console.log('GoogleGenAIModule constructor:', GoogleGenAIModule?.constructor?.name);
-      return { GoogleGenAI: GoogleGenAIModule, Type: TypeEnum };
+      GoogleGenAI = GoogleGenAIClass;
+      logger.log('✅ GoogleGenAI module loaded successfully');
+      console.log('[GEMINI] GoogleGenAI loaded successfully:', typeof GoogleGenAI);
+      return GoogleGenAI;
     } catch (e: any) {
-      console.error('❌ Failed to load @google/genai module:', {
+      console.error('[GEMINI] Failed to load @google/genai:', e);
+      logger.error('❌ Failed to load @google/genai module:', {
         message: e?.message || String(e),
-        stack: e?.stack,
         name: e?.name
       });
       // Clear the promise so we can retry
@@ -63,22 +58,22 @@ const loadGoogleGenAI = async () => {
 const geminiCircuitBreaker = new CircuitBreaker(5, 2, 30000);
 
 const getAI = (): any => {
-  console.log('getAI() called. aiInstance exists?', !!aiInstance, 'GoogleGenAIModule exists?', !!GoogleGenAIModule);
+  logger.log('getAI() called. aiInstance exists?', !!aiInstance, 'GoogleGenAI exists?', !!GoogleGenAI);
   
   if (!aiInstance) {
     const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
-      console.error('❌ GEMINI_API_KEY not configured in environment');
-      console.log('process.env.API_KEY:', process.env.API_KEY ? '***set***' : 'NOT SET');
-      console.log('process.env.GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '***set***' : 'NOT SET');
+      logger.error('❌ GEMINI_API_KEY not configured in environment');
+      logger.log('process.env.API_KEY:', process.env.API_KEY ? '***set***' : 'NOT SET');
+      logger.log('process.env.GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '***set***' : 'NOT SET');
       throw new Error('GEMINI_API_KEY is required but not configured');
     }
     
-    if (!GoogleGenAIModule) {
-      console.error('❌ GoogleGenAI module not initialized');
-      console.log('GoogleGenAIModule:', GoogleGenAIModule);
-      console.log('initializationPromise:', initializationPromise ? 'pending...' : 'not started');
+    if (!GoogleGenAI) {
+      logger.error('❌ GoogleGenAI module not initialized');
+      logger.log('GoogleGenAI:', GoogleGenAI);
+      logger.log('initializationPromise:', initializationPromise ? 'pending...' : 'not started');
       throw new Error(
         'GoogleGenAI module not initialized. ' +
         'This usually means initializeGemini() was not called or did not complete. ' +
@@ -88,35 +83,34 @@ const getAI = (): any => {
     }
     
     try {
-      console.log('✅ Creating GoogleGenAI instance...');
-      aiInstance = new GoogleGenAIModule({ apiKey });
-      console.log('✅ GoogleGenAI instance created successfully');
+      logger.log('✅ Creating GoogleGenAI instance...');
+      aiInstance = new GoogleGenAI({ apiKey });
+      logger.log('✅ GoogleGenAI instance created successfully');
     } catch (e: any) {
-      console.error('❌ Failed to create GoogleGenAI instance:', e?.message || e);
+      logger.error('❌ Failed to create GoogleGenAI instance:', e?.message || e);
       throw new Error(`GoogleGenAI instantiation failed: ${e?.message || String(e)}`);
     }
   }
   
-  console.log('✅ Returning AI instance');
+  logger.log('✅ Returning AI instance');
   return aiInstance;
-};
-
-// Get Type enum lazily - NEVER called at module scope
-const getType = () => {
-  if (!TypeEnum) {
-    throw new Error('Type enum not loaded - module not initialized');
-  }
-  return TypeEnum;
 };
 
 // Pre-initialize the module at startup (call this early in App component)
 export const initializeGemini = async () => {
-  console.log('🔄 initializeGemini() called...');
+  logger.log('🔄 initializeGemini() called...');
   try {
+    // If already loaded statically, return immediately
+    if (GoogleGenAI) {
+      logger.log('✅ GoogleGenAI already available from static import');
+      return;
+    }
+    
+    // Otherwise try to load dynamically
     await loadGoogleGenAI();
-    console.log('✅ initializeGemini() completed successfully');
+    logger.log('✅ initializeGemini() completed successfully');
   } catch (e: any) {
-    console.error('❌ initializeGemini() failed:', e?.message || e);
+    logger.error('❌ initializeGemini() failed:', e?.message || e);
     // Re-throw so App.tsx can log it, but set a flag that we tried
     throw e;
   }
@@ -200,7 +194,7 @@ export const generateSocialMediaPosts = async (
 
     return JSON.parse(response.text || '{}');
   } catch (error) {
-    console.error("Social media post generation failed:", error);
+    logger.error("Social media post generation failed:", error);
     throw error;
   }
 };
@@ -412,7 +406,7 @@ export const generatePlatformGrowthCampaign = async (
 
     return JSON.parse(response.text || '{}');
   } catch (error) {
-    console.error("Platform growth generation failed:", error);
+    logger.error("Platform growth generation failed:", error);
     return null;
   }
 };
@@ -445,9 +439,9 @@ export const generateAdImage = async (
         async () => {
           const ai = getAI();
           
-          console.log('[Gemini] Generating image with model: gemini-2.5-flash-image (Nano Banana)');
-          console.log('[Gemini] Prompt:', prompt.substring(0, 100) + '...');
-          console.log('[Gemini] Aspect ratio:', aspectRatio);
+          logger.log('[Gemini] Generating image with model: gemini-2.5-flash-image (Nano Banana)');
+          logger.log('[Gemini] Prompt:', prompt.substring(0, 100) + '...');
+          logger.log('[Gemini] Aspect ratio:', aspectRatio);
           
           // Nano Banana (gemini-2.5-flash-image) expects simple visual description
           // Use positive description + negative prompt to prevent unwanted text
@@ -460,18 +454,18 @@ NEGATIVE PROMPT (what NOT to include): No dates, no times, no locations, no addr
             contents: imagePrompt, // Simple string, not complex object
           });
 
-          console.log('[Gemini] Response received, parsing candidates...');
+          logger.log('[Gemini] Response received, parsing candidates...');
           
           // Check for inline image data in response
           for (const part of response.candidates?.[0]?.content?.parts || []) {
             if (part.inlineData?.data) {
-              console.log('[Gemini] ✅ Image data found! Length:', part.inlineData.data.length);
+              logger.log('[Gemini] ✅ Image data found! Length:', part.inlineData.data.length);
               return { inlineData: part.inlineData.data };
             }
           }
           
-          console.error('[Gemini] ❌ No image data in response');
-          console.error('[Gemini] Response structure:', JSON.stringify(response, null, 2));
+          logger.error('[Gemini] ❌ No image data in response');
+          logger.error('[Gemini] Response structure:', JSON.stringify(response, null, 2));
           throw new Error('No image data in response from gemini-2.5-flash-image');
         },
         {
@@ -482,7 +476,7 @@ NEGATIVE PROMPT (what NOT to include): No dates, no times, no locations, no addr
       );
 
       if (!retryResult.success) {
-        console.error('[Gemini] All retry attempts failed:', retryResult.error);
+        logger.error('[Gemini] All retry attempts failed:', retryResult.error);
         throw new Error(retryResult.error);
       }
 
@@ -490,11 +484,11 @@ NEGATIVE PROMPT (what NOT to include): No dates, no times, no locations, no addr
       
       // Validate base64 data
       if (!base64Data || base64Data.length < 100) {
-        console.error('[Gemini] ⚠️ Invalid base64 data - too short:', base64Data?.length || 0);
+        logger.error('[Gemini] ⚠️ Invalid base64 data - too short:', base64Data?.length || 0);
         throw new Error('Invalid image data received - data too short');
       }
       
-      console.log('[Gemini] ✅ Image validated successfully');
+      logger.log('[Gemini] ✅ Image validated successfully');
       const inlineDataUrl = `data:image/png;base64,${base64Data}`;
       
       // Deduct credits after successful generation (Free tier only)
@@ -523,10 +517,10 @@ NEGATIVE PROMPT (what NOT to include): No dates, no times, no locations, no addr
               .getPublicUrl(fileName);
             if (publicData?.publicUrl) return publicData.publicUrl;
           } else {
-            console.error('Storage upload failed:', uploadError);
+            logger.error('Storage upload failed:', uploadError);
           }
         } catch (storageError) {
-          console.error('Storage upload exception:', storageError);
+          logger.error('Storage upload exception:', storageError);
         }
       }
 
@@ -535,7 +529,7 @@ NEGATIVE PROMPT (what NOT to include): No dates, no times, no locations, no addr
     
     return result;
   } catch (error) {
-    console.error('[Gemini] ❌ Image generation failed:', error);
+    logger.error('[Gemini] ❌ Image generation failed:', error);
     
     // Provide detailed error message to user
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -608,7 +602,7 @@ Return ONLY the tagline text, no explanations, no numbering, no quotes, no alter
 
     return result || "Experience the extraordinary.";
   } catch (error) {
-    console.error("Tagline generation failed:", error);
+    logger.error("Tagline generation failed:", error);
     return "Experience the extraordinary.";
   }
 };
@@ -665,7 +659,7 @@ ${text}`
 
     return result;
   } catch (error) {
-    console.error("Translation failed:", error);
+    logger.error("Translation failed:", error);
     return text;
   }
 };
@@ -689,7 +683,7 @@ export const translateDescriptionBatch = async (
   try {
     // Ensure Gemini is initialized before use
     if (!GoogleGenAIModule) {
-      console.log('🔄 Initializing Gemini in translateDescriptionBatch...');
+      logger.log('🔄 Initializing Gemini in translateDescriptionBatch...');
       await loadGoogleGenAI();
     }
 
@@ -745,7 +739,7 @@ ${textList}`
 
     return translations;
   } catch (error) {
-    console.error("Batch translation failed:", error);
+    logger.error("Batch translation failed:", error);
     // Return original texts on error
     return texts;
   }
@@ -844,7 +838,7 @@ Make each ad unique and platform-appropriate. Focus on ${campaignTheme}.`,
 
     return result;
   } catch (error) {
-    console.error("Ad campaign generation failed:", error);
+    logger.error("Ad campaign generation failed:", error);
     return [];
   }
 };
@@ -974,7 +968,7 @@ Use professional but clear language. Be specific about URLs and repositories. Ac
       warningCount: warningAlerts.length
     };
   } catch (error) {
-    console.error("Brand protection report generation failed:", error);
+    logger.error("Brand protection report generation failed:", error);
     return {
       success: false,
       report: 'Failed to generate report. Please try again.',
@@ -1115,7 +1109,7 @@ Respond in JSON format with ONLY this structure:
 
     return result;
   } catch (error) {
-    console.error("Poster design generation failed:", error);
+    logger.error("Poster design generation failed:", error);
     throw error;
   }
 };
@@ -1158,12 +1152,12 @@ export const generateOutreachEmail = async (
     });
 
     if (error) {
-      console.error('Edge Function error:', error);
+      logger.error('Edge Function error:', error);
       return null;
     }
 
     if (!data.success) {
-      console.error('Generation failed:', data.error);
+      logger.error('Generation failed:', data.error);
       return null;
     }
 
@@ -1174,7 +1168,7 @@ export const generateOutreachEmail = async (
       emailId: data.emailId || null
     };
   } catch (error) {
-    console.error("Outreach email generation failed:", error);
+    logger.error("Outreach email generation failed:", error);
     return null;
   }
 };
@@ -1307,19 +1301,19 @@ Return ONLY valid JSON:`,
 
     const text = response?.response?.text();
     if (!text) {
-      console.warn('⚠️ No SEO metadata generated from AI');
+      logger.warn('⚠️ No SEO metadata generated from AI');
       return null;
     }
 
-    console.log('📝 Raw AI response:', text);
+    logger.log('📝 Raw AI response:', text);
     const metadata = JSON.parse(text);
-    console.log('✅ Parsed SEO metadata:', metadata);
+    logger.log('✅ Parsed SEO metadata:', metadata);
     
     return metadata;
   } catch (error) {
-    console.error('❌ SEO metadata generation failed:', error);
+    logger.error('❌ SEO metadata generation failed:', error);
     if (error instanceof Error) {
-      console.error('Error details:', error.message, error.stack);
+      logger.error('Error details:', error.message, error.stack);
     }
     return null;
   }
@@ -1407,15 +1401,15 @@ Return detailed analysis as JSON:`,
     const text = response?.response?.text();
     if (!text) return null;
 
-    console.log('📝 Raw AI analysis:', text);
+    logger.log('📝 Raw AI analysis:', text);
     const analysis = JSON.parse(text);
-    console.log('✅ Parsed SEO analysis:', analysis);
+    logger.log('✅ Parsed SEO analysis:', analysis);
     
     return analysis;
   } catch (error) {
-    console.error('❌ SEO analysis failed:', error);
+    logger.error('❌ SEO analysis failed:', error);
     if (error instanceof Error) {
-      console.error('Error details:', error.message, error.stack);
+      logger.error('Error details:', error.message, error.stack);
     }
     return null;
   }

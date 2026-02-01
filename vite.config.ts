@@ -2,6 +2,7 @@ import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { execSync } from 'child_process';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // Get git commit hash for build tracking
 const getGitCommit = () => {
@@ -31,7 +32,16 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
       },
-      plugins: [react()],
+      plugins: [
+        react(),
+        visualizer({
+          filename: './dist/stats.html',
+          open: false,
+          gzipSize: true,
+          brotliSize: true,
+          template: 'treemap'
+        })
+      ],
       define: {
         // Explicitly define all env vars for build time replacement
         // Vite does NOT automatically read process.env.VITE_* in CI environments
@@ -88,8 +98,8 @@ export default defineConfig(({ mode }) => {
         },
         // Enable CSS code splitting
         cssCodeSplit: true,
-        // Increase the size warning limit for chunks
-        polyfillModulePreload: true
+        // Modern module preload
+        modulePreload: { polyfill: true }
       }
     };
 });

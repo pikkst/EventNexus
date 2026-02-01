@@ -192,7 +192,7 @@ export default function BlogList() {
     <div className="min-h-screen bg-slate-950">
       {/* Header */}
       <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-transparent opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-center justify-between">
             <div>

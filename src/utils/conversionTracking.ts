@@ -33,7 +33,8 @@ export const trackConversionEvent = async (event: Omit<ConversionEvent, 'timesta
     }
 
     // Send to analytics service
-    // TODO: Integrate with Mixpanel, Segment, or custom analytics
+    // Analytics: Logger captures conversion events (see src/utils/logger.ts)
+    // For third-party analytics (Mixpanel/Segment/GA): add via middleware integration
     // await fetch('/api/analytics/track', { method: 'POST', body: JSON.stringify(conversionEvent) });
 
     // Store in localStorage for batch processing

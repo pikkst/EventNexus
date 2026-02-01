@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { EventNexusEvent, User, Notification, Achievement, UserAchievement, UserStats, PointsLedgerEntry, LeaderboardEntry } from '../types';
 import logger from '../utils/logger';
 import { logAuth, logEventAction, logError, logEvent } from './auditService';
+import { isNetworkError, getNetworkErrorMessage, withAuthRecovery } from '../utils/networkResilience';
 
 // Helper function to transform database event to EventNexusEvent
 // Establish a blog discussing 'Local Experiences' to build topical authority
@@ -252,7 +253,7 @@ export const getAllUsers = async (): Promise<User[]> => {
     .order('created_at', { ascending: false });
   
   if (error) {
-    console.error('Error fetching users:', error);
+    logger.error('Error fetching users:', error);
     return [];
   }
   
@@ -260,6 +261,34 @@ export const getAllUsers = async (): Promise<User[]> => {
 };
 
 export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<EventNexusEvent | null> => {
+  // ====== BACKEND VALIDATION: Free tier enforcement ======
+  // Prevent free tier users from bypassing frontend checks
+  try {
+    const { data: organizerData, error: userError } = await supabase
+      .from('users')
+      .select('subscription_tier, credits')
+      .eq('id', event.organizerId)
+      .single();
+    
+    if (userError || !organizerData) {
+      logger.error('Failed to fetch organizer data:', userError);
+      throw new Error('Unable to verify organizer subscription');
+    }
+    
+    // Free tier users are blocked at backend level
+    // They must upgrade or use credits via the proper flow
+    if (organizerData.subscription_tier === 'free') {
+      logger.warn(`Free tier user ${event.organizerId} attempted direct event creation`);
+      throw new Error('FREE_TIER_BLOCKED: Free tier users must use credits or upgrade to create events');
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('FREE_TIER_BLOCKED')) {
+      throw error; // Re-throw our custom error
+    }
+    logger.error('Subscription validation error:', error);
+    throw new Error('Failed to validate subscription tier');
+  }
+  
   // Combine date and time into ISO timestamp
   let dateTimeISO: string;
   try {
@@ -271,9 +300,9 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
     const dateTimeStr = `${dateStr}T${timeStr}:00`;
     dateTimeISO = new Date(dateTimeStr).toISOString();
     
-    console.log('📅 Date conversion:', { input: `${dateStr} ${timeStr}`, output: dateTimeISO });
+    logger.log('📅 Date conversion:', { input: `${dateStr} ${timeStr}`, output: dateTimeISO });
   } catch (error) {
-    console.error('❌ Date parsing error:', error);
+    logger.error('❌ Date parsing error:', error);
     throw new Error('Invalid date or time format');
   }
   
@@ -300,9 +329,9 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
     try {
       const endDateTimeStr = `${event.end_date}T${event.end_time}:00`;
       dbEvent.end_date = new Date(endDateTimeStr).toISOString();
-      console.log('📅 End date conversion:', { input: `${event.end_date} ${event.end_time}`, output: dbEvent.end_date });
+      logger.log('📅 End date conversion:', { input: `${event.end_date} ${event.end_time}`, output: dbEvent.end_date });
     } catch (error) {
-      console.warn('⚠️ End date parsing error:', error);
+      logger.warn('⚠️ End date parsing error:', error);
       // Continue without end_date if parsing fails
     }
   }
@@ -325,7 +354,7 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
     .single();
   
   if (error) {
-    console.error('Error creating event:', error);
+    logger.error('Error creating event:', error);
     // Log event creation failure
     logError(error, 'event_creation', event.organizerId, undefined, { eventName: event.name });
     return null;
@@ -371,7 +400,7 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
         .insert(notifications);
     }
   } catch (notifError) {
-    console.error('Error sending follower notifications:', notifError);
+    logger.error('Error sending follower notifications:', notifError);
     // Don't fail event creation if notifications fail
   }
   
@@ -387,7 +416,7 @@ export const updateEvent = async (id: string, updates: Partial<EventNexusEvent>)
     .single();
   
   if (error) {
-    console.error('Error updating event:', error);
+    logger.error('Error updating event:', error);
     return null;
   }
   
@@ -401,7 +430,7 @@ export const deleteEvent = async (id: string): Promise<boolean> => {
     .eq('id', id);
   
   if (error) {
-    console.error('Error deleting event:', error);
+    logger.error('Error deleting event:', error);
     return false;
   }
   
@@ -419,7 +448,7 @@ export const canDeleteEvent = async (eventId: string): Promise<{ canDelete: bool
       .eq('payment_status', 'paid');
 
     if (error) {
-      console.error('Error checking tickets:', error);
+      logger.error('Error checking tickets:', error);
       return { canDelete: false, ticketsSold: 0, reason: 'Failed to check ticket status' };
     }
 
@@ -435,7 +464,7 @@ export const canDeleteEvent = async (eventId: string): Promise<{ canDelete: bool
 
     return { canDelete: true, ticketsSold: 0 };
   } catch (error) {
-    console.error('Error in canDeleteEvent:', error);
+    logger.error('Error in canDeleteEvent:', error);
     return { canDelete: false, ticketsSold: 0, reason: 'Unexpected error' };
   }
 };
@@ -464,13 +493,13 @@ export const likeEvent = async (userId: string, eventId: string): Promise<boolea
       .insert([{ user_id: userId, event_id: eventId }]);
     
     if (error) {
-      console.error('Error liking event:', error);
+      logger.error('Error liking event:', error);
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error('Error liking event:', error);
+    logger.error('Error liking event:', error);
     return false;
   }
 };
@@ -484,13 +513,13 @@ export const unlikeEvent = async (userId: string, eventId: string): Promise<bool
       .eq('event_id', eventId);
     
     if (error) {
-      console.error('Error unliking event:', error);
+      logger.error('Error unliking event:', error);
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error('Error unliking event:', error);
+    logger.error('Error unliking event:', error);
     return false;
   }
 };
@@ -505,13 +534,13 @@ export const checkIfUserLikedEvent = async (userId: string, eventId: string): Pr
       .maybeSingle();
     
     if (error) {
-      console.error('Error checking like status:', error);
+      logger.error('Error checking like status:', error);
       return false;
     }
     
     return !!data;
   } catch (error) {
-    console.error('Error checking like status:', error);
+    logger.error('Error checking like status:', error);
     return false;
   }
 };
@@ -524,13 +553,13 @@ export const getUserLikedEvents = async (userId: string): Promise<string[]> => {
       .eq('user_id', userId);
     
     if (error) {
-      console.error('Error fetching liked events:', error);
+      logger.error('Error fetching liked events:', error);
       return [];
     }
     
     return (data || []).map(like => like.event_id);
   } catch (error) {
-    console.error('Error fetching liked events:', error);
+    logger.error('Error fetching liked events:', error);
     return [];
   }
 };
@@ -704,12 +733,12 @@ export const getUser = async (id: string): Promise<User | null> => {
     // Add timeout to prevent hanging - increased to 30 seconds due to slow DB
     const timeoutPromise = new Promise<null>((resolve) => {
       setTimeout(() => {
-        console.warn('⏱️ getUser query timeout after 30 seconds');
+        logger.warn('⏱️ getUser query timeout after 30 seconds');
         resolve(null);
       }, 30000); // Increased to 30 seconds
     });
     
-    console.log('🔍 Fetching user profile:', id.substring(0, 8) + '...');
+    logger.log('🔍 Fetching user profile:', id.substring(0, 8) + '...');
     const startTime = Date.now();
     
     const queryPromise = supabase
@@ -722,21 +751,21 @@ export const getUser = async (id: string): Promise<User | null> => {
     
     if (result === null) {
       const duration = Date.now() - startTime;
-      console.error(`⚠️ Database query timed out after ${duration}ms. This may indicate a slow connection or database issue.`);
+      logger.error(`⚠️ Database query timed out after ${duration}ms. This may indicate a slow connection or database issue.`);
       return null;
     }
     
     const duration = Date.now() - startTime;
-    console.log(`✅ User profile loaded in ${duration}ms`);
+    logger.log(`✅ User profile loaded in ${duration}ms`);
     
     const { data, error } = result as any;
     
     if (error) {
-      console.error('Error fetching user:', error.message, error.code);
+      logger.error('Error fetching user:', error.message, error.code);
     
       // If user profile doesn't exist or RLS blocks access, try to ensure it exists
       if (error.code === 'PGRST116' || error.code === '42501' || error.message?.includes('406')) {
-        console.log('🔧 User profile missing or inaccessible, attempting to create via RPC...');
+        logger.log('🔧 User profile missing or inaccessible, attempting to create via RPC...');
         
         try {
           // Use the ensure_user_profile RPC function which has SECURITY DEFINER
@@ -745,9 +774,9 @@ export const getUser = async (id: string): Promise<User | null> => {
             .rpc('ensure_user_profile', { user_id: id });
           
           if (rpcError) {
-            console.error('❌ RPC ensure_user_profile failed:', rpcError);
+            logger.error('❌ RPC ensure_user_profile failed:', rpcError);
           } else {
-            console.log('✅ User profile ensured via RPC');
+            logger.log('✅ User profile ensured via RPC');
             
             // Wait a moment for the insert to complete
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -760,7 +789,7 @@ export const getUser = async (id: string): Promise<User | null> => {
               .single();
             
             if (!fetchError && fetchedUser) {
-              console.log('✅ User profile fetched successfully after creation');
+              logger.log('✅ User profile fetched successfully after creation');
               const user = fetchedUser;
               // Apply same notification_prefs normalization
               if (!user.notification_prefs || typeof user.notification_prefs !== 'object') {
@@ -784,7 +813,7 @@ export const getUser = async (id: string): Promise<User | null> => {
             }
           }
         } catch (rpcErr) {
-          console.error('❌ RPC call exception:', rpcErr);
+          logger.error('❌ RPC call exception:', rpcErr);
         }
       }
       
@@ -842,7 +871,7 @@ export const getUser = async (id: string): Promise<User | null> => {
     
     return user;
   } catch (err) {
-    console.error('Error in getUser:', err);
+    logger.error('Error in getUser:', err);
     return null;
   }
 };
@@ -856,19 +885,19 @@ export const getUsers = async (): Promise<User[]> => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching users:', error);
+      logger.error('Error fetching users:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getUsers:', error);
+    logger.error('Error in getUsers:', error);
     return [];
   }
 };
 
 export const createUser = async (user: User): Promise<User | null> => {
-  console.log('Creating user profile:', user.email);
+  logger.log('Creating user profile:', user.email);
   
   // Ensure both legacy and new credit fields are populated
   const payload = {
@@ -884,12 +913,12 @@ export const createUser = async (user: User): Promise<User | null> => {
     .single();
   
   if (error) {
-    console.error('Error creating user profile:', error);
-    console.error('Error details:', { code: error.code, message: error.message, details: error.details, hint: error.hint });
+    logger.error('Error creating user profile:', error);
+    logger.error('Error details:', { code: error.code, message: error.message, details: error.details, hint: error.hint });
     return null;
   }
   
-  console.log('User profile created:', data?.email);
+  logger.log('User profile created:', data?.email);
   return data;
 };
 
@@ -908,7 +937,7 @@ export const uploadAvatar = async (userId: string, file: File): Promise<string |
       });
 
     if (uploadError) {
-      console.error('Error uploading avatar:', uploadError);
+      logger.error('Error uploading avatar:', uploadError);
       return null;
     }
 
@@ -919,7 +948,7 @@ export const uploadAvatar = async (userId: string, file: File): Promise<string |
 
     return publicUrl;
   } catch (error) {
-    console.error('Error in uploadAvatar:', error);
+    logger.error('Error in uploadAvatar:', error);
     return null;
   }
 };
@@ -939,7 +968,7 @@ export const uploadBanner = async (userId: string, file: File): Promise<string |
       });
 
     if (uploadError) {
-      console.error('Error uploading banner:', uploadError);
+      logger.error('Error uploading banner:', uploadError);
       return null;
     }
 
@@ -950,7 +979,7 @@ export const uploadBanner = async (userId: string, file: File): Promise<string |
 
     return publicUrl;
   } catch (error) {
-    console.error('Error in uploadBanner:', error);
+    logger.error('Error in uploadBanner:', error);
     return null;
   }
 };
@@ -970,7 +999,7 @@ export const uploadEventImage = async (eventId: string, file: File): Promise<str
       });
 
     if (uploadError) {
-      console.error('Error uploading event image:', uploadError);
+      logger.error('Error uploading event image:', uploadError);
       return null;
     }
 
@@ -981,7 +1010,7 @@ export const uploadEventImage = async (eventId: string, file: File): Promise<str
 
     return publicUrl;
   } catch (error) {
-    console.error('Error in uploadEventImage:', error);
+    logger.error('Error in uploadEventImage:', error);
     return null;
   }
 };
@@ -1045,7 +1074,7 @@ export const updateUser = async (id: string, updates: Partial<User>): Promise<Us
     .single();
   
   if (error) {
-    console.error('Error updating user:', error);
+    logger.error('Error updating user:', error);
     return null;
   }
   
@@ -1054,7 +1083,7 @@ export const updateUser = async (id: string, updates: Partial<User>): Promise<Us
 
 export const getUserBySlug = async (slug: string): Promise<User | null> => {
   try {
-    console.log('🔍 getUserBySlug: Searching for agency_slug:', slug);
+    logger.log('🔍 getUserBySlug: Searching for agency_slug:', slug);
     
     const { data, error } = await supabase
       .from('users')
@@ -1063,7 +1092,7 @@ export const getUserBySlug = async (slug: string): Promise<User | null> => {
       .single();
     
     if (error) {
-      console.error('❌ getUserBySlug: Error fetching user:', error.message, error.code);
+      logger.error('❌ getUserBySlug: Error fetching user:', error.message, error.code);
       return null;
     }
     
@@ -1123,7 +1152,7 @@ export const getUserBySlug = async (slug: string): Promise<User | null> => {
     }
     user.followedOrganizers = user.followed_organizers;
     
-    console.log('✅ getUserBySlug: Found user:', {
+    logger.log('✅ getUserBySlug: Found user:', {
       id: user.id,
       name: user.name,
       email: user.email,
@@ -1133,7 +1162,7 @@ export const getUserBySlug = async (slug: string): Promise<User | null> => {
     
     return user;
   } catch (err) {
-    console.error('Error in getUserBySlug:', err);
+    logger.error('Error in getUserBySlug:', err);
     return null;
   }
 };
@@ -1159,7 +1188,7 @@ export const getNotifications = async (userId: string): Promise<Notification[]> 
     .order('timestamp', { ascending: false });
   
   if (error) {
-    console.error('Error fetching notifications:', error);
+    logger.error('Error fetching notifications:', error);
     return [];
   }
   
@@ -1188,7 +1217,7 @@ export const createNotification = async (notification: Omit<Notification, 'id'> 
     .single();
   
   if (error) {
-    console.error('Error creating notification:', error);
+    logger.error('Error creating notification:', error);
     return null;
   }
   
@@ -1202,7 +1231,7 @@ export const markNotificationRead = async (id: string): Promise<boolean> => {
     .eq('id', id);
   
   if (error) {
-    console.error('Error marking notification as read:', error);
+    logger.error('Error marking notification as read:', error);
     return false;
   }
   
@@ -1216,7 +1245,7 @@ export const deleteNotification = async (id: string): Promise<boolean> => {
     .eq('id', id);
   
   if (error) {
-    console.error('Error deleting notification:', error);
+    logger.error('Error deleting notification:', error);
     return false;
   }
   
@@ -1239,7 +1268,7 @@ export const signUpUser = async (email: string, password: string) => {
   });
   
   if (error) {
-    console.error('Error signing up:', error);
+    logger.error('Error signing up:', error);
     return { user: null, error };
   }
   
@@ -1253,7 +1282,7 @@ export const signInUser = async (email: string, password: string) => {
   });
   
   if (error) {
-    console.error('Error signing in:', error);
+    logger.error('Error signing in:', error);
     // Log failed login attempt
     logEvent('user_login', `Failed login attempt: ${email}`, { email, error: error.message }, 'warning');
     return { user: null, error };
@@ -1285,7 +1314,7 @@ export const signOutUser = async () => {
   const { error } = await supabase.auth.signOut();
   
   if (error) {
-    console.error('Error signing out:', error);
+    logger.error('Error signing out:', error);
     return false;
   }
   
@@ -1325,13 +1354,13 @@ export const signInWithGoogle = async () => {
     });
     
     if (error) {
-      console.error('Error signing in with Google:', error);
+      logger.error('Error signing in with Google:', error);
       return { data: null, error };
     }
     
     return { data, error: null };
   } catch (err) {
-    console.error('Google OAuth error:', err);
+    logger.error('Google OAuth error:', err);
     return { 
       data: null, 
       error: { message: err instanceof Error ? err.message : 'Failed to sign in with Google' } as any 
@@ -1363,13 +1392,13 @@ export const signInWithFacebook = async () => {
     });
     
     if (error) {
-      console.error('Error signing in with Facebook:', error);
+      logger.error('Error signing in with Facebook:', error);
       return { data: null, error };
     }
     
     return { data, error: null };
   } catch (err) {
-    console.error('Facebook OAuth error:', err);
+    logger.error('Facebook OAuth error:', err);
     return { 
       data: null, 
       error: { message: err instanceof Error ? err.message : 'Failed to sign in with Facebook' } as any 
@@ -1389,7 +1418,7 @@ export const getCurrentUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser();
   
   if (error) {
-    console.error('Error getting current user:', error);
+    logger.error('Error getting current user:', error);
     return null;
   }
   
@@ -1417,7 +1446,7 @@ export const getUserTickets = async (userId: string) => {
     .order('purchase_date', { ascending: false });  // Use purchase_date for consistency
   
   if (error) {
-    console.error('Error fetching tickets:', error);
+    logger.error('Error fetching tickets:', error);
     return [];
   }
   
@@ -1443,7 +1472,7 @@ export const getTicketById = async (ticketId: string) => {
     .maybeSingle();
 
   if (error) {
-    console.error('Error fetching ticket by id:', error);
+    logger.error('Error fetching ticket by id:', error);
     return null;
   }
 
@@ -1454,7 +1483,7 @@ export const validateTicket = async (qrCodeData: string) => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      console.error('No active session found');
+      logger.error('No active session found');
       throw new Error('Not authenticated - please sign in again');
     }
 
@@ -1466,12 +1495,12 @@ export const validateTicket = async (qrCodeData: string) => {
     });
 
     if (error) {
-      console.error('Edge function error:', error);
+      logger.error('Edge function error:', error);
       throw error;
     }
     return data;
   } catch (error) {
-    console.error('Error validating ticket:', error);
+    logger.error('Error validating ticket:', error);
     return { valid: false, error: error.message || 'Validation failed' };
   }
 };
@@ -1558,7 +1587,7 @@ export const getPlatformStats = async () => {
       revenueByTier: []
     };
   } catch (error) {
-    console.error('Error fetching platform stats:', error);
+    logger.error('Error fetching platform stats:', error);
     // Return fallback data
     return {
       totalEvents: 0,
@@ -1597,12 +1626,12 @@ export const getInfrastructureStats = async () => {
     });
 
     if (error) {
-      console.error('Infrastructure stats error:', error);
+      logger.error('Infrastructure stats error:', error);
       throw error;
     }
     return data;
   } catch (error) {
-    console.error('Error fetching infrastructure stats:', error);
+    logger.error('Error fetching infrastructure stats:', error);
     return {
       clusterUptime: 0,
       apiLatency: 0,
@@ -1637,7 +1666,7 @@ export const checkProximityRadar = async (userId: string, latitude: number, long
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error checking smart proximity radar:', error);
+    logger.error('Error checking smart proximity radar:', error);
     return {
       success: false,
       nearbyEvents: [],
@@ -1673,7 +1702,7 @@ export const suspendUser = async (userId: string, reason: string): Promise<boole
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error suspending user:', error);
+    logger.error('Error suspending user:', error);
     return false;
   }
 };
@@ -1692,7 +1721,7 @@ export const unsuspendUser = async (userId: string): Promise<boolean> => {
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error unsuspending user:', error);
+    logger.error('Error unsuspending user:', error);
     return false;
   }
 };
@@ -1711,7 +1740,7 @@ export const banUser = async (userId: string, reason: string): Promise<boolean> 
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error banning user:', error);
+    logger.error('Error banning user:', error);
     return false;
   }
 };
@@ -1726,7 +1755,7 @@ export const updateUserCredits = async (userId: string, credits: number): Promis
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error updating user credits:', error);
+    logger.error('Error updating user credits:', error);
     return false;
   }
 };
@@ -1754,10 +1783,10 @@ export const addUserCredits = async (userId: string, amount: number): Promise<bo
     
     if (error) throw error;
     
-    console.log(`✅ Added ${amount} credits. New balance: ${newCredits}`);
+    logger.log(`✅ Added ${amount} credits. New balance: ${newCredits}`);
     return true;
   } catch (error) {
-    console.error('Error adding user credits:', error);
+    logger.error('Error adding user credits:', error);
     return false;
   }
 };
@@ -1781,7 +1810,7 @@ export const deductUserCredits = async (userId: string, amount: number): Promise
     
     // Check if user has enough credits
     if (currentCredits < amount) {
-      console.error('Insufficient credits:', { currentCredits, required: amount });
+      logger.error('Insufficient credits:', { currentCredits, required: amount });
       return false;
     }
     
@@ -1794,10 +1823,10 @@ export const deductUserCredits = async (userId: string, amount: number): Promise
     
     if (error) throw error;
     
-    console.log(`✅ Deducted ${amount} credits. New balance: ${newCredits}`);
+    logger.log(`✅ Deducted ${amount} credits. New balance: ${newCredits}`);
     return true;
   } catch (error) {
-    console.error('Error deducting user credits:', error);
+    logger.error('Error deducting user credits:', error);
     return false;
   }
 };
@@ -1816,7 +1845,7 @@ export const checkUserCredits = async (userId: string, requiredAmount: number): 
     if (error) throw error;
     return (user?.credits_balance || 0) >= requiredAmount;
   } catch (error) {
-    console.error('Error checking user credits:', error);
+    logger.error('Error checking user credits:', error);
     return false;
   }
 };
@@ -1836,7 +1865,7 @@ export const getUserCredits = async (userId: string): Promise<number> => {
     // Prefer credits_balance, fallback to legacy credits
     return user?.credits_balance ?? user?.credits ?? 0;
   } catch (error) {
-    console.error('Error getting user credits:', error);
+    logger.error('Error getting user credits:', error);
     return 0;
   }
 };
@@ -1851,7 +1880,7 @@ export const updateUserSubscription = async (userId: string, tier: string): Prom
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error updating user subscription:', error);
+    logger.error('Error updating user subscription:', error);
     return false;
   }
 };
@@ -1895,7 +1924,7 @@ export const broadcastNotification = async (
     if (error) throw error;
     return users.length;
   } catch (error) {
-    console.error('Error broadcasting notification:', error);
+    logger.error('Error broadcasting notification:', error);
     return 0;
   }
 };
@@ -1966,7 +1995,7 @@ export const getCampaigns = async (): Promise<Campaign[]> => {
     if (error) throw error;
     return (data || []).map(campaignFromDbFormat);
   } catch (error) {
-    console.error('Error fetching campaigns:', error);
+    logger.error('Error fetching campaigns:', error);
     return [];
   }
 };
@@ -1983,7 +2012,7 @@ export const createCampaign = async (campaign: Campaign): Promise<Campaign | nul
     if (error) throw error;
     return data ? campaignFromDbFormat(data) : null;
   } catch (error) {
-    console.error('Error creating campaign:', error);
+    logger.error('Error creating campaign:', error);
     return null;
   }
 };
@@ -2001,7 +2030,7 @@ export const updateCampaign = async (id: string, updates: Partial<Campaign>): Pr
     if (error) throw error;
     return data ? campaignFromDbFormat(data) : null;
   } catch (error) {
-    console.error('Error updating campaign:', error);
+    logger.error('Error updating campaign:', error);
     return null;
   }
 };
@@ -2025,7 +2054,7 @@ export const deleteCampaign = async (id: string): Promise<boolean> => {
         }
       }
     } catch (storageCleanupError) {
-      console.error('Warning: failed to delete campaign image from storage', storageCleanupError);
+      logger.error('Warning: failed to delete campaign image from storage', storageCleanupError);
     }
 
     const { error } = await supabase
@@ -2036,7 +2065,7 @@ export const deleteCampaign = async (id: string): Promise<boolean> => {
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error deleting campaign:', error);
+    logger.error('Error deleting campaign:', error);
     return false;
   }
 };
@@ -2059,7 +2088,7 @@ export const claimCampaignIncentive = async (userId: string, campaignId: string)
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error claiming campaign incentive:', error);
+    logger.error('Error claiming campaign incentive:', error);
     return null;
   }
 };
@@ -2079,12 +2108,12 @@ export const updateSystemConfig = async (key: string, value: any): Promise<boole
       });
     
     if (error) {
-      console.error('Error updating system config:', error);
+      logger.error('Error updating system config:', error);
       throw error;
     }
     return true;
   } catch (error) {
-    console.error('Error updating system config:', error);
+    logger.error('Error updating system config:', error);
     return false;
   }
 };
@@ -2104,7 +2133,7 @@ export const getSystemConfig = async (): Promise<Record<string, any>> => {
     
     return config;
   } catch (error) {
-    console.error('Error fetching system config:', error);
+    logger.error('Error fetching system config:', error);
     return {};
   }
 };
@@ -2127,7 +2156,7 @@ export const getFinancialLedger = async (): Promise<FinancialTransaction[]> => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching financial ledger:', error);
+    logger.error('Error fetching financial ledger:', error);
     return [];
   }
 };
@@ -2164,7 +2193,7 @@ export const getInboxMessages = async (status?: string): Promise<InboxMessage[]>
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching inbox messages:', error);
+    logger.error('Error fetching inbox messages:', error);
     return [];
   }
 };
@@ -2176,7 +2205,7 @@ export const getInboxStats = async (): Promise<any> => {
     if (error) throw error;
     return data || { total: 0, unread: 0, replied: 0, high_priority: 0 };
   } catch (error) {
-    console.error('Error fetching inbox stats:', error);
+    logger.error('Error fetching inbox stats:', error);
     return { total: 0, unread: 0, replied: 0, high_priority: 0 };
   }
 };
@@ -2190,7 +2219,7 @@ export const markInboxAsRead = async (messageId: string): Promise<void> => {
     
     if (error) throw error;
   } catch (error) {
-    console.error('Error marking message as read:', error);
+    logger.error('Error marking message as read:', error);
     throw error;
   }
 };
@@ -2240,7 +2269,7 @@ export const replyToInboxMessage = async (messageId: string, replyBody: string):
     
     if (updateError) throw updateError;
   } catch (error) {
-    console.error('Error replying to message:', error);
+    logger.error('Error replying to message:', error);
     throw error;
   }
 };
@@ -2254,7 +2283,7 @@ export const deleteInboxMessage = async (messageId: string): Promise<void> => {
     
     if (error) throw error;
   } catch (error) {
-    console.error('Error deleting message:', error);
+    logger.error('Error deleting message:', error);
     throw error;
   }
 };
@@ -2273,7 +2302,7 @@ export const createConnectAccount = async (userId: string, email: string): Promi
     });
 
     if (error) {
-      console.error('Error creating Connect account:', error);
+      logger.error('Error creating Connect account:', error);
       return null;
     }
 
@@ -2282,7 +2311,7 @@ export const createConnectAccount = async (userId: string, email: string): Promi
       accountId: data.accountId
     };
   } catch (error) {
-    console.error('Error invoking create-connect-account:', error);
+    logger.error('Error invoking create-connect-account:', error);
     return null;
   }
 };
@@ -2297,13 +2326,13 @@ export const getConnectDashboardLink = async (userId: string): Promise<string | 
     });
 
     if (error) {
-      console.error('Error getting dashboard link:', error);
+      logger.error('Error getting dashboard link:', error);
       return null;
     }
 
     return data.url;
   } catch (error) {
-    console.error('Error invoking get-connect-dashboard-link:', error);
+    logger.error('Error invoking get-connect-dashboard-link:', error);
     return null;
   }
 };
@@ -2347,13 +2376,13 @@ export const getOrganizerRevenue = async (organizerId: string): Promise<RevenueB
       .rpc('get_organizer_revenue', { org_id: organizerId });
 
     if (error) {
-      console.error('Error fetching organizer revenue:', error);
+      logger.error('Error fetching organizer revenue:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getOrganizerRevenue:', error);
+    logger.error('Error in getOrganizerRevenue:', error);
     return [];
   }
 };
@@ -2367,13 +2396,13 @@ export const getOrganizerRevenueSummary = async (organizerId: string): Promise<R
       .rpc('get_organizer_revenue_summary', { org_id: organizerId });
 
     if (error) {
-      console.error('Error fetching revenue summary:', error);
+      logger.error('Error fetching revenue summary:', error);
       return null;
     }
 
     return data?.[0] || null;
   } catch (error) {
-    console.error('Error in getOrganizerRevenueSummary:', error);
+    logger.error('Error in getOrganizerRevenueSummary:', error);
     return null;
   }
 };
@@ -2398,7 +2427,7 @@ export const getOrganizerAttendanceSummary = async (organizerId: string): Promis
       .eq('event.organizer_id', organizerId);
 
     if (error) {
-      console.error('Error fetching attendance summary:', error);
+      logger.error('Error fetching attendance summary:', error);
       return [];
     }
 
@@ -2424,7 +2453,7 @@ export const getOrganizerAttendanceSummary = async (organizerId: string): Promis
 
     return Object.values(summaryMap).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   } catch (error) {
-    console.error('Error in getOrganizerAttendanceSummary:', error);
+    logger.error('Error in getOrganizerAttendanceSummary:', error);
     return [];
   }
 };
@@ -2446,7 +2475,7 @@ export const checkConnectStatus = async (userId: string): Promise<{
       .single();
 
     if (error) {
-      console.error('Error checking Connect status:', error);
+      logger.error('Error checking Connect status:', error);
       return null;
     }
 
@@ -2457,7 +2486,7 @@ export const checkConnectStatus = async (userId: string): Promise<{
       payoutsEnabled: data.stripe_connect_payouts_enabled || false,
     };
   } catch (error) {
-    console.error('Error in checkConnectStatus:', error);
+    logger.error('Error in checkConnectStatus:', error);
     return null;
   }
 };
@@ -2479,7 +2508,7 @@ export const verifyConnectOnboarding = async (userId: string): Promise<{
     });
 
     if (error) {
-      console.error('Error verifying Connect onboarding:', error);
+      logger.error('Error verifying Connect onboarding:', error);
       return null;
     }
 
@@ -2491,7 +2520,7 @@ export const verifyConnectOnboarding = async (userId: string): Promise<{
       payoutsEnabled: data.payoutsEnabled || false,
     };
   } catch (error) {
-    console.error('Error invoking verify-connect-onboarding:', error);
+    logger.error('Error invoking verify-connect-onboarding:', error);
     return null;
   }
 };
@@ -2538,10 +2567,10 @@ export const generateBetaInvitations = async (count: number, expiryDays: number 
 
     if (error) throw error;
 
-    console.log(`✅ Generated ${count} beta invitation codes`);
+    logger.log(`✅ Generated ${count} beta invitation codes`);
     return codes;
   } catch (error) {
-    console.error('Error generating beta invitations:', error);
+    logger.error('Error generating beta invitations:', error);
     return [];
   }
 };
@@ -2593,7 +2622,7 @@ export const redeemBetaInvitation = async (userId: string, code: string, credits
       .eq('id', userId);
 
     if (betaError) {
-      console.error('Error marking user as beta tester:', betaError);
+      logger.error('Error marking user as beta tester:', betaError);
     }
 
     if (creditsSuccess) {
@@ -2608,7 +2637,7 @@ export const redeemBetaInvitation = async (userId: string, code: string, credits
       };
     }
   } catch (error) {
-    console.error('Error redeeming beta invitation:', error);
+    logger.error('Error redeeming beta invitation:', error);
     return { success: false, message: 'An error occurred while redeeming the code' };
   }
 };
@@ -2626,7 +2655,7 @@ export const getBetaInvitations = async (): Promise<BetaInvitation[]> => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching beta invitations:', error);
+    logger.error('Error fetching beta invitations:', error);
     return [];
   }
 };
@@ -2658,7 +2687,7 @@ export const getBetaStats = async (): Promise<{
 
     return stats;
   } catch (error) {
-    console.error('Error fetching beta stats:', error);
+    logger.error('Error fetching beta stats:', error);
     return { total: 0, active: 0, used: 0, expired: 0, creditsDistributed: 0 };
   }
 };
@@ -2676,7 +2705,7 @@ export const revokeBetaInvitation = async (invitationId: string): Promise<boolea
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error revoking beta invitation:', error);
+    logger.error('Error revoking beta invitation:', error);
     return false;
   }
 };
@@ -2714,7 +2743,7 @@ export const generateReferralCode = async (userId: string): Promise<string> => {
 
     return code;
   } catch (error) {
-    console.error('Error generating referral code:', error);
+    logger.error('Error generating referral code:', error);
     return '';
   }
 };
@@ -2761,7 +2790,7 @@ export const getUserReferralStats = async (userId: string): Promise<{
       pendingReferrals: pending?.length || 0
     };
   } catch (error) {
-    console.error('Error getting referral stats:', error);
+    logger.error('Error getting referral stats:', error);
     return {
       code: '',
       totalReferrals: 0,
@@ -2787,7 +2816,7 @@ export const awardFirstActionBonus = async (
     if (error) throw error;
     return data?.success || false;
   } catch (error) {
-    console.error('Error awarding first action bonus:', error);
+    logger.error('Error awarding first action bonus:', error);
     return false;
   }
 };
@@ -2811,13 +2840,13 @@ export const transitionToproduction = async (
     );
 
     if (error) {
-      console.error('Production transition error:', error);
+      logger.error('Production transition error:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error transitioning to production:', error);
+    logger.error('Error transitioning to production:', error);
     return null;
   }
 };
@@ -2834,7 +2863,7 @@ export const getCurrentEnvironment = async (): Promise<Record<string, any>> => {
 
     return data || {};
   } catch (error) {
-    console.error('Error fetching current environment:', error);
+    logger.error('Error fetching current environment:', error);
     return {};
   }
 };
@@ -2849,7 +2878,7 @@ export const getProductionTransitionHistory = async (): Promise<any[]> => {
 
     return data || [];
   } catch (error) {
-    console.error('Error fetching production transition history:', error);
+    logger.error('Error fetching production transition history:', error);
     return [];
   }
 };
@@ -2874,7 +2903,7 @@ export const uploadEnterpriseMedia = async (
     // Get auth token
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      console.error('No active session');
+      logger.error('No active session');
       return null;
     }
 
@@ -2898,13 +2927,13 @@ export const uploadEnterpriseMedia = async (
     const result = await response.json();
     
     if (!result.success) {
-      console.error('Upload failed:', result.error);
+      logger.error('Upload failed:', result.error);
       return null;
     }
 
     return result.url;
   } catch (error) {
-    console.error('Error uploading enterprise media:', error);
+    logger.error('Error uploading enterprise media:', error);
     return null;
   }
 };
@@ -2942,7 +2971,7 @@ export const uploadEventHighlight = async (
     const result = await response.json();
     return result.success ? result.url : null;
   } catch (error) {
-    console.error('Error uploading event highlight:', error);
+    logger.error('Error uploading event highlight:', error);
     return null;
   }
 };
@@ -2980,7 +3009,7 @@ export const uploadTeamAvatar = async (
     const result = await response.json();
     return result.success ? result.url : null;
   } catch (error) {
-    console.error('Error uploading team avatar:', error);
+    logger.error('Error uploading team avatar:', error);
     return null;
   }
 };
@@ -3018,7 +3047,7 @@ export const uploadPartnerLogo = async (
     const result = await response.json();
     return result.success ? result.url : null;
   } catch (error) {
-    console.error('Error uploading partner logo:', error);
+    logger.error('Error uploading partner logo:', error);
     return null;
   }
 };
@@ -3056,7 +3085,7 @@ export const uploadMediaLogo = async (
     const result = await response.json();
     return result.success ? result.url : null;
   } catch (error) {
-    console.error('Error uploading media logo:', error);
+    logger.error('Error uploading media logo:', error);
     return null;
   }
 };
@@ -3094,7 +3123,7 @@ export const uploadTestimonialAvatar = async (
     const result = await response.json();
     return result.success ? result.url : null;
   } catch (error) {
-    console.error('Error uploading testimonial avatar:', error);
+    logger.error('Error uploading testimonial avatar:', error);
     return null;
   }
 };
@@ -3138,7 +3167,7 @@ export const uploadMediaBatch = async (
     const result = await response.json();
     return result.results || [];
   } catch (error) {
-    console.error('Error in batch upload:', error);
+    logger.error('Error in batch upload:', error);
     return [];
   }
 };
@@ -3176,7 +3205,7 @@ export const getUserStorageInfo = async (userId: string): Promise<{
       percentage: Math.round(percentage * 100) / 100
     };
   } catch (error) {
-    console.error('Error getting storage info:', error);
+    logger.error('Error getting storage info:', error);
     return null;
   }
 };
@@ -3211,7 +3240,7 @@ export const getUserMediaUploads = async (
 
     return data || [];
   } catch (error) {
-    console.error('Error fetching media uploads:', error);
+    logger.error('Error fetching media uploads:', error);
     return [];
   }
 };
@@ -3231,7 +3260,7 @@ export const deleteMediaFile = async (
       .remove([filePath]);
 
     if (storageError) {
-      console.error('Error deleting from storage:', storageError);
+      logger.error('Error deleting from storage:', storageError);
       return false;
     }
 
@@ -3244,12 +3273,12 @@ export const deleteMediaFile = async (
       .eq('bucket_id', bucket);
 
     if (dbError) {
-      console.error('Error deleting tracking record:', dbError);
+      logger.error('Error deleting tracking record:', dbError);
     }
 
     return true;
   } catch (error) {
-    console.error('Error deleting media file:', error);
+    logger.error('Error deleting media file:', error);
     return false;
   }
 };
@@ -3284,13 +3313,13 @@ export const getTopOrganizers = async (limit: number = 10, tier?: string): Promi
     });
 
     if (error) {
-      console.error('Error fetching top organizers:', error);
+      logger.error('Error fetching top organizers:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getTopOrganizers:', error);
+    logger.error('Error in getTopOrganizers:', error);
     return [];
   }
 };
@@ -3319,13 +3348,13 @@ export const submitOrganizerRating = async (
     });
 
     if (error) {
-      console.error('Error submitting rating:', error);
+      logger.error('Error submitting rating:', error);
       return false;
     }
 
     return data?.success || false;
   } catch (error) {
-    console.error('Error in submitOrganizerRating:', error);
+    logger.error('Error in submitOrganizerRating:', error);
     return false;
   }
 };
@@ -3339,13 +3368,13 @@ export const getOrganizerRatings = async (organizerId: string): Promise<any[]> =
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching organizer ratings:', error);
+      logger.error('Error fetching organizer ratings:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getOrganizerRatings:', error);
+    logger.error('Error in getOrganizerRatings:', error);
     return [];
   }
 };
@@ -3359,13 +3388,13 @@ export const getSuccessStories = async (limit: number = 6, featuredOnly: boolean
     });
 
     if (error) {
-      console.error('Error fetching success stories:', error);
+      logger.error('Error fetching success stories:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getSuccessStories:', error);
+    logger.error('Error in getSuccessStories:', error);
     return [];
   }
 };
@@ -3385,13 +3414,13 @@ export const createSuccessStory = async (story: Omit<any, 'id' | 'created_at' | 
       .single();
 
     if (error) {
-      console.error('Error creating success story:', error);
+      logger.error('Error creating success story:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error in createSuccessStory:', error);
+    logger.error('Error in createSuccessStory:', error);
     return null;
   }
 };
@@ -3406,13 +3435,13 @@ export const updateSuccessStory = async (id: string, updates: Partial<any>): Pro
       .single();
 
     if (error) {
-      console.error('Error updating success story:', error);
+      logger.error('Error updating success story:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error in updateSuccessStory:', error);
+    logger.error('Error in updateSuccessStory:', error);
     return null;
   }
 };
@@ -3425,13 +3454,13 @@ export const deleteSuccessStory = async (id: string): Promise<boolean> => {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting success story:', error);
+      logger.error('Error deleting success story:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in deleteSuccessStory:', error);
+    logger.error('Error in deleteSuccessStory:', error);
     return false;
   }
 };
@@ -3445,13 +3474,13 @@ export const getPressMentions = async (limit: number = 10, featuredOnly: boolean
     });
 
     if (error) {
-      console.error('Error fetching press mentions:', error);
+      logger.error('Error fetching press mentions:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getPressMentions:', error);
+    logger.error('Error in getPressMentions:', error);
     return [];
   }
 };
@@ -3471,13 +3500,13 @@ export const createPressMention = async (mention: Omit<any, 'id' | 'created_at' 
       .single();
 
     if (error) {
-      console.error('Error creating press mention:', error);
+      logger.error('Error creating press mention:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error in createPressMention:', error);
+    logger.error('Error in createPressMention:', error);
     return null;
   }
 };
@@ -3492,13 +3521,13 @@ export const updatePressMention = async (id: string, updates: Partial<any>): Pro
       .single();
 
     if (error) {
-      console.error('Error updating press mention:', error);
+      logger.error('Error updating press mention:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error in updatePressMention:', error);
+    logger.error('Error in updatePressMention:', error);
     return null;
   }
 };
@@ -3511,13 +3540,13 @@ export const deletePressMention = async (id: string): Promise<boolean> => {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting press mention:', error);
+      logger.error('Error deleting press mention:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in deletePressMention:', error);
+    logger.error('Error in deletePressMention:', error);
     return false;
   }
 };
@@ -3531,13 +3560,13 @@ export const getPlatformMedia = async (location: string = 'landing_demo', mediaT
     });
 
     if (error) {
-      console.error('Error fetching platform media:', error);
+      logger.error('Error fetching platform media:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getPlatformMedia:', error);
+    logger.error('Error in getPlatformMedia:', error);
     return [];
   }
 };
@@ -3550,13 +3579,13 @@ export const getAllPlatformMedia = async (): Promise<any[]> => {
       .order('display_order', { ascending: true });
 
     if (error) {
-      console.error('Error fetching all platform media:', error);
+      logger.error('Error fetching all platform media:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getAllPlatformMedia:', error);
+    logger.error('Error in getAllPlatformMedia:', error);
     return [];
   }
 };
@@ -3576,13 +3605,13 @@ export const createPlatformMedia = async (media: Omit<any, 'id' | 'created_at' |
       .single();
 
     if (error) {
-      console.error('Error creating platform media:', error);
+      logger.error('Error creating platform media:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error in createPlatformMedia:', error);
+    logger.error('Error in createPlatformMedia:', error);
     return null;
   }
 };
@@ -3597,13 +3626,13 @@ export const updatePlatformMedia = async (id: string, updates: Partial<any>): Pr
       .single();
 
     if (error) {
-      console.error('Error updating platform media:', error);
+      logger.error('Error updating platform media:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error in updatePlatformMedia:', error);
+    logger.error('Error in updatePlatformMedia:', error);
     return null;
   }
 };
@@ -3616,13 +3645,13 @@ export const deletePlatformMedia = async (id: string): Promise<boolean> => {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting platform media:', error);
+      logger.error('Error deleting platform media:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in deletePlatformMedia:', error);
+    logger.error('Error in deletePlatformMedia:', error);
     return false;
   }
 };
@@ -3656,13 +3685,13 @@ export const getContactInquiries = async (organizerId: string): Promise<ContactI
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching contact inquiries:', error);
+      logger.error('Error fetching contact inquiries:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getContactInquiries:', error);
+    logger.error('Error in getContactInquiries:', error);
     return [];
   }
 };
@@ -3677,13 +3706,13 @@ export const getUnreadInquiryCount = async (organizerId: string): Promise<number
       .eq('status', 'new');
 
     if (error) {
-      console.error('Error counting unread inquiries:', error);
+      logger.error('Error counting unread inquiries:', error);
       return 0;
     }
 
     return count || 0;
   } catch (error) {
-    console.error('Error in getUnreadInquiryCount:', error);
+    logger.error('Error in getUnreadInquiryCount:', error);
     return 0;
   }
 };
@@ -3700,13 +3729,13 @@ export const markInquiryAsRead = async (inquiryId: string): Promise<boolean> => 
       .eq('id', inquiryId);
 
     if (error) {
-      console.error('Error marking inquiry as read:', error);
+      logger.error('Error marking inquiry as read:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in markInquiryAsRead:', error);
+    logger.error('Error in markInquiryAsRead:', error);
     return false;
   }
 };
@@ -3723,13 +3752,13 @@ export const markInquiryAsReplied = async (inquiryId: string): Promise<boolean> 
       .eq('id', inquiryId);
 
     if (error) {
-      console.error('Error marking inquiry as replied:', error);
+      logger.error('Error marking inquiry as replied:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in markInquiryAsReplied:', error);
+    logger.error('Error in markInquiryAsReplied:', error);
     return false;
   }
 };
@@ -3743,13 +3772,13 @@ export const archiveInquiry = async (inquiryId: string): Promise<boolean> => {
       .eq('id', inquiryId);
 
     if (error) {
-      console.error('Error archiving inquiry:', error);
+      logger.error('Error archiving inquiry:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in archiveInquiry:', error);
+    logger.error('Error in archiveInquiry:', error);
     return false;
   }
 };
@@ -3763,13 +3792,13 @@ export const deleteContactInquiry = async (inquiryId: string): Promise<boolean> 
       .eq('id', inquiryId);
 
     if (error) {
-      console.error('Error deleting inquiry:', error);
+      logger.error('Error deleting inquiry:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in deleteContactInquiry:', error);
+    logger.error('Error in deleteContactInquiry:', error);
     return false;
   }
 };
@@ -3814,13 +3843,13 @@ export const getTicketTemplates = async (eventId: string): Promise<TicketTemplat
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error fetching ticket templates:', error);
+      logger.error('Error fetching ticket templates:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getTicketTemplates:', error);
+    logger.error('Error in getTicketTemplates:', error);
     return [];
   }
 };
@@ -3853,13 +3882,13 @@ export const createTicketTemplates = async (
       .select();
 
     if (error) {
-      console.error('Error creating ticket templates:', error);
+      logger.error('Error creating ticket templates:', error);
       throw error;
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in createTicketTemplates:', error);
+    logger.error('Error in createTicketTemplates:', error);
     throw error;
   }
 };
@@ -3876,13 +3905,13 @@ export const updateTicketTemplate = async (
       .eq('id', templateId);
 
     if (error) {
-      console.error('Error updating ticket template:', error);
+      logger.error('Error updating ticket template:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in updateTicketTemplate:', error);
+    logger.error('Error in updateTicketTemplate:', error);
     return false;
   }
 };
@@ -3919,7 +3948,7 @@ export const purchaseTicket = async (
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error('Error purchasing ticket:', error);
+    logger.error('Error purchasing ticket:', error);
     return { success: false, message: 'Failed to purchase ticket' };
   }
 };
@@ -3942,7 +3971,7 @@ export const getUserTicketsEnhanced = async (userId: string): Promise<Ticket[]> 
     const result = await response.json();
     return result.tickets || [];
   } catch (error) {
-    console.error('Error fetching user tickets:', error);
+    logger.error('Error fetching user tickets:', error);
     return [];
   }
 };
@@ -3973,7 +4002,7 @@ export const verifyTicket = async (
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error('Error verifying ticket:', error);
+    logger.error('Error verifying ticket:', error);
     return { success: false, message: 'Failed to verify ticket' };
   }
 };
@@ -4004,14 +4033,14 @@ export const getOrganizerStats = async (
     );
 
     if (!response.ok) {
-      console.error('Error response from organizer-stats:', await response.text());
+      logger.error('Error response from organizer-stats:', await response.text());
       return null;
     }
 
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error('Error fetching organizer stats:', error);
+    logger.error('Error fetching organizer stats:', error);
     return null;
   }
 };
@@ -4029,13 +4058,13 @@ export const refundTicket = async (ticketId: string, reason: string): Promise<bo
       .eq('id', ticketId);
 
     if (error) {
-      console.error('Error refunding ticket:', error);
+      logger.error('Error refunding ticket:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in refundTicket:', error);
+    logger.error('Error in refundTicket:', error);
     return false;
   }
 };
@@ -4049,13 +4078,13 @@ export const cancelTicket = async (ticketId: string): Promise<boolean> => {
       .eq('id', ticketId);
 
     if (error) {
-      console.error('Error cancelling ticket:', error);
+      logger.error('Error cancelling ticket:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in cancelTicket:', error);
+    logger.error('Error in cancelTicket:', error);
     return false;
   }
 };
@@ -4070,13 +4099,13 @@ export const getTicketVerifications = async (eventId: string): Promise<TicketVer
       .order('verified_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching verifications:', error);
+      logger.error('Error fetching verifications:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getTicketVerifications:', error);
+    logger.error('Error in getTicketVerifications:', error);
     return [];
   }
 };
@@ -4138,13 +4167,13 @@ export const generatePromoCodes = async (params: {
     });
 
     if (error) {
-      console.error('Error generating promo codes:', error);
+      logger.error('Error generating promo codes:', error);
       return [];
     }
 
     return data?.codes || [];
   } catch (error) {
-    console.error('Error in generatePromoCodes:', error);
+    logger.error('Error in generatePromoCodes:', error);
     return [];
   }
 };
@@ -4158,13 +4187,13 @@ export const getAllPromoCodes = async (): Promise<PromoCode[]> => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching promo codes:', error);
+      logger.error('Error fetching promo codes:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getAllPromoCodes:', error);
+    logger.error('Error in getAllPromoCodes:', error);
     return [];
   }
 };
@@ -4178,13 +4207,13 @@ export const getPromoCodeStats = async (): Promise<any[]> => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching promo code stats:', error);
+      logger.error('Error fetching promo code stats:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getPromoCodeStats:', error);
+    logger.error('Error in getPromoCodeStats:', error);
     return [];
   }
 };
@@ -4201,13 +4230,13 @@ export const updatePromoCodeStatus = async (
       .eq('id', codeId);
 
     if (error) {
-      console.error('Error updating promo code:', error);
+      logger.error('Error updating promo code:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in updatePromoCodeStatus:', error);
+    logger.error('Error in updatePromoCodeStatus:', error);
     return false;
   }
 };
@@ -4221,13 +4250,13 @@ export const deletePromoCode = async (codeId: string): Promise<boolean> => {
       .eq('id', codeId);
 
     if (error) {
-      console.error('Error deleting promo code:', error);
+      logger.error('Error deleting promo code:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in deletePromoCode:', error);
+    logger.error('Error in deletePromoCode:', error);
     return false;
   }
 };
@@ -4244,13 +4273,13 @@ export const redeemPromoCode = async (
     });
 
     if (error) {
-      console.error('Error redeeming promo code:', error);
+      logger.error('Error redeeming promo code:', error);
       return { success: false, error: error.message };
     }
 
     return data;
   } catch (error) {
-    console.error('Error in redeemPromoCode:', error);
+    logger.error('Error in redeemPromoCode:', error);
     return { success: false, error: 'Failed to redeem code' };
   }
 };
@@ -4271,13 +4300,13 @@ export const adminGrantCredits = async (
     });
 
     if (error) {
-      console.error('Error granting credits:', error);
+      logger.error('Error granting credits:', error);
       return { success: false, error: error.message };
     }
 
     return data;
   } catch (error) {
-    console.error('Error in adminGrantCredits:', error);
+    logger.error('Error in adminGrantCredits:', error);
     return { success: false, error: 'Failed to grant credits' };
   }
 };
@@ -4292,13 +4321,13 @@ export const getCreditTransactions = async (userId: string): Promise<CreditTrans
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching credit transactions:', error);
+      logger.error('Error fetching credit transactions:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getCreditTransactions:', error);
+    logger.error('Error in getCreditTransactions:', error);
     return [];
   }
 };
@@ -4313,13 +4342,13 @@ export const getAllCreditTransactions = async (): Promise<CreditTransaction[]> =
       .limit(100);
 
     if (error) {
-      console.error('Error fetching all credit transactions:', error);
+      logger.error('Error fetching all credit transactions:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getAllCreditTransactions:', error);
+    logger.error('Error in getAllCreditTransactions:', error);
     return [];
   }
 };
@@ -4334,13 +4363,13 @@ export const getUserCodeRedemptions = async (userId: string): Promise<CodeRedemp
       .order('redeemed_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching code redemptions:', error);
+      logger.error('Error fetching code redemptions:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getUserCodeRedemptions:', error);
+    logger.error('Error in getUserCodeRedemptions:', error);
     return [];
   }
 };
@@ -4359,13 +4388,13 @@ export const archiveTicket = async (
     });
 
     if (error) {
-      console.error('Error archiving ticket:', error);
+      logger.error('Error archiving ticket:', error);
       return { success: false, message: error.message };
     }
 
     return data || { success: false, message: 'Unknown error occurred' };
   } catch (error) {
-    console.error('Error in archiveTicket:', error);
+    logger.error('Error in archiveTicket:', error);
     return { success: false, message: 'Failed to archive ticket' };
   }
 };
@@ -4382,13 +4411,13 @@ export const restoreTicket = async (
     });
 
     if (error) {
-      console.error('Error restoring ticket:', error);
+      logger.error('Error restoring ticket:', error);
       return { success: false, message: error.message };
     }
 
     return data || { success: false, message: 'Unknown error occurred' };
   } catch (error) {
-    console.error('Error in restoreTicket:', error);
+    logger.error('Error in restoreTicket:', error);
     return { success: false, message: 'Failed to restore ticket' };
   }
 };
@@ -4413,7 +4442,7 @@ export const getArchivedTickets = async (userId: string) => {
     .order('archived_at', { ascending: false });
   
   if (error) {
-    console.error('Error fetching archived tickets:', error);
+    logger.error('Error fetching archived tickets:', error);
     return [];
   }
   
@@ -4434,13 +4463,13 @@ export const archiveEvent = async (
     });
 
     if (error) {
-      console.error('Error archiving event:', error);
+      logger.error('Error archiving event:', error);
       return { success: false, message: error.message };
     }
 
     return data || { success: false, message: 'Unknown error occurred' };
   } catch (error) {
-    console.error('Error in archiveEvent:', error);
+    logger.error('Error in archiveEvent:', error);
     return { success: false, message: 'Failed to archive event' };
   }
 };
@@ -4457,13 +4486,13 @@ export const restoreEvent = async (
     });
 
     if (error) {
-      console.error('Error restoring event:', error);
+      logger.error('Error restoring event:', error);
       return { success: false, message: error.message };
     }
 
     return data || { success: false, message: 'Unknown error occurred' };
   } catch (error) {
-    console.error('Error in restoreEvent:', error);
+    logger.error('Error in restoreEvent:', error);
     return { success: false, message: 'Failed to restore event' };
   }
 };
@@ -4478,7 +4507,7 @@ export const getArchivedEvents = async (organizerId: string): Promise<EventNexus
     .order('archived_at', { ascending: false });
   
   if (error) {
-    console.error('Error fetching archived events:', error);
+    logger.error('Error fetching archived events:', error);
     return [];
   }
   
@@ -4493,13 +4522,13 @@ export const isEventCompleted = async (eventId: string): Promise<boolean> => {
     });
 
     if (error) {
-      console.error('Error checking event completion:', error);
+      logger.error('Error checking event completion:', error);
       return false;
     }
 
     return data || false;
   } catch (error) {
-    console.error('Error in isEventCompleted:', error);
+    logger.error('Error in isEventCompleted:', error);
     return false;
   }
 };
@@ -4510,13 +4539,13 @@ export const runAutoArchiveCompletedEvents = async (): Promise<number> => {
     const { data, error } = await supabase.rpc('auto_archive_completed_events');
 
     if (error) {
-      console.error('Error running auto-archive:', error);
+      logger.error('Error running auto-archive:', error);
       return 0;
     }
 
     return data || 0;
   } catch (error) {
-    console.error('Error in runAutoArchiveCompletedEvents:', error);
+    logger.error('Error in runAutoArchiveCompletedEvents:', error);
     return 0;
   }
 };
@@ -4566,7 +4595,7 @@ export const createAffiliatePartner = async (userId: string): Promise<any> => {
 
     return data;
   } catch (error) {
-    console.error('Error creating affiliate partner:', error);
+    logger.error('Error creating affiliate partner:', error);
     throw error;
   }
 };
@@ -4584,7 +4613,7 @@ export const getAffiliateStats = async (userId: string): Promise<any> => {
 
     return data?.[0] || null;
   } catch (error) {
-    console.error('Error getting affiliate stats:', error);
+    logger.error('Error getting affiliate stats:', error);
     return null;
   }
 };
@@ -4640,7 +4669,7 @@ export const getAffiliateReferrals = async (
       days_ago: calculateDaysAgo(ref.created_at)
     }));
   } catch (error) {
-    console.error('Error getting affiliate referrals:', error);
+    logger.error('Error getting affiliate referrals:', error);
     return [];
   }
 };
@@ -4673,7 +4702,7 @@ export const getAffiliateCommissions = async (
 
     return data || [];
   } catch (error) {
-    console.error('Error getting affiliate commissions:', error);
+    logger.error('Error getting affiliate commissions:', error);
     return [];
   }
 };
@@ -4706,7 +4735,7 @@ export const getAffiliatePayouts = async (
 
     return data || [];
   } catch (error) {
-    console.error('Error getting affiliate payouts:', error);
+    logger.error('Error getting affiliate payouts:', error);
     return [];
   }
 };
@@ -4754,7 +4783,7 @@ export const trackAffiliateReferral = async (
 
     return true;
   } catch (error) {
-    console.error('Error tracking affiliate referral:', error);
+    logger.error('Error tracking affiliate referral:', error);
     return false;
   }
 };
@@ -4792,7 +4821,7 @@ export const processAffiliateConversion = async (
 
     return true;
   } catch (error) {
-    console.error('Error processing affiliate conversion:', error);
+    logger.error('Error processing affiliate conversion:', error);
     return false;
   }
 };
@@ -4837,7 +4866,7 @@ export const requestAffiliatePayout = async (
 
     return data;
   } catch (error) {
-    console.error('Error requesting affiliate payout:', error);
+    logger.error('Error requesting affiliate payout:', error);
     throw error;
   }
 };
@@ -4955,12 +4984,12 @@ export const createEventReport = async (
         }
       });
     } catch (error) {
-      console.warn('Edge Function notification error (non-critical):', error);
+      logger.warn('Edge Function notification error (non-critical):', error);
     }
 
     return data as EventReport;
   } catch (error) {
-    console.error('Error creating event report:', error);
+    logger.error('Error creating event report:', error);
     return null;
   }
 };
@@ -4980,7 +5009,7 @@ export const getEventReports = async (eventId: string): Promise<EventReport[]> =
 
     return (data || []) as EventReport[];
   } catch (error) {
-    console.error('Error fetching event reports:', error);
+    logger.error('Error fetching event reports:', error);
     return [];
   }
 };
@@ -5000,7 +5029,7 @@ export const getEventOpenReportsCount = async (eventId: string): Promise<number>
 
     return data?.length || 0;
   } catch (error) {
-    console.error('Error counting event reports:', error);
+    logger.error('Error counting event reports:', error);
     return 0;
   }
 };
@@ -5067,12 +5096,12 @@ export const updateReportStatus = async (
         }
       });
     } catch (error) {
-      console.warn('Edge Function notification error (non-critical):', error);
+      logger.warn('Edge Function notification error (non-critical):', error);
     }
 
     return true;
   } catch (error) {
-    console.error('Error updating report status:', error);
+    logger.error('Error updating report status:', error);
     return false;
   }
 };
@@ -5101,7 +5130,7 @@ export const getAllEventReports = async (
 
     return (data || []) as EventReport[];
   } catch (error) {
-    console.error('Error fetching all event reports:', error);
+    logger.error('Error fetching all event reports:', error);
     return [];
   }
 };
@@ -5126,7 +5155,7 @@ export const getOrganizerEventsWithReportCounts = async (organizerId: string): P
       report_count: event.report_count || 0
     }));
   } catch (error) {
-    console.error('Error fetching organizer events with reports:', error);
+    logger.error('Error fetching organizer events with reports:', error);
     return [];
   }
 }
@@ -5191,7 +5220,7 @@ export const rsvpToEvent = async (
 
     return data;
   } catch (error) {
-    console.error('Error RSVPing to event:', error);
+    logger.error('Error RSVPing to event:', error);
     return null;
   }
 };
@@ -5210,7 +5239,7 @@ export const cancelRsvp = async (userId: string, eventId: string): Promise<boole
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error canceling RSVP:', error);
+    logger.error('Error canceling RSVP:', error);
     return false;
   }
 };
@@ -5232,7 +5261,7 @@ export const getEventAttendees = async (
     if (error) throw error;
     return (data || []) as EventAttendeePreview[];
   } catch (error) {
-    console.error('Error fetching event attendees:', error);
+    logger.error('Error fetching event attendees:', error);
     return [];
   }
 };
@@ -5248,7 +5277,7 @@ export const getEventAttendeeCount = async (eventId: string): Promise<number> =>
     if (error) throw error;
     return data || 0;
   } catch (error) {
-    console.error('Error getting attendee count:', error);
+    logger.error('Error getting attendee count:', error);
     return 0;
   }
 };
@@ -5267,7 +5296,7 @@ export const isUserAttending = async (userId: string, eventId: string): Promise<
     if (error) throw error;
     return data || false;
   } catch (error) {
-    console.error('Error checking attendance:', error);
+    logger.error('Error checking attendance:', error);
     return false;
   }
 };
@@ -5298,7 +5327,7 @@ export const updateUserInterests = async (
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error updating user interests:', error);
+    logger.error('Error updating user interests:', error);
     return null;
   }
 };
@@ -5332,7 +5361,7 @@ export const getUserInterests = async (userId: string): Promise<UserInterests | 
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error fetching user interests:', error);
+    logger.error('Error fetching user interests:', error);
     return null;
   }
 };
@@ -5387,7 +5416,7 @@ export const checkInToEvent = async (
 
     return data;
   } catch (error) {
-    console.error('Error checking in to event:', error);
+    logger.error('Error checking in to event:', error);
     return null;
   }
 };
@@ -5407,7 +5436,7 @@ export const getEventCheckins = async (eventId: string, limit: number = 20): Pro
     if (error) throw error;
     return (data || []) as EventCheckin[];
   } catch (error) {
-    console.error('Error fetching event check-ins:', error);
+    logger.error('Error fetching event check-ins:', error);
     return [];
   }
 };
@@ -5428,7 +5457,7 @@ export const getUserFeed = async (userId: string, limit: number = 20): Promise<U
     if (error) throw error;
     return (data || []) as UserFeedItem[];
   } catch (error) {
-    console.error('Error fetching user feed:', error);
+    logger.error('Error fetching user feed:', error);
     return [];
   }
 };
@@ -5452,7 +5481,7 @@ export const getGlobalFeed = async (limit: number = 30): Promise<any[]> => {
     if (error) throw error;
     return (data || []);
   } catch (error) {
-    console.error('Error fetching global feed:', error);
+    logger.error('Error fetching global feed:', error);
     return [];
   }
 };
@@ -5479,7 +5508,7 @@ export const getFriendsAttendingEvent = async (
     if (error) throw error;
     return (data || []);
   } catch (error) {
-    console.error('Error fetching friends at event:', error);
+    logger.error('Error fetching friends at event:', error);
     return [];
   }
 };
@@ -5506,7 +5535,7 @@ export const getCommonEvents = async (userId1: string, userId2: string): Promise
     if (error) throw error;
     return (data || []);
   } catch (error) {
-    console.error('Error fetching common events:', error);
+    logger.error('Error fetching common events:', error);
     return [];
   }
 };
@@ -5532,7 +5561,7 @@ export const sendBuddyRequest = async (userId1: string, userId2: string): Promis
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error sending buddy request:', error);
+    logger.error('Error sending buddy request:', error);
     return null;
   }
 };
@@ -5550,7 +5579,7 @@ export const updateBuddyStatus = async (buddyId: string, status: 'accepted' | 'b
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error updating buddy status:', error);
+    logger.error('Error updating buddy status:', error);
     return false;
   }
 };
@@ -5566,7 +5595,7 @@ export const getBuddyMatches = async (userId: string, limit: number = 10): Promi
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching buddy matches:', error);
+    logger.error('Error fetching buddy matches:', error);
     return [];
   }
 };
@@ -5585,7 +5614,7 @@ export const getUserBuddies = async (userId: string): Promise<any[]> => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching buddies:', error);
+    logger.error('Error fetching buddies:', error);
     return [];
   }
 };
@@ -5611,7 +5640,7 @@ export const createCommunity = async (communityData: {
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error creating community:', error);
+    logger.error('Error creating community:', error);
     return null;
   }
 };
@@ -5656,7 +5685,7 @@ export const joinCommunity = async (communityId: string, userId: string): Promis
 
     return true;
   } catch (error) {
-    console.error('Error joining community:', error);
+    logger.error('Error joining community:', error);
     return false;
   }
 };
@@ -5690,7 +5719,7 @@ export const leaveCommunity = async (communityId: string, userId: string): Promi
 
     return true;
   } catch (error) {
-    console.error('Error leaving community:', error);
+    logger.error('Error leaving community:', error);
     return false;
   }
 };
@@ -5709,7 +5738,7 @@ export const getCommunities = async (limit: number = 20, offset: number = 0): Pr
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching communities:', error);
+    logger.error('Error fetching communities:', error);
     return [];
   }
 };
@@ -5727,7 +5756,7 @@ export const getCommunityMembers = async (communityId: string): Promise<any[]> =
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching community members:', error);
+    logger.error('Error fetching community members:', error);
     return [];
   }
 };
@@ -5764,7 +5793,7 @@ export const createEventReview = async (reviewData: {
     }
     return data;
   } catch (error) {
-    console.error('Error creating review:', error);
+    logger.error('Error creating review:', error);
     return null;
   }
 };
@@ -5784,7 +5813,7 @@ export const getEventReviews = async (eventId: string, limit: number = 10): Prom
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching reviews:', error);
+    logger.error('Error fetching reviews:', error);
     return [];
   }
 };
@@ -5800,7 +5829,7 @@ export const getEventRatingSummary = async (eventId: string): Promise<any | null
     if (error) throw error;
     return data?.[0] || null;
   } catch (error) {
-    console.error('Error fetching rating summary:', error);
+    logger.error('Error fetching rating summary:', error);
     return null;
   }
 };
@@ -5820,7 +5849,7 @@ export const followUser = async (followerId: string, followingId: string): Promi
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error following user:', error);
+    logger.error('Error following user:', error);
     return false;
   }
 };
@@ -5839,7 +5868,7 @@ export const unfollowUser = async (followerId: string, followingId: string): Pro
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('Error unfollowing user:', error);
+    logger.error('Error unfollowing user:', error);
     return false;
   }
 };
@@ -5855,7 +5884,7 @@ export const getUserSocialStats = async (userId: string): Promise<any | null> =>
     if (error) throw error;
     return data?.[0] || null;
   } catch (error) {
-    console.error('Error fetching user stats:', error);
+    logger.error('Error fetching user stats:', error);
     return null;
   }
 };

@@ -4,7 +4,7 @@
             "outputFile": "eu.eventnexus.scanner.app-mergeDebugResources-60:/values-watch-v20/values-watch-v20.xml",
             "map": [
                 {
-                    "source": "/home/vscode/.gradle/caches/8.14.1/transforms/53820f5227c817fa12b81239ab71360d/transformed/appcompat-1.1.0/res/values-watch-v20/values-watch-v20.xml",
+                    "source": "C:\\Users\\PC\\.gradle\\caches\\8.14.1\\transforms\\53820f5227c817fa12b81239ab71360d\\transformed\\appcompat-1.1.0\\res\\values-watch-v20\\values-watch-v20.xml",
                     "from": {
                         "startLines": "2,5,8",
                         "startColumns": "4,4,4",

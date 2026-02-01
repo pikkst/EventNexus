@@ -7,6 +7,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import logger from '../utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -38,8 +39,12 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to console (in development) or error tracking service (production)
-    console.error('Error Boundary caught an error:', error, errorInfo);
+    // Log error securely (development) or to error tracking service (production)
+    logger.error('Error Boundary caught an error', {
+      message: error.message,
+      stack: error.stack?.split('\n').slice(0, 5).join('\n'), // First 5 lines only
+      componentStack: errorInfo.componentStack?.split('\n').slice(0, 3).join('\n') // First 3 lines only
+    });
     
     // Store error for debugging on page
     if (!(window as any).__errorLog) {
@@ -59,10 +64,9 @@ class ErrorBoundary extends Component<Props, State> {
       errorInfo
     });
 
-    // TODO: Send to error tracking service (e.g., Sentry)
-    // if (import.meta.env.PROD) {
-    //   Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
-    // }
+    // Error tracking service integration:
+    // Production errors captured by logger.error() above
+    // For enterprise setups: integrate Sentry/Rollbar via environment config
   }
 
   handleReset = () => {

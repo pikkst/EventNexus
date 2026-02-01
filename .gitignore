@@ -26,3 +26,4 @@ mobile/android/EventNexusLiveMap/.gradle/
 mobile/android/EventNexusScanner/.gradle/nb-cache/
 mobile/android/**/keystore/
 mobile/android/**/local.properties
+oracleJdk-25/

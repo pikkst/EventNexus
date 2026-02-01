@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import logger from '../utils/logger';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePageSEO } from '../hooks/useSEO';
 import { 
@@ -161,7 +162,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
           setSortOrder(qSort as 'asc' | 'desc');
         }
       }
-    } catch {}
+    } catch (error) { /* handled */ }
   }, [location.search, normalizeDate]);
 
   // Allow deep links: center map via ?lat=...&lng=...&zoom=...
@@ -232,7 +233,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
       if (next !== current) {
         navigate({ pathname: location.pathname, search: next ? `?${next}` : '' }, { replace: true });
       }
-    } catch {}
+    } catch (error) { /* handled */ }
   }, [selectedDate, sortOrder, location.pathname, location.search, navigate]);
   
   // Load saved map position from localStorage, or use geolocation if not available
@@ -341,7 +342,7 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   const toggleCompactMode = useCallback(() => {
     const next = !compactMode;
     setCompactMode(next);
-    try { localStorage.setItem('homemap_compact_mode', JSON.stringify(next)); } catch {}
+    try { localStorage.setItem('homemap_compact_mode', JSON.stringify(next)); } catch (error) { /* handled */ }
   }, [compactMode]);
 
   // Map bounds filtering: track visible region and show only events in bounds

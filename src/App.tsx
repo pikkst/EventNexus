@@ -107,8 +107,14 @@ import {
   signInUser,
   signOutUser
 } from './services/dbService';
-import { filterActiveEvents } from './utils/eventUtils';
 import logger from './utils/logger';
+import { 
+  startNetworkMonitoring, 
+  setupSessionTimeout, 
+  AuthEdgeCases,
+  isNetworkError
+} from './utils/networkResilience';
+import { filterActiveEvents } from './utils/eventUtils';
 
 const GA_MEASUREMENT_ID = 'G-JD7P5ZKF4L';
 const AD_LEFT_SLOT = import.meta.env.VITE_ADSENSE_SLOT_LEFT || '';
@@ -122,7 +128,7 @@ const AnalyticsTracker: React.FC<{ user: User | null }> = ({ user }) => {
   useEffect(() => {
     // Skip tracking for admin users
     if (user?.role === 'admin') {
-      console.log('⛔ Analytics tracking skipped: Admin user');
+      logger.log('⛔ Analytics tracking skipped: Admin user');
       return;
     }
 
@@ -149,15 +155,15 @@ const AnalyticsTracker: React.FC<{ user: User | null }> = ({ user }) => {
         page_location,
         user_type: user ? 'logged_in' : 'guest'
       });
-      console.log('✅ GA page_view sent', { page_path, user_type: user ? 'logged_in' : 'guest' });
+      logger.log('✅ GA page_view sent', { page_path, user_type: user ? 'logged_in' : 'guest' });
     } else {
-      console.warn('⚠️ GA not ready (AnalyticsTracker)');
+      logger.warn('⚠️ GA not ready (AnalyticsTracker)');
     }
 
     // Track Meta Pixel SPA PageView on route changes (exclude admin)
     if (typeof fbq === 'function') {
       fbq('track', 'PageView');
-      console.log('✅ Meta Pixel PageView tracked');
+      logger.log('✅ Meta Pixel PageView tracked');
     } else {
       // If base code hasn't defined fbq yet, queue a call defensively
       (window as any).fbq = function(){
@@ -193,7 +199,7 @@ const App: React.FC = () => {
         const parsed = JSON.parse(cached);
         // Invalidate cache if it doesn't have agency_slug field (old schema)
         if (parsed.user && !('agency_slug' in parsed.user || 'agencySlug' in parsed.user)) {
-          console.log('🔄 Cache invalidated - missing agency_slug field. Clearing cache.');
+          logger.log('🔄 Cache invalidated - missing agency_slug field. Clearing cache.');
           localStorage.removeItem('eventnexus-user-cache');
           return null;
         }
@@ -270,14 +276,14 @@ const App: React.FC = () => {
       script.async = true;
       script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
       document.head.appendChild(script);
-      console.log('GA fallback: injected gtag.js script');
+      logger.log('GA fallback: injected gtag.js script');
     }
 
     (window as any).dataLayer = (window as any).dataLayer || [];
     (window as any).gtag = function gtag(){ (window as any).dataLayer.push(arguments); };
     (window as any).gtag('js', new Date());
     (window as any).gtag('config', GA_MEASUREMENT_ID, { page_path: window.location.pathname + window.location.search + window.location.hash });
-    console.log(`✅ GA fallback initialized with ${GA_MEASUREMENT_ID}`);
+    logger.log(`✅ GA fallback initialized with ${GA_MEASUREMENT_ID}`);
     
     // Initialize performance optimizations after GA is set up
     initializePerformanceOptimizations();
@@ -287,7 +293,7 @@ const App: React.FC = () => {
     const initGemini = async () => {
       // Prevent duplicate initialization
       if (geminiInitializedRef.current) {
-        console.log('✅ Gemini AI already initialized');
+        logger.log('✅ Gemini AI already initialized');
         return;
       }
       geminiInitializedRef.current = true;
@@ -295,18 +301,18 @@ const App: React.FC = () => {
       try {
         const { initializeGemini } = await import('./services/geminiService');
         await initializeGemini();
-        console.log('✅ Gemini AI module pre-initialized successfully');
+        logger.log('✅ Gemini AI module pre-initialized successfully');
         setGeminiReady(true);
       } catch (e) {
-        console.error('❌ Failed to pre-initialize Gemini:', e?.message || e);
+        logger.error('❌ Failed to pre-initialize Gemini:', e?.message || e);
         // Set ready anyway so components don't hang forever
         // They'll get an error from getAI() but can handle it gracefully
         setGeminiReady(true);
       }
     };
     
-    // Call initialization immediately
-    initGemini();
+    // Call initialization and await it
+    initGemini().catch(err => logger.error('initGemini promise error:', err));
   }, []);
 
   // Helper to cache user data
@@ -321,7 +327,7 @@ const App: React.FC = () => {
         localStorage.removeItem('eventnexus-user-cache');
       }
     } catch (e) {
-      console.warn('Failed to cache user data:', e);
+      logger.warn('Failed to cache user data:', e);
     }
   };
 
@@ -330,7 +336,7 @@ const App: React.FC = () => {
     try {
       sessionStorage.setItem('eventnexus-notifications-cache', JSON.stringify(notifs));
     } catch (e) {
-      console.warn('Failed to cache notifications:', e);
+      logger.warn('Failed to cache notifications:', e);
     }
   };
 
@@ -347,7 +353,7 @@ const App: React.FC = () => {
         timestamp: Date.now()
       }));
     } catch (e) {
-      console.warn('Failed to cache events:', e);
+      logger.warn('Failed to cache events:', e);
     }
   };
 
@@ -369,6 +375,8 @@ const App: React.FC = () => {
   });
   const sessionRestoreAttempted = useRef(false);
   const isMountedRef = useRef(true);
+  const cleanupNetworkRef = useRef<(() => void) | null>(null);
+  const cleanupSessionTimeoutRef = useRef<(() => void) | null>(null);
   
   // Global session keep-alive: prevents auto-logout during long-running operations
   // Especially critical for admin pages with multi-city batch processing
@@ -376,17 +384,27 @@ const App: React.FC = () => {
     let keepAliveInterval: NodeJS.Timer;
     
     const startKeepAlive = async () => {
-      // Only start if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        keepAliveInterval = setInterval(async () => {
-          try {
-            await supabase.auth.refreshSession();
-            console.log('🔄 Global session keep-alive: session refreshed');
-          } catch (error) {
-            console.error('Global keep-alive failed:', error);
-          }
-        }, 30000); // Refresh every 30 seconds globally
+      try {
+        // Only start if user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          keepAliveInterval = setInterval(async () => {
+            try {
+              await supabase.auth.refreshSession();
+              if (isMountedRef.current) {
+                logger.log('Global session keep-alive: session refreshed');
+              }
+            } catch (error: any) {
+              if (isNetworkError(error)) {
+                logger.warn('Keep-alive failed (network issue)', { code: error.code });
+              } else {
+                logger.error('Global keep-alive failed:', { code: error.code });
+              }
+            }
+          }, 30000); // Refresh every 30 seconds globally
+        }
+      } catch (error) {
+        logger.error('Error starting keep-alive:', { error });
       }
     };
     
@@ -397,6 +415,48 @@ const App: React.FC = () => {
     };
   }, []);
   
+  // Setup network monitoring
+  useEffect(() => {
+    if (!cleanupNetworkRef.current) {
+      cleanupNetworkRef.current = startNetworkMonitoring(
+        () => {
+          logger.log('Network restored - attempting session recovery');
+          AuthEdgeCases.validateSession();
+        },
+        () => {
+          logger.warn('Network disconnected');
+        }
+      );
+    }
+    
+    return () => {
+      if (cleanupNetworkRef.current) {
+        cleanupNetworkRef.current();
+        cleanupNetworkRef.current = null;
+      }
+    };
+  }, []);
+  
+  // Setup session inactivity timeout (30 minutes)
+  useEffect(() => {
+    if (user && !cleanupSessionTimeoutRef.current) {
+      cleanupSessionTimeoutRef.current = setupSessionTimeout(
+        30 * 60 * 1000, // 30 minutes
+        () => {
+          logger.log('Session timeout triggered');
+          handleLogout();
+        }
+      );
+    }
+    
+    return () => {
+      if (!user && cleanupSessionTimeoutRef.current) {
+        cleanupSessionTimeoutRef.current();
+        cleanupSessionTimeoutRef.current = null;
+      }
+    };
+  }, [user]);
+  
   useEffect(() => {
     // Check for successful subscription checkout and reload user data
     const checkSubscriptionSuccess = async () => {
@@ -404,7 +464,7 @@ const App: React.FC = () => {
       const checkoutSuccess = params.get('checkout') === 'success';
       
       if (checkoutSuccess && user) {
-        console.log('🔄 Subscription checkout successful, reloading user data...');
+        logger.log('🔄 Subscription checkout successful, reloading user data...');
         try {
           // Wait a bit for webhook to complete
           await new Promise(resolve => setTimeout(resolve, 2000));
@@ -412,10 +472,10 @@ const App: React.FC = () => {
           if (updatedUser && isMountedRef.current) {
             setUser(updatedUser);
             cacheUserData(updatedUser);
-            console.log('✅ User data reloaded after subscription:', updatedUser.subscription_tier);
+            logger.log('✅ User data reloaded after subscription:', updatedUser.subscription_tier);
           }
         } catch (error) {
-          console.error('Error reloading user after subscription:', error);
+          logger.error('Error reloading user after subscription:', error);
         }
       }
     };
@@ -451,12 +511,12 @@ const App: React.FC = () => {
           );
           await Promise.race([trackingPromise, timeoutPromise]);
         } catch (trackingError) {
-          console.warn('⚠️ Campaign tracking initialization failed (non-blocking):', trackingError?.message || trackingError);
+          logger.warn('⚠️ Campaign tracking initialization failed (non-blocking):', trackingError?.message || trackingError);
           // Continue anyway - tracking is not critical for app loading
         }
         
         if (session?.user && isMountedRef.current) {
-          console.log('🔄 Loading fresh user data from database...');
+          logger.log('🔄 Loading fresh user data from database...');
           try {
             // ALWAYS fetch fresh data from database, don't rely on cache
             const userData = await getUser(session.user.id);
@@ -464,7 +524,7 @@ const App: React.FC = () => {
               setUser(userData);
               cacheUserData(userData);
               setSessionRestored(true);
-              console.log('✅ Fresh user data loaded. Credits:', userData.credits);
+              logger.log('✅ Fresh user data loaded. Credits:', userData.credits);
               
               const userNotifications = await getNotifications(userData.id);
               if (isMountedRef.current) {
@@ -473,12 +533,12 @@ const App: React.FC = () => {
               }
             } else {
               // If user data fails to load, sign out
-              console.error('Failed to load user data, signing out');
+              logger.error('Failed to load user data, signing out');
               await supabase.auth.signOut();
               sessionRestoreAttempted.current = false;
             }
           } catch (userError) {
-            console.error('Error loading user data:', userError);
+            logger.error('Error loading user data:', userError);
             await supabase.auth.signOut();
             sessionRestoreAttempted.current = false;
           }
@@ -498,7 +558,7 @@ const App: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Error loading initial data:', error);
+        logger.error('Error loading initial data:', error);
       } finally {
         clearTimeout(hardTimeout);
         if (isMountedRef.current) {
@@ -511,7 +571,7 @@ const App: React.FC = () => {
 
     // Listen for auth state changes (login, logout, token refresh)
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth event:', event, session?.user?.email || 'no session');
+      logger.log('🔐 Auth event:', event, session?.user?.email || 'no session');
       
       // Handle OAuth callback - detect OAuth params in URL
       const hasOAuthParams = window.location.hash.includes('access_token') || 
@@ -519,13 +579,13 @@ const App: React.FC = () => {
                             window.location.search.includes('code=');
       
       if (event === 'INITIAL_SESSION' && session?.user && hasOAuthParams && !user) {
-        console.log('🔄 OAuth callback detected, loading user profile...');
+        logger.log('🔄 OAuth callback detected, loading user profile...');
         setIsLoading(true);
         
         try {
           // Ensure profile exists via RPC
           await supabase.rpc('ensure_user_profile', { user_id: session.user.id })
-            .catch(err => console.warn('⚠️ RPC warning:', err.message));
+            .catch(err => logger.warn('⚠️ RPC warning:', err.message));
           
           // Small delay for profile creation
           await new Promise(resolve => setTimeout(resolve, 300));
@@ -555,13 +615,13 @@ const App: React.FC = () => {
             
             // Clean URL - remove OAuth params and redirect to profile
             window.history.replaceState({}, '', '/profile');
-            console.log('✅ OAuth login successful');
+            logger.log('✅ OAuth login successful');
           } else {
-            console.error('⚠️ Failed to load user profile');
+            logger.error('⚠️ Failed to load user profile');
             setIsLoading(false);
           }
         } catch (error) {
-          console.error('OAuth callback error:', error);
+          logger.error('OAuth callback error:', error);
           setIsLoading(false);
         }
         return;
@@ -569,13 +629,13 @@ const App: React.FC = () => {
       
       // Skip other INITIAL_SESSION events
       if (event === 'INITIAL_SESSION') {
-        console.log('✅ Session restored:', session?.user?.email || 'No session');
+        logger.log('✅ Session restored:', session?.user?.email || 'No session');
         return;
       }
       
       // Handle regular sign-in (non-OAuth)
       if (event === 'SIGNED_IN' && session?.user && isMountedRef.current && !user && !hasOAuthParams) {
-        console.log('User signed in (regular login), loading data...');
+        logger.log('User signed in (regular login), loading data...');
         
         try {
           const userData = await getUser(session.user.id);
@@ -598,12 +658,12 @@ const App: React.FC = () => {
             }
           }
         } catch (userError) {
-          console.error('Error loading user data:', userError);
+          logger.error('Error loading user data:', userError);
         }
       } else if (event === 'TOKEN_REFRESHED' && session?.user && isMountedRef.current) {
-        console.log('✅ Token refreshed successfully');
+        logger.log('✅ Token refreshed successfully');
       } else if (event === 'SIGNED_OUT' && isMountedRef.current) {
-        console.log('User signed out');
+        logger.log('User signed out');
         setUser(null);
         setNotifications([]);
         cacheUserData(null);
@@ -619,7 +679,7 @@ const App: React.FC = () => {
           cacheEvents(activeEvents);
         }
       } else if (event === 'USER_UPDATED' && session?.user && isMountedRef.current) {
-        console.log('User updated, reloading data...');
+        logger.log('User updated, reloading data...');
         const userData = await getUser(session.user.id);
         if (userData && isMountedRef.current) {
           setUser(userData);
@@ -677,7 +737,7 @@ const App: React.FC = () => {
           setNotifiedEventIds(prev => new Set(prev).add(event.id));
         }
       });
-    }, (err) => console.error(err), { enableHighAccuracy: true });
+    }, (err) => logger.error(err), { enableHighAccuracy: true });
 
     return () => navigator.geolocation.clearWatch(watchId);
   }, [user, notifiedEventIds, events]);
@@ -698,10 +758,10 @@ const App: React.FC = () => {
   const handleUpdateUser = async (updatedData: Partial<User>) => {
     if (!user) return;
     
-    console.log('🔄 Updating user with data:', updatedData);
+    logger.log('🔄 Updating user with data:', updatedData);
     const updatedUser = await updateUser(user.id, updatedData);
     if (updatedUser) {
-      console.log('✅ User updated. New agency_slug:', updatedUser.agency_slug || updatedUser.agencySlug || 'NOT SET');
+      logger.log('✅ User updated. New agency_slug:', updatedUser.agency_slug || updatedUser.agencySlug || 'NOT SET');
       setUser(updatedUser);
     }
   };
@@ -710,15 +770,15 @@ const App: React.FC = () => {
     if (!user) return;
     
     try {
-      console.log('🔄 Refreshing user data...');
+      logger.log('🔄 Refreshing user data...');
       const updatedUser = await getUser(user.id);
       if (updatedUser) {
         setUser(updatedUser);
         cacheUserData(updatedUser);
-        console.log('✅ User data refreshed. Credits:', updatedUser.credits);
+        logger.log('✅ User data refreshed. Credits:', updatedUser.credits);
       }
     } catch (error) {
-      console.error('Error refreshing user:', error);
+      logger.error('Error refreshing user:', error);
     }
   };
 
@@ -730,15 +790,15 @@ const App: React.FC = () => {
 
   const handleReloadEvents = async () => {
     try {
-      console.log('🔄 Reloading events after event creation...');
+      logger.log('🔄 Reloading events after event creation...');
       const eventsData = user ? await getAllEvents() : await getEvents();
       // Filter out expired events
       const activeEvents = filterActiveEvents(eventsData);
       setEvents(activeEvents);
       cacheEvents(activeEvents);
-      console.log(`✅ Events reloaded: ${activeEvents.length} active of ${eventsData.length} total`);
+      logger.log(`✅ Events reloaded: ${activeEvents.length} active of ${eventsData.length} total`);
     } catch (error) {
-      console.error('Error reloading events:', error);
+      logger.error('Error reloading events:', error);
     }
   };
 
@@ -809,7 +869,7 @@ const App: React.FC = () => {
             showToast(`New message from Admin: ${title}`, 'success');
           }
         } catch (err) {
-          console.error('Realtime notifications update error:', err);
+          logger.error('Realtime notifications update error:', err);
         }
       });
     channel.subscribe();
@@ -843,9 +903,9 @@ const App: React.FC = () => {
     // Save to database
     try {
       await updateUser(user.id, { notification_prefs: newPrefs });
-      console.log('✅ Notification preferences saved to database');
+      logger.log('✅ Notification preferences saved to database');
     } catch (error) {
-      console.error('❌ Failed to save notification preferences:', error);
+      logger.error('❌ Failed to save notification preferences:', error);
       // Optionally: Show error toast to user
     }
   };
@@ -967,7 +1027,7 @@ const App: React.FC = () => {
                   setUser({ ...user, tutorial_completed: true });
                   localStorage.setItem('onboarding_completed', 'true');
                 } catch (error) {
-                  console.error('Failed to save tutorial completion:', error);
+                  logger.error('Failed to save tutorial completion:', error);
                   // Still mark as completed locally to avoid repeated showing
                   localStorage.setItem('onboarding_completed', 'true');
                 }
@@ -982,7 +1042,7 @@ const App: React.FC = () => {
                   setUser({ ...user, tutorial_completed: true });
                   localStorage.setItem('onboarding_completed', 'true');
                 } catch (error) {
-                  console.error('Failed to save tutorial skip:', error);
+                  logger.error('Failed to save tutorial skip:', error);
                   localStorage.setItem('onboarding_completed', 'true');
                 }
               }
@@ -1081,50 +1141,69 @@ const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSuppo
               <div className="relative">
                 <button 
                   onClick={() => setShowNotifs(!showNotifs)}
-                  className="p-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl hover:bg-slate-800 transition-all relative text-white"
+                  aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+                  aria-expanded={showNotifs}
+                  aria-controls="notif-menu"
+                  aria-haspopup="menu"
+                  className="p-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl hover:bg-slate-800 transition-all relative text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-5 h-5" aria-hidden="true" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-500 rounded-full text-[10px] font-black flex items-center justify-center border-2 border-slate-950">
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-500 rounded-full text-[10px] font-black flex items-center justify-center border-2 border-slate-950" aria-hidden="true">
                       {unreadCount}
                     </span>
                   )}
                 </button>
 
                 {showNotifs && (
-                  <div className="fixed sm:absolute top-16 sm:top-full sm:mt-4 right-0 sm:right-0 left-0 sm:left-auto w-full sm:w-96 bg-slate-900 border-x-0 sm:border-x border-t-0 sm:border-t border-b border-slate-800 sm:rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in sm:zoom-in-95 slide-in-from-top-4 sm:slide-in-from-top-0 duration-200 max-h-[calc(100vh-4rem)] sm:max-h-[80vh]">
+                  <div 
+                    id="notif-menu"
+                    role="menu"
+                    aria-labelledby="notif-button"
+                    className="fixed sm:absolute top-16 sm:top-full sm:mt-4 right-0 sm:right-0 left-0 sm:left-auto w-full sm:w-96 bg-slate-900 border-x-0 sm:border-x border-t-0 sm:border-t border-b border-slate-800 sm:rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in sm:zoom-in-95 slide-in-from-top-4 sm:slide-in-from-top-0 duration-200 max-h-[calc(100vh-4rem)] sm:max-h-[80vh]"
+                  >
                     <div className="p-4 sm:p-5 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
-                      <h4 className="font-black text-xs sm:text-xs uppercase tracking-[0.15em] sm:tracking-[0.2em] text-indigo-400">{t.notifications.title}</h4>
-                      <button onClick={() => setShowNotifs(false)} className="p-2 hover:bg-slate-800 rounded-lg transition-colors"><X className="w-4 h-4 text-slate-500" /></button>
+                      <h4 id="notif-title" className="font-black text-xs sm:text-xs uppercase tracking-[0.15em] sm:tracking-[0.2em] text-indigo-400">{t.notifications.title}</h4>
+                      <button 
+                        onClick={() => setShowNotifs(false)}
+                        aria-label="Close notifications menu"
+                        className="p-2 hover:bg-slate-800 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <X className="w-4 h-4 text-slate-500" aria-hidden="true" />
+                      </button>
                     </div>
-                    <div className="max-h-[calc(100vh-12rem)] sm:max-h-[400px] overflow-y-auto divide-y divide-slate-800 scrollbar-hide">
+                    <div className="max-h-[calc(100vh-12rem)] sm:max-h-[400px] overflow-y-auto divide-y divide-slate-800 scrollbar-hide" role="menu">
                       {notifications.length === 0 ? (
-                        <div className="p-10 text-center text-slate-600 italic text-sm">{t.notifications.noNotifications}</div>
+                        <div className="p-10 text-center text-slate-600 italic text-sm" role="status">{t.notifications.noNotifications}</div>
                       ) : (
                         notifications.map((n: any) => (
                           <div 
                             key={n.id} 
-                            className={`block p-4 sm:p-5 space-y-2 sm:space-y-3 transition-colors ${n.isRead ? 'opacity-60' : 'bg-indigo-600/5'}`} 
+                            role="menuitem"
+                            tabIndex={0}
+                            className={`block p-4 sm:p-5 space-y-2 sm:space-y-3 transition-colors cursor-pointer focus:outline-none focus:bg-slate-800/30 ${n.isRead ? 'opacity-60' : 'bg-indigo-600/5'}`} 
                             onClick={() => { onMarkRead(n.id); }}
+                            onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onMarkRead(n.id); } }}
                           >
                             <div className="flex justify-between items-start gap-2 sm:gap-3">
                               <Link 
                                 to={n.eventId ? `/event/${n.eventId}` : '#'}
-                                className="space-y-1"
+                                className="space-y-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded px-1"
                                 onClick={() => setShowNotifs(false)}
                               >
                                 <div className="flex items-center gap-2">
-                                  {n.type === 'proximity_radar' && <Radar className="w-3 h-3 text-indigo-400" />}
-                                  {n.type === 'contact_inquiry' && <Mail className="w-3 h-3 text-purple-400" />}
+                                  {n.type === 'proximity_radar' && <Radar className="w-3 h-3 text-indigo-400" aria-hidden="true" />}
+                                  {n.type === 'contact_inquiry' && <Mail className="w-3 h-3 text-purple-400" aria-hidden="true" />}
                                   <h5 className="font-black text-sm text-white">{n.title}</h5>
                                 </div>
                                 <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">{n.senderName}</p>
                               </Link>
                               <button 
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(n.id); }}
-                                className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                aria-label={`Delete notification: ${n.title}`}
+                                className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4" aria-hidden="true" />
                               </button>
                             </div>
                             <p className="text-xs text-slate-400 leading-relaxed font-medium">{n.message}</p>
@@ -1159,20 +1238,25 @@ const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSuppo
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   aria-label={`User menu for ${user.name}`}
                   aria-expanded={showProfileMenu}
-                  aria-haspopup="true"
-                  className="flex items-center gap-2 bg-slate-800/50 p-1 pr-3 rounded-full hover:bg-slate-800 transition-all border border-slate-700 group"
+                  aria-haspopup="menu"
+                  aria-controls="profile-menu"
+                  className="flex items-center gap-2 bg-slate-800/50 p-1 pr-3 rounded-full hover:bg-slate-800 transition-all border border-slate-700 group focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <img src={user.avatar} className="w-8 h-8 rounded-full border border-indigo-500" alt={`${user.name}'s avatar`} />
-                  <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} aria-hidden="true" />
                 </button>
 
                 {showProfileMenu && (
-                  <div className="fixed sm:absolute top-16 sm:top-full sm:mt-4 right-0 left-0 sm:left-auto w-full sm:w-64 bg-slate-900 border-x-0 sm:border-x border-t-0 sm:border-t border-b border-slate-800 sm:rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in sm:zoom-in-95 slide-in-from-top-4 sm:slide-in-from-top-0 duration-200">
+                  <div 
+                    id="profile-menu"
+                    role="menu"
+                    className="fixed sm:absolute top-16 sm:top-full sm:mt-4 right-0 left-0 sm:left-auto w-full sm:w-64 bg-slate-900 border-x-0 sm:border-x border-t-0 sm:border-t border-b border-slate-800 sm:rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in sm:zoom-in-95 slide-in-from-top-4 sm:slide-in-from-top-0 duration-200"
+                  >
                     <div className="p-4 sm:p-6 border-b border-slate-800 bg-slate-950/50">
                       <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">{user.subscription_tier} plan</p>
                       <h4 className="font-black text-white truncate text-sm sm:text-base">{user.name}</h4>
                     </div>
-                    <div className="p-2">
+                    <div className="p-2" role="menugroup">
                       <ProfileMenuItem 
                         icon={<UserIcon />} 
                         label={t.nav.profile} 
@@ -1185,7 +1269,7 @@ const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSuppo
                         onClick={() => { setShowProfileMenu(false); navigate('/notifications'); }} 
                         t={t}
                       />
-                      <div className="h-px bg-slate-800 my-2 mx-4" />
+                      <div className="h-px bg-slate-800 my-2 mx-4" aria-hidden="true" />
                       <ProfileMenuItem 
                         icon={<LogOut />} 
                         label={t.nav.signOut} 
@@ -1219,12 +1303,13 @@ const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSuppo
 
 const ProfileMenuItem = ({ icon, label, onClick, variant, t }: any) => (
   <button 
+    role="menuitem"
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-4 py-3 sm:py-3 min-h-[48px] sm:min-h-0 rounded-2xl transition-all text-sm font-bold active:scale-98 ${
+    className={`w-full flex items-center gap-3 px-4 py-3 sm:py-3 min-h-[48px] sm:min-h-0 rounded-2xl transition-all text-sm font-bold active:scale-98 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
       variant === 'danger' ? 'text-red-400 hover:bg-red-400/10 active:bg-red-400/20' : 'text-slate-300 hover:bg-slate-800 hover:text-white active:bg-slate-700'
     }`}
   >
-    <span className="shrink-0">{React.cloneElement(icon, { size: 18 })}</span>
+    <span className="shrink-0" aria-hidden="true">{React.cloneElement(icon, { size: 18 })}</span>
     {label}
   </button>
 );
@@ -1233,15 +1318,30 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
   const t = useTranslation();
   return (
     <>
-      {isOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1050]" onClick={closeSidebar} />}
-      <aside className={`fixed inset-y-0 left-0 z-[1100] w-72 bg-slate-900 transform transition-transform duration-300 ease-in-out border-r border-slate-800 max-h-screen overflow-hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1050]" 
+          onClick={closeSidebar}
+          role="presentation"
+          aria-hidden="true"
+        />
+      )}
+      <aside 
+        className={`fixed inset-y-0 left-0 z-[1100] w-72 bg-slate-900 transform transition-transform duration-300 ease-in-out border-r border-slate-800 max-h-screen overflow-hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        role="navigation"
+        aria-label="Main navigation"
+      >
         <div className="p-6 flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
-            <Compass className="w-6 h-6 text-indigo-500" />
+            <Compass className="w-6 h-6 text-indigo-500" aria-hidden="true" />
             <span className="font-black text-xl tracking-tighter text-white">EventNexus</span>
           </div>
-          <button onClick={closeSidebar} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400">
-            <X className="w-6 h-6" />
+          <button 
+            onClick={closeSidebar}
+            aria-label="Close sidebar menu"
+            className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <X className="w-6 h-6" aria-hidden="true" />
           </button>
         </div>
         <nav className="p-4 space-y-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 97px)', scrollbarWidth: 'thin', scrollbarColor: '#475569 #1e293b' }}>
@@ -1255,21 +1355,21 @@ const Sidebar = ({ isOpen, closeSidebar, user }: any) => {
           <SidebarItem icon={<Smartphone />} label="Mobile Apps" to="/mobile" onClick={closeSidebar} />
           <SidebarItem icon={<Zap />} label={t.nav.pricing} to="/pricing" onClick={closeSidebar} />
           
-          <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">Social</div>
+          <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest" role="separator" aria-label="Social section">Social</div>
           <SidebarItem icon={<Users />} label="Social Feed" to="/feed" onClick={closeSidebar} />
           <SidebarItem icon={<Heart />} label="Find Friends" to="/communities" onClick={closeSidebar} />
           <SidebarItem icon={<Trophy />} label="Achievements" to="/achievements" onClick={closeSidebar} />
           
-          <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">Resources</div>
+          <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest" role="separator" aria-label="Resources section">Resources</div>
           <SidebarItem icon={<Newspaper />} label={t.nav.blog} to="/blog" onClick={closeSidebar} />
           
-          <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest">User</div>
+          <div className="pt-6 pb-2 px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest" role="separator" aria-label="User section">User</div>
           <SidebarItem icon={<Settings />} label={t.nav.settings} to="/notifications" onClick={closeSidebar} />
           <SidebarItem icon={<LayoutDashboard />} label={t.nav.dashboard} to="/dashboard" onClick={closeSidebar} />
 
           {user?.role === 'admin' && (
             <>
-              <div className="pt-6 pb-2 px-3 text-[10px] font-black text-orange-500 uppercase tracking-widest">Admin</div>
+              <div className="pt-6 pb-2 px-3 text-[10px] font-black text-orange-500 uppercase tracking-widest" role="separator" aria-label="Admin section">Admin</div>
               <SidebarItem icon={<ShieldCheck />} label="Command Center" to="/admin" onClick={closeSidebar} />
               <SidebarItem icon={<Coins />} label="Credit Manager" to="/admin/credits" onClick={closeSidebar} />
               <SidebarItem icon={<Globe />} label="Social Media" to="/social-media" onClick={closeSidebar} />
@@ -1285,9 +1385,9 @@ const SidebarItem = ({ icon, label, to, onClick }: any) => (
   <Link 
     to={to} 
     onClick={onClick}
-    className="flex items-center gap-4 px-4 py-3 min-h-[48px] rounded-xl hover:bg-indigo-600/10 active:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 transition-all group"
+    className="flex items-center gap-4 px-4 py-3 min-h-[48px] rounded-xl hover:bg-indigo-600/10 active:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 transition-all group focus:outline-none focus:ring-2 focus:ring-indigo-500"
   >
-    <span className="w-5 h-5 text-slate-500 group-hover:text-indigo-400 transition-colors shrink-0">{icon}</span>
+    <span className="w-5 h-5 text-slate-500 group-hover:text-indigo-400 transition-colors shrink-0" aria-hidden="true">{icon}</span>
     <span className="text-sm font-bold tracking-tight">{label}</span>
   </Link>
 );

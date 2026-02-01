@@ -159,8 +159,11 @@ const AdminCommandCenter: React.FC<{ user: User; supportUnread?: number; onOpenS
   const [isLoadingNewsletter, setIsLoadingNewsletter] = useState(true);
   const [newsletterFilter, setNewsletterFilter] = useState<'all' | 'active' | 'unsubscribed'>('all');
   const [isImportingNewsletter, setIsImportingNewsletter] = useState(false);
+  
+  // ====== ALL REFS AFTER STATE ======
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // ====== MEMOS & CALLBACKS ======
   const filteredUsers = useMemo(() => {
     return platformUsers.filter(u => {
       const matchesSearch = u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase());

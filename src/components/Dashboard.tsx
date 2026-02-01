@@ -1797,27 +1797,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
             handleUpdateService={handleUpdateService}
             handleCommitBranding={handleCommitBranding}
           />
-      {activeTab === 'branding' && (
-        <React.Suspense fallback={
-          <div className="flex items-center justify-center h-96 bg-slate-900/40 border-2 border-dashed border-slate-800 rounded-[48px] m-4">
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-              <p className="text-sm text-slate-400">Loading White-Labeling Studio...</p>
-            </div>
-          </div>
-        }>
-          <DashboardBrandingTab
-            user={user}
-            isEnterprise={isEnterprise}
-            tempSlug={tempSlug}
-            setTempSlug={setTempSlug}
-            tempBio={tempBio}
-            setTempBio={setTempBio}
-            tempBranding={tempBranding}
-            setTempBranding={setTempBranding}
-            handleUpdateService={handleUpdateService}
-            handleCommitBranding={handleCommitBranding}
-          />
         </React.Suspense>
       )}
 

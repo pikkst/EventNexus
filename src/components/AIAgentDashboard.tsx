@@ -1231,9 +1231,11 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
     };
 
     try {
-      // 🚨 DEBUG ALERT #1: Show selected cities
+      // Debug: Selected cities
       const selectedIds = Array.from(selectedCities);
-      alert(`🔍 DEBUG #1: Selected Cities\n\nCount: ${selectedCities.size}\nFirst 3 IDs:\n${selectedIds.slice(0, 3).join('\n')}\n\nClick OK to continue...`);
+      if (import.meta.env.DEV) {
+        logger.log('Campaign cities selected', { count: selectedCities.size, sampleIds: selectedIds.slice(0, 3) });
+      }
       
       // Load ALL cities (including inactive ones if explicitly selected by user)
       const { data: allCities, error: citiesError } = await supabase
@@ -1247,16 +1249,18 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         return;
       }
       
-      // 🚨 DEBUG ALERT #2: Show Ukrainian cities from DB
+      // Debug: Ukrainian cities from DB
       const ukrainianCitiesFromDB = allCities.filter(c => c.country === 'Ukraine');
-      alert(`🔍 DEBUG #2: Ukrainian Cities from DB\n\nCount: ${ukrainianCitiesFromDB.length}\nFirst 3:\n${ukrainianCitiesFromDB.slice(0, 3).map(c => `${c.city_name}: ${c.city_id}`).join('\n')}`);
+      if (import.meta.env.DEV) {
+        logger.log('Ukrainian cities loaded', { count: ukrainianCitiesFromDB.length, sample: ukrainianCitiesFromDB.slice(0, 3).map(c => c.city_name) });
+      }
       
-      // 🚨 DEBUG ALERT #3: Test Set.has() for first Ukrainian city
-      if (ukrainianCitiesFromDB.length > 0) {
+      // Debug: Test city matching logic
+      if (import.meta.env.DEV && ukrainianCitiesFromDB.length > 0) {
         const testCity = ukrainianCitiesFromDB[0];
         const hasCheck = selectedCities.has(testCity.city_id);
         const hasStringCheck = selectedCities.has(String(testCity.city_id));
-        alert(`🔍 DEBUG #3: Set.has() Test\n\nCity: ${testCity.city_name}\nDB city_id: ${testCity.city_id}\nType: ${typeof testCity.city_id}\n\nSet.has(city_id): ${hasCheck}\nSet.has(String(city_id)): ${hasStringCheck}\n\nSelected IDs sample:\n${selectedIds.slice(0, 2).join('\n')}`);
+        logger.log('City matching test', { city: testCity.city_name, directMatch: hasCheck, stringMatch: hasStringCheck });
       }
       
       // Filter by selected cities if any are selected
@@ -1264,8 +1268,13 @@ ${data.error ? `\n⚠️ ${data.error}` : ''}
         ? allCities.filter(city => selectedCities.has(city.city_id))
         : allCities.filter(city => city.active);
       
-      // 🚨 DEBUG ALERT #4: Show final result
-      alert(`🔍 DEBUG #4: Filter Result\n\nCities to process: ${citiesToProcess.length}\nUkrainian cities matched: ${citiesToProcess.filter(c => c.country === 'Ukraine').length}`);
+      // Debug: Final filter results
+      if (import.meta.env.DEV) {
+        logger.log('Campaign cities filtered', { 
+          total: citiesToProcess.length, 
+          ukrainian: citiesToProcess.filter(c => c.country === 'Ukraine').length 
+        });
+      }
       
       if (citiesToProcess.length === 0) {
         alert('⚠️ No cities selected. Please select at least one city to run the pipeline.');

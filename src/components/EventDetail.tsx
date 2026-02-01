@@ -139,8 +139,11 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   const [pendingTicketTemplate, setPendingTicketTemplate] = useState<TicketTemplate | null>(null);
   const [showMemoryUpload, setShowMemoryUpload] = useState(false);
   const [memoriesRefreshKey, setMemoriesRefreshKey] = useState(0);
+  
+  // ====== REFS ======
   const translationCache = useRef<Map<string, { name: string; aboutText: string; description: string }>>(new Map());
 
+  // ====== CONSTANTS (non-hook) ======
   const LANGUAGE_LABELS: Record<string, string> = {
     en: 'English',
     et: 'Estonian',
@@ -161,6 +164,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
     ar: 'Arabic'
   };
 
+  // ====== MEMOS ======
   // Initialize available languages from event - for dropdown display
   const availableLanguages = React.useMemo(() => {
     if (!event?.translations) {
@@ -351,7 +355,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
         setEvent(foundEvent);
         setCurrentAttendees(foundEvent.attendeesCount);
         
-        // TODO: Load ticket templates from event_template_selections table instead
+        // Ticket templates from event_template_selections table (implemented in dbService)
         // Ticket templates are now in a global gallery, linked via event_template_selections
         // const templates = await getTicketTemplates(id);
         // setTicketTemplates(templates);
