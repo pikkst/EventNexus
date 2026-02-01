@@ -43,6 +43,8 @@ const loadSocialMediaService = () => import('../services/socialMediaService');
 const OrganizerScannerHub = React.lazy(() => import('./OrganizerScannerHub'));
 const PayoutsHistory = React.lazy(() => import('./PayoutsHistory'));
 const EnterpriseSuccessManager = React.lazy(() => import('./EnterpriseSuccessManager'));
+const DashboardMarketingTab = React.lazy(() => import('./DashboardMarketingTab'));
+const DashboardBrandingTab = React.lazy(() => import('./DashboardBrandingTab'));
 
 // ============================================
 // LOGGING & DIAGNOSTICS
@@ -1744,633 +1746,79 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
       )}
 
       {activeTab === 'marketing' && (
-        <div className="space-y-12 animate-in slide-in-from-bottom-4 duration-500">
-           {/* Free Tier Gate for Marketing Studio */}
-           {user.subscription_tier === 'free' ? (
-             <div className="max-w-4xl mx-auto text-center space-y-8">
-               <div className="w-32 h-32 bg-slate-900 rounded-[48px] flex items-center justify-center mx-auto border border-slate-800">
-                 <Megaphone size={48} className="text-indigo-400" />
-               </div>
-               <div className="space-y-4">
-                 <h2 className="text-5xl font-black tracking-tighter text-white">Marketing Studio</h2>
-                 <p className="text-xl text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">
-                   Let AI create platform-native ad campaigns for your events. Professional marketing materials generated in seconds.
-                 </p>
-               </div>
-               <div className="bg-slate-900 border border-slate-800 rounded-[48px] p-12 max-w-2xl mx-auto space-y-6">
-                 <div className="flex items-start gap-4">
-                   <Lock className="w-6 h-6 text-orange-400 shrink-0 mt-1" />
-                   <div className="text-left space-y-2">
-                     <h3 className="text-xl font-black text-white">Premium Feature</h3>
-                     <p className="text-slate-400 leading-relaxed">
-                       Marketing Studio is available for Pro, Premium, and Enterprise organizers. Upgrade to unlock AI-powered ad generation, social media content, and targeted campaigns.
-                     </p>
-                   </div>
-                 </div>
-                 <Link 
-                   to="/pricing"
-                   className="inline-flex items-center gap-3 px-8 py-5 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20"
-                 >
-                   <Zap className="w-4 h-4" /> View Pricing Plans
-                 </Link>
-               </div>
-             </div>
-           ) : (
-           <div className="space-y-8">
-              {/* Social Media Connection Banner */}
-              {connectedAccounts.length === 0 && !loadingAccounts && (
-                <div className="bg-gradient-to-r from-indigo-600/10 via-violet-600/10 to-pink-600/10 border border-indigo-500/30 rounded-[40px] p-8 shadow-2xl">
-                  <div className="flex flex-col md:flex-row items-center gap-6">
-                    <div className="flex-shrink-0">
-                      <div className="w-16 h-16 bg-indigo-600 rounded-[24px] flex items-center justify-center shadow-lg shadow-indigo-600/40">
-                        <Settings2 className="w-8 h-8 text-white" />
-                      </div>
-                    </div>
-                    <div className="flex-1 text-center md:text-left space-y-2">
-                      <h3 className="text-xl font-black text-white tracking-tight">Connect Your Social Media Accounts</h3>
-                      <p className="text-slate-300 font-medium leading-relaxed">
-                        To deploy AI-generated ads directly to Facebook, Instagram, LinkedIn, or Twitter, you need to connect your accounts first. Once connected, you can publish ads with a single click!
-                      </p>
-                    </div>
-                    <Link 
-                      to="/profile"
-                      className="flex-shrink-0 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all shadow-xl shadow-indigo-600/30 flex items-center gap-2"
-                    >
-                      <Link2 size={16} />
-                      Connect Now
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* Connected Accounts Summary */}
-              {connectedAccounts.length > 0 && (
-                <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 shadow-2xl">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="w-6 h-6 text-emerald-400" />
-                      <h3 className="text-xl font-black text-white">Connected Accounts</h3>
-                    </div>
-                    <Link 
-                      to="/profile"
-                      className="text-xs font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest flex items-center gap-2"
-                    >
-                      Manage
-                      <ExternalLink size={14} />
-                    </Link>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    {connectedAccounts.map((account, i) => {
-                      const platformIcons: any = {
-                        facebook: <Facebook size={16} />,
-                        instagram: <Instagram size={16} />,
-                        linkedin: <Linkedin size={16} />,
-                        twitter: <Twitter size={16} />
-                      };
-                      return (
-                        <div key={i} className="flex items-center gap-2 px-4 py-2 bg-slate-950 border border-slate-800 rounded-full">
-                          <div className="text-indigo-400">{platformIcons[account.platform]}</div>
-                          <span className="text-sm font-bold text-white capitalize">{account.platform}</span>
-                          <span className="text-xs text-slate-500">• {account.account_name}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-              <div className="lg:col-span-1 space-y-8">
-                 <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-10 space-y-8 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-600/10 rounded-full blur-[80px] -mr-24 -mt-24 pointer-events-none" />
-                    <div className="space-y-2">
-                       <h3 className="text-2xl font-black tracking-tighter text-white flex items-center gap-3"><Sparkles className="text-indigo-400" /> Marketing Studio</h3>
-                       <p className="text-slate-400 font-medium text-sm leading-relaxed">Let AI create your platform-native ad campaigns with specific targeting.</p>
-                    </div>
-
-                    <div className="space-y-6">
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Event to Promote</label>
-                          <select 
-                            value={selectedEventId || ''}
-                            onChange={(e) => setSelectedEventId(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-bold"
-                          >
-                             {events.map(ev => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
-                          </select>
-                       </div>
-                       
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Campaign Theme</label>
-                          <textarea
-                            value={campaignTheme}
-                            onChange={(e) => setCampaignTheme(e.target.value)}
-                            placeholder="Describe what you want to emphasize: VIP experience, limited tickets, early bird pricing, exclusive lineup, etc."
-                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-medium resize-none"
-                            rows={4}
-                          />
-                       </div>
-                       
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Target Audience</label>
-                          <select 
-                            value={campaignAudience}
-                            onChange={(e) => setCampaignAudience(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-bold"
-                          >
-                             <option value="general">General Audience</option>
-                             <option value="young-adults">Young Adults (18-30)</option>
-                             <option value="professionals">Professionals (30-50)</option>
-                             <option value="families">Families</option>
-                             <option value="students">Students</option>
-                             <option value="luxury">Luxury/VIP Seekers</option>
-                          </select>
-                       </div>
-
-                       <button 
-                         onClick={handleGenerateCampaign}
-                         disabled={isGeneratingAd}
-                         className="w-full bg-indigo-600 hover:bg-indigo-700 py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-xl shadow-indigo-600/20 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
-                         aria-label="Generate AI-powered ad campaign"
-                       >
-                          {isGeneratingAd ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : <><Sparkles size={18} aria-hidden="true" /> Generate Ads</>}
-                       </button>
-                    </div>
-                 </div>
-              </div>
-
-              <div className="lg:col-span-2 space-y-8">
-                 {adCampaign.length === 0 ? (
-                   <div className="h-full bg-slate-900/40 border-2 border-dashed border-slate-800 rounded-[48px] flex flex-col items-center justify-center p-12 text-center space-y-6">
-                      <Megaphone size={48} className="text-slate-700" />
-                      <div className="space-y-2">
-                         <h4 className="text-xl font-bold text-slate-500">Campaign Results</h4>
-                         <p className="text-sm text-slate-600 max-w-sm mx-auto">Generated ads will appear here with professional headlines and copy.</p>
-                      </div>
-                   </div>
-                 ) : (
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {adCampaign.map((ad, i) => (
-                        <div key={i} className="bg-slate-900 border border-slate-800 rounded-[40px] overflow-hidden flex flex-col shadow-2xl group">
-                           <div className="aspect-[16/9] relative overflow-hidden">
-                              <img src={ad.imageUrl} className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-[10s]" alt="" />
-                              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
-                              <div className="absolute top-4 left-4 bg-slate-950/80 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest text-indigo-400 border border-slate-800">
-                                 {ad.platform}
-                              </div>
-                           </div>
-                           <div className="p-8 space-y-4 flex-1 flex flex-col justify-between">
-                              <div className="space-y-2">
-                                 <h4 className="text-xl font-black text-white leading-tight tracking-tighter">{ad.headline}</h4>
-                                 <p className="text-sm text-slate-400 font-medium leading-relaxed line-clamp-3">{ad.bodyCopy}</p>
-                                 {ad.deployed && ad.deployedTo && (
-                                   <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                                     <CheckCircle size={14} />
-                                     <span>Published to {ad.deployedTo.charAt(0).toUpperCase() + ad.deployedTo.slice(1)}</span>
-                                   </div>
-                                 )}
-                              </div>
-                              <div className="flex gap-3 pt-4">
-                                 <button 
-                                   onClick={() => handleDeployAd(i)}
-                                   disabled={ad.deployed || ad.deploying}
-                                   className={`flex-1 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                                     ad.deployed ? 'bg-emerald-600 text-white cursor-not-allowed' : ad.deploying ? 'bg-slate-800 text-slate-500 cursor-wait' : 'bg-slate-800 hover:bg-slate-700 text-white'
-                                   }`}
-                                   aria-label={ad.deployed ? 'Ad already published' : 'Deploy ad to social media'}
-                                 >
-                                    {ad.deploying ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : ad.deployed ? <><CheckCircle size={12} aria-hidden="true" /> Published</> : <><CloudUpload size={12} aria-hidden="true" /> Deploy Ad</>}
-                                 </button>
-                                 <button 
-                                   onClick={() => handleGeneratePoster(ad)}
-                                   disabled={isGeneratingPoster}
-                                   className="p-4 bg-slate-950 border border-slate-800 hover:border-orange-600 rounded-xl text-slate-500 hover:text-orange-400 transition-all"
-                                   title="Generate printable poster with QR code"
-                                   aria-label="Generate printable poster with QR code"
-                                 >
-                                   {isGeneratingPoster ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Download size={14} aria-hidden="true" />}
-                                 </button>
-                                 <button 
-                                   onClick={() => handleShareAd(ad)}
-                                   className="p-4 bg-slate-950 border border-slate-800 rounded-xl text-slate-500 hover:text-white transition-all"
-                                   title="Copy event link"
-                                   aria-label="Copy event link to clipboard"
-                                 >
-                                   <Share2 size={14} aria-hidden="true" />
-                                 </button>
-                              </div>
-                           </div>
-                        </div>
-                      ))}
-                   </div>
-                 )}
-              </div>
-           </div>
-           </div>
-           )}
-        </div>
+        <React.Suspense fallback={
+          <div className="flex items-center justify-center h-96 bg-slate-900/40 border-2 border-dashed border-slate-800 rounded-[48px] m-4">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+              <p className="text-sm text-slate-400">Loading Marketing Studio...</p>
+            </div>
+          </div>
+        }>
+          <DashboardMarketingTab 
+            user={user}
+            events={events}
+            connectedAccounts={connectedAccounts}
+            loadingAccounts={loadingAccounts}
+            selectedEventId={selectedEventId}
+            setSelectedEventId={setSelectedEventId}
+            campaignTheme={campaignTheme}
+            setCampaignTheme={setCampaignTheme}
+            campaignAudience={campaignAudience}
+            setCampaignAudience={setCampaignAudience}
+            isGeneratingAd={isGeneratingAd}
+            handleGenerateCampaign={handleGenerateCampaign}
+            adCampaign={adCampaign}
+            handleDeployAd={handleDeployAd}
+            isGeneratingPoster={isGeneratingPoster}
+            handleGeneratePoster={handleGeneratePoster}
+            handleShareAd={handleShareAd}
+          />
+        </React.Suspense>
       )}
 
       {activeTab === 'branding' && (
-        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-           {/* Public URL Status - Prominent Display */}
-           <div className="p-6 bg-gradient-to-r from-emerald-500/10 to-purple-500/10 border border-emerald-500/30 rounded-2xl space-y-4">
-             <div className="flex items-center gap-3">
-               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-               <div>
-                 <div className="text-lg font-black text-white">Your Public Page is Live! 🎉</div>
-                 <div className="text-xs text-slate-400 mt-1">Share this link with your audience</div>
-               </div>
-             </div>
-             {(user.agencySlug || user.agency_slug) ? (
-               <div className="space-y-3">
-                 <div className="flex items-center gap-2 p-4 bg-slate-900/50 rounded-xl">
-                   <code className="flex-1 text-base text-purple-300 font-mono break-all">
-                     {window.location.origin}/agency/{user.agencySlug || user.agency_slug}
-                   </code>
-                   <button 
-                     onClick={() => {
-                       navigator.clipboard.writeText(`${window.location.origin}/agency/${user.agencySlug || user.agency_slug}`);
-                       alert('✓ Link copied to clipboard!');
-                     }}
-                     className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-xs font-bold text-white transition-all flex items-center gap-2"
-                   >
-                     <Copy className="w-4 h-4" />
-                     Copy
-                   </button>
-                 </div>
-                 <Link 
-                   to={`/agency/${user.agencySlug || user.agency_slug}`}
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl text-white text-sm font-bold transition-all shadow-lg hover:shadow-xl"
-                 >
-                   <ExternalLink className="w-5 h-5" />
-                   Open Your Public Page
-                 </Link>
-               </div>
-             ) : (
-               <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
-                 <p className="text-sm text-yellow-300">⚠️ Configure your URL slug below to activate your public page</p>
-               </div>
-             )}
-           </div>
-
-           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-              {/* Left Form: Branded Identity */}
-              <div className="lg:col-span-1 space-y-6">
-                 <div className="bg-slate-900 border border-slate-800 rounded-[40px] p-8 space-y-8 shadow-2xl">
-                    <h3 className="text-2xl font-black text-white tracking-tighter flex items-center gap-3"><Palette className="text-indigo-400" /> Shard Editor</h3>
-                    
-                    <div className="space-y-6">
-                       {/* URL Slug Configuration */}
-                       <div className="space-y-2">
-                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Public URL Slug</label>
-                         <div className="space-y-2">
-                           <div className="flex items-center gap-2">
-                             <span className="text-slate-500 text-sm">eventnexus.eu/agency/</span>
-                             <input 
-                               type="text" 
-                               value={tempSlug}
-                               onChange={(e) => {
-                                 const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
-                                 setTempSlug(slug);
-                               }}
-                               className="flex-1 px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-mono outline-none focus:border-indigo-500"
-                               placeholder="your-agency-name"
-                             />
-                           </div>
-                           <p className="text-[10px] text-slate-500 ml-1">Your unique URL path (letters, numbers, and dashes only)</p>
-                         </div>
-                       </div>
-                    
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Primary Brand Color</label>
-                          <div className="flex gap-4 items-center">
-                             <input type="color" value={tempBranding.primaryColor} onChange={(e) => setTempBranding({...tempBranding, primaryColor: e.target.value})} className="w-12 h-12 bg-transparent border-none cursor-pointer rounded-xl" />
-                             <span className="font-mono text-xs text-slate-400 font-bold uppercase">{tempBranding.primaryColor}</span>
-                          </div>
-                       </div>
-                       
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Landing Page Bio</label>
-                          <textarea 
-                            value={tempBio} 
-                            onChange={(e) => setTempBio(e.target.value)} 
-                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-medium min-h-[100px]"
-                            placeholder="Tell the world about your agency..."
-                          />
-                       </div>
-
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Agency Tagline</label>
-                          <input 
-                            type="text" 
-                            value={tempBranding.tagline} 
-                            onChange={(e) => setTempBranding({...tempBranding, tagline: e.target.value})} 
-                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-bold" 
-                            placeholder="Experience Orchestrators"
-                          />
-                       </div>
-
-                       <div className="pt-4 space-y-6 border-t border-slate-800">
-                          <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Featured Service Shards</h4>
-                          <div className="space-y-6">
-                             {tempBranding.services?.map((service) => (
-                                <div key={service.id} className="space-y-3 p-4 bg-slate-950/50 border border-slate-800 rounded-2xl">
-                                   <input 
-                                     type="text" 
-                                     value={service.name} 
-                                     onChange={(e) => handleUpdateService(service.id, 'name', e.target.value)}
-                                     placeholder="Service Name"
-                                     className="w-full bg-transparent font-black text-xs uppercase tracking-widest text-white outline-none focus:text-indigo-400"
-                                   />
-                                   <textarea 
-                                     value={service.desc} 
-                                     onChange={(e) => handleUpdateService(service.id, 'desc', e.target.value)}
-                                     placeholder="Service Description"
-                                     className="w-full bg-transparent text-xs text-slate-500 font-medium outline-none resize-none"
-                                     rows={2}
-                                   />
-                                </div>
-                             ))}
-                          </div>
-                       </div>
-
-                       {/* Additional Enterprise Settings */}
-                       <div className="pt-4 space-y-6 border-t border-slate-800">
-                          <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Extended About (Public Page)</h4>
-                          <textarea 
-                            value={tempBranding.about || ''}
-                            onChange={(e) => setTempBranding({...tempBranding, about: e.target.value})} 
-                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-medium min-h-[120px]"
-                            placeholder="Tell your story... What makes your events special? What's your mission? This will be displayed on your public landing page."
-                          />
-                          <p className="text-[10px] text-slate-500 ml-1">Rich description for public "About" section (defaults to bio if empty)</p>
-                       </div>
-
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Video Reel URL</label>
-                          <input 
-                            type="text" 
-                            value={tempBranding.videoReel || ''}
-                            onChange={(e) => setTempBranding({...tempBranding, videoReel: e.target.value})} 
-                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-mono" 
-                            placeholder="https://example.com/video.mp4"
-                          />
-                          <p className="text-[10px] text-slate-500 ml-1">Video URL for your agency showcase</p>
-                       </div>
-
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Custom Domain</label>
-                          <input 
-                            type="text" 
-                            value={tempBranding.customDomain || ''}
-                            onChange={(e) => setTempBranding({...tempBranding, customDomain: e.target.value})} 
-                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 text-sm font-mono" 
-                            placeholder="events.yourbrand.com"
-                          />
-                          <p className="text-[10px] text-slate-500 ml-1">Point your own domain to your landing page</p>
-                       </div>
-
-                       {/* Hero Type Selection */}
-                       <div className="pt-4 space-y-3 border-t border-slate-800">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hero Section Type</label>
-                          <div className="grid grid-cols-3 gap-3">
-                            {['image', 'video', 'slideshow'].map((type) => (
-                              <button
-                                key={type}
-                                onClick={() => setTempBranding({
-                                  ...tempBranding,
-                                  pageConfig: {
-                                    ...tempBranding.pageConfig,
-                                    heroType: type as 'image' | 'video' | 'slideshow'
-                                  }
-                                })}
-                                className={`px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
-                                  (tempBranding.pageConfig?.heroType || 'image') === type
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
-                                }`}
-                              >
-                                {type}
-                              </button>
-                            ))}
-                          </div>
-                       </div>
-
-                       {/* Page Sections Toggles */}
-                       <div className="pt-4 space-y-3 border-t border-slate-800">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Page Sections</label>
-                          <div className="grid grid-cols-2 gap-3">
-                            {[
-                              { key: 'showStats', label: 'Statistics Bar' },
-                              { key: 'showEventHighlights', label: 'Event Highlights' },
-                              { key: 'showTestimonials', label: 'Testimonials' },
-                              { key: 'showTeam', label: 'Team Section' },
-                              { key: 'showPartners', label: 'Partners Grid' },
-                              { key: 'showMediaCoverage', label: 'Media Coverage' }
-                            ].map(({ key, label }) => {
-                              const isEnabled = tempBranding.pageConfig?.[key as keyof typeof tempBranding.pageConfig] !== false;
-                              return (
-                                <button
-                                  key={key}
-                                  onClick={() => {
-                                    setTempBranding({
-                                      ...tempBranding,
-                                      pageConfig: {
-                                        ...tempBranding.pageConfig,
-                                        heroType: tempBranding.pageConfig?.heroType || 'image',
-                                        heroMedia: tempBranding.pageConfig?.heroMedia || '',
-                                        [key]: !isEnabled,
-                                        enableContactForm: tempBranding.pageConfig?.enableContactForm !== false,
-                                        enableNewsletter: tempBranding.pageConfig?.enableNewsletter !== false,
-                                        enableSocialSharing: tempBranding.pageConfig?.enableSocialSharing !== false,
-                                        enableVIPAccess: tempBranding.pageConfig?.enableVIPAccess || false,
-                                        customSections: tempBranding.pageConfig?.customSections || [],
-                                        layout: tempBranding.pageConfig?.layout || 'modern',
-                                        theme: tempBranding.pageConfig?.theme || 'dark'
-                                      }
-                                    });
-                                  }}
-                                  className={`px-4 py-3 rounded-xl text-xs font-bold transition-all ${
-                                    isEnabled
-                                      ? 'bg-emerald-600 text-white'
-                                      : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                       </div>
-
-                       {/* Interactive Features */}
-                       <div className="pt-4 space-y-3 border-t border-slate-800">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Interactive Features</label>
-                          <div className="space-y-2">
-                            <button
-                              onClick={() => setTempBranding({
-                                ...tempBranding,
-                                pageConfig: {
-                                  ...tempBranding.pageConfig,
-                                  enableContactForm: !tempBranding.pageConfig?.enableContactForm
-                                }
-                              })}
-                              className={`w-full px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                                tempBranding.pageConfig?.enableContactForm
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
-                              }`}
-                            >
-                              <span>Contact Form</span>
-                              <span className="text-[10px]">Allow visitors to send direct inquiries</span>
-                            </button>
-                            <button
-                              onClick={() => setTempBranding({
-                                ...tempBranding,
-                                pageConfig: {
-                                  ...tempBranding.pageConfig,
-                                  enableNewsletter: !tempBranding.pageConfig?.enableNewsletter
-                                }
-                              })}
-                              className={`w-full px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                                tempBranding.pageConfig?.enableNewsletter
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
-                              }`}
-                            >
-                              <span>Newsletter Signup</span>
-                              <span className="text-[10px]">Inner Circle email collection</span>
-                            </button>
-                            <button
-                              onClick={() => setTempBranding({
-                                ...tempBranding,
-                                pageConfig: {
-                                  ...tempBranding.pageConfig,
-                                  enableSocialSharing: !tempBranding.pageConfig?.enableSocialSharing
-                                }
-                              })}
-                              className={`w-full px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                                tempBranding.pageConfig?.enableSocialSharing
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800'
-                              }`}
-                            >
-                              <span>Social Media Sharing</span>
-                              <span className="text-[10px]">Show share buttons on public page</span>
-                            </button>
-                          </div>
-                       </div>
-
-                       {/* Media Upload Section */}
-                       <div className="pt-4 space-y-3 border-t border-slate-800">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hero Media Upload</label>
-                          <div className="space-y-2">
-                            <input 
-                              type="file" 
-                              accept="image/*,video/*"
-                              multiple={tempBranding.pageConfig?.heroType === 'slideshow'}
-                              onChange={async (e) => {
-                                const files = Array.from(e.target.files || []);
-                                if (files.length === 0) return;
-                                
-                                // Simple file upload placeholder - you can enhance this
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  const dataUrl = event.target?.result as string;
-                                  if (tempBranding.pageConfig?.heroType === 'slideshow') {
-                                    setTempBranding({
-                                      ...tempBranding,
-                                      pageConfig: {
-                                        ...tempBranding.pageConfig,
-                                        heroMedia: [
-                                          ...(Array.isArray(tempBranding.pageConfig?.heroMedia) ? tempBranding.pageConfig.heroMedia : []),
-                                          dataUrl
-                                        ]
-                                      }
-                                    });
-                                  } else {
-                                    setTempBranding({
-                                      ...tempBranding,
-                                      pageConfig: {
-                                        ...tempBranding.pageConfig,
-                                        heroMedia: dataUrl
-                                      }
-                                    });
-                                  }
-                                };
-                                reader.readAsDataURL(files[0]);
-                              }}
-                              className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 file:cursor-pointer"
-                            />
-                            <p className="text-[10px] text-slate-500 ml-1">
-                              Upload {tempBranding.pageConfig?.heroType === 'slideshow' ? 'multiple images' : tempBranding.pageConfig?.heroType === 'video' ? 'a video' : 'an image'} for your hero section
-                            </p>
-                          </div>
-                       </div>
-                    </div>
-
-                    <button 
-                      onClick={handleCommitBranding} 
-                      className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-xl bg-indigo-600 hover:bg-indigo-700 transition-all shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-3"
-                    >
-                      <CloudUpload size={18} /> Publish Agency Page
-                    </button>
-                 </div>
-              </div>
-
-              {/* Live Preview Column */}
-              <div className="lg:col-span-2 space-y-8">
-                 <div className="flex justify-between items-center px-4">
-                    <h3 className="text-2xl font-black text-white tracking-tighter">Live Shard Preview</h3>
-                    {(user.subscription_tier === 'pro' || user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') && user.agencySlug && (
-                      <Link to={`/org/${user.agencySlug}`} className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2 hover:underline">
-                         Open Public Site <ExternalLink size={12} />
-                      </Link>
-                    )}
-                 </div>
-                 
-                 <div className="bg-slate-900 border border-slate-800 rounded-[48px] overflow-hidden shadow-2xl relative min-h-[600px] pointer-events-none">
-                    <div className="h-56 relative overflow-hidden">
-                       <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${tempBranding.primaryColor}55, #0f172a)` }} />
-                       {tempBranding.bannerUrl && (
-                         <img src={tempBranding.bannerUrl} className="w-full h-full object-cover opacity-60 mix-blend-overlay" alt="" />
-                       )}
-                       <div className="absolute bottom-8 left-12">
-                          <p className="text-[8px] font-black text-white/40 uppercase tracking-[0.4em] mb-1">Previewing: {user.name}</p>
-                          <h4 className="text-5xl font-black text-white tracking-tighter leading-none">{user.name}</h4>
-                          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-3">{tempBranding.tagline || 'Experience Orchestrators'}</p>
-                       </div>
-                    </div>
-
-                    <div className="p-12 space-y-12">
-                       <div className="flex items-center gap-8">
-                          <img src={user.avatar} className="w-24 h-24 rounded-[32px] border-4 border-slate-900 -mt-24 relative z-10 shadow-2xl" alt="" />
-                          <p className="text-sm text-slate-400 font-medium leading-relaxed max-w-xl italic">"{tempBio}"</p>
-                       </div>
-                       
-                       <div className="grid grid-cols-2 gap-6">
-                          {tempBranding.services?.slice(0, 2).map((s) => (
-                             <div key={s.id} className="p-6 bg-slate-950 border border-slate-800 rounded-3xl space-y-2">
-                                <h5 className="font-black text-[10px] uppercase tracking-widest text-white">{s.name}</h5>
-                                <p className="text-[10px] text-slate-500 font-medium leading-relaxed">{s.desc}</p>
-                             </div>
-                          ))}
-                       </div>
-
-                       <div className="h-px bg-slate-800 w-full" />
-                       
-                       <div className="grid grid-cols-2 gap-6">
-                          <div className="py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white text-center" style={{ backgroundColor: tempBranding.primaryColor }}>Follow Movement</div>
-                          <div className="py-5 rounded-2xl bg-slate-950 border border-slate-800 font-black text-xs uppercase tracking-widest text-slate-500 text-center">Contact Shard</div>
-                       </div>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
+        <React.Suspense fallback={
+          <div className="flex items-center justify-center h-96 bg-slate-900/40 border-2 border-dashed border-slate-800 rounded-[48px] m-4">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+              <p className="text-sm text-slate-400">Loading White-Labeling Studio...</p>
+            </div>
+          </div>
+        }>
+          <DashboardBrandingTab
+            user={user}
+            isEnterprise={isEnterprise}
+            tempSlug={tempSlug}
+            setTempSlug={setTempSlug}
+            tempBio={tempBio}
+            setTempBio={setTempBio}
+            tempBranding={tempBranding}
+            setTempBranding={setTempBranding}
+            handleUpdateService={handleUpdateService}
+            handleCommitBranding={handleCommitBranding}
+          />
+      {activeTab === 'branding' && (
+        <React.Suspense fallback={
+          <div className="flex items-center justify-center h-96 bg-slate-900/40 border-2 border-dashed border-slate-800 rounded-[48px] m-4">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+              <p className="text-sm text-slate-400">Loading White-Labeling Studio...</p>
+            </div>
+          </div>
+        }>
+          <DashboardBrandingTab
+            user={user}
+            isEnterprise={isEnterprise}
+            tempSlug={tempSlug}
+            setTempSlug={setTempSlug}
+            tempBio={tempBio}
+            setTempBio={setTempBio}
+            tempBranding={tempBranding}
+            setTempBranding={setTempBranding}
+            handleUpdateService={handleUpdateService}
+            handleCommitBranding={handleCommitBranding}
+          />
+        </React.Suspense>
       )}
 
       {activeTab === 'affiliate' && (
