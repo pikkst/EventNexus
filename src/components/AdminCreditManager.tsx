@@ -14,20 +14,26 @@ import {
   Filter,
   TrendingUp,
   Calendar,
+  Percent,
   CheckCircle,
   XCircle,
   AlertCircle
 } from 'lucide-react';
 import {
   generatePromoCodes,
+  generateSubscriptionDiscountCodes,
   getAllPromoCodes,
+  getAllSubscriptionDiscountCodes,
   getPromoCodeStats,
   updatePromoCodeStatus,
+  updateSubscriptionDiscountCodeStatus,
   deletePromoCode,
+  deleteSubscriptionDiscountCode,
   adminGrantCredits,
   getAllCreditTransactions,
   getUsers,
   PromoCode,
+  SubscriptionDiscountCode,
   CreditTransaction
 } from '../services/dbService';
 import { User } from '../types';
@@ -37,8 +43,9 @@ interface AdminCreditManagerProps {
 }
 
 const AdminCreditManager: React.FC<AdminCreditManagerProps> = ({ user }) => {
-  const [activeTab, setActiveTab] = useState<'grant' | 'generate' | 'codes' | 'transactions'>('grant');
+  const [activeTab, setActiveTab] = useState<'grant' | 'generate' | 'codes' | 'discounts' | 'transactions'>('grant');
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const [subscriptionDiscountCodes, setSubscriptionDiscountCodes] = useState<SubscriptionDiscountCode[]>([]);
   const [codeStats, setCodeStats] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -58,6 +65,19 @@ const AdminCreditManager: React.FC<AdminCreditManagerProps> = ({ user }) => {
   const [validUntil, setValidUntil] = useState('');
   const [codeCount, setCodeCount] = useState('1');
   const [codePrefix, setCodePrefix] = useState('');
+
+  // Subscription Discount Codes Form
+  const [discountTier, setDiscountTier] = useState<'pro' | 'premium' | 'enterprise' | 'any'>('pro');
+  const [discountPercent, setDiscountPercent] = useState('50');
+  const [discountDurationMonths, setDiscountDurationMonths] = useState('1');
+  const [discountMaxUses, setDiscountMaxUses] = useState('');
+  const [discountValidUntil, setDiscountValidUntil] = useState('');
+  const [discountCodeCount, setDiscountCodeCount] = useState('1');
+  const [discountCodePrefix, setDiscountCodePrefix] = useState('');
+
+  // Discount Filters
+  const [discountSearchTerm, setDiscountSearchTerm] = useState('');
+  const [discountFilterActive, setDiscountFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -80,13 +100,15 @@ const AdminCreditManager: React.FC<AdminCreditManagerProps> = ({ user }) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [codesData, statsData, transactionsData, usersData] = await Promise.all([
+      const [codesData, discountCodesData, statsData, transactionsData, usersData] = await Promise.all([
         getAllPromoCodes(),
+        getAllSubscriptionDiscountCodes(),
         getPromoCodeStats(),
         getAllCreditTransactions(),
         getUsers()
       ]);
       setPromoCodes(codesData);
+      setSubscriptionDiscountCodes(discountCodesData);
       setCodeStats(statsData);
       setTransactions(transactionsData);
       setUsers(usersData);
@@ -181,6 +203,59 @@ const AdminCreditManager: React.FC<AdminCreditManagerProps> = ({ user }) => {
     }
   };
 
+  const handleGenerateSubscriptionDiscountCodes = async () => {
+    const percentOff = parseInt(discountPercent);
+    const durationMonths = parseInt(discountDurationMonths);
+    const count = parseInt(discountCodeCount);
+    const uses = discountMaxUses ? parseInt(discountMaxUses) : undefined;
+
+    if (isNaN(percentOff) || percentOff <= 0 || percentOff > 100) {
+      showMessage('error', 'Percent off must be between 1 and 100');
+      return;
+    }
+
+    if (isNaN(durationMonths) || durationMonths < 1 || durationMonths > 12) {
+      showMessage('error', 'Duration must be between 1 and 12 months');
+      return;
+    }
+
+    if (isNaN(count) || count <= 0 || count > 100) {
+      showMessage('error', 'Count must be between 1 and 100');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const codes = await generateSubscriptionDiscountCodes({
+        tier: discountTier,
+        percentOff,
+        durationMonths,
+        maxUses: uses,
+        validUntil: discountValidUntil || undefined,
+        count,
+        prefix: discountCodePrefix || undefined
+      });
+
+      if (codes.length > 0) {
+        showMessage('success', `Successfully generated ${codes.length} discount codes`);
+        setDiscountPercent('50');
+        setDiscountDurationMonths('1');
+        setDiscountMaxUses('');
+        setDiscountValidUntil('');
+        setDiscountCodeCount('1');
+        setDiscountCodePrefix('');
+        loadData();
+      } else {
+        showMessage('error', 'Failed to generate discount codes');
+      }
+    } catch (error) {
+      console.error('Error generating subscription discount codes:', error);
+      showMessage('error', 'Failed to generate discount codes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleToggleCodeStatus = async (codeId: string, currentStatus: boolean) => {
     setLoading(true);
     try {
@@ -194,6 +269,24 @@ const AdminCreditManager: React.FC<AdminCreditManagerProps> = ({ user }) => {
     } catch (error) {
       console.error('Error updating code:', error);
       showMessage('error', 'Failed to update code status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleDiscountCodeStatus = async (codeId: string, currentStatus: boolean) => {
+    setLoading(true);
+    try {
+      const success = await updateSubscriptionDiscountCodeStatus(codeId, !currentStatus);
+      if (success) {
+        showMessage('success', `Discount code ${!currentStatus ? 'activated' : 'deactivated'}`);
+        loadData();
+      } else {
+        showMessage('error', 'Failed to update discount code status');
+      }
+    } catch (error) {
+      console.error('Error updating discount code:', error);
+      showMessage('error', 'Failed to update discount code status');
     } finally {
       setLoading(false);
     }
@@ -217,6 +310,40 @@ const AdminCreditManager: React.FC<AdminCreditManagerProps> = ({ user }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteDiscountCode = async (codeId: string) => {
+    if (!confirm('Are you sure you want to delete this discount code?')) return;
+
+    setLoading(true);
+    try {
+      const success = await deleteSubscriptionDiscountCode(codeId);
+      if (success) {
+        showMessage('success', 'Discount code deleted successfully');
+        loadData();
+      } else {
+        showMessage('error', 'Failed to delete discount code');
+      }
+    } catch (error) {
+      console.error('Error deleting discount code:', error);
+      showMessage('error', 'Failed to delete discount code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getFilteredDiscountCodes = () => {
+    return subscriptionDiscountCodes.filter(code => {
+      const matchesSearch = discountSearchTerm
+        ? code.code.toLowerCase().includes(discountSearchTerm.toLowerCase())
+        : true;
+      const matchesActive = discountFilterActive === 'all'
+        ? true
+        : discountFilterActive === 'active'
+          ? code.is_active
+          : !code.is_active;
+      return matchesSearch && matchesActive;
+    });
   };
 
   const exportCodes = () => {
@@ -322,6 +449,7 @@ const AdminCreditManager: React.FC<AdminCreditManagerProps> = ({ user }) => {
               { id: 'grant', label: 'Grant Credits', icon: Coins },
               { id: 'generate', label: 'Generate Codes', icon: Code },
               { id: 'codes', label: 'Manage Codes', icon: Gift },
+              { id: 'discounts', label: 'Subscription Discounts', icon: Percent },
               { id: 'transactions', label: 'Transactions', icon: TrendingUp }
             ].map(tab => (
               <button
@@ -654,6 +782,237 @@ const AdminCreditManager: React.FC<AdminCreditManagerProps> = ({ user }) => {
                   <p className="text-gray-600">No codes found</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Subscription Discounts Tab */}
+          {activeTab === 'discounts' && (
+            <div>
+              <div className="max-w-2xl mb-10">
+                <h2 className="text-lg font-semibold mb-4">Generate Subscription Discount Codes</h2>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tier
+                      </label>
+                      <select
+                        value={discountTier}
+                        onChange={(e) => setDiscountTier(e.target.value as any)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      >
+                        <option value="pro">Pro</option>
+                        <option value="premium">Premium</option>
+                        <option value="enterprise">Enterprise</option>
+                        <option value="any">Any Tier</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Percent Off
+                      </label>
+                      <input
+                        type="number"
+                        value={discountPercent}
+                        onChange={(e) => setDiscountPercent(e.target.value)}
+                        min="1"
+                        max="100"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Duration (months)
+                      </label>
+                      <input
+                        type="number"
+                        value={discountDurationMonths}
+                        onChange={(e) => setDiscountDurationMonths(e.target.value)}
+                        min="1"
+                        max="12"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Max Uses (optional)
+                      </label>
+                      <input
+                        type="number"
+                        value={discountMaxUses}
+                        onChange={(e) => setDiscountMaxUses(e.target.value)}
+                        min="1"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Number of Codes
+                      </label>
+                      <input
+                        type="number"
+                        value={discountCodeCount}
+                        onChange={(e) => setDiscountCodeCount(e.target.value)}
+                        min="1"
+                        max="100"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Valid Until (optional)
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={discountValidUntil}
+                        onChange={(e) => setDiscountValidUntil(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Code Prefix (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={discountCodePrefix}
+                      onChange={(e) => setDiscountCodePrefix(e.target.value.toUpperCase())}
+                      placeholder="e.g., LAUNCH"
+                      maxLength={10}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleGenerateSubscriptionDiscountCodes}
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Code className="w-5 h-5" />
+                    Generate Discount Codes
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold">Manage Discount Codes</h2>
+                </div>
+
+                <div className="flex gap-4 mb-6">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={discountSearchTerm}
+                        onChange={(e) => setDiscountSearchTerm(e.target.value)}
+                        placeholder="Search discount codes..."
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <select
+                    value={discountFilterActive}
+                    onChange={(e) => setDiscountFilterActive(e.target.value as any)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tier</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uses</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {getFilteredDiscountCodes().map(code => (
+                        <tr key={code.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-4">
+                            <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{code.code}</code>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="text-sm capitalize">{code.tier}</span>
+                          </td>
+                          <td className="px-4 py-4 text-sm">{code.percent_off}%</td>
+                          <td className="px-4 py-4 text-sm">{code.duration_months} month(s)</td>
+                          <td className="px-4 py-4 text-sm">
+                            {code.current_uses}/{code.max_uses || '∞'}
+                          </td>
+                          <td className="px-4 py-4">
+                            {code.is_active ? (
+                              <span className="inline-flex items-center gap-1 text-green-600 text-sm">
+                                <CheckCircle className="w-4 h-4" />
+                                Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-gray-600 text-sm">
+                                <XCircle className="w-4 h-4" />
+                                Inactive
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-sm">
+                            {code.valid_until ? new Date(code.valid_until).toLocaleDateString() : 'No expiry'}
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleToggleDiscountCodeStatus(code.id, code.is_active)}
+                                className="p-2 hover:bg-gray-100 rounded"
+                                title={code.is_active ? 'Deactivate' : 'Activate'}
+                              >
+                                {code.is_active ? (
+                                  <ToggleRight className="w-5 h-5 text-green-600" />
+                                ) : (
+                                  <ToggleLeft className="w-5 h-5 text-gray-500" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteDiscountCode(code.id)}
+                                className="p-2 hover:bg-gray-100 rounded"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-5 h-5 text-red-600" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {getFilteredDiscountCodes().length === 0 && (
+                  <div className="text-center py-12">
+                    <Code className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No discount codes found</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

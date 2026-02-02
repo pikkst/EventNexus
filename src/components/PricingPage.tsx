@@ -90,6 +90,7 @@ interface PricingPageProps {
 const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade, onOpenAuth }) => {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
 
   // Update SEO meta tags on mount
   useEffect(() => {
@@ -159,7 +160,8 @@ const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade, onOpenAuth }
       const checkoutUrl = await createSubscriptionCheckout(
         user.id,
         tier,
-        user.email
+        user.email,
+        promoCode.trim() || undefined
       );
 
       if (checkoutUrl) {
@@ -170,7 +172,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade, onOpenAuth }
       }
     } catch (error) {
       console.error('Subscription upgrade failed:', error);
-      alert('Failed to start checkout. Please try again or contact support.');
+      alert(error instanceof Error ? error.message : 'Failed to start checkout. Please try again or contact support.');
       setLoadingTier(null);
     }
   };
@@ -197,6 +199,22 @@ const PricingPage: React.FC<PricingPageProps> = ({ user, onUpgrade, onOpenAuth }
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white">
             Choose Your <span className="text-indigo-500">Nexus Journey</span>
           </h1>
+        </div>
+
+        <div className="max-w-md mx-auto mb-10">
+          <label className="block text-sm font-semibold text-slate-300 mb-2" htmlFor="promo-code">
+            Discount code (optional)
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              id="promo-code"
+              type="text"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              placeholder="Enter code"
+              className="flex-1 px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 items-start">

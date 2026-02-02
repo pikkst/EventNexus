@@ -4130,6 +4130,24 @@ export interface PromoCode {
   metadata: any;
 }
 
+export interface SubscriptionDiscountCode {
+  id: string;
+  code: string;
+  tier: 'pro' | 'premium' | 'enterprise' | 'any';
+  percent_off: number;
+  duration_months: number;
+  max_uses: number | null;
+  current_uses: number;
+  valid_from: string;
+  valid_until: string | null;
+  is_active: boolean;
+  stripe_coupon_id: string;
+  stripe_promotion_code_id: string;
+  created_by: string | null;
+  created_at: string;
+  metadata: any;
+}
+
 export interface CreditTransaction {
   id: string;
   user_id: string;
@@ -4178,6 +4196,33 @@ export const generatePromoCodes = async (params: {
   }
 };
 
+// Generate subscription discount codes (Admin only)
+export const generateSubscriptionDiscountCodes = async (params: {
+  tier: 'pro' | 'premium' | 'enterprise' | 'any';
+  percentOff: number;
+  durationMonths: number;
+  maxUses?: number;
+  validUntil?: string;
+  count?: number;
+  prefix?: string;
+}): Promise<SubscriptionDiscountCode[]> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-subscription-discounts', {
+      body: params
+    });
+
+    if (error) {
+      logger.error('Error generating subscription discount codes:', error);
+      return [];
+    }
+
+    return data?.codes || [];
+  } catch (error) {
+    logger.error('Error in generateSubscriptionDiscountCodes:', error);
+    return [];
+  }
+};
+
 // Get all promo codes (Admin only)
 export const getAllPromoCodes = async (): Promise<PromoCode[]> => {
   try {
@@ -4194,6 +4239,26 @@ export const getAllPromoCodes = async (): Promise<PromoCode[]> => {
     return data || [];
   } catch (error) {
     logger.error('Error in getAllPromoCodes:', error);
+    return [];
+  }
+};
+
+// Get all subscription discount codes (Admin only)
+export const getAllSubscriptionDiscountCodes = async (): Promise<SubscriptionDiscountCode[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('subscription_discount_codes')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      logger.error('Error fetching subscription discount codes:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    logger.error('Error in getAllSubscriptionDiscountCodes:', error);
     return [];
   }
 };
@@ -4241,6 +4306,29 @@ export const updatePromoCodeStatus = async (
   }
 };
 
+// Update subscription discount code status (Admin only)
+export const updateSubscriptionDiscountCodeStatus = async (
+  codeId: string,
+  isActive: boolean
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('subscription_discount_codes')
+      .update({ is_active: isActive })
+      .eq('id', codeId);
+
+    if (error) {
+      logger.error('Error updating subscription discount code:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    logger.error('Error in updateSubscriptionDiscountCodeStatus:', error);
+    return false;
+  }
+};
+
 // Delete promo code (Admin only)
 export const deletePromoCode = async (codeId: string): Promise<boolean> => {
   try {
@@ -4257,6 +4345,26 @@ export const deletePromoCode = async (codeId: string): Promise<boolean> => {
     return true;
   } catch (error) {
     logger.error('Error in deletePromoCode:', error);
+    return false;
+  }
+};
+
+// Delete subscription discount code (Admin only)
+export const deleteSubscriptionDiscountCode = async (codeId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('subscription_discount_codes')
+      .delete()
+      .eq('id', codeId);
+
+    if (error) {
+      logger.error('Error deleting subscription discount code:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    logger.error('Error in deleteSubscriptionDiscountCode:', error);
     return false;
   }
 };

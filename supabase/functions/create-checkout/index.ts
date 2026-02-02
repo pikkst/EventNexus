@@ -70,7 +70,7 @@ serve(async (req: Request) => {
       );
     }
 
-    const { userId, tier, priceId, customerEmail, eventId, ticketCount, lineItems, pricePerTicket, eventName, ticketTemplateId, ticketType, ticketName, successUrl, cancelUrl } = await req.json();
+    const { userId, tier, priceId, customerEmail, eventId, ticketCount, lineItems, pricePerTicket, eventName, ticketTemplateId, ticketType, ticketName, successUrl, cancelUrl, promoCode } = await req.json();
 
     // Validate required parameters
     if (!userId) {
@@ -137,30 +137,83 @@ serve(async (req: Request) => {
         throw new Error(`Subscription price not configured for tier: ${tier}. Please contact support or see STRIPE_PRODUCTS_SETUP.md`);
       }
       
-      const buildSession = async (custId: string) => stripe.checkout.sessions.create({
-        customer: custId,
-        payment_method_types: ['card'],
-        mode: 'subscription',
-        line_items: [
-          {
-            price: stripePriceId,
-            quantity: 1,
-          },
-        ],
-        success_url: successUrl + (successUrl.includes('?') ? '&' : '?') + 'session_id={CHECKOUT_SESSION_ID}',
-        cancel_url: cancelUrl,
-        metadata: {
+      const normalizedPromoCode = typeof promoCode === 'string' ? promoCode.trim().toUpperCase() : '';
+      let promoCodeRecord: any = null;
+
+      if (normalizedPromoCode) {
+        const { data: codeRecord, error: codeError } = await supabase
+          .from('subscription_discount_codes')
+          .select('*')
+          .eq('code', normalizedPromoCode)
+          .single();
+
+        if (codeError || !codeRecord) {
+          throw new Error('Invalid discount code');
+        }
+
+        const now = new Date();
+        const validFrom = new Date(codeRecord.valid_from);
+        const validUntil = codeRecord.valid_until ? new Date(codeRecord.valid_until) : null;
+
+        if (!codeRecord.is_active) {
+          throw new Error('Discount code is inactive');
+        }
+
+        if (validFrom > now || (validUntil && validUntil < now)) {
+          throw new Error('Discount code is expired');
+        }
+
+        if (codeRecord.max_uses !== null && codeRecord.current_uses >= codeRecord.max_uses) {
+          throw new Error('Discount code usage limit reached');
+        }
+
+        if (codeRecord.tier !== 'any' && codeRecord.tier !== tier) {
+          throw new Error('Discount code is not valid for this tier');
+        }
+
+        const stripePromo = await stripe.promotionCodes.retrieve(codeRecord.stripe_promotion_code_id);
+        if (!stripePromo?.active) {
+          throw new Error('Discount code is inactive in Stripe');
+        }
+
+        promoCodeRecord = codeRecord;
+      }
+
+      const buildSession = async (custId: string) => {
+        const metadata: Record<string, string> = {
           user_id: userId,
           tier: tier,
           type: 'subscription',
-        },
-        subscription_data: {
-          metadata: {
-            user_id: userId,
-            tier: tier,
+        };
+
+        if (promoCodeRecord) {
+          metadata.promo_code = promoCodeRecord.code;
+          metadata.promo_code_id = promoCodeRecord.id;
+        }
+
+        return stripe.checkout.sessions.create({
+          customer: custId,
+          payment_method_types: ['card'],
+          mode: 'subscription',
+          line_items: [
+            {
+              price: stripePriceId,
+              quantity: 1,
+            },
+          ],
+          success_url: successUrl + (successUrl.includes('?') ? '&' : '?') + 'session_id={CHECKOUT_SESSION_ID}',
+          cancel_url: cancelUrl,
+          metadata,
+          subscription_data: {
+            metadata: {
+              user_id: userId,
+              tier: tier,
+              ...(promoCodeRecord ? { promo_code: promoCodeRecord.code, promo_code_id: promoCodeRecord.id } : {})
+            },
           },
-        },
-      });
+          discounts: promoCodeRecord ? [{ promotion_code: promoCodeRecord.stripe_promotion_code_id }] : undefined,
+        });
+      };
 
       try {
         session = await buildSession(customerId);

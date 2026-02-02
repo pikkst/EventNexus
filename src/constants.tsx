@@ -68,7 +68,7 @@ export const SUBSCRIPTION_TIERS = {
     livePolls: true,
     streamRecording: true,
     multiStreamSupport: true, // Stream to multiple platforms simultaneously
-    customBranding: true, // White-label streaming player
+    whiteLabeStreamingPlayer: true, // White-label streaming player
     advancedModeration: true, // AI-powered chat moderation
   }
 };

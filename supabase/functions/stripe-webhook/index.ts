@@ -294,6 +294,44 @@ serve(async (req: Request) => {
               stripe_subscription_id: session.subscription
             })
             .eq('id', metadata.user_id);
+
+          if (metadata.promo_code_id) {
+            const { data: discountCode, error: discountError } = await supabase
+              .from('subscription_discount_codes')
+              .select('id, current_uses, max_uses, percent_off, duration_months')
+              .eq('id', metadata.promo_code_id)
+              .single();
+
+            if (discountError) {
+              console.error('Error fetching subscription discount code:', discountError);
+            } else if (discountCode) {
+              const newUses = (discountCode.current_uses || 0) + 1;
+              const reachedLimit = discountCode.max_uses !== null && newUses >= discountCode.max_uses;
+
+              await supabase
+                .from('subscription_discount_codes')
+                .update({
+                  current_uses: newUses,
+                  is_active: reachedLimit ? false : true
+                })
+                .eq('id', discountCode.id);
+
+              await supabase
+                .from('subscription_discount_redemptions')
+                .insert({
+                  discount_code_id: discountCode.id,
+                  user_id: metadata.user_id,
+                  stripe_session_id: session.id,
+                  stripe_subscription_id: session.subscription || null,
+                  tier: metadata.tier,
+                  percent_off: discountCode.percent_off,
+                  duration_months: discountCode.duration_months,
+                  metadata: {
+                    promo_code: metadata.promo_code || null
+                  }
+                });
+            }
+          }
           
           // Record subscription payment in financial ledger
           await supabase.from('subscription_payments').insert({

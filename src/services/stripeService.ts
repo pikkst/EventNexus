@@ -29,7 +29,8 @@ const getStripePublicKey = async (): Promise<string> => {
 export const createSubscriptionCheckout = async (
   userId: string,
   tier: 'pro' | 'premium' | 'enterprise',
-  userEmail: string
+  userEmail: string,
+  promoCode?: string
 ): Promise<string | null> => {
   try {
     const publicKey = await getStripePublicKey();
@@ -47,6 +48,7 @@ export const createSubscriptionCheckout = async (
         userId,
         tier,
         customerEmail: userEmail,
+        promoCode: promoCode || undefined,
         successUrl: `${baseUrl}/dashboard?checkout=success`,
         cancelUrl: `${baseUrl}/pricing?checkout=cancelled`
       }
