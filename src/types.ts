@@ -161,6 +161,9 @@ export interface VenueLayout {
   updated_at?: string;
 }
 
+export type EventType = 'physical' | 'online' | 'hybrid';
+export type StreamingPlatform = 'youtube' | 'vimeo' | 'custom' | 'twitch' | 'zoom';
+
 export interface EventNexusEvent {
   id: string;
   name: string;
@@ -203,6 +206,22 @@ export interface EventNexusEvent {
   has_seating?: boolean; // Whether event uses venue seating/zone designer
   venue_layout_id?: string; // Reference to venue_layouts table
   venueLayout?: VenueLayout; // Populated venue layout data
+  
+  // 🎥 LIVE STREAMING SUPPORT (Premium/Enterprise tier feature)
+  is_online?: boolean; // Legacy flag for backward compatibility
+  event_type?: EventType; // Event delivery type: physical, online, or hybrid
+  streaming_url?: string; // Direct URL to live stream
+  streaming_platform?: StreamingPlatform; // Platform hosting the stream
+  streaming_embed_code?: string; // Full iframe/embed code for custom solutions
+  max_online_attendees?: number; // Maximum concurrent viewers (null = unlimited)
+  requires_registration?: boolean; // Require ticket/registration to view stream
+  stream_starts_at?: string; // Exact timestamp when live stream begins
+  stream_ends_at?: string; // Exact timestamp when live stream ends
+  replay_available?: boolean; // Whether recording will be available after stream
+  replay_url?: string; // URL to recorded stream
+  
+  // Populated with analytics data
+  liveStreamAnalytics?: LiveStreamAnalytics;
 }
 
 export interface PlatformCampaign {
@@ -1277,6 +1296,147 @@ export interface UserStats {
   total_reviews: number;
   communities_joined: number;
   updated_at: string;
+}
+
+// ============================================
+// Live Streaming & Online Events
+// ============================================
+
+export type ReactionType = 'like' | 'love' | 'clap' | 'fire' | 'wow' | 'laugh';
+export type ChatMessageType = 'text' | 'emoji' | 'question' | 'poll' | 'system';
+
+/**
+ * Live Stream Analytics
+ * Real-time metrics for live streaming events
+ */
+export interface LiveStreamAnalytics {
+  id: string;
+  event_id: string;
+  
+  // Viewer metrics
+  peak_concurrent_viewers: number;
+  total_unique_viewers: number;
+  average_watch_time_seconds: number;
+  total_watch_time_minutes: number;
+  current_viewers?: number; // Real-time current viewer count
+  
+  // Engagement metrics
+  chat_messages_count: number;
+  reactions_count: number;
+  questions_asked: number;
+  polls_responded: number;
+  
+  // Quality metrics
+  average_bitrate_kbps?: number;
+  buffering_incidents: number;
+  stream_uptime_percentage: number;
+  
+  // Geographic distribution
+  viewers_by_country?: Record<string, number>;
+  viewers_by_city?: Record<string, number>;
+  
+  // Timestamps
+  stream_started_at?: string;
+  stream_ended_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Live Stream Session
+ * Individual viewer session for concurrent tracking
+ */
+export interface LiveStreamSession {
+  id: string;
+  event_id: string;
+  user_id?: string;
+  
+  // Session data
+  session_token: string;
+  ip_address?: string;
+  user_agent?: string;
+  country?: string;
+  city?: string;
+  
+  // Viewing metrics
+  joined_at: string;
+  left_at?: string;
+  watch_duration_seconds: number;
+  is_active: boolean;
+  
+  // Quality tracking
+  buffering_events: number;
+  quality_changes: number;
+  
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Live Chat Message
+ * Real-time chat messages during live events
+ */
+export interface LiveChatMessage {
+  id: string;
+  event_id: string;
+  user_id?: string;
+  
+  // Message content
+  message: string;
+  message_type: ChatMessageType;
+  
+  // Moderation
+  is_pinned: boolean;
+  is_deleted: boolean;
+  is_highlighted: boolean;
+  deleted_by?: string;
+  deleted_at?: string;
+  
+  // Cached user data for performance
+  user_name?: string;
+  user_avatar?: string;
+  
+  created_at: string;
+}
+
+/**
+ * Live Poll
+ * Interactive polls during live events
+ */
+export interface LivePoll {
+  id: string;
+  event_id: string;
+  created_by: string;
+  
+  // Poll content
+  question: string;
+  options: Array<{
+    id: string;
+    text: string;
+    votes: number;
+  }>;
+  
+  // Settings
+  is_active: boolean;
+  allow_multiple_votes: boolean;
+  show_results_before_close: boolean;
+  
+  // Timing
+  created_at: string;
+  closes_at?: string;
+  closed_at?: string;
+}
+
+/**
+ * Live Reaction
+ * Real-time emoji reactions during live events
+ */
+export interface LiveReaction {
+  id: string;
+  event_id: string;
+  user_id?: string;
+  reaction_type: ReactionType;
+  created_at: string;
 }
 
 export interface PointsLedgerEntry {

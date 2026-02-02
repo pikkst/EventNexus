@@ -34,6 +34,8 @@ import BuddyMatching from './BuddyMatching';
 import VenueSeatSelector from './VenueSeatSelector';
 import EventMemoryUpload from './EventMemoryUpload';
 import EventMemoriesGallery from './EventMemoriesGallery';
+import LiveStreamPlayer from './LiveStreamPlayer';
+import LiveChat from './LiveChat';
 import { createTicketCheckout, checkCheckoutSuccess, clearCheckoutStatus, verifyCheckoutPayment } from '../services/stripeService';
 import { User, EventNexusEvent, TicketTemplate } from '../types';
 import { isEventExpired } from '../utils/eventUtils';
@@ -142,6 +144,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
   
   // ====== REFS ======
   const translationCache = useRef<Map<string, { name: string; aboutText: string; description: string }>>(new Map());
+  const [showLiveStream, setShowLiveStream] = useState(false);
 
   // ====== CONSTANTS (non-hook) ======
   const LANGUAGE_LABELS: Record<string, string> = {
@@ -801,6 +804,33 @@ const EventDetail: React.FC<EventDetailProps> = ({ user, onToggleFollow, onOpenA
                   <span className="font-semibold">{event.location.city}</span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Live Stream Section - For online and hybrid events */}
+      {(event.event_type === 'online' || event.event_type === 'hybrid') && event.streaming_url && (
+        <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Live Stream Player */}
+            <div className="lg:col-span-2">
+              <LiveStreamPlayer
+                eventId={event.id}
+                streamingUrl={event.streaming_url}
+                streamingPlatform={event.streaming_platform}
+                eventName={event.name}
+                isLive={event.is_live}
+              />
+            </div>
+            
+            {/* Live Chat */}
+            <div className="lg:col-span-1">
+              <LiveChat
+                eventId={event.id}
+                currentUser={user}
+                isOrganizer={user?.id === event.organizerId}
+              />
             </div>
           </div>
         </div>

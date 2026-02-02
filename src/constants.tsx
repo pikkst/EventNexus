@@ -36,7 +36,14 @@ export const SUBSCRIPTION_TIERS = {
     description: 'Ultimate power for professional agencies',
     featuredPlacement: true, // Featured on map
     affiliateTools: true, // Affiliate marketing
-    advancedAnalytics: true // Advanced metrics
+    advancedAnalytics: true, // Advanced metrics
+    // 🎥 LIVE STREAMING FEATURES
+    liveStreaming: true, // Can create online/hybrid events
+    maxConcurrentViewers: 500, // Maximum concurrent viewers per stream
+    streamingAnalytics: true, // Access to detailed streaming analytics
+    liveChat: true, // Live chat during streams
+    livePolls: true, // Interactive polls during streams
+    streamRecording: true, // Auto-record streams for replay
   },
   enterprise: { 
     maxEvents: Infinity, 
@@ -52,7 +59,17 @@ export const SUBSCRIPTION_TIERS = {
     whiteLabelDashboard: true, // White-labeled interface
     customLandingPage: true, // Personalized public web platform
     apiAccess: true, // Full API access
-    dedicatedManager: true // Personal success manager
+    dedicatedManager: true, // Personal success manager
+    // 🎥 ADVANCED LIVE STREAMING FEATURES
+    liveStreaming: true,
+    maxConcurrentViewers: null, // Unlimited concurrent viewers
+    streamingAnalytics: true,
+    liveChat: true,
+    livePolls: true,
+    streamRecording: true,
+    multiStreamSupport: true, // Stream to multiple platforms simultaneously
+    customBranding: true, // White-label streaming player
+    advancedModeration: true, // AI-powered chat moderation
   }
 };
 
