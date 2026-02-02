@@ -1401,6 +1401,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                   <li className="flex items-start gap-2 text-sm">
                     <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
                     <span className="text-slate-300">{details.welcomeCredits} welcome credits</span>
+                                  {details.liveStreaming && (
+                                    <li className="flex items-start gap-2 text-sm">
+                                      <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                                      <span className="text-slate-300">
+                                        🎥 Live streaming ({details.maxConcurrentViewers === null ? 'unlimited' : `${details.maxConcurrentViewers}`} viewers)
+                                      </span>
+                                    </li>
+                                  )}
+                                  {tier === 'premium' && (
+                                    <li className="flex items-start gap-2 text-sm">
+                                      <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                                      <span className="text-slate-300">Stream recording & polls</span>
+                                    </li>
+                                  )}
+                                  {tier === 'enterprise' && details.multiStreamSupport && (
+                                    <li className="flex items-start gap-2 text-sm">
+                                      <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                                      <span className="text-slate-300">Multi-platform streaming</span>
+                                    </li>
+                                  )}
                   </li>
                 )}
               </ul>

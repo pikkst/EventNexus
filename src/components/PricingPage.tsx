@@ -32,7 +32,8 @@ const PLANS = [
       'AI-powered event translations',
       'Public organizer profile page',
       'Social media auto-posting tools',
-      'Reduced platform fees (3%)'
+      'Reduced platform fees (3%)',
+      'Live chat & reactions'
     ],
     cta: 'Get Started with Pro',
     highlight: false,
@@ -48,8 +49,11 @@ const PLANS = [
       'Custom branded tickets & logos',
       'Deep analytics & insights',
       'Priority email support (24h)',
-      'Lowest platform fees (2.5%)',
-      'Affiliate program & referrals'
+      'Platform fees (2.5%)',
+      'Affiliate program & referrals',
+      '🎥 Live streaming (500 viewers)',
+      'Stream recording & analytics',
+      'Interactive polls & reactions'
     ],
     cta: 'Go Premium Elite',
     highlight: true,
@@ -66,7 +70,10 @@ const PLANS = [
       'Full REST API access',
       'Custom public agency page',
       'Your own branded domain URL',
-      'Best platform fees (1.5%)'
+      'Best platform fees (1.5%)',
+      '🎥 Unlimited live streaming',
+      'Multi-platform streaming support',
+      'AI chat moderation & analytics'
     ],
     cta: 'Launch Agency',
     highlight: false,
