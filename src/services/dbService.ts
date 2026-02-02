@@ -4207,8 +4207,18 @@ export const generateSubscriptionDiscountCodes = async (params: {
   prefix?: string;
 }): Promise<SubscriptionDiscountCode[]> => {
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      logger.error('No active session for generating discount codes');
+      return [];
+    }
+
     const { data, error } = await supabase.functions.invoke('generate-subscription-discounts', {
-      body: params
+      body: params,
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
     });
 
     if (error) {
