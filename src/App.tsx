@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { 
   Map as MapIcon, 
   PlusCircle, 
@@ -39,6 +39,7 @@ import {
 
 // Lightweight components - load immediately
 import LandingPage from './components/LandingPage';
+import LoginPage from './components/LoginPage';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import { DashboardSkeleton, PageSkeleton } from './components/LoadingSkeleton';
@@ -329,6 +330,17 @@ const App: React.FC = () => {
     } catch (e) {
       logger.warn('Failed to cache user data:', e);
     }
+  };
+
+  const handleOpenAuth = (returnUrl?: string) => {
+    if (typeof window === 'undefined') return;
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const target = returnUrl || currentPath;
+    const url = new URL('/login', window.location.origin);
+    if (target) {
+      url.searchParams.set('returnUrl', target);
+    }
+    window.location.assign(url.toString());
   };
 
   // Helper to cache notifications
@@ -878,7 +890,7 @@ const App: React.FC = () => {
 
   const handleToggleFollow = (organizerId: string) => {
     if (!user) {
-      setIsAuthModalOpen(true);
+      handleOpenAuth();
       return;
     }
     setUser(prev => {
@@ -936,7 +948,7 @@ const App: React.FC = () => {
           onMarkRead={handleMarkRead}
           onDelete={handleDeleteNotification}
           onLogout={handleLogout}
-          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onOpenAuth={() => handleOpenAuth()}
         />
         <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} user={user} />
         
@@ -944,27 +956,28 @@ const App: React.FC = () => {
           <ErrorBoundary>
             <Suspense fallback={<DashboardSkeleton />}>
               <Routes>
-              <Route path="/" element={<LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/browse" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} user={user} />} />
-              <Route path="/events" element={<PublicEventsBrowse onOpenAuth={() => setIsAuthModalOpen(true)} user={user} />} />
+              <Route path="/" element={<LandingPage user={user} onOpenAuth={() => handleOpenAuth('/')} />} />
+              <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+              <Route path="/browse" element={<PublicEventsBrowse onOpenAuth={() => handleOpenAuth('/browse')} user={user} />} />
+              <Route path="/events" element={<PublicEventsBrowse onOpenAuth={() => handleOpenAuth('/events')} user={user} />} />
               <Route path="/directory" element={<EventDirectory />} />
               <Route path="/directory/:category" element={<EventDirectory />} />
               <Route path="/events-in-:city" element={<CityLandingPage />} />
               <Route path="/data-source" element={<DataSourcePage />} />
-              <Route path="/host" element={<OrganizerHubPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/host" element={<OrganizerHubPage user={user} onOpenAuth={() => handleOpenAuth('/host')} />} />
               <Route path="/map" element={<HomeMap theme={mapTheme} onToggleTheme={handleToggleMapTheme} events={events} user={user} />} />
-              <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} onRefreshUser={handleRefreshUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/event/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/events/:id/edit" element={<EventEditPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/events/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <Navigate to="/login" state={{ returnUrl: '/create' }} replace />} />
+              <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <Navigate to="/login" state={{ returnUrl: '/create-event' }} replace />} />
+              <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : <Navigate to="/login" state={{ returnUrl: '/dashboard' }} replace />} />
+              <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} onRefreshUser={handleRefreshUser} /> : <Navigate to="/login" state={{ returnUrl: '/profile' }} replace />} />
+              <Route path="/event/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => handleOpenAuth()} />} />
+              <Route path="/events/:id/edit" element={user ? <EventEditPage user={user} onOpenAuth={() => handleOpenAuth()} /> : <Navigate to="/login" replace />} />
+              <Route path="/events/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => handleOpenAuth()} />} />
               <Route path="/scanner" element={<TicketScanner user={user} />} />
-              <Route path="/ticket" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/ticket/:id" element={user ? <TicketViewPage /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/live-map" element={user ? <LiveMapApp user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription_tier: t, subscription: t }) : null)} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/ticket" element={user ? <TicketViewPage /> : <Navigate to="/login" state={{ returnUrl: '/ticket' }} replace />} />
+              <Route path="/ticket/:id" element={user ? <TicketViewPage /> : <Navigate to="/login" state={{ returnUrl: `/ticket/${window.location.pathname.split('/').pop()}` }} replace />} />
+              <Route path="/live-map" element={user ? <LiveMapApp user={user} /> : <Navigate to="/login" state={{ returnUrl: '/live-map' }} replace />} />
+              <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription_tier: t, subscription: t }) : null)} onOpenAuth={() => handleOpenAuth('/pricing')} />} />
               <Route path="/mobile" element={<MobileAppsPage />} />
               <Route path="/beta" element={<BetaInvitation />} />
               <Route path="/beta-signup" element={<BetaInvitation />} />
@@ -972,23 +985,23 @@ const App: React.FC = () => {
               <Route path="/agency/:slug" element={<AgencyProfile user={user} onToggleFollow={handleToggleFollow} />} />
                 <Route path="/user/:username" element={<PublicUserProfile currentUser={user} />} />
                   <Route path="/feed" element={<EventFeed user={user} />} />
-              <Route path="/communities" element={<Communities user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/achievements" element={user ? <Achievements user={user} onOpenAuth={() => setIsAuthModalOpen(true)} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/communities" element={<Communities user={user} onOpenAuth={() => handleOpenAuth('/communities')} />} />
+              <Route path="/achievements" element={user ? <Achievements user={user} onOpenAuth={() => handleOpenAuth('/achievements')} /> : <Navigate to="/login" state={{ returnUrl: '/achievements' }} replace />} />
               <Route path="/blog" element={<BlogList />} />
-              <Route path="/blog/new" element={user ? <BlogPostEditor /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/blog/new" element={user ? <BlogPostEditor /> : <Navigate to="/login" state={{ returnUrl: '/blog/new' }} replace />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/press" element={<PressPage />} />
-              <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} supportUnread={supportUnread} onOpenSupport={() => setSupportDockOpenSignal((s) => s + 1)} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/admin/ai-agents" element={user?.role === 'admin' ? <AIAgentDashboard user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/redeem" element={user ? <CodeRedemption user={user} onCreditsUpdated={handleRefreshUser} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
-              <Route path="/help" element={<HelpCenter user={user || undefined} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} supportUnread={supportUnread} onOpenSupport={() => setSupportDockOpenSignal((s) => s + 1)} /> : <Navigate to="/login" replace />} />
+              <Route path="/admin/ai-agents" element={user?.role === 'admin' ? <AIAgentDashboard user={user} /> : <Navigate to="/login" replace />} />
+              <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <Navigate to="/login" replace />} />
+              <Route path="/redeem" element={user ? <CodeRedemption user={user} onCreditsUpdated={handleRefreshUser} /> : <Navigate to="/login" state={{ returnUrl: '/redeem' }} replace />} />
+              <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : <Navigate to="/login" replace />} />
+              <Route path="/help" element={<HelpCenter user={user || undefined} onOpenAuth={() => handleOpenAuth('/help')} />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/cookies" element={<CookieSettings />} />
               <Route path="/gdpr" element={<GDPRCompliance />} />
-              <Route path="/notifications" element={user ? <NotificationSettings user={user} onUpdatePrefs={handleUpdatePrefs} /> : <LandingPage user={user} onOpenAuth={() => setIsAuthModalOpen(true)} />} />
+              <Route path="/notifications" element={user ? <NotificationSettings user={user} onUpdatePrefs={handleUpdatePrefs} /> : <Navigate to="/login" state={{ returnUrl: '/notifications' }} replace />} />
               </Routes>
             </Suspense>
           </ErrorBoundary>

@@ -28,7 +28,11 @@ const EventEditPage: React.FC<EventEditPageProps> = ({ user, onOpenAuth }) => {
   useEffect(() => {
     const loadEvent = async () => {
       if (!id || !user) {
-        navigate('/');
+        if (onOpenAuth) {
+          onOpenAuth();
+        } else {
+          navigate('/login');
+        }
         return;
       }
 
@@ -67,7 +71,7 @@ const EventEditPage: React.FC<EventEditPageProps> = ({ user, onOpenAuth }) => {
     };
 
     loadEvent();
-  }, [id, user, navigate]);
+  }, [id, user, navigate, onOpenAuth]);
 
   const handleSave = async () => {
     if (!event || !user) return;
