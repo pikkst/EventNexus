@@ -17,8 +17,11 @@ CREATE POLICY "Anyone can view active events"
     TO public, anon, authenticated
     USING (
         status = 'active' 
-        OR organizer_id = auth.uid()
-        OR EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
+        AND (
+            visibility IN ('public', 'semi-private')
+            OR organizer_id = auth.uid()
+            OR EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
+        )
     );
 
 -- ============================================
