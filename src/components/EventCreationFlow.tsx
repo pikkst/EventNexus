@@ -1505,86 +1505,81 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 </div>
               </div>
               
-              {/* Location fields - only for physical and hybrid events */}
-              {(formData.event_type === 'physical' || formData.event_type === 'hybrid') && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-1.5">{t.create.step2.venueLabel}</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" aria-hidden="true" />
-                      <input 
-                        type="text" 
-                        aria-label={t.create.step2.venueLabel}
-                        aria-required="true"
-                        placeholder={t.create.step2.addressPlaceholder}
-                        value={formData.location}
-                        onChange={(e) => setFormData({...formData, location: e.target.value})}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            geocodeAddress(formData.location);
-                          }
-                        }}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-24 py-3 focus:border-indigo-500 outline-none" 
-                      />
-                      <button
-                        type="button"
-                        onClick={() => geocodeAddress(formData.location)}
-                        disabled={isGeocoding}
-                        aria-label={t.create.step2.searchButton}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
-                      >
-                        <Search className="w-3.5 h-3.5" aria-hidden="true" />
-                        {isGeocoding ? t.create.step2.searching : t.create.step2.searchButton}
-                      </button>
-                    </div>
-                    {formData.locationAddress && (
-                      <p className="text-xs text-slate-500 mt-1.5 pl-1">
-                        📍 {formData.locationAddress}
-                      </p>
-                    )}
-                  </div>
-                
-                  {/* Interactive Map Location Picker */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-slate-200">{t.create.step2.mapLabel}</label>
-                    <MapLocationPicker
-                      initialLat={formData.locationLat}
-                      initialLng={formData.locationLng}
-                      onLocationSelect={(lat, lng, address) => {
-                        setFormData(prev => ({
-                          ...prev,
-                          locationLat: lat,
-                          locationLng: lng,
-                          locationAddress: address || prev.locationAddress,
-                          locationCity: prev.locationCity
-                        }));
-                      }}
-                      isLoading={isGeocoding}
-                    />
-                    {formData.locationAddress && (
-                      <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
-                        📍 {formData.locationAddress}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-              
-              {/* Info message for online-only events */}
-              {formData.event_type === 'online' && (
-                <div className="p-4 bg-blue-950/20 border border-blue-900/50 rounded-2xl">
-                  <div className="flex items-start gap-3">
-                    <Globe className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h3 className="text-sm font-bold text-blue-400 mb-1">Online Event</h3>
-                      <p className="text-xs text-slate-400">
-                        This is an online-only event. No physical location is required. Attendees will access via the streaming link you provided.
-                      </p>
-                    </div>
-                  </div>
+              {/* Location fields - always required (organizer location for online events) */}
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1.5">
+                  {formData.event_type === 'online' ? 'Organizer Location' : t.create.step2.venueLabel}
+                </label>
+                {formData.event_type === 'online' && (
+                  <p className="text-xs text-slate-500 mb-2">
+                    📍 Enter your location as the event organizer (city/country). This helps attendees see where the event is hosted from.
+                  </p>
+                )}
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" aria-hidden="true" />
+                  <input 
+                    type="text" 
+                    aria-label={formData.event_type === 'online' ? 'Organizer Location' : t.create.step2.venueLabel}
+                    aria-required="true"
+                    placeholder={formData.event_type === 'online' ? 'e.g., Tallinn, Estonia' : t.create.step2.addressPlaceholder}
+                    value={formData.location}
+                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        geocodeAddress(formData.location);
+                      }
+                    }}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-24 py-3 focus:border-indigo-500 outline-none" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => geocodeAddress(formData.location)}
+                    disabled={isGeocoding}
+                    aria-label={t.create.step2.searchButton}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                  >
+                    <Search className="w-3.5 h-3.5" aria-hidden="true" />
+                    {isGeocoding ? t.create.step2.searching : t.create.step2.searchButton}
+                  </button>
                 </div>
-              )}
+                {formData.locationAddress && (
+                  <p className="text-xs text-slate-500 mt-1.5 pl-1">
+                    📍 {formData.locationAddress}
+                  </p>
+                )}
+              </div>
+            
+              {/* Interactive Map Location Picker */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-slate-200">
+                  {formData.event_type === 'online' ? 'Organizer Location on Map' : t.create.step2.mapLabel}
+                </label>
+                {formData.event_type === 'online' && (
+                  <p className="text-xs text-slate-500 mb-2">
+                    🌐 Select your location on the map. Online attendees will see where you're hosting from.
+                  </p>
+                )}
+                <MapLocationPicker
+                  initialLat={formData.locationLat}
+                  initialLng={formData.locationLng}
+                  onLocationSelect={(lat, lng, address) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      locationLat: lat,
+                      locationLng: lng,
+                      locationAddress: address || prev.locationAddress,
+                      locationCity: prev.locationCity
+                    }));
+                  }}
+                  isLoading={isGeocoding}
+                />
+                {formData.locationAddress && (
+                  <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                    📍 {formData.locationAddress}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         );

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-02-04T09:05:55.914Z -->
+<!-- Last generated: 2026-02-04T09:17:09.768Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Core Platform Pages (Public & AI-crawlable) -->
   <url>
@@ -1288,6 +1288,21 @@
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/73d6c9dc-fdf4-4fa5-aa65-972c49df2485</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-04T09:14:10.645977+00:00</news:publication_date>
+      <news:title>ELAV DIALOOG: Natalja Kapajeva (Live Dialogue: Natalja Kapajeva)</news:title>
+      <news:keywords>Art/Culture</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/361a9f4b-11ef-447a-adaa-b66729ae7811</loc>
@@ -2661,6 +2676,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/067a700d-fa6c-46e4-8b07-3edc266b31d2</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-04T09:14:25.963746+00:00</news:publication_date>
+      <news:title>Põks-Põiks Party</news:title>
+      <news:keywords>Children&apos;s Activity/Dance</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/d6ad3cc8-7416-44e9-a250-71a3c8dd1f66</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -3330,6 +3360,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/adfb4dda-4eb7-46d3-bead-5e1a3c4c3d9e</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-04T09:14:38.742359+00:00</news:publication_date>
+      <news:title>Loeng “Soome-ugri müütide saladused” (Lecture &quot;Secrets of Finno-Ugric Myths&quot;)</news:title>
+      <news:keywords>Lecture/Culture</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/50a5de92-5d65-4444-abc1-846c91b227d0</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -3661,6 +3706,21 @@
     <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/62a36fd2-1131-45cd-947d-73fe9d379e68</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-04T09:07:38.61355+00:00</news:publication_date>
+      <news:title>Karini töötuba – karbi kaunistamine (Karin&apos;s Workshop - Box Decoration)</news:title>
+      <news:keywords>Workshop</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/544dcea8-0d17-4a41-b502-4f0db521e895</loc>
@@ -4929,6 +4989,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/24bdcf89-a617-48a5-9b35-606a9fafe28c</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-04T09:07:49.219957+00:00</news:publication_date>
+      <news:title>Vestlusõhtu Sekspositiiviga (Conversation Evening with Sexpositiiv)</news:title>
+      <news:keywords>Conversation Evening</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/1b2e9b76-8884-4d76-ab53-e40491367969</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>weekly</changefreq>
@@ -5817,6 +5892,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/e5c3cc8f-73a0-4444-b115-accaa7374d4d</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-04T09:12:39.799235+00:00</news:publication_date>
+      <news:title>Eesti suurim süda 2026. aastal on Maardus (Estonia&apos;s Biggest Heart in 2026 is in Maardu)</news:title>
+      <news:keywords>Community</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/dfb0a157-8eb2-4a69-961f-ced43d59c7a1</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
@@ -6406,42 +6496,6 @@
   </url>
   <url>
     <loc>https://eventnexus.eu/event/31d4d266-915f-4231-b509-19fc6508688a</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/e0873fab-fe2e-46ea-94bc-a2a68cbcf957</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f83b555f-dfc1-4225-a6d4-2de0ef91b73e</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/64493d42-8ccb-4330-9f4b-440fce16897c</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/c24bb267-787b-422a-b730-8ee38863c6ef</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/f1bcbaf2-839c-475d-8bb1-8a3472176aaf</loc>
-    <lastmod>2026-01-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://eventnexus.eu/event/e40a84f8-4795-4c69-8e44-f1154857d3ae</loc>
     <lastmod>2026-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
