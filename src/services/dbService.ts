@@ -42,6 +42,10 @@ const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
     aboutText: dbEvent.about_text || undefined,
     date: dbEvent.date,
     time: dbEvent.time || '',
+    event_type: dbEvent.event_type || 'physical',
+    streaming_url: dbEvent.streaming_url || undefined,
+    streaming_platform: dbEvent.streaming_platform || undefined,
+    max_online_attendees: dbEvent.max_online_attendees || undefined,
     location: location,
     price: dbEvent.price,
     visibility: dbEvent.visibility || 'public',
@@ -314,6 +318,10 @@ export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<E
     category: event.category,
     date: dateTimeISO, // Database expects TIMESTAMP WITH TIME ZONE
     time: event.time, // Keep original time string for display
+    event_type: event.event_type || 'physical',
+    streaming_url: event.streaming_url || null,
+    streaming_platform: event.streaming_platform || null,
+    max_online_attendees: event.max_online_attendees || null,
     location: event.location,
     price: event.price,
     visibility: event.visibility,

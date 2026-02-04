@@ -112,6 +112,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
             time: parsed.time || '',
             end_date: parsed.end_date || '',
             end_time: parsed.end_time || '',
+            event_type: parsed.event_type || 'physical',
+            streaming_url: parsed.streaming_url || '',
+            streaming_platform: parsed.streaming_platform || 'youtube',
+            max_online_attendees: parsed.max_online_attendees || null,
             location: parsed.location || '',
             locationLat: parsed.locationLat || 58.8934,
             locationLng: parsed.locationLng || 25.9659,
@@ -139,6 +143,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       time: '',
       end_date: '',
       end_time: '',
+      event_type: 'physical',
+      streaming_url: '',
+      streaming_platform: 'youtube',
+      max_online_attendees: null,
       location: '',
       locationLat: 58.8934,
       locationLng: 25.9659,
@@ -1018,6 +1026,10 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
         time: formData.time,
         end_date: formData.end_date || undefined,
         end_time: formData.end_time || undefined,
+        event_type: formData.event_type || 'physical',
+        streaming_url: (formData.event_type === 'online' || formData.event_type === 'hybrid') ? formData.streaming_url : undefined,
+        streaming_platform: (formData.event_type === 'online' || formData.event_type === 'hybrid') ? formData.streaming_platform as any : undefined,
+        max_online_attendees: (formData.event_type === 'online' || formData.event_type === 'hybrid') ? formData.max_online_attendees : undefined,
         location: {
           lat: formData.locationLat || 40.7128,
           lng: formData.locationLng || -74.0060,
@@ -1273,6 +1285,130 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                   ))}
                 </div>
               </div>
+              
+              {/* Event Type Selection */}
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1.5">Event Type</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button 
+                    onClick={() => setFormData({...formData, event_type: 'physical'})}
+                    aria-label="Physical event"
+                    aria-pressed={formData.event_type === 'physical'}
+                    className={`px-3 py-3 rounded-lg text-xs font-semibold border transition-all flex flex-col items-center gap-1 ${
+                      formData.event_type === 'physical' ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
+                    }`}
+                  >
+                    <MapPin className="w-5 h-5" />
+                    <span>Physical</span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') {
+                        setFormData({...formData, event_type: 'online'});
+                      } else {
+                        alert('🔒 Online events are available for Premium and Enterprise tiers only. Upgrade to unlock live streaming!');
+                      }
+                    }}
+                    aria-label="Online event"
+                    aria-pressed={formData.event_type === 'online'}
+                    disabled={user.subscription_tier !== 'premium' && user.subscription_tier !== 'enterprise'}
+                    className={`px-3 py-3 rounded-lg text-xs font-semibold border transition-all flex flex-col items-center gap-1 relative ${
+                      formData.event_type === 'online' ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed'
+                    }`}
+                  >
+                    <Globe className="w-5 h-5" />
+                    <span>Online</span>
+                    {(user.subscription_tier !== 'premium' && user.subscription_tier !== 'enterprise') && (
+                      <Crown className="w-3 h-3 absolute top-1 right-1 text-yellow-400" />
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (user.subscription_tier === 'premium' || user.subscription_tier === 'enterprise') {
+                        setFormData({...formData, event_type: 'hybrid'});
+                      } else {
+                        alert('🔒 Hybrid events are available for Premium and Enterprise tiers only. Upgrade to unlock live streaming!');
+                      }
+                    }}
+                    aria-label="Hybrid event"
+                    aria-pressed={formData.event_type === 'hybrid'}
+                    disabled={user.subscription_tier !== 'premium' && user.subscription_tier !== 'enterprise'}
+                    className={`px-3 py-3 rounded-lg text-xs font-semibold border transition-all flex flex-col items-center gap-1 relative ${
+                      formData.event_type === 'hybrid' ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed'
+                    }`}
+                  >
+                    <Zap className="w-5 h-5" />
+                    <span>Hybrid</span>
+                    {(user.subscription_tier !== 'premium' && user.subscription_tier !== 'enterprise') && (
+                      <Crown className="w-3 h-3 absolute top-1 right-1 text-yellow-400" />
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-slate-500 mt-1.5">
+                  {formData.event_type === 'physical' && '📍 In-person event with a physical location'}
+                  {formData.event_type === 'online' && '🌐 Online-only event via live stream (no physical location)'}
+                  {formData.event_type === 'hybrid' && '🔥 Both in-person and online attendance available'}
+                </p>
+              </div>
+              
+              {/* Streaming URL for Online/Hybrid */}
+              {(formData.event_type === 'online' || formData.event_type === 'hybrid') && (
+                <div className="p-4 bg-indigo-950/20 border border-indigo-900/50 rounded-2xl space-y-3">
+                  <div className="flex items-center gap-2 text-indigo-400">
+                    <Globe className="w-4 h-4" />
+                    <h3 className="text-sm font-bold">Live Streaming Setup</h3>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-1.5">Streaming Platform</label>
+                    <select
+                      value={formData.streaming_platform}
+                      onChange={(e) => setFormData({...formData, streaming_platform: e.target.value})}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
+                    >
+                      <option value="youtube">YouTube Live</option>
+                      <option value="vimeo">Vimeo</option>
+                      <option value="twitch">Twitch</option>
+                      <option value="zoom">Zoom</option>
+                      <option value="custom">Custom / Other</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-1.5">Stream URL</label>
+                    <input 
+                      type="url" 
+                      placeholder="https://youtube.com/watch?v=..."
+                      value={formData.streaming_url}
+                      onChange={(e) => setFormData({...formData, streaming_url: e.target.value})}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
+                    />
+                    <p className="text-xs text-slate-500 mt-1.5">Enter the direct link to your live stream</p>
+                  </div>
+                  
+                  {user.subscription_tier === 'premium' && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-400 mb-1.5">Max Concurrent Viewers</label>
+                      <input 
+                        type="number" 
+                        placeholder="500"
+                        value={formData.max_online_attendees || ''}
+                        onChange={(e) => setFormData({...formData, max_online_attendees: e.target.value ? parseInt(e.target.value) : null})}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 focus:border-indigo-500 outline-none"
+                      />
+                      <p className="text-xs text-slate-500 mt-1.5">Premium tier: up to 500 viewers. Leave empty for default limit.</p>
+                    </div>
+                  )}
+                  
+                  {user.subscription_tier === 'enterprise' && (
+                    <p className="text-xs text-green-400 flex items-center gap-1.5">
+                      <Rocket className="w-3 h-3" />
+                      Enterprise tier: Unlimited concurrent viewers
+                    </p>
+                  )}
+                </div>
+              )}
+              
               <div>
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="block text-sm font-medium text-slate-400">{t.create.step1.taglineLabel}</label>
@@ -1369,65 +1505,85 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                 </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1.5">{t.create.step2.venueLabel}</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" aria-hidden="true" />
-                  <input 
-                    type="text" 
-                    aria-label={t.create.step2.venueLabel}
-                    aria-required="true"
-                    placeholder={t.create.step2.addressPlaceholder}
-                    value={formData.location}
-                    onChange={(e) => setFormData({...formData, location: e.target.value})}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        geocodeAddress(formData.location);
-                      }
-                    }}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-24 py-3 focus:border-indigo-500 outline-none" 
-                  />
-                  <button
-                    type="button"
-                    onClick={() => geocodeAddress(formData.location)}
-                    disabled={isGeocoding}
-                    aria-label={t.create.step2.searchButton}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
-                  >
-                    <Search className="w-3.5 h-3.5" aria-hidden="true" />
-                    {isGeocoding ? t.create.step2.searching : t.create.step2.searchButton}
-                  </button>
+              {/* Location fields - only for physical and hybrid events */}
+              {(formData.event_type === 'physical' || formData.event_type === 'hybrid') && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-1.5">{t.create.step2.venueLabel}</label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" aria-hidden="true" />
+                      <input 
+                        type="text" 
+                        aria-label={t.create.step2.venueLabel}
+                        aria-required="true"
+                        placeholder={t.create.step2.addressPlaceholder}
+                        value={formData.location}
+                        onChange={(e) => setFormData({...formData, location: e.target.value})}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            geocodeAddress(formData.location);
+                          }
+                        }}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-24 py-3 focus:border-indigo-500 outline-none" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => geocodeAddress(formData.location)}
+                        disabled={isGeocoding}
+                        aria-label={t.create.step2.searchButton}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                      >
+                        <Search className="w-3.5 h-3.5" aria-hidden="true" />
+                        {isGeocoding ? t.create.step2.searching : t.create.step2.searchButton}
+                      </button>
+                    </div>
+                    {formData.locationAddress && (
+                      <p className="text-xs text-slate-500 mt-1.5 pl-1">
+                        📍 {formData.locationAddress}
+                      </p>
+                    )}
+                  </div>
+                
+                  {/* Interactive Map Location Picker */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-slate-200">{t.create.step2.mapLabel}</label>
+                    <MapLocationPicker
+                      initialLat={formData.locationLat}
+                      initialLng={formData.locationLng}
+                      onLocationSelect={(lat, lng, address) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          locationLat: lat,
+                          locationLng: lng,
+                          locationAddress: address || prev.locationAddress,
+                          locationCity: prev.locationCity
+                        }));
+                      }}
+                      isLoading={isGeocoding}
+                    />
+                    {formData.locationAddress && (
+                      <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                        📍 {formData.locationAddress}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+              
+              {/* Info message for online-only events */}
+              {formData.event_type === 'online' && (
+                <div className="p-4 bg-blue-950/20 border border-blue-900/50 rounded-2xl">
+                  <div className="flex items-start gap-3">
+                    <Globe className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="text-sm font-bold text-blue-400 mb-1">Online Event</h3>
+                      <p className="text-xs text-slate-400">
+                        This is an online-only event. No physical location is required. Attendees will access via the streaming link you provided.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                {formData.locationAddress && (
-                  <p className="text-xs text-slate-500 mt-1.5 pl-1">
-                    📍 {formData.locationAddress}
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            {/* Interactive Map Location Picker */}
-            <div>
-              <label className="block text-sm font-medium mb-2 text-slate-200">{t.create.step2.mapLabel}</label>
-              <MapLocationPicker
-                initialLat={formData.locationLat}
-                initialLng={formData.locationLng}
-                onLocationSelect={(lat, lng, address) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    locationLat: lat,
-                    locationLng: lng,
-                    locationAddress: address || prev.locationAddress,
-                    locationCity: prev.locationCity
-                  }));
-                }}
-                isLoading={isGeocoding}
-              />
-              {formData.locationAddress && (
-                <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
-                  📍 {formData.locationAddress}
-                </p>
               )}
             </div>
           </div>
