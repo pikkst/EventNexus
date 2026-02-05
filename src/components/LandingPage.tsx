@@ -52,6 +52,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
   const [visitorCountry, setVisitorCountry] = useState<string | null>(null);
   const [cityLinks, setCityLinks] = useState<Array<{ label: string; lat: number; lng: number }>>(DEFAULT_CITY_LINKS);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showIndiegogoPopup, setShowIndiegogoPopup] = useState(false);
 
   // SEO optimization for AI crawlers
   usePageSEO({
@@ -68,6 +69,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
     // Track landing page view
     trackLandingPageView();
   }, []);
+
+  // Show Indiegogo popup after 2 seconds on first visit
+  useEffect(() => {
+    const dismissed = sessionStorage.getItem('indiegogo_popup_dismissed');
+    if (dismissed !== 'true') {
+      const timer = setTimeout(() => {
+        setShowIndiegogoPopup(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleDismissIndiegogoPopup = () => {
+    sessionStorage.setItem('indiegogo_popup_dismissed', 'true');
+    setShowIndiegogoPopup(false);
+  };
 
   // Track scroll depth
   useEffect(() => {
@@ -321,8 +338,106 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
     }
   };
 
+  const indiegogoUrl = 'https://www.indiegogo.com/en/projects/eventnexus/eventnexus-the-global-ai-powered-event-map';
+
   return (
     <div className="space-y-24 pb-24">
+      {/* Indiegogo Launch Popup */}
+      {showIndiegogoPopup && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300"
+          style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(0, 0, 0, 0.75)' }}
+          onClick={handleDismissIndiegogoPopup}
+        >
+          <div 
+            className="relative max-w-2xl w-full bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border-2 border-orange-500/60 rounded-[32px] shadow-2xl shadow-orange-500/20 overflow-hidden animate-in zoom-in-95 duration-500"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Animated gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-rose-500/10 animate-pulse" style={{ animationDuration: '3s' }} />
+            
+            {/* Close button */}
+            <button
+              onClick={handleDismissIndiegogoPopup}
+              className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-slate-800/80 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-all"
+              aria-label="Close popup"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Content */}
+            <div className="relative z-10 p-8 md:p-12 space-y-6">
+              {/* Icon badge */}
+              <div className="flex justify-center">
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-500 to-rose-500 flex items-center justify-center shadow-2xl shadow-orange-500/40 border-4 border-slate-900">
+                  <TrendingUp className="w-10 h-10 text-white" strokeWidth={3} />
+                </div>
+              </div>
+
+              {/* Text content */}
+              <div className="text-center space-y-4">
+                <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/40 px-4 py-2 rounded-full">
+                  <Sparkles className="w-4 h-4 text-orange-300" />
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-orange-300">Launching Soon</span>
+                </div>
+                
+                <h2 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight">
+                  We're Launching on<br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-400 to-rose-400">
+                    Indiegogo Feb 13!
+                  </span>
+                </h2>
+                
+                <p className="text-lg md:text-xl text-slate-300 leading-relaxed max-w-xl mx-auto">
+                  Be among the first to support EventNexus and secure <span className="font-bold text-orange-400">Lifetime PRO access</span> at an exclusive early-bird price.
+                </p>
+
+                {/* Benefits list */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+                  <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50">
+                    <Trophy className="w-8 h-8 text-orange-400" />
+                    <span className="text-sm font-bold text-white">Early Access</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50">
+                    <Heart className="w-8 h-8 text-rose-400" />
+                    <span className="text-sm font-bold text-white">Lifetime PRO</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50">
+                    <Target className="w-8 h-8 text-amber-400" />
+                    <span className="text-sm font-bold text-white">Exclusive Price</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                <a
+                  href={indiegogoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => {
+                    trackCTAClick('indiegogo_popup_primary');
+                    handleDismissIndiegogoPopup();
+                  }}
+                  className="flex-1 inline-flex items-center justify-center gap-3 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-400 hover:to-rose-400 text-white px-8 py-5 rounded-2xl font-black text-lg shadow-2xl shadow-orange-500/40 transition-all transform hover:scale-105"
+                >
+                  Follow on Indiegogo
+                  <ExternalLink className="w-5 h-5" />
+                </a>
+                <button
+                  onClick={handleDismissIndiegogoPopup}
+                  className="sm:w-auto px-6 py-5 text-slate-400 hover:text-white font-bold transition-colors"
+                >
+                  Maybe Later
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Active Growth Campaign Banner */}
       {activeBanner && !user && (
         <section className="px-4">
