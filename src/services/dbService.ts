@@ -6328,45 +6328,51 @@ export const importMarketingProspects = async (csvContent: string, country: stri
     const dataRows = lines.slice(1); // Skip header
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    // Detect CSV format from header
-    const header = lines[0].toLowerCase();
-    const hasWebsiteColumn = header.includes('website');
-    
-    for (let i = 0; i < dataRows.length; i++) {
-      const row = dataRows[i].trim();
-      if (!row) continue;
-
-      // Parse CSV with quotes support - handles quoted fields with commas inside
+    const parseCsvRow = (row: string) => {
       const parts: string[] = [];
       let current = '';
       let inQuotes = false;
-      
+
       for (let j = 0; j < row.length; j++) {
         const char = row[j];
         const nextChar = row[j + 1];
-        
+
         if (char === '"' && (j === 0 || row[j - 1] === ',')) {
           inQuotes = true;
           continue;
         }
-        
+
         if (char === '"' && (nextChar === ',' || nextChar === undefined)) {
           inQuotes = false;
           continue;
         }
-        
+
         if (char === ',' && !inQuotes) {
           parts.push(current.trim());
           current = '';
           continue;
         }
-        
+
         current += char;
       }
-      
-      if (current) {
-        parts.push(current.trim());
-      }
+
+      parts.push(current.trim());
+      return parts;
+    };
+
+    // Detect CSV format from header
+    const header = lines[0].toLowerCase();
+    const headerParts = parseCsvRow(header).map((part) => part.trim().toLowerCase());
+    const hasHeaderFields = headerParts.includes('email') || headerParts.includes('e-mail');
+    const hasWebsiteColumn = headerParts.includes('website');
+    const hasCountryColumn = headerParts.includes('country');
+    const hasLocationColumn = headerParts.includes('location') || headerParts.includes('city');
+    
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i].trim();
+      if (!row) continue;
+
+      const parts = parseCsvRow(row);
       
       if (parts.length < 3) {
         results.errors.push(`Row ${i + 2}: Invalid format (missing required fields)`);
@@ -6374,19 +6380,45 @@ export const importMarketingProspects = async (csvContent: string, country: stri
         continue;
       }
 
-      // Support multiple CSV formats:
-      // Format 1 (old): Name, Website, Category, Email, Description, SourceUrl
-      // Format 2 (new): Name, Category, Email, Description
-      let name: string, website: string | null, category: string, email: string, description: string | null, sourceUrl: string | null;
-      
-      if (hasWebsiteColumn && parts.length >= 4) {
-        // Format 1: Name, Website, Category, Email, Description, SourceUrl
+      // Support multiple CSV formats with header-based mapping
+      let name: string, website: string | null, category: string, email: string, description: string | null, sourceUrl: string | null, rowCountry: string | null, location: string | null;
+
+      if (hasHeaderFields) {
+        const getField = (key: string) => {
+          const index = headerParts.indexOf(key);
+          return index >= 0 ? parts[index] : undefined;
+        };
+
+        name = getField('name') || getField('company') || parts[0];
+        website = getField('website') || null;
+        category = getField('category') || parts[hasWebsiteColumn ? 2 : 1];
+        email = getField('email') || getField('e-mail') || parts[hasWebsiteColumn ? 3 : 2];
+        description = getField('description') || null;
+        sourceUrl = getField('source') || getField('sourceurl') || null;
+        rowCountry = getField('country') || null;
+        location = getField('location') || getField('city') || null;
+      } else if (hasWebsiteColumn && parts.length >= 4) {
         [name, website, category, email, description = null, sourceUrl = null] = parts;
+        rowCountry = null;
+        location = null;
       } else {
-        // Format 2: Name, Category, Email, Description
         [name, category, email, description = null] = parts;
         website = null;
         sourceUrl = null;
+        rowCountry = null;
+        location = null;
+      }
+
+      if (hasCountryColumn && (!rowCountry || rowCountry.trim().length === 0)) {
+        results.errors.push(`Row ${i + 2}: Missing Country value`);
+        results.failed++;
+        continue;
+      }
+
+      if (hasLocationColumn && (!location || location.trim().length === 0)) {
+        results.errors.push(`Row ${i + 2}: Missing Location value`);
+        results.failed++;
+        continue;
       }
 
       // Validate email
@@ -6454,7 +6486,8 @@ export const importMarketingProspects = async (csvContent: string, country: stri
         'Morocco': 'ar', 'Algeria': 'ar', 'Tunisia': 'ar', 'Libya': 'ar', 'Sudan': 'ar',
         'Senegal': 'fr', 'Ivory Coast': 'fr', 'Cameroon': 'fr', 'Madagascar': 'fr'
       };
-      const language = languageMap[country] || 'en';
+      const resolvedCountry = rowCountry || country;
+      const language = languageMap[resolvedCountry] || 'en';
 
       // Insert prospect
       const { error } = await supabase
@@ -6465,11 +6498,12 @@ export const importMarketingProspects = async (csvContent: string, country: stri
           category,
           email: email.toLowerCase(),
           description: description || null,
-          country,
+          country: resolvedCountry,
           language,
           source_url: sourceUrl || null,
           status: 'new',
-          contact_count: 0
+          contact_count: 0,
+          metadata: location ? { location } : {}
         });
 
       if (error) {

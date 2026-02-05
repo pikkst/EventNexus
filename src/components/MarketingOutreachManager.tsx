@@ -59,6 +59,93 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
     loadData();
   }, [statusFilter, countryFilter]);
 
+  const getEetDateParts = () => {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/Tallinn',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(new Date());
+    const map = parts.reduce<Record<string, string>>((acc, part) => {
+      acc[part.type] = part.value;
+      return acc;
+    }, {});
+
+    return {
+      year: Number(map.year),
+      month: Number(map.month),
+      day: Number(map.day),
+      hour: Number(map.hour),
+      minute: Number(map.minute)
+    };
+  };
+
+  const getProspectType = (category: string) => {
+    const normalized = category.toLowerCase();
+    if (normalized.includes('festival')) return 'festival';
+    if (normalized.includes('mice') || normalized.includes('conference') || normalized.includes('convention') || normalized.includes('meetings')) {
+      return 'mice';
+    }
+    if (
+      normalized.includes('venue') ||
+      normalized.includes('arena') ||
+      normalized.includes('theatre') ||
+      normalized.includes('theater') ||
+      normalized.includes('concert') ||
+      normalized.includes('hall') ||
+      normalized.includes('stadium')
+    ) {
+      return 'venue';
+    }
+    return 'general';
+  };
+
+  const isTopProspect = (prospect: MarketingProspect) => {
+    const metadata = prospect.metadata as Record<string, any> | null;
+    return (
+      prospect.status === 'interested' ||
+      prospect.status === 'responded' ||
+      prospect.status === 'converted' ||
+      metadata?.top_list === true ||
+      metadata?.priority === 'top'
+    );
+  };
+
+  const getCampaignWindow = () => {
+    const { month, day, hour, minute } = getEetDateParts();
+    const isVipWindow = month === 2 && day >= 5 && day <= 10;
+    const isLaunchDay = month === 2 && day === 13 && (hour > 20 || (hour === 20 && minute >= 5));
+    return { isVipWindow, isLaunchDay };
+  };
+
+  const getTemplateByName = (matchers: string[]) => {
+    const normalizedMatchers = matchers.map(m => m.toLowerCase());
+    return templates.find(template =>
+      normalizedMatchers.some(matcher => template.name.toLowerCase().includes(matcher))
+    ) || null;
+  };
+
+  const getTemplateForProspect = (prospect: MarketingProspect) => {
+    const { isVipWindow, isLaunchDay } = getCampaignWindow();
+    if (isLaunchDay && isTopProspect(prospect)) {
+      return getTemplateByName(['launch day blast', 'launch day']) || getTemplateByName(['vip invitation']);
+    }
+    if (isVipWindow) {
+      return getTemplateByName(['vip invitation', 'vip']) || templates[0] || null;
+    }
+
+    const type = getProspectType(prospect.category);
+    if (type === 'venue' || type === 'mice') {
+      return getTemplateByName(['tech edge', 'tech']) || templates[0] || null;
+    }
+
+    return getTemplateByName(['vip invitation', 'vip']) || templates[0] || null;
+  };
+
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -135,8 +222,6 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
 
     setIsBulkSending(true);
     const selectedProspects = prospects.filter(p => selectedProspectIds.has(p.id));
-    const template = templates[0]; // Use first template
-    
     let successCount = 0;
     let failCount = 0;
 
@@ -146,6 +231,11 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
       setSendingProspectId(prospect.id);
 
       try {
+        const template = getTemplateForProspect(prospect);
+        if (!template) {
+          failCount++;
+          continue;
+        }
         const result = await generateOutreachEmail(
           {
             id: prospect.id,
@@ -153,7 +243,9 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
             email: prospect.email,
             category: prospect.category,
             description: prospect.description || undefined,
-            website: prospect.website || undefined
+            website: prospect.website || undefined,
+            country: prospect.country,
+            location: (prospect.metadata as Record<string, any> | null)?.location
           },
           {
             subject_template: template.subject_template,
@@ -224,7 +316,9 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
           email: prospect.email,
           category: prospect.category,
           description: prospect.description || undefined,
-          website: prospect.website || undefined
+            website: prospect.website || undefined,
+            country: prospect.country,
+            location: (prospect.metadata as Record<string, any> | null)?.location
         },
         {
           subject_template: template.subject_template,
@@ -654,7 +748,14 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
                             {templates.length > 0 && (
                               <>
                                 <button
-                                  onClick={() => handleGenerateEmail(prospect, templates[0], false)}
+                                  onClick={() => {
+                                    const template = getTemplateForProspect(prospect);
+                                    if (template) {
+                                      handleGenerateEmail(prospect, template, false);
+                                    } else {
+                                      alert('❌ No matching template found for current campaign window');
+                                    }
+                                  }}
                                   disabled={isGenerating || (isSending && sendingProspectId === prospect.id)}
                                   className="p-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg text-white transition-all"
                                   title="Generate AI email (draft)"
@@ -666,7 +767,14 @@ const MarketingOutreachManager: React.FC<MarketingOutreachManagerProps> = ({ use
                                   )}
                                 </button>
                                 <button
-                                  onClick={() => handleGenerateEmail(prospect, templates[0], true)}
+                                  onClick={() => {
+                                    const template = getTemplateForProspect(prospect);
+                                    if (template) {
+                                      handleGenerateEmail(prospect, template, true);
+                                    } else {
+                                      alert('❌ No matching template found for current campaign window');
+                                    }
+                                  }}
                                   disabled={isGenerating || isSending}
                                   className="p-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-lg text-white transition-all relative"
                                   title="Generate & Send email immediately"

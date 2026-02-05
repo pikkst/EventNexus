@@ -1130,6 +1130,8 @@ export const generateOutreachEmail = async (
     category: string;
     description?: string;
     website?: string;
+    country?: string;
+    location?: string;
   },
   template: {
     subject_template: string;

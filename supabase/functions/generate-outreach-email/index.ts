@@ -14,6 +14,8 @@ interface OutreachRequest {
     category: string;
     description?: string;
     website?: string;
+    country?: string;
+    location?: string;
   };
   template: {
     subject_template: string;
@@ -75,9 +77,60 @@ serve(async (req) => {
     const adminName = varMap['admin_name'] || 'Villu Künnap';
     const adminEmail = varMap['admin_email'] || 'villu@mail.eventnexus.eu';
     const adminPhone = varMap['admin_phone'] || '+372 5XXX XXXX';
+    const indiegogoUrl = varMap['indiegogo_url'] || 'https://www.indiegogo.com/projects/eventnexus/eventnexus-the-global-ai-powered-event-map';
+    const lifetimeSlots = varMap['enterprise_lifetime_slots'] || '30';
+    const lifetimePrice = varMap['enterprise_lifetime_price_eur'] || '950';
+    const launchDatetime = varMap['indiegogo_launch_datetime'] || 'February 13 at 20:00 (EET)';
 
     const totalUsers = stats?.find((s: any) => s.stat_key === 'total_users')?.stat_value || '5+';
     const totalEvents = stats?.find((s: any) => s.stat_key === 'total_events')?.stat_value || '1600+';
+    const canvaSeating = stats?.find((s: any) => s.stat_key === 'canva_seating_charts')?.stat_value || 'Canva-powered seating charts';
+    const liveStreaming = stats?.find((s: any) => s.stat_key === 'live_streaming')?.stat_value || 'Unlimited live streaming';
+    const prospectCountry = (prospect.country || '').toLowerCase();
+    const prospectLocation = (prospect.location || '').toLowerCase();
+    const isNorthAmerica = prospectCountry === 'united states' || prospectCountry === 'usa' || prospectCountry === 'canada';
+
+    const formatLocalLaunchDatetime = (timeZone: string) => {
+      const date = new Date('2026-02-13T20:00:00+02:00');
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZoneName: 'short'
+      });
+      const parts = formatter.formatToParts(date);
+      const map = parts.reduce<Record<string, string>>((acc, part) => {
+        acc[part.type] = part.value;
+        return acc;
+      }, {});
+      return `${map.month} ${map.day} at ${map.hour}:${map.minute} ${map.dayPeriod} ${map.timeZoneName}`;
+    };
+
+    const resolveNorthAmericaTimezone = () => {
+      const lookup = [
+        { match: ['los angeles', 'san francisco', 'seattle', 'portland', 'vancouver'], timeZone: 'America/Los_Angeles' },
+        { match: ['phoenix', 'denver', 'calgary', 'edmonton'], timeZone: 'America/Denver' },
+        { match: ['chicago', 'dallas', 'houston', 'austin', 'winnipeg'], timeZone: 'America/Chicago' },
+        { match: ['new york', 'boston', 'toronto', 'montreal', 'ottawa', 'miami', 'atlanta', 'philadelphia', 'washington'], timeZone: 'America/New_York' },
+        { match: ['halifax'], timeZone: 'America/Halifax' },
+        { match: ['st. john', "st john"], timeZone: 'America/St_Johns' }
+      ];
+
+      for (const item of lookup) {
+        if (item.match.some((keyword) => prospectLocation.includes(keyword))) {
+          return item.timeZone;
+        }
+      }
+
+      return 'America/New_York';
+    };
+
+    const launchDatetimeLocal = isNorthAmerica
+      ? formatLocalLaunchDatetime(resolveNorthAmericaTimezone())
+      : launchDatetime;
     const platformPhase = 'Beta Launch';
     const recentFeatures = changelog?.slice(0, 3).map((c: any) => `${c.title} (${c.version})`).join(', ') || 'AI-powered features';
     console.log('✅ Platform stats:', { totalUsers, totalEvents, features: recentFeatures });
@@ -194,6 +247,13 @@ serve(async (req) => {
       return acc;
     }, {});
 
+    const categoryLower = (prospect.category || '').toLowerCase();
+    const prospectType = categoryLower.includes('festival')
+      ? 'festival'
+      : (categoryLower.includes('venue') || categoryLower.includes('arena') || categoryLower.includes('theatre') || categoryLower.includes('theater') || categoryLower.includes('concert') || categoryLower.includes('hall') || categoryLower.includes('stadium') || categoryLower.includes('mice') || categoryLower.includes('conference') || categoryLower.includes('convention'))
+        ? 'venue'
+        : 'general';
+
     const prompt = `You are Villu Künnap, founder of EventNexus, writing a personalized B2B partnership email.
 
 **CRITICAL - NO LYING:**
@@ -210,6 +270,9 @@ serve(async (req) => {
   * ${platformFacts?.ai_translation_model || 'Gemini 3.0'} translation (${platformFacts?.languages_supported || '50+'} languages)
   * ${platformFacts?.ai_image_model || 'Imagen 3'} poster generation
   * AI-powered event descriptions and social media content
+- **Venue & streaming tools:**
+  * ${canvaSeating}
+  * ${liveStreaming}
 - **Technology stack:**
   * React ${platformFacts?.react_version || '19'} + TypeScript
   * ${platformFacts?.map_provider || 'PostGIS + OpenStreetMap'} for geospatial search
@@ -220,6 +283,11 @@ serve(async (req) => {
   * ${platformFacts?.total_users || '5+'} active users
   * ${platformFacts?.total_events || '1,600+'} events created
   * Global expansion underway (Indiegogo campaign)
+- **Indiegogo campaign constants (VERIFIED):**
+  * Launch: ${launchDatetimeLocal}
+  * Lifetime Enterprise spots: ${lifetimeSlots}
+  * Lifetime Enterprise price: EUR ${lifetimePrice}
+  * Campaign link: ${indiegogoUrl}
 - **Recent platform updates (VERIFIED):**
 ${changelog?.map((c: any) => `  * ${c.title} (${c.version}) - ${c.description}`).join('\n') || '  * AI-powered marketing tools and automation'}
 
@@ -244,6 +312,7 @@ ${prospect.country === 'Estonia' || language === 'et' ? `
 - Description: ${prospect.description || 'N/A'}
 - Website: ${prospect.website || 'N/A'}
 - Country: ${prospect.country || 'N/A'}
+- Location: ${prospect.location || 'N/A'}
 - Language: ${languageName}
 
 **Your Contact Info:**
@@ -255,6 +324,15 @@ ${prospect.country === 'Estonia' || language === 'et' ? `- WhatsApp: ${adminPhon
 
 **Template Strategy:**
 ${template.ai_prompt || 'Create a professional, value-focused partnership proposal'}
+
+**Skeleton Compliance (MANDATORY):**
+- Follow the provided Subject and Body templates as the primary structure
+- Keep key phrasing intact; only personalize placeholders and adapt minor wording for grammar
+- Do not add new sections beyond the template's intent
+
+**Timezone Rule (MANDATORY):**
+- If the prospect is based in North America, convert the launch time from EET to their local timezone
+- Use the local time in the email body (not EET)
 
 **Subject Template (adapt to context):**
 ${template.subject_template}
@@ -286,6 +364,10 @@ ${template.body_template}
   * If large venue/festival → emphasize ${platformFacts?.cost_savings || '80%'} cost savings (${platformFacts?.platform_fee_range || '1.5%-5%'} vs ${platformFacts?.industry_fee_avg || '10-15%'})
   * If tourism/international → emphasize global reach and ${platformFacts?.languages_supported || '50+'} language translation
   * If agency/corporate → emphasize AI marketing automation and time savings
+- Context rule (mandatory):
+  * If prospect is a venue → emphasize ${canvaSeating} and seating workflow
+  * If prospect is a festival → emphasize AI translation and global discovery
+  * Detected prospect type: ${prospectType}
 - Use concrete verified numbers from platform facts
 - Include 2-3 key benefits maximum (not a feature dump)
 - Low-pressure call-to-action:
@@ -377,14 +459,29 @@ ${adminPhone}
     let subject = parsed.subject || template.subject_template;
     let body = parsed.body || template.body_template;
 
+    const safeCountry = prospect.country || '';
+    const safeLocation = prospect.location || prospect.country || '';
+
     // Replace any remaining placeholders (shouldn't happen, but just in case)
     subject = subject.replace(/\{contactName\}/gi, '');
     subject = subject.replace(/\{senderName\}/gi, adminName);
     subject = subject.replace(/\{companyName\}/gi, prospect.name);
+    subject = subject.replace(/\{country\}/gi, safeCountry);
+    subject = subject.replace(/\{location\}/gi, safeLocation);
+    subject = subject.replace(/\{indiegogoUrl\}/gi, indiegogoUrl);
+    subject = subject.replace(/\{lifetimePrice\}/gi, lifetimePrice);
+    subject = subject.replace(/\{lifetimeSlots\}/gi, lifetimeSlots);
+    subject = subject.replace(/\{launchDatetime\}/gi, launchDatetimeLocal);
     body = body.replace(/\{contactName\}/gi, '');
     body = body.replace(/\{senderName\}/gi, adminName);
     body = body.replace(/\{companyName\}/gi, prospect.name);
     body = body.replace(/\{category\}/gi, prospect.category);
+    body = body.replace(/\{country\}/gi, safeCountry);
+    body = body.replace(/\{location\}/gi, safeLocation);
+    body = body.replace(/\{indiegogoUrl\}/gi, indiegogoUrl);
+    body = body.replace(/\{lifetimePrice\}/gi, lifetimePrice);
+    body = body.replace(/\{lifetimeSlots\}/gi, lifetimeSlots);
+    body = body.replace(/\{launchDatetime\}/gi, launchDatetimeLocal);
 
     console.log('✅ Final email ready');
 
