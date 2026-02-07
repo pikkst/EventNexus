@@ -497,6 +497,12 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       return;
     }
     
+    // Check API key
+    if (!process.env.GEMINI_API_KEY) {
+      alert('❌ Gemini API key not configured. Please add GEMINI_API_KEY to your environment variables.');
+      return;
+    }
+    
     setIsFetchingCities(true);
     setSuggestedCities([]);
     setSelectedCitiesForImport(new Set());
@@ -505,6 +511,10 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       // First normalize the country name to English to prevent duplicates
       const normalizedCountry = await normalizeCountryName(selectedCountryForBulk.trim());
       console.log(`🌍 Fetching ALL cities for ${normalizedCountry}...`);
+      
+      if (!normalizedCountry || normalizedCountry.length < 2) {
+        throw new Error(`Invalid country name: "${selectedCountryForBulk}". Please enter a valid country name.`);
+      }
       
       // Use Gemini to get ALL cities with coordinates
       const response = await fetch(
@@ -515,7 +525,31 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `List ALL cities in ${normalizedCountry} with their approximate coordinates and timezones. Include:\n- All major cities\n- All regional capitals\n- All significant towns with population over 5,000\n- All administrative centers\n\nReturn ONLY a JSON array with this exact structure (no markdown, no explanations):\n[{"city_name":"City","country":"${normalizedCountry}","latitude":12.34,"longitude":56.78,"timezone":"Region/City"}]\n\nEnsure:\n- Use English city names\n- Include capital and ALL significant cities\n- Provide accurate coordinates (latitude/longitude as numbers)\n- Use IANA timezone format (e.g., Europe/Berlin, America/New_York)\n- Return valid JSON only\n- Include as many cities as possible (aim for comprehensive coverage)`
+                text: `You are a geographic data API. Return ONLY valid JSON, no explanations, no markdown.
+
+Task: List ALL cities in ${normalizedCountry} with coordinates and timezones.
+
+Include:
+- All major cities
+- All regional capitals  
+- All significant towns with population over 5,000
+- All administrative centers
+
+Required JSON structure:
+[{"city_name":"CityName","country":"${normalizedCountry}","latitude":12.34,"longitude":56.78,"timezone":"Region/City"}]
+
+Rules:
+- Use English city names only
+- Include capital and ALL significant cities (aim for 20-100 cities minimum)
+- Provide accurate coordinates (latitude/longitude as decimal numbers, not strings)
+- Use IANA timezone format (e.g., Europe/Berlin, America/New_York)
+- Return ONLY the JSON array, no other text
+- Ensure valid JSON syntax
+
+Example for Estonia:
+[{"city_name":"Tallinn","country":"Estonia","latitude":59.437,"longitude":24.7536,"timezone":"Europe/Tallinn"},{"city_name":"Tartu","country":"Estonia","latitude":58.3806,"longitude":26.7225,"timezone":"Europe/Tallinn"}]
+
+Now return the JSON array for ${normalizedCountry}:`
               }]
             }],
             generationConfig: {
@@ -523,6 +557,7 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
               topK: 1,
               topP: 0.8,
               maxOutputTokens: 8192,
+              responseMimeType: "application/json"
             }
           })
         }
@@ -539,19 +574,53 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
         throw new Error('No response from Gemini AI');
       }
       
-      // Parse JSON from response (handle markdown code blocks)
+      console.log('🤖 Raw AI response (first 500 chars):', textContent.substring(0, 500));
+      
+      // Parse JSON from response (handle multiple formats)
       let citiesData;
       try {
-        // Remove markdown code blocks if present
-        const cleanedText = textContent.replace(/```json\n?|```\n?/g, '').trim();
+        // Try multiple extraction strategies
+        let cleanedText = textContent;
+        
+        // Strategy 1: Remove markdown code blocks
+        cleanedText = cleanedText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        
+        // Strategy 2: Extract JSON array if embedded in text
+        const jsonArrayMatch = cleanedText.match(/\[\s*\{[\s\S]*\}\s*\]/);
+        if (jsonArrayMatch) {
+          cleanedText = jsonArrayMatch[0];
+        }
+        
+        // Strategy 3: Remove any leading/trailing non-JSON text
+        const firstBracket = cleanedText.indexOf('[');
+        const lastBracket = cleanedText.lastIndexOf(']');
+        if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+          cleanedText = cleanedText.substring(firstBracket, lastBracket + 1);
+        }
+        
+        console.log('🧹 Cleaned text (first 300 chars):', cleanedText.substring(0, 300));
         citiesData = JSON.parse(cleanedText);
+        
       } catch (parseError) {
-        console.error('Failed to parse Gemini response:', textContent);
-        throw new Error('Invalid JSON response from AI. Please try again.');
+        console.error('❌ Failed to parse Gemini response:', parseError);
+        console.error('📄 Full response text:', textContent);
+        throw new Error(
+          `Invalid JSON response from AI. The AI returned text that couldn't be parsed as JSON. ` +
+          `Response preview: "${textContent.substring(0, 200)}..."`
+        );
       }
       
-      if (!Array.isArray(citiesData) || citiesData.length === 0) {
-        throw new Error('No cities found in AI response');
+      if (!Array.isArray(citiesData)) {
+        console.error('❌ Response is not an array:', typeof citiesData, citiesData);
+        throw new Error(`AI response is not a valid array. Got: ${typeof citiesData}`);
+      }
+      
+      if (citiesData.length === 0) {
+        throw new Error(
+          `No cities found in AI response for "${normalizedCountry}". ` +
+          `The AI might not recognize this country name. Try using the English name ` +
+          `(e.g., "Estonia" instead of "Eesti").`
+        );
       }
       
       // Validate and filter existing cities
@@ -604,8 +673,37 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
       );
       
     } catch (error: any) {
-      console.error('Failed to fetch cities:', error);
-      alert(`Failed to fetch cities: ${error.message}`);
+      console.error('❌ Failed to fetch cities:', error);
+      
+      // Provide user-friendly error message with guidance
+      let errorMessage = 'Failed to fetch cities for this country.\n\n';
+      
+      if (error.message?.includes('Invalid JSON') || error.message?.includes('not a valid array')) {
+        errorMessage += '🤖 AI Response Issue:\n' +
+          'The AI returned an unexpected response format.\n\n' +
+          'Try:\n' +
+          '1. Try again (sometimes AI responses vary)\n' +
+          '2. Use the English country name\n' +
+          '3. Check the browser console for details';
+      } else if (error.message?.includes('No cities found')) {
+        errorMessage += '🌍 Country Not Recognized:\n' +
+          `The AI couldn't find cities for "${selectedCountryForBulk}".\n\n` +
+          'Try:\n' +
+          '1. Use the official English name (e.g., "Estonia" not "Eesti")\n' +
+          '2. Check spelling\n' +
+          '3. Try a well-known city name from that country';
+      } else if (error.message?.includes('API error')) {
+        errorMessage += '🔑 API Connection Issue:\n' +
+          'Could not connect to Gemini AI.\n\n' +
+          'Check:\n' +
+          '1. Internet connection\n' +
+          '2. API key is valid\n' +
+          '3. Browser console for details';
+      } else {
+        errorMessage += `Error: ${error.message}`;
+      }
+      
+      alert(errorMessage);
       setSuggestedCities([]);
     } finally {
       setIsFetchingCities(false);
