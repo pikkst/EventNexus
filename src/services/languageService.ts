@@ -457,12 +457,10 @@ export const getCachedTranslation = async (
       .select('name, description, about_text')
       .eq('event_id', eventId)
       .eq('language_code', languageCode)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code !== 'PGRST116') { // Not found error
-        console.warn('Error fetching cached translation:', error);
-      }
+      // Silently ignore DB errors (table may not exist, RLS may block)
       return null;
     }
 
@@ -499,8 +497,13 @@ export const storeCachedTranslation = async (
   const cacheKey = getCacheKey(eventId, languageCode);
   translationCache.set(cacheKey, translation);
 
-  // Store in database cache asynchronously (don't block)
+  // Only persist to DB if user is authenticated (anon users get 401)
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return; // Skip DB write for anonymous users
+    }
+
     const { error } = await supabase
       .from('event_translations')
       .upsert({
@@ -514,12 +517,10 @@ export const storeCachedTranslation = async (
       });
 
     if (error) {
-      console.warn('Error storing translation in DB cache:', error);
-    } else {
-      console.log(`✅ Translation cached: ${eventId} -> ${languageCode}`);
+      // Silently ignore - translation is still in memory cache
     }
-  } catch (error) {
-    console.error('Error storing translation in DB cache:', error);
+  } catch {
+    // Silently ignore DB cache errors
   }
 };
 
@@ -559,7 +560,7 @@ export const batchGetCachedTranslations = async (
       .eq('language_code', languageCode);
 
     if (error) {
-      console.warn('Error batch fetching cached translations:', error);
+      // Silently ignore - DB cache is optional, translations will use AI
       return result;
     }
 

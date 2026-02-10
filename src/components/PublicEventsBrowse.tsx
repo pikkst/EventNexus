@@ -46,11 +46,13 @@ const PublicEventsBrowse: React.FC<PublicEventsBrowseProps> = ({ onOpenAuth, use
     const translateAllEvents = async () => {
       if (events.length === 0 || !userLanguage) return;
       
-      // Filter events that need translation (not in original language)
-      const eventsToTranslate = events.filter(e => e.original_language !== userLanguage);
+      // Skip translation if user language is English (most events are in English)
+      if (userLanguage === 'en') return;
+      
+      // Filter events that need translation (treat undefined original_language as 'en')
+      const eventsToTranslate = events.filter(e => (e.original_language || 'en') !== userLanguage);
       
       if (eventsToTranslate.length === 0) {
-        console.log('✅ All events already in user language, no translation needed');
         return;
       }
       

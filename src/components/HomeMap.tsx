@@ -475,7 +475,11 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
   useEffect(() => {
     const translateAllEvents = async () => {
       if (events.length === 0 || !userLanguage) {
-        console.log('⏭️ Skipping translation:', events.length === 0 ? 'no events' : 'no language');
+        return;
+      }
+      
+      // Skip translation entirely if user language is English (most events are in English)
+      if (userLanguage === 'en') {
         return;
       }
       
@@ -487,11 +491,8 @@ const HomeMap: React.FC<HomeMapProps> = ({ theme = 'dark', onToggleTheme, events
         console.warn('⚠️ Gemini initialization in HomeMap:', e);
       }
       
-      // Filter events that need translation (not in original language)
-      const eventsToTranslate = events.filter(e => e.original_language !== userLanguage);
-      
-      console.log(`📊 Translation check: ${events.length} total, ${eventsToTranslate.length} need translation to ${userLanguage}`);
-      console.log('Sample event original_language:', events[0]?.original_language, 'vs userLanguage:', userLanguage);
+      // Filter events that need translation (treat undefined original_language as 'en')
+      const eventsToTranslate = events.filter(e => (e.original_language || 'en') !== userLanguage);
       
       if (eventsToTranslate.length === 0) {
         console.log('✅ All events already in user language, no translation needed');
