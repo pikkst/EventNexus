@@ -57,6 +57,9 @@ const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
     isFeatured: dbEvent.is_featured || false,
     customBranding: dbEvent.custom_branding || undefined,
     translations: dbEvent.translations || undefined,
+    // Multi-day / end time fields
+    end_date: dbEvent.end_date || undefined,
+    end_time: dbEvent.end_time || undefined,
     // Venue seating fields
     has_seating: dbEvent.has_seating || false,
     venue_layout_id: dbEvent.venue_layout_id || undefined
@@ -66,37 +69,68 @@ const transformEventFromDB = (dbEvent: any): EventNexusEvent => {
 // Events - returns public and semi-private events (excludes only private)
 // Shows ALL events worldwide
 export const getEvents = async (): Promise<EventNexusEvent[]> => {
-  const { data, error } = await supabase
-    .from('events')
-    .select('*')
-    .eq('status', 'active')
-    .in('visibility', ['public', 'semi-private'])
-    .is('archived_at', null)
-    .order('date', { ascending: true });
-  
-  if (error) {
-    logger.error('Error fetching events:', error);
-    return [];
+  // Filter past events server-side to avoid Supabase 1000-row default limit
+  // cutting off future events when ordered by date ASC
+  const today = new Date().toISOString().split('T')[0];
+  const allData: any[] = [];
+  let from = 0;
+  const PAGE_SIZE = 1000;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('status', 'active')
+      .in('visibility', ['public', 'semi-private'])
+      .is('archived_at', null)
+      .gte('date', today)
+      .order('date', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) {
+      logger.error('Error fetching events:', error);
+      break;
+    }
+
+    if (!data || data.length === 0) break;
+    allData.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
   }
-  
-  return (data || []).map(transformEventFromDB);
+
+  return allData.map(transformEventFromDB);
 };
 
 // Get all events (for authenticated users, admins, etc.)
 export const getAllEvents = async (): Promise<EventNexusEvent[]> => {
-  const { data, error } = await supabase
-    .from('events')
-    .select('*')
-    .eq('status', 'active')
-    .is('archived_at', null)
-    .order('date', { ascending: true });
-  
-  if (error) {
-    logger.error('Error fetching all events:', error);
-    return [];
+  // Filter past events server-side to avoid Supabase 1000-row default limit
+  const today = new Date().toISOString().split('T')[0];
+  const allData: any[] = [];
+  let from = 0;
+  const PAGE_SIZE = 1000;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('status', 'active')
+      .is('archived_at', null)
+      .gte('date', today)
+      .order('date', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) {
+      logger.error('Error fetching all events:', error);
+      break;
+    }
+
+    if (!data || data.length === 0) break;
+    allData.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
   }
-  
-  return (data || []).map(transformEventFromDB);
+
+  return allData.map(transformEventFromDB);
 };
 
 // Get trending/featured events - popular events with good engagement
