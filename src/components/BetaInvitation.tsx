@@ -38,7 +38,7 @@ const BetaInvitation: React.FC = () => {
       }
 
       // Sign up user first
-      const signupResult = await signUpUser(email, password);
+      const signupResult = await signUpUser(email, password, email.split('@')[0]);
 
       if (signupResult.error) {
         setMessage({ type: 'error', text: signupResult.error.message || 'Signup failed' });

@@ -91,7 +91,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }) => {
       } else {
         // Registration flow
         logger.log('Attempting registration for:', email);
-        const { user: authUser, error: authError } = await signUpUser(email, password);
+        const { user: authUser, error: authError } = await signUpUser(email, password, fullName);
         
         logger.log('Registration response:', { user: authUser?.id, error: authError });
         

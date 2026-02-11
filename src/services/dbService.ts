@@ -770,6 +770,97 @@ export const getMonthlyLeaderboard = async (monthISO?: string): Promise<Leaderbo
 };
 
 // Users
+/**
+ * Robust helper to ensure a user profile exists in public.users.
+ * Tries multiple strategies: RPC function, then direct insert.
+ * This is called as a fallback when the DB trigger may have failed.
+ */
+export const ensureUserProfileExists = async (
+  userId: string, 
+  email?: string, 
+  name?: string,
+  avatar?: string
+): Promise<boolean> => {
+  try {
+    // Strategy 1: Check if profile already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+    
+    if (existingUser) {
+      logger.log('✅ User profile already exists:', userId.substring(0, 8) + '...');
+      return true;
+    }
+    
+    logger.log('⚠️ User profile missing, creating...', userId.substring(0, 8) + '...');
+    
+    // Strategy 2: Try the RPC function (SECURITY DEFINER, bypasses RLS)
+    try {
+      const { error: rpcError } = await supabase
+        .rpc('ensure_user_profile', { user_id: userId });
+      
+      if (!rpcError) {
+        logger.log('✅ User profile created via RPC');
+        return true;
+      }
+      logger.warn('⚠️ RPC ensure_user_profile failed:', rpcError.message);
+    } catch (rpcErr) {
+      logger.warn('⚠️ RPC call exception:', rpcErr);
+    }
+    
+    // Strategy 3: Direct insert as fallback
+    try {
+      const userName = name || email?.split('@')[0] || 'User';
+      const userAvatar = avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`;
+      const userEmail = email || '';
+      
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: userId,
+          email: userEmail,
+          name: userName,
+          avatar: userAvatar,
+          role: 'user',
+          subscription_tier: 'free',
+          credits: 100,
+          credits_balance: 100,
+          notification_prefs: {
+            proximityAlerts: true,
+            eventUpdates: true,
+            interestedCategories: [],
+            alertRadius: 10
+          },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          last_login: new Date().toISOString()
+        });
+      
+      if (!insertError) {
+        logger.log('✅ User profile created via direct insert');
+        return true;
+      }
+      
+      // If conflict (already exists), that's fine
+      if (insertError.code === '23505') {
+        logger.log('✅ User profile already exists (conflict on insert)');
+        return true;
+      }
+      
+      logger.error('❌ Direct insert failed:', insertError.message, insertError.code);
+    } catch (insertErr) {
+      logger.error('❌ Direct insert exception:', insertErr);
+    }
+    
+    return false;
+  } catch (err) {
+    logger.error('❌ ensureUserProfileExists failed:', err);
+    return false;
+  }
+};
+
 export const getUser = async (id: string): Promise<User | null> => {
   try {
     // Add timeout to prevent hanging - increased to 30 seconds due to slow DB
@@ -805,8 +896,8 @@ export const getUser = async (id: string): Promise<User | null> => {
     if (error) {
       logger.error('Error fetching user:', error.message, error.code);
     
-      // If user profile doesn't exist or RLS blocks access, try to ensure it exists
-      if (error.code === 'PGRST116' || error.code === '42501' || error.message?.includes('406')) {
+      // Try to ensure user profile exists on ANY error (trigger may have failed)
+      {
         logger.log('🔧 User profile missing or inaccessible, attempting to create via RPC...');
         
         try {
@@ -1295,7 +1386,7 @@ export const deleteNotification = async (id: string): Promise<boolean> => {
 };
 
 // Authentication helpers
-export const signUpUser = async (email: string, password: string) => {
+export const signUpUser = async (email: string, password: string, fullName?: string) => {
   // Get the current origin for email confirmation redirect
   const redirectUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/profile`
@@ -1312,6 +1403,20 @@ export const signUpUser = async (email: string, password: string) => {
   if (error) {
     logger.error('Error signing up:', error);
     return { user: null, error };
+  }
+  
+  // Ensure profile exists in public.users (trigger may have failed)
+  if (data.user) {
+    try {
+      await ensureUserProfileExists(
+        data.user.id,
+        email,
+        fullName || email.split('@')[0],
+        undefined
+      );
+    } catch (profileErr) {
+      logger.warn('⚠️ Profile creation after signup failed (will retry on login):', profileErr);
+    }
   }
   
   return { user: data.user, error: null };
