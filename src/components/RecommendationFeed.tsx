@@ -328,7 +328,7 @@ export const TrendingEventsSection: React.FC<{ onEventClick?: (event: EventNexus
                 </div>
               </div>
 
-              <p className="text-xs text-slate-400 mt-2">{event.location}</p>
+              <p className="text-xs text-slate-400 mt-2">{event.location?.address || event.location?.city || 'TBA'}</p>
 
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-700">
                 <span className="text-xs text-slate-300">{new Date(event.date).toLocaleDateString()}</span>

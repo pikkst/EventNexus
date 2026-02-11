@@ -42,7 +42,8 @@ const EventDirectory: React.FC<EventDirectoryProps> = ({ category, location }) =
       // Apply location filter if specified
       if (location) {
         filtered = filtered.filter(e => 
-          e.location?.toLowerCase().includes(location.toLowerCase()) ||
+          e.location?.address?.toLowerCase().includes(location.toLowerCase()) ||
+          e.location?.city?.toLowerCase().includes(location.toLowerCase()) ||
           e.country?.toLowerCase().includes(location.toLowerCase())
         );
       }
@@ -204,7 +205,7 @@ const EventDirectory: React.FC<EventDirectoryProps> = ({ category, location }) =
 
                     <div className="flex items-center gap-2 text-slate-400">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span className="line-clamp-1">{event.location || event.venue || 'TBA'}</span>
+                      <span className="line-clamp-1">{event.location?.address || event.location?.city || event.venue || 'TBA'}</span>
                     </div>
 
                     {event.category && (
