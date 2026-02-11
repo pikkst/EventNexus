@@ -44,7 +44,7 @@ import CreditsPricingModal from './CreditsPricingModal';
 import VenueDesignerModal from './VenueDesigner/VenueDesignerModal';
 import LayoutItem from './VenueDesigner/LayoutItem';
 import TemplateSelector from './Templates/TemplateSelector';
-import { saveEventTemplateSelections } from '../services/templateService';
+import { saveEventTemplateSelections, purchaseTemplate } from '../services/templateService';
 
 // Simple logger for debugging
 const logger = {
@@ -542,6 +542,57 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
     };
     refreshCredits();
   }, [user.id]);
+
+  // Handle template purchase with credits
+  const handleTemplatePurchase = async (templateId: string, creditPrice: number) => {
+    try {
+      const success = await deductUserCredits(user.id, creditPrice);
+      if (!success) {
+        alert('Failed to deduct credits. Please try again.');
+        return;
+      }
+      const purchased = await purchaseTemplate(
+        user.id,
+        'ticket',
+        templateId,
+        creditPrice
+      );
+      if (purchased) {
+        setUserCredits(prev => prev - creditPrice);
+        logger.log(`Template ${templateId} purchased for ${creditPrice} credits`);
+      } else {
+        alert('Failed to purchase template. Credits have been refunded.');
+      }
+    } catch (error) {
+      logger.error('Error purchasing template:', error);
+      alert('An error occurred while purchasing the template.');
+    }
+  };
+
+  const handleMarkerTemplatePurchase = async (templateId: string, creditPrice: number) => {
+    try {
+      const success = await deductUserCredits(user.id, creditPrice);
+      if (!success) {
+        alert('Failed to deduct credits. Please try again.');
+        return;
+      }
+      const purchased = await purchaseTemplate(
+        user.id,
+        'marker',
+        templateId,
+        creditPrice
+      );
+      if (purchased) {
+        setUserCredits(prev => prev - creditPrice);
+        logger.log(`Marker template ${templateId} purchased for ${creditPrice} credits`);
+      } else {
+        alert('Failed to purchase template. Credits have been refunded.');
+      }
+    } catch (error) {
+      logger.error('Error purchasing marker template:', error);
+      alert('An error occurred while purchasing the template.');
+    }
+  };
 
   // Get tier limits
   const tierLimits = SUBSCRIPTION_TIERS[user.subscription_tier];
@@ -1977,10 +2028,12 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                     <TemplateSelector
                       userId={user.id}
                       userTier={user.subscription_tier || 'free'}
+                      userCredits={userCredits}
                       templateType="ticket"
                       ticketType="standard"
                       selectedTemplateId={standardTicketTemplateId}
                       onSelect={setStandardTicketTemplateId}
+                      onPurchase={handleTemplatePurchase}
                       eventDetails={{
                         name: formData.name,
                         date: formData.date,
@@ -1996,10 +2049,12 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                       <TemplateSelector
                         userId={user.id}
                         userTier={user.subscription_tier || 'free'}
+                        userCredits={userCredits}
                         templateType="ticket"
                         ticketType="vip"
                         selectedTemplateId={vipTicketTemplateId}
                         onSelect={setVipTicketTemplateId}
+                        onPurchase={handleTemplatePurchase}
                         eventDetails={{
                           name: formData.name,
                           date: formData.date,
@@ -2016,9 +2071,11 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
                     <TemplateSelector
                       userId={user.id}
                       userTier={user.subscription_tier || 'free'}
+                      userCredits={userCredits}
                       templateType="marker"
                       selectedTemplateId={markerTemplateId}
                       onSelect={setMarkerTemplateId}
+                      onPurchase={handleMarkerTemplatePurchase}
                     />
                   </div>
                 </div>

@@ -3,7 +3,7 @@
  * Shows a preview of how a ticket will look with the selected template
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { QrCode, Calendar, MapPin, Clock, User } from 'lucide-react';
 import type { TicketTemplate } from '../../types';
 import { getTicketTemplateStyles, getTicketPatternClass } from '../../services/templateService';
@@ -31,6 +31,7 @@ export const TicketTemplatePreview: React.FC<TicketTemplatePreviewProps> = ({
 }) => {
   const styles = getTicketTemplateStyles(template);
   const patternClass = getTicketPatternClass(template);
+  const stableTicketId = useMemo(() => Math.random().toString(36).substr(2, 9).toUpperCase(), []);
 
   const sizeClasses = {
     small: 'w-64 p-3 text-xs',
@@ -97,7 +98,7 @@ export const TicketTemplatePreview: React.FC<TicketTemplatePreviewProps> = ({
         {/* Ticket Footer */}
         <div className="border-t pt-2 mt-3 opacity-60" style={{ borderColor: template.text_color }}>
           <p className="text-xs" style={{ color: template.text_color }}>
-            Ticket ID: #TKT-{Math.random().toString(36).substr(2, 9).toUpperCase()}
+            Ticket ID: #TKT-{stableTicketId}
           </p>
         </div>
 
@@ -111,8 +112,8 @@ export const TicketTemplatePreview: React.FC<TicketTemplatePreviewProps> = ({
       </div>
 
       {/* Template name label */}
-      <div className="mt-2 text-center text-sm text-gray-600">
-        {template.display_name.en}
+      <div className="mt-2 text-center text-sm text-slate-400">
+        {template.display_name?.en || template.name}
       </div>
     </div>
   );
