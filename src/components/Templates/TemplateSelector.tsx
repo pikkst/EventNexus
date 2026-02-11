@@ -6,8 +6,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Lock, ShoppingCart, Check, Sparkles } from 'lucide-react';
-import type { UserAvailableTemplate } from '../../types';
-import { getUserAvailableTicketTemplates, getUserAvailableMarkerTemplates } from '../../services/templateService';
+import type { UserAvailableTemplate, TicketTemplate } from '../../types';
+import { getUserAvailableTicketTemplates, getUserAvailableMarkerTemplates, getAllTicketTemplates } from '../../services/templateService';
 import { TicketTemplatePreview } from './TicketTemplatePreview';
 
 interface TemplateSelectorProps {
@@ -38,6 +38,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   language = 'en'
 }) => {
   const [templates, setTemplates] = useState<UserAvailableTemplate[]>([]);
+  const [fullTicketTemplates, setFullTicketTemplates] = useState<Map<string, TicketTemplate>>(new Map());
   const [loading, setLoading] = useState(true);
   const [hoveredTemplate, setHoveredTemplate] = useState<string | null>(null);
 
@@ -52,6 +53,14 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         ? await getUserAvailableTicketTemplates(userId)
         : await getUserAvailableMarkerTemplates(userId);
       setTemplates(data);
+
+      // Fetch full ticket template details for visual preview rendering
+      if (templateType === 'ticket') {
+        const allTemplates = await getAllTicketTemplates();
+        const templateMap = new Map<string, TicketTemplate>();
+        allTemplates.forEach(t => templateMap.set(t.id, t));
+        setFullTicketTemplates(templateMap);
+      }
     } catch (error) {
       console.error('Error loading templates:', error);
     } finally {
@@ -67,12 +76,13 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
   const getTierBadgeColor = (tier: string) => {
     switch (tier) {
-      case 'free': return 'bg-gray-100 text-gray-700';
-      case 'starter': return 'bg-blue-100 text-blue-700';
-      case 'pro': return 'bg-purple-100 text-purple-700';
-      case 'business': return 'bg-yellow-100 text-yellow-700';
-      case 'enterprise': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'free': return 'bg-slate-700 text-slate-300';
+      case 'starter': return 'bg-blue-900/50 text-blue-300';
+      case 'pro': return 'bg-purple-900/50 text-purple-300';
+      case 'premium': return 'bg-amber-900/50 text-amber-300';
+      case 'business': return 'bg-yellow-900/50 text-yellow-300';
+      case 'enterprise': return 'bg-red-900/50 text-red-300';
+      default: return 'bg-slate-700 text-slate-300';
     }
   };
 
@@ -117,15 +127,15 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        <span className="ml-3 text-gray-600">{t.loading}</span>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+        <span className="ml-3 text-slate-400">{t.loading}</span>
       </div>
     );
   }
 
   if (templates.length === 0) {
     return (
-      <div className="text-center p-8 text-gray-500">
+      <div className="text-center p-8 text-slate-500">
         {t.noTemplates}
       </div>
     );
@@ -134,10 +144,10 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-white">
           {t.selectTemplate}
         </h3>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-slate-400">
           <Sparkles size={16} />
           <span>Your tier: {userTier}</span>
         </div>
@@ -148,16 +158,17 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
           const isSelected = selectedTemplateId === template.template_id;
           const canAccess = template.has_access;
           const isPremium = template.is_premium && !template.is_purchased;
+          const fullTemplate = fullTicketTemplates.get(template.template_id);
 
           return (
             <div
               key={template.template_id}
-              className={`relative border-2 rounded-lg p-4 transition-all cursor-pointer ${
+              className={`relative border-2 rounded-xl p-4 transition-all cursor-pointer ${
                 isSelected 
-                  ? 'border-indigo-600 bg-indigo-50 shadow-lg' 
+                  ? 'border-indigo-500 bg-indigo-950/30 shadow-lg shadow-indigo-500/20' 
                   : canAccess
-                  ? 'border-gray-200 hover:border-indigo-400 hover:shadow-md'
-                  : 'border-gray-200 bg-gray-50 opacity-60'
+                  ? 'border-slate-700 hover:border-indigo-500/50 hover:shadow-md bg-slate-800/50'
+                  : 'border-slate-700/50 bg-slate-800/30 opacity-60'
               }`}
               onMouseEnter={() => setHoveredTemplate(template.template_id)}
               onMouseLeave={() => setHoveredTemplate(null)}
@@ -171,14 +182,10 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               </div>
 
               {/* Template preview */}
-              {templateType === 'ticket' && (
+              {templateType === 'ticket' && fullTemplate && (
                 <div className="mb-3 flex justify-center">
                   <TicketTemplatePreview
-                    template={{ 
-                      id: template.template_id,
-                      name: template.name,
-                      ...template 
-                    } as any}
+                    template={fullTemplate}
                     eventName={eventDetails?.name}
                     eventDate={eventDetails?.date}
                     eventLocation={eventDetails?.location}
@@ -186,6 +193,13 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     showDetails={hoveredTemplate === template.template_id}
                     size="small"
                   />
+                </div>
+              )}
+              {templateType === 'ticket' && !fullTemplate && (
+                <div className="mb-3 flex justify-center">
+                  <div className="w-64 h-32 bg-slate-700/50 rounded-lg flex items-center justify-center">
+                    <span className="text-slate-500 text-xs">{template.display_name[language]}</span>
+                  </div>
                 </div>
               )}
 
@@ -201,16 +215,16 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
               {/* Template info */}
               <div className="text-center">
-                <h4 className="font-semibold text-gray-900 mb-1">
+                <h4 className="font-semibold text-white mb-1">
                   {template.display_name[language]}
                 </h4>
-                <p className="text-xs text-gray-600 mb-3">
+                <p className="text-xs text-slate-400 mb-3">
                   {template.description[language]}
                 </p>
 
                 {/* Access status */}
                 {isSelected && (
-                  <div className="flex items-center justify-center gap-2 text-indigo-600 font-medium">
+                  <div className="flex items-center justify-center gap-2 text-indigo-400 font-medium">
                     <Check size={16} />
                     <span>{t.selected}</span>
                   </div>
@@ -218,7 +232,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
                 {!canAccess && (
                   <div className="space-y-2">
-                    <div className="flex items-center justify-center gap-2 text-gray-500">
+                    <div className="flex items-center justify-center gap-2 text-slate-500">
                       <Lock size={16} />
                       <span className="text-sm">
                         {t.requiresTier} {template.required_tier} {t.tier}
@@ -243,7 +257,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                 {canAccess && !isSelected && (
                   <button
                     onClick={() => onSelect(template.template_id)}
-                    className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                    className="w-full px-3 py-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600 transition-colors text-sm font-medium"
                   >
                     {t.selectTemplate}
                   </button>
@@ -253,7 +267,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               {/* Premium badge */}
               {template.is_purchased && (
                 <div className="absolute bottom-2 left-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-900/50 text-green-400">
                     <Sparkles size={12} className="mr-1" />
                     Purchased
                   </span>
