@@ -298,33 +298,36 @@ export const getAllUsers = async (): Promise<User[]> => {
   return data || [];
 };
 
-export const createEvent = async (event: Omit<EventNexusEvent, 'id'>): Promise<EventNexusEvent | null> => {
+export const createEvent = async (event: Omit<EventNexusEvent, 'id'>, options?: { creditUnlocked?: boolean }): Promise<EventNexusEvent | null> => {
   // ====== BACKEND VALIDATION: Free tier enforcement ======
   // Prevent free tier users from bypassing frontend checks
-  try {
-    const { data: organizerData, error: userError } = await supabase
-      .from('users')
-      .select('subscription_tier, credits')
-      .eq('id', event.organizerId)
-      .single();
-    
-    if (userError || !organizerData) {
-      logger.error('Failed to fetch organizer data:', userError);
-      throw new Error('Unable to verify organizer subscription');
+  // Skip check if user already paid with credits (creditUnlocked = true)
+  if (!options?.creditUnlocked) {
+    try {
+      const { data: organizerData, error: userError } = await supabase
+        .from('users')
+        .select('subscription_tier, credits')
+        .eq('id', event.organizerId)
+        .single();
+      
+      if (userError || !organizerData) {
+        logger.error('Failed to fetch organizer data:', userError);
+        throw new Error('Unable to verify organizer subscription');
+      }
+      
+      // Free tier users are blocked at backend level
+      // They must upgrade or use credits via the proper flow
+      if (organizerData.subscription_tier === 'free') {
+        logger.warn(`Free tier user ${event.organizerId} attempted direct event creation`);
+        throw new Error('FREE_TIER_BLOCKED: Free tier users must use credits or upgrade to create events');
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('FREE_TIER_BLOCKED')) {
+        throw error; // Re-throw our custom error
+      }
+      logger.error('Subscription validation error:', error);
+      throw new Error('Failed to validate subscription tier');
     }
-    
-    // Free tier users are blocked at backend level
-    // They must upgrade or use credits via the proper flow
-    if (organizerData.subscription_tier === 'free') {
-      logger.warn(`Free tier user ${event.organizerId} attempted direct event creation`);
-      throw new Error('FREE_TIER_BLOCKED: Free tier users must use credits or upgrade to create events');
-    }
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('FREE_TIER_BLOCKED')) {
-      throw error; // Re-throw our custom error
-    }
-    logger.error('Subscription validation error:', error);
-    throw new Error('Failed to validate subscription tier');
   }
   
   // Combine date and time into ISO timestamp

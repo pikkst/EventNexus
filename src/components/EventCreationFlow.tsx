@@ -1104,7 +1104,7 @@ const EventCreationFlow: React.FC<EventCreationFlowProps> = ({ user, onUpdateUse
       };
 
       logger.log('Calling createEvent()...');
-      const created = await createEvent(eventData);
+      const created = await createEvent(eventData, { creditUnlocked: isEventUnlocked });
       logger.log('createEvent() response:', created ? 'success' : 'failed');
       
       if (created) {
