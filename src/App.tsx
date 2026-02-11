@@ -511,6 +511,29 @@ const App: React.FC = () => {
       }, 15000);
       
       try {
+        // PKCE code exchange fallback: when user returns from OAuth with ?code=
+        // but automatic detectSessionInUrl failed (e.g., www/non-www domain mismatch
+        // causes code_verifier to be on a different localStorage origin)
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        
+        if (authCode) {
+          logger.log('\xf0\x9f\x94\x91 PKCE auth code detected in URL, attempting exchange...');
+          try {
+            const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode);
+            
+            if (exchangeError) {
+              logger.warn('\xe2\x9a\xa0\xef\xb8\x8f PKCE code exchange failed:', exchangeError.message);
+            } else if (exchangeData?.session) {
+              logger.log('\xe2\x9c\x85 PKCE code exchange successful:', exchangeData.session.user?.email);
+            }
+          } catch (pkceErr: any) {
+            logger.warn('\xe2\x9a\xa0\xef\xb8\x8f PKCE exchange exception:', pkceErr?.message || pkceErr);
+          }
+          // Clean URL regardless of outcome to prevent stale code reuse
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+        
         // Check for existing session FIRST (avoid TDZ on session variable)
         const { data: { session } } = await supabase.auth.getSession();
 

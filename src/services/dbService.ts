@@ -1476,16 +1476,11 @@ export const signOutUser = async () => {
 // OAuth authentication helpers
 export const signInWithGoogle = async () => {
   try {
-    // Construct proper redirect URL for custom domain
+    // Use current origin for redirect to avoid www/non-www domain mismatch
+    // PKCE code_verifier is stored in localStorage per-origin, so redirect
+    // MUST go back to the same origin that initiated the OAuth flow
     const getRedirectUrl = () => {
       if (typeof window === 'undefined') return undefined;
-      
-      // For production - redirect to /profile (BrowserRouter with 404.html redirect)
-      if (window.location.origin.includes('eventnexus.eu')) {
-        return 'https://www.eventnexus.eu/profile';
-      }
-      
-      // For local development
       return `${window.location.origin}/profile`;
     };
     
@@ -1517,16 +1512,9 @@ export const signInWithGoogle = async () => {
 
 export const signInWithFacebook = async () => {
   try {
-    // Construct proper redirect URL for GitHub Pages deployment
+    // Use current origin for redirect to keep PKCE code_verifier on same domain
     const getRedirectUrl = () => {
       if (typeof window === 'undefined') return undefined;
-      
-      // For production - redirect to /profile
-      if (window.location.origin.includes('eventnexus.eu')) {
-        return 'https://www.eventnexus.eu/EventNexus/profile';
-      }
-      
-      // For local development
       return `${window.location.origin}/profile`;
     };
     
