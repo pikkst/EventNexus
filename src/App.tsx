@@ -518,12 +518,13 @@ const App: React.FC = () => {
         // Check for existing session (auto-detect may have already exchanged ?code=)
         // Small delay to give detectSessionInUrl time to complete the exchange
         if (window.location.search.includes('code=')) {
-          logger.log('\xf0\x9f\x94\x91 Auth code detected, waiting for auto-exchange...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log('[AUTH DEBUG] 🔑 PKCE auth code detected in URL, waiting for auto-exchange...', window.location.href);
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
         
         // Check for existing session FIRST (avoid TDZ on session variable)
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('[AUTH DEBUG] getSession result:', session ? `session found for ${session.user.email}` : 'no session');
 
         // Initialize campaign tracking with known session info (with timeout to prevent hanging)
         try {
@@ -594,15 +595,16 @@ const App: React.FC = () => {
 
     // Listen for auth state changes (login, logout, token refresh)
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      logger.log('🔐 Auth event:', event, session?.user?.email || 'no session');
+      console.log('[AUTH DEBUG] 🔐 Auth event:', event, '| user email:', session?.user?.email || 'no session', '| current path:', window.location.pathname, '| search:', window.location.search);
       
       // Handle OAuth callback - detect OAuth params in URL
       // Check if this is an OAuth callback (for URL cleanup)
       const hasOAuthCode = window.location.search.includes('code=');
+      console.log('[AUTH DEBUG] hasOAuthCode:', hasOAuthCode, '| current user state:', user?.email || 'null');
 
       
       if (event === 'INITIAL_SESSION' && session?.user && !user) {
-        logger.log('🔄 Session detected on init, loading user profile...');
+        console.log('[AUTH DEBUG] 🔄 INITIAL_SESSION with user, loading profile for:', session.user.id, session.user.email);
         setIsLoading(true);
         
         try {
@@ -614,6 +616,7 @@ const App: React.FC = () => {
           await new Promise(resolve => setTimeout(resolve, 300));
           
           const userData = await getUser(session.user.id);
+          console.log('[AUTH DEBUG] getUser result:', userData ? `✅ ${userData.email} (role: ${userData.role})` : '❌ null');
           
           if (userData && isMountedRef.current) {
             setUser(userData);
@@ -638,13 +641,13 @@ const App: React.FC = () => {
             
             // Clean URL - remove OAuth params and redirect to profile
             window.history.replaceState({}, '', '/profile');
-            logger.log('✅ OAuth login successful');
+            console.log('[AUTH DEBUG] ✅ OAuth login successful, redirected to /profile');
           } else {
-            logger.error('⚠️ Failed to load user profile');
+            console.error('[AUTH DEBUG] ⚠️ Failed to load user profile for:', session.user.id);
             setIsLoading(false);
           }
         } catch (error) {
-          logger.error('OAuth callback error:', error);
+          console.error('[AUTH DEBUG] OAuth callback error:', error);
           setIsLoading(false);
         }
         return;
@@ -652,13 +655,13 @@ const App: React.FC = () => {
       
       // Skip INITIAL_SESSION without session (unauthenticated)
       if (event === 'INITIAL_SESSION') {
-        logger.log('✅ No active session on page load');
+        console.log('[AUTH DEBUG] ✅ No active session on page load (unauthenticated)');
         return;
       }
       
       // Handle sign-in (OAuth + regular)
       if (event === 'SIGNED_IN' && session?.user && isMountedRef.current && !user) {
-        logger.log('User signed in, loading data...');
+        console.log('[AUTH DEBUG] 🔑 SIGNED_IN event for:', session.user.email, '| provider:', session.user.app_metadata?.provider);
         
         try {
           // Ensure profile exists (for OAuth/new users)
@@ -997,17 +1000,17 @@ const App: React.FC = () => {
               <Route path="/data-source" element={<DataSourcePage />} />
               <Route path="/host" element={<OrganizerHubPage user={user} onOpenAuth={() => handleOpenAuth('/host')} />} />
               <Route path="/map" element={<HomeMap theme={mapTheme} onToggleTheme={handleToggleMapTheme} events={events} user={user} />} />
-              <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <Navigate to="/login" state={{ returnUrl: '/create' }} replace />} />
-              <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : <Navigate to="/login" state={{ returnUrl: '/create-event' }} replace />} />
-              <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : <Navigate to="/login" state={{ returnUrl: '/dashboard' }} replace />} />
-              <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} onRefreshUser={handleRefreshUser} /> : <Navigate to="/login" state={{ returnUrl: '/profile' }} replace />} />
+              <Route path="/create" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : isLoading ? null : <Navigate to="/login" state={{ returnUrl: '/create' }} replace />} />
+              <Route path="/create-event" element={user ? <EventCreationFlow user={user} onUpdateUser={handleUpdateUser} onEventCreated={handleReloadEvents} /> : isLoading ? null : <Navigate to="/login" state={{ returnUrl: '/create-event' }} replace />} />
+              <Route path="/dashboard" element={user ? <Dashboard user={user} onBroadcast={handleAddNotification} onUpdateUser={handleUpdateUser} /> : isLoading ? null : <Navigate to="/login" state={{ returnUrl: '/dashboard' }} replace />} />
+              <Route path="/profile" element={user ? <UserProfile user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} onRefreshUser={handleRefreshUser} /> : isLoading ? null : <Navigate to="/login" state={{ returnUrl: '/profile' }} replace />} />
               <Route path="/event/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => handleOpenAuth()} />} />
-              <Route path="/events/:id/edit" element={user ? <EventEditPage user={user} onOpenAuth={() => handleOpenAuth()} /> : <Navigate to="/login" replace />} />
+              <Route path="/events/:id/edit" element={user ? <EventEditPage user={user} onOpenAuth={() => handleOpenAuth()} /> : isLoading ? null : <Navigate to="/login" replace />} />
               <Route path="/events/:id" element={<EventDetail user={user} onToggleFollow={handleToggleFollow} onOpenAuth={() => handleOpenAuth()} />} />
               <Route path="/scanner" element={<TicketScanner user={user} />} />
-              <Route path="/ticket" element={user ? <TicketViewPage /> : <Navigate to="/login" state={{ returnUrl: '/ticket' }} replace />} />
-              <Route path="/ticket/:id" element={user ? <TicketViewPage /> : <Navigate to="/login" state={{ returnUrl: `/ticket/${window.location.pathname.split('/').pop()}` }} replace />} />
-              <Route path="/live-map" element={user ? <LiveMapApp user={user} /> : <Navigate to="/login" state={{ returnUrl: '/live-map' }} replace />} />
+              <Route path="/ticket" element={user ? <TicketViewPage /> : isLoading ? null : <Navigate to="/login" state={{ returnUrl: '/ticket' }} replace />} />
+              <Route path="/ticket/:id" element={user ? <TicketViewPage /> : isLoading ? null : <Navigate to="/login" state={{ returnUrl: `/ticket/${window.location.pathname.split('/').pop()}` }} replace />} />
+              <Route path="/live-map" element={user ? <LiveMapApp user={user} /> : isLoading ? null : <Navigate to="/login" state={{ returnUrl: '/live-map' }} replace />} />
               <Route path="/pricing" element={<PricingPage user={user} onUpgrade={(t) => setUser(prev => prev ? ({ ...prev, subscription_tier: t, subscription: t }) : null)} onOpenAuth={() => handleOpenAuth('/pricing')} />} />
               <Route path="/mobile" element={<MobileAppsPage />} />
               <Route path="/beta" element={<BetaInvitation />} />
@@ -1017,22 +1020,22 @@ const App: React.FC = () => {
                 <Route path="/user/:username" element={<PublicUserProfile currentUser={user} />} />
                   <Route path="/feed" element={<EventFeed user={user} />} />
               <Route path="/communities" element={<Communities user={user} onOpenAuth={() => handleOpenAuth('/communities')} />} />
-              <Route path="/achievements" element={user ? <Achievements user={user} onOpenAuth={() => handleOpenAuth('/achievements')} /> : <Navigate to="/login" state={{ returnUrl: '/achievements' }} replace />} />
+              <Route path="/achievements" element={user ? <Achievements user={user} onOpenAuth={() => handleOpenAuth('/achievements')} /> : isLoading ? null : <Navigate to="/login" state={{ returnUrl: '/achievements' }} replace />} />
               <Route path="/blog" element={<BlogList />} />
-              <Route path="/blog/new" element={user ? <BlogPostEditor /> : <Navigate to="/login" state={{ returnUrl: '/blog/new' }} replace />} />
+              <Route path="/blog/new" element={user ? <BlogPostEditor /> : isLoading ? null : <Navigate to="/login" state={{ returnUrl: '/blog/new' }} replace />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/press" element={<PressPage />} />
-              <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} supportUnread={supportUnread} onOpenSupport={() => setSupportDockOpenSignal((s) => s + 1)} /> : <Navigate to="/login" replace />} />
-              <Route path="/admin/ai-agents" element={user?.role === 'admin' ? <AIAgentDashboard user={user} /> : <Navigate to="/login" replace />} />
-              <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : <Navigate to="/login" replace />} />
-              <Route path="/redeem" element={user ? <CodeRedemption user={user} onCreditsUpdated={handleRefreshUser} /> : <Navigate to="/login" state={{ returnUrl: '/redeem' }} replace />} />
-              <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : <Navigate to="/login" replace />} />
+              <Route path="/admin" element={user?.role === 'admin' ? <AdminCommandCenter user={user} supportUnread={supportUnread} onOpenSupport={() => setSupportDockOpenSignal((s) => s + 1)} /> : isLoading ? null : <Navigate to="/login" replace />} />
+              <Route path="/admin/ai-agents" element={user?.role === 'admin' ? <AIAgentDashboard user={user} /> : isLoading ? null : <Navigate to="/login" replace />} />
+              <Route path="/admin/credits" element={user?.role === 'admin' ? <AdminCreditManager user={user} /> : isLoading ? null : <Navigate to="/login" replace />} />
+              <Route path="/redeem" element={user ? <CodeRedemption user={user} onCreditsUpdated={handleRefreshUser} /> : isLoading ? null : <Navigate to="/login" state={{ returnUrl: '/redeem' }} replace />} />
+              <Route path="/social-media" element={user?.role === 'admin' ? <SimplifiedSocialMediaManager user={user} /> : isLoading ? null : <Navigate to="/login" replace />} />
               <Route path="/help" element={<HelpCenter user={user || undefined} onOpenAuth={() => handleOpenAuth('/help')} />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/cookies" element={<CookieSettings />} />
               <Route path="/gdpr" element={<GDPRCompliance />} />
-              <Route path="/notifications" element={user ? <NotificationSettings user={user} onUpdatePrefs={handleUpdatePrefs} /> : <Navigate to="/login" state={{ returnUrl: '/notifications' }} replace />} />
+              <Route path="/notifications" element={user ? <NotificationSettings user={user} onUpdatePrefs={handleUpdatePrefs} /> : isLoading ? null : <Navigate to="/login" state={{ returnUrl: '/notifications' }} replace />} />
               </Routes>
             </Suspense>
           </ErrorBoundary>
