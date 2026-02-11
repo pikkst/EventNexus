@@ -3947,41 +3947,18 @@ export const deleteContactInquiry = async (inquiryId: string): Promise<boolean> 
 
 import { Ticket, TicketTemplate, TicketVerification, EventTicketStats, OrganizerDashboardStats } from '../types';
 
-// Get ticket templates for an event
+// Get ticket types for an event (per-event pricing and quantities)
 export const getTicketTemplates = async (eventId: string): Promise<TicketTemplate[]> => {
   try {
-    // Get event's selected templates from event_template_selections
-    const { data: selection, error: selectionError } = await supabase
-      .from('event_template_selections')
-      .select('standard_ticket_template_id, vip_ticket_template_id, early_bird_ticket_template_id')
-      .eq('event_id', eventId)
-      .single();
-
-    if (selectionError || !selection) {
-      // No templates selected, return empty
-      return [];
-    }
-
-    // Get the actual template data
-    const templateIds = [
-      selection.standard_ticket_template_id,
-      selection.vip_ticket_template_id,
-      selection.early_bird_ticket_template_id
-    ].filter(Boolean); // Remove nulls
-
-    if (templateIds.length === 0) {
-      return [];
-    }
-
     const { data, error } = await supabase
-      .from('ticket_templates')
+      .from('event_ticket_types')
       .select('*')
-      .in('id', templateIds)
+      .eq('event_id', eventId)
       .eq('is_active', true)
       .order('created_at', { ascending: true });
 
     if (error) {
-      logger.error('Error fetching ticket templates:', error);
+      logger.error('Error fetching event ticket types:', error);
       return [];
     }
 
@@ -3992,7 +3969,7 @@ export const getTicketTemplates = async (eventId: string): Promise<TicketTemplat
   }
 };
 
-// Create ticket templates for an event
+// Create ticket types for an event (per-event pricing and quantities)
 export const createTicketTemplates = async (
   eventId: string,
   templates: Partial<TicketTemplate>[]
@@ -4001,7 +3978,7 @@ export const createTicketTemplates = async (
     const templatesToInsert = templates.map(template => ({
       event_id: eventId,
       name: template.name,
-      type: template.type,
+      type: template.type || 'general',
       price: template.price || 0,
       quantity_total: template.quantity_total || 100,
       quantity_available: template.quantity_available || template.quantity_total || 100,
@@ -4015,12 +3992,12 @@ export const createTicketTemplates = async (
     }));
 
     const { data, error } = await supabase
-      .from('ticket_templates')
+      .from('event_ticket_types')
       .insert(templatesToInsert)
       .select();
 
     if (error) {
-      logger.error('Error creating ticket templates:', error);
+      logger.error('Error creating event ticket types:', error);
       throw error;
     }
 
@@ -4031,19 +4008,19 @@ export const createTicketTemplates = async (
   }
 };
 
-// Update ticket template
+// Update event ticket type
 export const updateTicketTemplate = async (
   templateId: string,
   updates: Partial<TicketTemplate>
 ): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('ticket_templates')
+      .from('event_ticket_types')
       .update(updates)
       .eq('id', templateId);
 
     if (error) {
-      logger.error('Error updating ticket template:', error);
+      logger.error('Error updating event ticket type:', error);
       return false;
     }
 
