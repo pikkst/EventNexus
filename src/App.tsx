@@ -511,27 +511,15 @@ const App: React.FC = () => {
       }, 15000);
       
       try {
-        // PKCE code exchange fallback: when user returns from OAuth with ?code=
-        // but automatic detectSessionInUrl failed (e.g., www/non-www domain mismatch
-        // causes code_verifier to be on a different localStorage origin)
-        const urlParams = new URLSearchParams(window.location.search);
-        const authCode = urlParams.get('code');
+        // Let Supabase's detectSessionInUrl handle PKCE code exchange automatically
+        // Do NOT manually call exchangeCodeForSession - it races with auto-detect
+        // and cleaning the URL before onAuthStateChange fires breaks OAuth handling
         
-        if (authCode) {
-          logger.log('\xf0\x9f\x94\x91 PKCE auth code detected in URL, attempting exchange...');
-          try {
-            const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode);
-            
-            if (exchangeError) {
-              logger.warn('\xe2\x9a\xa0\xef\xb8\x8f PKCE code exchange failed:', exchangeError.message);
-            } else if (exchangeData?.session) {
-              logger.log('\xe2\x9c\x85 PKCE code exchange successful:', exchangeData.session.user?.email);
-            }
-          } catch (pkceErr: any) {
-            logger.warn('\xe2\x9a\xa0\xef\xb8\x8f PKCE exchange exception:', pkceErr?.message || pkceErr);
-          }
-          // Clean URL regardless of outcome to prevent stale code reuse
-          window.history.replaceState({}, '', window.location.pathname);
+        // Check for existing session (auto-detect may have already exchanged ?code=)
+        // Small delay to give detectSessionInUrl time to complete the exchange
+        if (window.location.search.includes('code=')) {
+          logger.log('\xf0\x9f\x94\x91 Auth code detected, waiting for auto-exchange...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
         // Check for existing session FIRST (avoid TDZ on session variable)
@@ -613,8 +601,8 @@ const App: React.FC = () => {
                             window.location.hash.includes('code=') ||
                             window.location.search.includes('code=');
       
-      if (event === 'INITIAL_SESSION' && session?.user && hasOAuthParams && !user) {
-        logger.log('🔄 OAuth callback detected, loading user profile...');
+      if (event === 'INITIAL_SESSION' && session?.user && !user) {
+        logger.log('🔄 Session detected on init, loading user profile...');
         setIsLoading(true);
         
         try {
@@ -662,9 +650,9 @@ const App: React.FC = () => {
         return;
       }
       
-      // Skip other INITIAL_SESSION events
+      // Skip INITIAL_SESSION without session (unauthenticated)
       if (event === 'INITIAL_SESSION') {
-        logger.log('✅ Session restored:', session?.user?.email || 'No session');
+        logger.log('✅ No active session on page load');
         return;
       }
       
