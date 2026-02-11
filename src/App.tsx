@@ -988,7 +988,7 @@ const App: React.FC = () => {
             <Suspense fallback={<DashboardSkeleton />}>
               <Routes>
               <Route path="/" element={<LandingPage user={user} onOpenAuth={() => handleOpenAuth('/')} />} />
-              <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+              <Route path="/login" element={user ? <Navigate to="/profile" replace /> : <LoginPage onLogin={handleLogin} />} />
               <Route path="/browse" element={<PublicEventsBrowse onOpenAuth={() => handleOpenAuth('/browse')} user={user} />} />
               <Route path="/events" element={<PublicEventsBrowse onOpenAuth={() => handleOpenAuth('/events')} user={user} />} />
               <Route path="/directory" element={<EventDirectory />} />
