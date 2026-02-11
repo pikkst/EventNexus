@@ -597,9 +597,9 @@ const App: React.FC = () => {
       logger.log('🔐 Auth event:', event, session?.user?.email || 'no session');
       
       // Handle OAuth callback - detect OAuth params in URL
-      const hasOAuthParams = window.location.hash.includes('access_token') || 
-                            window.location.hash.includes('code=') ||
-                            window.location.search.includes('code=');
+      // Check if this is an OAuth callback (for URL cleanup)
+      const hasOAuthCode = window.location.search.includes('code=');
+
       
       if (event === 'INITIAL_SESSION' && session?.user && !user) {
         logger.log('🔄 Session detected on init, loading user profile...');
@@ -656,32 +656,52 @@ const App: React.FC = () => {
         return;
       }
       
-      // Handle regular sign-in (non-OAuth)
-      if (event === 'SIGNED_IN' && session?.user && isMountedRef.current && !user && !hasOAuthParams) {
-        logger.log('User signed in (regular login), loading data...');
+      // Handle sign-in (OAuth + regular)
+      if (event === 'SIGNED_IN' && session?.user && isMountedRef.current && !user) {
+        logger.log('User signed in, loading data...');
         
         try {
+          // Ensure profile exists (for OAuth/new users)
+          await supabase.rpc('ensure_user_profile', { user_id: session.user.id })
+            .catch(err => logger.warn('⚠️ RPC warning:', err.message));
+          await new Promise(resolve => setTimeout(resolve, 300));
+
           const userData = await getUser(session.user.id);
           
           if (userData && isMountedRef.current) {
             setUser(userData);
             cacheUserData(userData);
+            setIsLoading(false);
             
-            const userNotifications = await getNotifications(userData.id);
-            if (isMountedRef.current) {
-              setNotifications(userNotifications);
-              cacheNotifications(userNotifications);
+            // Clean URL if OAuth code is present
+            if (hasOAuthCode) {
+              window.history.replaceState({}, '', '/profile');
             }
             
-            const eventsData = await getAllEvents();
-            const activeEvents = filterActiveEvents(eventsData);
-            if (isMountedRef.current) {
-              setEvents(activeEvents);
-              cacheEvents(activeEvents);
-            }
+            // Load notifications and events in background
+            getNotifications(userData.id).then(notifs => {
+              if (isMountedRef.current) {
+                setNotifications(notifs);
+                cacheNotifications(notifs);
+              }
+            });
+            
+            getAllEvents().then(eventsData => {
+              const activeEvents = filterActiveEvents(eventsData);
+              if (isMountedRef.current) {
+                setEvents(activeEvents);
+                cacheEvents(activeEvents);
+              }
+            });
+            
+            logger.log('✅ Sign-in complete:', userData.email);
+          } else {
+            logger.error('⚠️ Failed to load user profile after sign-in');
+            setIsLoading(false);
           }
         } catch (userError) {
           logger.error('Error loading user data:', userError);
+          setIsLoading(false);
         }
       } else if (event === 'TOKEN_REFRESHED' && session?.user && isMountedRef.current) {
         logger.log('✅ Token refreshed successfully');
