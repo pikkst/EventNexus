@@ -95,10 +95,10 @@ These instructions help AI coding agents work productively in this repo.
 - **Do:** keep route protection patterns intact; reuse `LandingPage` for auth prompts.
 - **Don’t:** access `@google/genai` directly from components; use the service.
 - **Don’t:** introduce global state without need; follow local state + props pattern in `App.tsx`.- **CRITICAL - Don't break the build:**
-  - **Never modify `index.html` script paths** - `<script type="module" src="/index.tsx">` must remain absolute. Vite transforms this during build.
-  - **Never change `vite.config.ts` base path** - `base: '/EventNexus/'` is required for GitHub Pages deployment.
+  - **Never modify `index.html` script paths** - `<script type="module" src="/src/index.tsx">` must remain absolute. Vite transforms this during build.
+  - **Never change `vite.config.ts` base path** - `base: '/'` is required for Cloudflare Pages deployment.
   - **Environment variables must be in `define` block** - Any `import.meta.env.*` values used at runtime must be explicitly defined in `vite.config.ts` define section for build-time injection.
-  - **Test in production** - Changes are tested on production at `https://www.eventnexus.eu` after deployment.
+  - **Test in production** - Changes are tested on production at `https://eventnexus.eu` after deployment.
 ## Troubleshooting (Supabase Auth)
 - **Email not confirmed:** Run `confirm-admin-user.sql` in Supabase SQL Editor to confirm admin user email and create profile.
 - **Missing user profile:** The SQL script also ensures the user profile exists in `public.users` table with admin role.
@@ -135,53 +135,24 @@ These instructions help AI coding agents work productively in this repo.
 ## Deployment Notes
 - **Build:** `npm run build` → static assets in `dist/`.
 - **Preview:** `npm run preview` for local sanity.
-- **Static hosting:** Works with custom domain (www.eventnexus.eu). Uses BrowserRouter for clean URLs. Configure build command `npm run build` and publish directory `dist`.
+- **Hosting:** Cloudflare Pages with custom domain (eventnexus.eu). Uses BrowserRouter with SPA fallback via `_redirects`.
 
-## GitHub Pages Deployment
-- **Set Vite base:** In `vite.config.ts`, set `base: '/EventNexus/'` for asset paths on Pages. Example:
-  ```ts
-  export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    return {
-      base: '/EventNexus/',
-      server: { port: 3000, host: '0.0.0.0' },
-      plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
-      resolve: { alias: { '@': path.resolve(__dirname, '.') } }
-    };
-  });
-  ```
-- **Workflow (recommended):** Add `.github/workflows/deploy.yml` to build and deploy `dist/` to Pages:
-  ```yaml
-  name: Deploy to GitHub Pages
-  on:
-    push:
-      branches: [ main ]
-  permissions:
-    contents: write
-    pages: write
-    id-token: write
-  jobs:
-    build:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v4
-        - uses: actions/setup-node@v4
-          with: { node-version: '20' }
-        - run: npm ci
-        - run: npm run build
-        - uses: actions/upload-pages-artifact@v3
-          with: { path: 'dist' }
-    deploy:
-      needs: build
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/deploy-pages@v4
-  ```
-- **Manual publish:** Push `dist/` to `gh-pages` branch using an action like `peaceiris/actions-gh-pages` if preferred.
+## Cloudflare Pages Deployment
+- **Vite base:** `base: '/'` in `vite.config.ts` (Cloudflare serves from root domain).
+- **SPA Routing:** Handled by `public/_redirects` (`/* /index.html 200`). No need for 404.html hacks.
+- **Custom Headers:** `public/_headers` file is fully supported by Cloudflare edge (security, caching, SEO).
+- **DNS:** Managed in Cloudflare dashboard. Domain `eventnexus.eu` pointed to Cloudflare Pages project.
+- **Workflow:** `.github/workflows/deploy.yml` uses `cloudflare/wrangler-action@v3` to deploy.
+- **Secrets required in GitHub:**
+  - `CLOUDFLARE_API_TOKEN` - Cloudflare API token with Pages edit permissions
+  - `CLOUDFLARE_ACCOUNT_ID` - Cloudflare account ID
+  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `GEMINI_API_KEY` - app env vars
+- **SEO Benefits over GitHub Pages:**
+  - Proper HTTP security headers (HSTS, CSP, X-Frame-Options)
+  - Aggressive asset caching with `immutable` for hashed files
+  - Faster global CDN with 300+ edge locations
+  - No 404→redirect hack needed (proper 200 for all SPA routes)
+  - Better Core Web Vitals scores
 
 ## No Mock Data Policy
 - **ENFORCED:** Zero mock data in the application. All removed and replaced with Supabase backend.

@@ -1,13 +1,8 @@
-# ⚠️ NOTE: GitHub Pages does NOT support custom _headers files
-# This file is for Netlify/Vercel deployments only.
-# For GitHub Pages static caching: 
-#  - Assets are cached by default for ~10 minutes by CDN
-#  - HTML is not cached (good for deployments)
-#  - Consider moving to Netlify for better cache control
-#
-# The following headers would work on Netlify/Vercel:
+# Cloudflare Pages Custom Headers
+# These headers are applied by Cloudflare's edge network for optimal SEO and security
+# Docs: https://developers.cloudflare.com/pages/configuration/headers/
 
-# Security Headers - Enhanced for SEO Report Requirements
+# Global security headers for all pages
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
@@ -15,31 +10,56 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=()
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
-  Content-Security-Policy: default-src 'self' https:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://anlivujgkjmajkcgbaxw.supabase.co https://generativelanguage.googleapis.com;
+  Content-Security-Policy: default-src 'self' https:; script-src 'self' https: 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://anlivujgkjmajkcgbaxw.supabase.co https://generativelanguage.googleapis.com https://www.google-analytics.com https://pagead2.googlesyndication.com; frame-src 'self' https://www.google.com https://pagead2.googlesyndication.com;
 
-# Static assets - cache for 1 year
+# Hashed static assets - cache aggressively (1 year, immutable)
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-# HTML - don't cache, serve fresh
+# HTML pages - always serve fresh for deployments
+/
+  Cache-Control: public, max-age=0, must-revalidate
+  Content-Type: text/html; charset=utf-8
+
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
   Content-Type: text/html; charset=utf-8
 
-# API responses - cache for 5 minutes
-/api/*
-  Cache-Control: public, max-age=300
-
-# Sitemap and robots
+# SEO-critical files - cache for 24 hours
 /sitemap.xml
   Content-Type: application/xml; charset=utf-8
-  X-Content-Type-Options: nosniff
   Cache-Control: public, max-age=86400
 
 /robots.txt
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=86400
 
-# Default for other files
-/*
+# RSS/Atom feeds for AI crawlers - cache 1 hour
+/api/feed
   Cache-Control: public, max-age=3600
+  Access-Control-Allow-Origin: *
+
+# API responses - cache for 5 minutes
+/api/*
+  Cache-Control: public, max-age=300
+  Access-Control-Allow-Origin: *
+
+# PWA manifest
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=86400
+
+# APK downloads - cache for 1 week
+/downloads/*
+  Cache-Control: public, max-age=604800
+
+# Images and media - cache 1 month
+/og-image.png
+  Cache-Control: public, max-age=2592000
+
+/favicon.svg
+  Cache-Control: public, max-age=2592000
+
+# Video content - cache 1 month
+/vidio/*
+  Cache-Control: public, max-age=2592000

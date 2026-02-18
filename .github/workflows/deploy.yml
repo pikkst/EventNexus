@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to Cloudflare Pages
 
 on:
   push:
@@ -11,16 +11,14 @@ on:
     branches: [ main ]
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
 
 concurrency:
-  group: pages-${{ github.ref }}
+  group: cloudflare-pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_LEGACY_PEER_DEPS: true
@@ -81,53 +79,16 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: npm run build
 
-      - name: Setup SPA routing for GitHub Pages
+      - name: Verify build output
         run: |
-          # Create index.html copies for ALL app routes
-          # This ensures Google crawler gets 200 (not 404) for every route
-          # The 404.html fallback handles dynamic routes like /event/:id
-          cd dist
-
-          # Static public routes (from sitemap + App.tsx routes)
-          ROUTES=(
-            map browse events directory blog press host
-            data-source pricing beta beta-signup mobile help
-            privacy terms cookies gdpr communities feed
-            login create create-event dashboard profile
-            live-map achievements redeem notifications
-            scanner admin social-media
-          )
-
-          for route in "${ROUTES[@]}"; do
-            mkdir -p "$route"
-            cp index.html "$route/index.html"
-          done
-
-          # Create 404.html from the built index.html
-          # This is the critical fallback for dynamic routes (/event/:id, /blog/:slug, /user/:username, etc.)
-          cp index.html 404.html
-
-          echo "✅ Created index.html for ${#ROUTES[@]} routes + 404.html fallback"
-          ls -la */index.html 2>/dev/null | wc -l
-          cd ..
-
-      - name: Verify APKs in dist
-        run: |
+          echo "Build output size:"
+          du -sh dist/
           echo "Contents of dist/downloads:"
           ls -lh dist/downloads/ || echo "No downloads directory in dist"
 
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
         with:
-          path: 'dist'
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=eventnexus
