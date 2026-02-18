@@ -28,10 +28,11 @@ async function generateSitemap() {
     const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('❌ Missing Supabase credentials in environment');
-      console.error('   Looking for: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
-      console.error('   Please ensure .env.local exists with these values');
-      process.exit(1);
+      console.warn('⚠️  Missing Supabase credentials in environment');
+      console.warn('   Looking for: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
+      console.warn('   Skipping sitemap generation (using existing sitemap.xml from public/)');
+      console.warn('   To generate: set env vars in Cloudflare Pages dashboard or .env.local');
+      return;
     }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
