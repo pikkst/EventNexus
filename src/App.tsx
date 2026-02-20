@@ -485,15 +485,94 @@ const App: React.FC = () => {
       }
       sessionRestoreAttempted.current = true;
       
-      // Detect OAuth callback — if ?code= is in URL, skip getSession() here entirely.
-      // Supabase's detectSessionInUrl will exchange the code and fire onAuthStateChange,
-      // which handles login independently. Calling getSession() here races for the
-      // Navigator Lock and causes the "lock timed out" error.
+      // Detect OAuth callback — if ?code= is in URL, handle it explicitly.
+      // We need to let Supabase exchange the PKCE code first, then read the session.
       const isOAuthCallback = window.location.search.includes('code=');
       
       if (isOAuthCallback) {
-        console.log('[AUTH DEBUG] 🔑 OAuth callback detected — deferring to onAuthStateChange');
-        // Load public events while waiting for OAuth to complete
+        console.warn('[AUTH] OAuth callback detected, exchanging code...');
+        
+        // Safety timeout: if exchange doesn't complete in 20s, give up
+        const oauthTimeout = setTimeout(() => {
+          if (isMountedRef.current) {
+            console.error('[AUTH] OAuth exchange timed out after 20s');
+            setIsLoading(false);
+            window.history.replaceState({}, '', '/');
+          }
+        }, 20000);
+        
+        try {
+          // Extract the authorization code from URL
+          const params = new URLSearchParams(window.location.search);
+          const code = params.get('code');
+          
+          if (code) {
+            // Exchange the code for a session explicitly
+            // This is more reliable than waiting for detectSessionInUrl
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+            
+            if (error) {
+              console.error('[AUTH] Code exchange failed:', error.message);
+              clearTimeout(oauthTimeout);
+              if (isMountedRef.current) {
+                setIsLoading(false);
+                window.history.replaceState({}, '', '/');
+              }
+              return;
+            }
+            
+            if (data?.session?.user) {
+              console.warn('[AUTH] Code exchange successful for:', data.session.user.email);
+              
+              // Ensure user profile exists
+              await supabase.rpc('ensure_user_profile', { user_id: data.session.user.id })
+                .catch(err => console.warn('[AUTH] ensure_user_profile warning:', err?.message));
+              
+              // Small delay for profile creation to propagate
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              // Load user data
+              const userData = await getUser(data.session.user.id);
+              
+              if (userData && isMountedRef.current) {
+                setUser(userData);
+                cacheUserData(userData);
+                setSessionRestored(true);
+                
+                // Load notifications and events in background
+                getNotifications(userData.id).then(notifs => {
+                  if (isMountedRef.current) {
+                    setNotifications(notifs);
+                    cacheNotifications(notifs);
+                  }
+                });
+                
+                getAllEvents().then(eventsData => {
+                  const activeEvents = filterActiveEvents(eventsData);
+                  if (isMountedRef.current) {
+                    setEvents(activeEvents);
+                    cacheEvents(activeEvents);
+                  }
+                });
+                
+                // Clean URL and navigate to profile
+                window.history.replaceState({}, '', '/profile');
+                console.warn('[AUTH] OAuth login complete:', userData.email);
+              } else {
+                console.error('[AUTH] Failed to load user profile after OAuth');
+              }
+            }
+          }
+        } catch (err: any) {
+          console.error('[AUTH] OAuth exchange error:', err?.message || err);
+        } finally {
+          clearTimeout(oauthTimeout);
+          if (isMountedRef.current) {
+            setIsLoading(false);
+          }
+        }
+        
+        // Load public events regardless
         try {
           if (events.length === 0) {
             const eventsData = await getEvents();
@@ -504,9 +583,8 @@ const App: React.FC = () => {
             }
           }
         } catch (e) {
-          logger.warn('Failed to load events during OAuth callback:', e);
+          console.warn('[AUTH] Failed to load events:', e);
         }
-        // Don't setIsLoading(false) — onAuthStateChange will handle that
         return;
       }
       
@@ -642,9 +720,20 @@ const App: React.FC = () => {
         return;
       }
       
-      // Skip INITIAL_SESSION without session (unauthenticated)
+      // INITIAL_SESSION without session — user not authenticated
       if (event === 'INITIAL_SESSION') {
-        console.log('[AUTH DEBUG] ✅ No active session on page load (unauthenticated)');
+        // If we're on an OAuth callback URL but got no session,
+        // the PKCE exchange failed (code expired, code_verifier mismatch, etc.)
+        if (hasOAuthCode) {
+          console.error('[AUTH DEBUG] ⚠️ OAuth code exchange failed — no session returned');
+          if (isMountedRef.current) {
+            setIsLoading(false);
+            // Clean the URL so user can retry
+            window.history.replaceState({}, '', '/');
+          }
+        } else {
+          console.log('[AUTH DEBUG] ✅ No active session on page load (unauthenticated)');
+        }
         return;
       }
       

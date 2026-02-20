@@ -28,7 +28,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    // We handle ?code= exchange explicitly in App.tsx loadInitialData
+    // to avoid Navigator Lock race conditions with detectSessionInUrl
+    detectSessionInUrl: false,
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     storageKey: 'eventnexus-auth-token',
     flowType: 'pkce',
