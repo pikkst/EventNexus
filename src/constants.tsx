@@ -1,5 +1,3 @@
-import { EventNexusEvent } from './types';
-
 // Event categories available in the platform
 export const CATEGORIES = [
   'Concert', 'Festival', 'Workshop', 'Party', 'Conference', 'Meetup', 'Sports'
