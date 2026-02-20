@@ -1142,7 +1142,7 @@ const Navbar = ({ toggleSidebar, user, notifications, supportUnread, onOpenSuppo
           </button>
           <Link to="/" className="flex items-center gap-2 font-bold text-xl tracking-tighter">
             <img 
-              src="/logo for eventnexus.png" 
+              src="/logo-eventnexus.png" 
               alt="EventNexus Logo"
               width="40"
               height="40"

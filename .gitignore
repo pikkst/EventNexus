@@ -27,3 +27,7 @@ mobile/android/EventNexusScanner/.gradle/nb-cache/
 mobile/android/**/keystore/
 mobile/android/**/local.properties
 oracleJdk-25/
+
+# Large files (use Supabase Storage / GitHub Releases instead)
+public/downloads/*.apk
+public/vidio/*.mp4
