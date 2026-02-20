@@ -91,14 +91,14 @@ const AdminCommandCenter: React.FC<{ user: User; supportUnread?: number; onOpenS
   const [creditValue, setCreditValue] = useState(0.50);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
 
-  // API Settings State
+  // API Settings State — placeholder display values only (never real keys)
   const [apiSettings, setApiSettings] = useState({
-    stripe: { pk: 'pk_live_51P...', sk: 'sk_live_v920...', wh: 'whsec_920a...' },
-    supabase: { url: 'https://nexus-core.supabase.co', anon: 'eyJhbGciOiJIUzI1Ni...', svc: 'eyJhbGciOiJIUzI1Ni...' },
-    gemini: { key: process.env.API_KEY || 'NEXUS_AI_INTERNAL', model: 'gemini-3-pro-preview' },
-    github: { appId: '920831', secret: 'ghs_820v...', repo: 'eventnexus/backbone' },
-    mapbox: { token: 'pk.ey...v920', styleId: 'dark-v11' },
-    email: { provider: 'Resend', key: 'RESEND_API_KEY', from: 'noreply@mail.eventnexus.eu' }
+    stripe: { pk: '••••••••', sk: '••••••••', wh: '••••••••' },
+    supabase: { url: import.meta.env.VITE_SUPABASE_URL || '••••••••', anon: '••••••••', svc: '••••••••' },
+    gemini: { key: '••••••••', model: 'gemini-2.5-flash' },
+    github: { appId: '••••••••', secret: '••••••••', repo: 'pikkst/EventNexus' },
+    mapbox: { token: '••••••••', styleId: 'dark-v11' },
+    email: { provider: 'Resend', key: '••••••••', from: 'noreply@mail.eventnexus.eu' }
   });
 
   // Search & Filter State

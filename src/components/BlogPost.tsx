@@ -36,6 +36,7 @@ import {
 } from '../services/blogService';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../services/supabase';
+import { sanitizeHtml } from '../utils/security';
 
 interface BlogPost {
   id: string;
@@ -94,13 +95,17 @@ export default function BlogPost() {
 
   const language = 'en'; // Get from context/props
 
-  // Convert markdown to HTML
+  // Convert markdown to sanitized HTML
   const htmlContent = useMemo(() => {
     if (!post?.content?.[language]) return '';
-    return marked(post.content[language], { 
+    const rawHtml = marked(post.content[language], { 
       breaks: true,
       gfm: true 
     }) as string;
+    return sanitizeHtml(rawHtml, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'del', 'sup', 'sub', 'span', 'div'],
+      ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'src', 'alt', 'title', 'width', 'height'],
+    });
   }, [post?.content, language]);
 
   // Get current user on mount

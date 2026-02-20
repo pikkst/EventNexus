@@ -15,11 +15,18 @@ import logger from '../utils/logger';
 // Access environment variable with proper typing
 declare const process: {
   env: {
-    VITE_TICKET_HASH_SECRET?: string;
+    TICKET_HASH_SECRET?: string;
   };
 };
 
-const TICKET_HASH_SECRET = process.env.VITE_TICKET_HASH_SECRET || 'eventnexus-production-secret-2025';
+const TICKET_HASH_SECRET = process.env.TICKET_HASH_SECRET;
+
+if (!TICKET_HASH_SECRET) {
+  logger.warn('TICKET_HASH_SECRET not set — ticket hashing will use a runtime-generated fallback. Set this env var in production.');
+}
+
+// Runtime-generated fallback — unique per deployment, never hardcoded
+const EFFECTIVE_SECRET = TICKET_HASH_SECRET || crypto.randomUUID();
 
 /**
  * Generate secure hash for ticket verification
@@ -30,7 +37,7 @@ export const generateTicketHash = async (
   eventId: string,
   userId: string
 ): Promise<string> => {
-  const data = `${ticketId}-${eventId}-${userId}-${TICKET_HASH_SECRET}`;
+  const data = `${ticketId}-${eventId}-${userId}-${EFFECTIVE_SECRET}`;
   
   // Use Web Crypto API for secure hashing
   const encoder = new TextEncoder();

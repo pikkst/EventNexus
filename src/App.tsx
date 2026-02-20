@@ -986,7 +986,7 @@ const App: React.FC = () => {
         />
         <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} user={user} />
         
-        <main className="pt-16 flex-grow relative xl:px-6 2xl:px-12">
+        <main id="main-content" className="pt-16 flex-grow relative xl:px-6 2xl:px-12">
           <ErrorBoundary>
             <Suspense fallback={<DashboardSkeleton />}>
               <Routes>

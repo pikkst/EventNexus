@@ -169,9 +169,14 @@ export default function LiveStreamPlayer({
   const generateEmbedCode = (): string | null => {
     if (!event.streaming_url) return null;
 
-    // Use custom embed code if provided
+    // Use custom embed code if provided — sanitize to allow only iframes
     if (event.streaming_embed_code) {
-      return event.streaming_embed_code;
+      const cleaned = event.streaming_embed_code
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+      // Only allow iframe tags for embeds
+      const iframeMatch = cleaned.match(/<iframe[^>]*src=["']https:\/\/[^"']+["'][^>]*><\/iframe>/i);
+      return iframeMatch ? iframeMatch[0] : null;
     }
 
     const url = event.streaming_url;
