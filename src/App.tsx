@@ -495,7 +495,7 @@ const App: React.FC = () => {
         
         // Safety timeout: if onAuthStateChange doesn't resolve within 25s, give up
         const oauthTimeout = setTimeout(() => {
-          if (isMountedRef.current && !user) {
+          if (isMountedRef.current) {
             console.error('[AUTH] OAuth exchange timed out after 25s');
             setIsLoading(false);
             window.history.replaceState({}, '', '/');

@@ -27,12 +27,12 @@ if (typeof window !== 'undefined') {
       }
     });
     
-    // On OAuth callback (?code= in URL), clear any existing auth session.
-    // Previous failed login attempts may have stored partial/corrupted tokens
-    // that cause "Invalid value" errors in fetch headers.
+    // On OAuth callback (?code= in URL), clear stale data.
+    // Previous failed login attempts may have stored partial/corrupted tokens.
+    // Also clear user cache so the component initializes with user=null,
+    // allowing onAuthStateChange handlers (which check !user) to process.
     if (window.location.search.includes('code=')) {
       const authKey = 'eventnexus-auth-token';
-      const verifierKey = `${authKey}-code-verifier`;
       
       // Keep the code-verifier (needed for PKCE exchange) but nuke the session
       const existingSession = localStorage.getItem(authKey);
@@ -40,6 +40,10 @@ if (typeof window !== 'undefined') {
         console.warn('[AUTH] Clearing stale session before OAuth code exchange');
         localStorage.removeItem(authKey);
       }
+      // Clear user cache so useState initializes user as null
+      localStorage.removeItem('eventnexus-user-cache');
+      sessionStorage.removeItem('eventnexus-notifications-cache');
+      sessionStorage.removeItem('eventnexus-events-cache');
     }
   } catch (e) {
     console.warn('Could not clean session data:', e);
