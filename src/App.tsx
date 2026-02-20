@@ -485,98 +485,27 @@ const App: React.FC = () => {
       }
       sessionRestoreAttempted.current = true;
       
-      // Detect OAuth callback — if ?code= is in URL, handle it explicitly.
-      // We need to let Supabase exchange the PKCE code first, then read the session.
+      // Detect OAuth callback — Supabase handles ?code= exchange internally
+      // via detectSessionInUrl: true. We just skip normal session loading here
+      // and let onAuthStateChange fire INITIAL_SESSION/SIGNED_IN with the session.
       const isOAuthCallback = window.location.search.includes('code=');
       
       if (isOAuthCallback) {
-        console.warn('[AUTH] OAuth callback detected, exchanging code...');
+        console.warn('[AUTH] OAuth callback detected, Supabase will handle PKCE exchange internally');
         
-        // Safety timeout: if exchange doesn't complete in 20s, give up
+        // Safety timeout: if onAuthStateChange doesn't resolve within 25s, give up
         const oauthTimeout = setTimeout(() => {
-          if (isMountedRef.current) {
-            console.error('[AUTH] OAuth exchange timed out after 20s');
+          if (isMountedRef.current && !user) {
+            console.error('[AUTH] OAuth exchange timed out after 25s');
             setIsLoading(false);
             window.history.replaceState({}, '', '/');
           }
-        }, 20000);
+        }, 25000);
         
-        try {
-          // Extract the authorization code from URL
-          const params = new URLSearchParams(window.location.search);
-          const code = params.get('code');
-          
-          if (code) {
-            // Exchange the code for a session explicitly
-            // This is more reliable than waiting for detectSessionInUrl
-            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-            
-            if (error) {
-              console.error('[AUTH] Code exchange failed:', error.message);
-              clearTimeout(oauthTimeout);
-              if (isMountedRef.current) {
-                setIsLoading(false);
-                window.history.replaceState({}, '', '/');
-              }
-              return;
-            }
-            
-            if (data?.session?.user) {
-              console.warn('[AUTH] Code exchange successful for:', data.session.user.email);
-              
-              // Ensure user profile exists
-              try {
-                const { error: rpcErr } = await supabase.rpc('ensure_user_profile', { user_id: data.session.user.id });
-                if (rpcErr) console.warn('[AUTH] ensure_user_profile warning:', rpcErr.message);
-              } catch (rpcErr: any) {
-                console.warn('[AUTH] ensure_user_profile error:', rpcErr?.message);
-              }
-              
-              // Small delay for profile creation to propagate
-              await new Promise(resolve => setTimeout(resolve, 500));
-              
-              // Load user data
-              const userData = await getUser(data.session.user.id);
-              
-              if (userData && isMountedRef.current) {
-                setUser(userData);
-                cacheUserData(userData);
-                setSessionRestored(true);
-                
-                // Load notifications and events in background
-                getNotifications(userData.id).then(notifs => {
-                  if (isMountedRef.current) {
-                    setNotifications(notifs);
-                    cacheNotifications(notifs);
-                  }
-                });
-                
-                getAllEvents().then(eventsData => {
-                  const activeEvents = filterActiveEvents(eventsData);
-                  if (isMountedRef.current) {
-                    setEvents(activeEvents);
-                    cacheEvents(activeEvents);
-                  }
-                });
-                
-                // Clean URL and navigate to profile
-                window.history.replaceState({}, '', '/profile');
-                console.warn('[AUTH] OAuth login complete:', userData.email);
-              } else {
-                console.error('[AUTH] Failed to load user profile after OAuth');
-              }
-            }
-          }
-        } catch (err: any) {
-          console.error('[AUTH] OAuth exchange error:', err?.message || err);
-        } finally {
-          clearTimeout(oauthTimeout);
-          if (isMountedRef.current) {
-            setIsLoading(false);
-          }
-        }
+        // Store timeout ref so onAuthStateChange handler can clear it
+        (window as any).__oauthTimeout = oauthTimeout;
         
-        // Load public events regardless
+        // Load public events in the meantime
         try {
           if (events.length === 0) {
             const eventsData = await getEvents();
@@ -676,6 +605,11 @@ const App: React.FC = () => {
       
       if (event === 'INITIAL_SESSION' && session?.user && !user) {
         console.log('[AUTH DEBUG] 🔄 INITIAL_SESSION with user, loading profile for:', session.user.id, session.user.email);
+        // Clear safety timeout from loadInitialData
+        if ((window as any).__oauthTimeout) {
+          clearTimeout((window as any).__oauthTimeout);
+          delete (window as any).__oauthTimeout;
+        }
         setIsLoading(true);
         
         try {
@@ -734,6 +668,11 @@ const App: React.FC = () => {
         // the PKCE exchange failed (code expired, code_verifier mismatch, etc.)
         if (hasOAuthCode) {
           console.error('[AUTH DEBUG] ⚠️ OAuth code exchange failed — no session returned');
+          // Clear safety timeout
+          if ((window as any).__oauthTimeout) {
+            clearTimeout((window as any).__oauthTimeout);
+            delete (window as any).__oauthTimeout;
+          }
           if (isMountedRef.current) {
             setIsLoading(false);
             // Clean the URL so user can retry
@@ -748,6 +687,11 @@ const App: React.FC = () => {
       // Handle sign-in (OAuth + regular)
       if (event === 'SIGNED_IN' && session?.user && isMountedRef.current && !user) {
         console.log('[AUTH DEBUG] 🔑 SIGNED_IN event for:', session.user.email, '| provider:', session.user.app_metadata?.provider);
+        // Clear safety timeout from loadInitialData
+        if ((window as any).__oauthTimeout) {
+          clearTimeout((window as any).__oauthTimeout);
+          delete (window as any).__oauthTimeout;
+        }
         
         try {
           // Ensure profile exists (for OAuth/new users)
