@@ -1,11 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 import logger from '../utils/logger';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Trim values — Cloudflare dashboard can inject trailing newlines/spaces from copy-paste
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
+}
+
+// Runtime validation: anon key must only contain URL-safe base64 characters
+if (!/^[A-Za-z0-9._-]+$/.test(supabaseAnonKey)) {
+  console.error('[FATAL] VITE_SUPABASE_ANON_KEY contains invalid characters! Length:', supabaseAnonKey.length,
+    'First 20 chars:', JSON.stringify(supabaseAnonKey.slice(0, 20)),
+    'Last 5 chars:', JSON.stringify(supabaseAnonKey.slice(-5)));
 }
 
 // Clear corrupted/stale session data on initialization

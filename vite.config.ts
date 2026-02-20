@@ -19,12 +19,13 @@ export default defineConfig(({ mode }) => {
     
     // CI/CD environments set these via process.env, local dev uses .env files
     // Priority: process.env first (for GitHub Actions), then loadEnv (for local .env)
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY;
-    const geminiApiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY;
-    const ticketHashSecret = process.env.TICKET_HASH_SECRET || env.TICKET_HASH_SECRET || env.VITE_TICKET_HASH_SECRET;
-    const adsenseLeftSlot = process.env.VITE_ADSENSE_SLOT_LEFT || env.VITE_ADSENSE_SLOT_LEFT || '';
-    const adsenseRightSlot = process.env.VITE_ADSENSE_SLOT_RIGHT || env.VITE_ADSENSE_SLOT_RIGHT || '';
+    // .trim() strips invisible characters from copy-paste in hosting dashboards
+    const supabaseUrl = (process.env.VITE_SUPABASE_URL || env.VITE_SUPABASE_URL || '').trim();
+    const supabaseAnonKey = (process.env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY || '').trim();
+    const geminiApiKey = (process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || '').trim();
+    const ticketHashSecret = (process.env.TICKET_HASH_SECRET || env.TICKET_HASH_SECRET || env.VITE_TICKET_HASH_SECRET || '').trim();
+    const adsenseLeftSlot = (process.env.VITE_ADSENSE_SLOT_LEFT || env.VITE_ADSENSE_SLOT_LEFT || '').trim();
+    const adsenseRightSlot = (process.env.VITE_ADSENSE_SLOT_RIGHT || env.VITE_ADSENSE_SLOT_RIGHT || '').trim();
     
     return {
       base: '/',
