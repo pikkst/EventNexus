@@ -485,7 +485,32 @@ const App: React.FC = () => {
       }
       sessionRestoreAttempted.current = true;
       
-      // Set a timeout - if nothing completes in 15 seconds, force loading to end
+      // Detect OAuth callback — if ?code= is in URL, skip getSession() here entirely.
+      // Supabase's detectSessionInUrl will exchange the code and fire onAuthStateChange,
+      // which handles login independently. Calling getSession() here races for the
+      // Navigator Lock and causes the "lock timed out" error.
+      const isOAuthCallback = window.location.search.includes('code=');
+      
+      if (isOAuthCallback) {
+        console.log('[AUTH DEBUG] 🔑 OAuth callback detected — deferring to onAuthStateChange');
+        // Load public events while waiting for OAuth to complete
+        try {
+          if (events.length === 0) {
+            const eventsData = await getEvents();
+            const activeEvents = filterActiveEvents(eventsData);
+            if (isMountedRef.current) {
+              setEvents(activeEvents);
+              cacheEvents(activeEvents);
+            }
+          }
+        } catch (e) {
+          logger.warn('Failed to load events during OAuth callback:', e);
+        }
+        // Don't setIsLoading(false) — onAuthStateChange will handle that
+        return;
+      }
+      
+      // Normal page load (no OAuth) — resolve session from storage
       const hardTimeout = setTimeout(() => {
         if (isMountedRef.current) {
           setIsLoading(false);
@@ -493,38 +518,23 @@ const App: React.FC = () => {
       }, 15000);
       
       try {
-        // Let Supabase's detectSessionInUrl handle PKCE code exchange automatically
-        // Do NOT manually call exchangeCodeForSession - it races with auto-detect
-        // and cleaning the URL before onAuthStateChange fires breaks OAuth handling
-        
-        // Check for existing session (auto-detect may have already exchanged ?code=)
-        // Small delay to give detectSessionInUrl time to complete the exchange
-        if (window.location.search.includes('code=')) {
-          console.log('[AUTH DEBUG] 🔑 PKCE auth code detected in URL, waiting for auto-exchange...', window.location.href);
-          await new Promise(resolve => setTimeout(resolve, 1500));
-        }
-        
-        // Check for existing session FIRST (avoid TDZ on session variable)
         const { data: { session } } = await supabase.auth.getSession();
         console.log('[AUTH DEBUG] getSession result:', session ? `session found for ${session.user.email}` : 'no session');
 
-        // Initialize campaign tracking with known session info (with timeout to prevent hanging)
+        // Initialize campaign tracking (non-blocking)
         try {
           const { initializeTracking } = await import('./services/campaignTrackingService');
-          const trackingPromise = initializeTracking(session?.user?.id);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Campaign tracking timeout')), 5000)
-          );
-          await Promise.race([trackingPromise, timeoutPromise]);
+          await Promise.race([
+            initializeTracking(session?.user?.id),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Campaign tracking timeout')), 5000))
+          ]);
         } catch (trackingError) {
           logger.warn('⚠️ Campaign tracking initialization failed (non-blocking):', trackingError?.message || trackingError);
-          // Continue anyway - tracking is not critical for app loading
         }
         
         if (session?.user && isMountedRef.current) {
           logger.log('🔄 Loading fresh user data from database...');
           try {
-            // ALWAYS fetch fresh data from database, don't rely on cache
             const userData = await getUser(session.user.id);
             if (userData && isMountedRef.current) {
               setUser(userData);
@@ -538,7 +548,6 @@ const App: React.FC = () => {
                 cacheNotifications(userNotifications);
               }
             } else {
-              // If user data fails to load, sign out
               logger.error('Failed to load user data, signing out');
               await supabase.auth.signOut();
               sessionRestoreAttempted.current = false;
@@ -549,14 +558,12 @@ const App: React.FC = () => {
             sessionRestoreAttempted.current = false;
           }
         } else {
-          // No session to restore, mark as complete
           setSessionRestored(true);
         }
         
-        // Load events - use getAllEvents for authenticated users, getEvents for guests
+        // Load events
         if (events.length === 0 || !sessionStorage.getItem('eventnexus-events-cache')) {
           const eventsData = session?.user ? await getAllEvents() : await getEvents();
-          // Filter out expired events
           const activeEvents = filterActiveEvents(eventsData);
           if (isMountedRef.current) {
             setEvents(activeEvents);
