@@ -390,42 +390,24 @@ const App: React.FC = () => {
   const cleanupNetworkRef = useRef<(() => void) | null>(null);
   const cleanupSessionTimeoutRef = useRef<(() => void) | null>(null);
   
-  // Global session keep-alive: prevents auto-logout during long-running operations
-  // Especially critical for admin pages with multi-city batch processing
+  // Session keep-alive: Supabase's autoRefreshToken handles token refresh automatically.
+  // Manual refreshSession() every 30s causes Navigator Lock contention and OAuth timeouts.
+  // Only do a lightweight visibility-based refresh when the tab becomes active after being hidden.
   useEffect(() => {
-    let keepAliveInterval: NodeJS.Timer;
-    
-    const startKeepAlive = async () => {
-      try {
-        // Only start if user is authenticated
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          keepAliveInterval = setInterval(async () => {
-            try {
-              await supabase.auth.refreshSession();
-              if (isMountedRef.current) {
-                logger.log('Global session keep-alive: session refreshed');
-              }
-            } catch (error: any) {
-              if (isNetworkError(error)) {
-                logger.warn('Keep-alive failed (network issue)', { code: error.code });
-              } else {
-                logger.error('Global keep-alive failed:', { code: error.code });
-              }
-            }
-          }, 30000); // Refresh every 30 seconds globally
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && user) {
+        try {
+          await supabase.auth.getSession();
+          logger.log('Session checked on tab focus');
+        } catch (error: any) {
+          logger.warn('Session check on focus failed:', error?.message);
         }
-      } catch (error) {
-        logger.error('Error starting keep-alive:', { error });
       }
     };
-    
-    startKeepAlive();
-    
-    return () => {
-      if (keepAliveInterval) clearInterval(keepAliveInterval);
-    };
-  }, []);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user]);
   
   // Setup network monitoring
   useEffect(() => {

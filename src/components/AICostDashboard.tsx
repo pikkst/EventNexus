@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../services/supabase';
 import { TrendingDown, Zap, Clock, AlertCircle } from 'lucide-react';
 
 interface CostMetrics {
@@ -48,11 +48,6 @@ interface CityAICost {
  * - Timeout analysis
  */
 export function AICostDashboard() {
-  const supabase = createClient(
-    process.env.REACT_APP_SUPABASE_URL || '',
-    process.env.REACT_APP_SUPABASE_ANON_KEY || ''
-  );
-
   const [costData, setCostData] = useState<CostMetrics[]>([]);
   const [modelPerformance, setModelPerformance] = useState<ModelPerformance[]>([]);
   const [cityCosts, setCityCosts] = useState<CityAICost[]>([]);
