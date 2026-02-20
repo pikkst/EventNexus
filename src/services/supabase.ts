@@ -8,19 +8,33 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// Clear any old/corrupted session data on initialization
+// Clear corrupted/stale session data on initialization
 if (typeof window !== 'undefined') {
   try {
-    // Check for old session keys and clean them up
+    // Remove old Supabase key formats
     const oldKeys = ['sb-anlivujgkjmajkcgbaxw-auth-token', 'supabase.auth.token'];
     oldKeys.forEach(key => {
       if (localStorage.getItem(key)) {
-        logger.debug('Removing old session key:', key);
         localStorage.removeItem(key);
       }
     });
+    
+    // On OAuth callback (?code= in URL), clear any existing auth session.
+    // Previous failed login attempts may have stored partial/corrupted tokens
+    // that cause "Invalid value" errors in fetch headers.
+    if (window.location.search.includes('code=')) {
+      const authKey = 'eventnexus-auth-token';
+      const verifierKey = `${authKey}-code-verifier`;
+      
+      // Keep the code-verifier (needed for PKCE exchange) but nuke the session
+      const existingSession = localStorage.getItem(authKey);
+      if (existingSession) {
+        console.warn('[AUTH] Clearing stale session before OAuth code exchange');
+        localStorage.removeItem(authKey);
+      }
+    }
   } catch (e) {
-    logger.warn('Could not clean old session data:', e);
+    console.warn('Could not clean session data:', e);
   }
 }
 
