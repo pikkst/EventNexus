@@ -1,33 +1,33 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
+
 dist
+dist/
 dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Editor directories and files
+.idea
+# Large files (use Supabase Storage / GitHub Releases instead)
+lerna-debug.log*
+*.local
+*.log
+logs
+# Logs
 mobile/android/EventNexusLiveMap/.gradle/
 mobile/android/EventNexusScanner/.gradle/nb-cache/
 mobile/android/**/keystore/
 mobile/android/**/local.properties
+*.njsproj
+node_modules
+npm-debug.log*
+*.ntvs*
 oracleJdk-25/
-
-# Large files (use Supabase Storage / GitHub Releases instead)
+pnpm-debug.log*
 public/downloads/*.apk
 public/vidio/*.mp4
+*.sln
+*.suo
+*.sw?
+.vscode/*
+!.vscode/extensions.json
+yarn-debug.log*
+yarn-error.log*

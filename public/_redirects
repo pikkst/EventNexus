@@ -2,12 +2,8 @@
 # Cloudflare Pages natively supports _redirects file
 # Docs: https://developers.cloudflare.com/pages/configuration/redirects/
 
-# Redirect www to apex domain (canonical URL for SEO)
-https://www.eventnexus.eu/* https://eventnexus.eu/:splat 301
-
 # Redirect API sitemap to static sitemap (backwards compatibility)
 /api/sitemap /sitemap.xml 301
 
-# SPA fallback: all unmatched routes serve index.html
-# Cloudflare Pages serves static files first, then falls back to this
-/* /index.html 200
+# Note: www → apex redirect is handled via Cloudflare Pages custom domain settings
+# Note: SPA fallback is handled automatically by Cloudflare Pages (no rule needed)
