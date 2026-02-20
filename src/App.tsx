@@ -525,8 +525,12 @@ const App: React.FC = () => {
               console.warn('[AUTH] Code exchange successful for:', data.session.user.email);
               
               // Ensure user profile exists
-              await supabase.rpc('ensure_user_profile', { user_id: data.session.user.id })
-                .catch(err => console.warn('[AUTH] ensure_user_profile warning:', err?.message));
+              try {
+                const { error: rpcErr } = await supabase.rpc('ensure_user_profile', { user_id: data.session.user.id });
+                if (rpcErr) console.warn('[AUTH] ensure_user_profile warning:', rpcErr.message);
+              } catch (rpcErr: any) {
+                console.warn('[AUTH] ensure_user_profile error:', rpcErr?.message);
+              }
               
               // Small delay for profile creation to propagate
               await new Promise(resolve => setTimeout(resolve, 500));
@@ -676,8 +680,12 @@ const App: React.FC = () => {
         
         try {
           // Ensure profile exists via RPC
-          await supabase.rpc('ensure_user_profile', { user_id: session.user.id })
-            .catch(err => logger.warn('⚠️ RPC warning:', err.message));
+          try {
+            const { error: rpcErr } = await supabase.rpc('ensure_user_profile', { user_id: session.user.id });
+            if (rpcErr) logger.warn('⚠️ RPC warning:', rpcErr.message);
+          } catch (rpcErr: any) {
+            logger.warn('⚠️ RPC error:', rpcErr?.message);
+          }
           
           // Small delay for profile creation
           await new Promise(resolve => setTimeout(resolve, 300));
@@ -743,8 +751,12 @@ const App: React.FC = () => {
         
         try {
           // Ensure profile exists (for OAuth/new users)
-          await supabase.rpc('ensure_user_profile', { user_id: session.user.id })
-            .catch(err => logger.warn('⚠️ RPC warning:', err.message));
+          try {
+            const { error: rpcErr } = await supabase.rpc('ensure_user_profile', { user_id: session.user.id });
+            if (rpcErr) logger.warn('⚠️ RPC warning:', rpcErr.message);
+          } catch (rpcErr: any) {
+            logger.warn('⚠️ RPC error:', rpcErr?.message);
+          }
           await new Promise(resolve => setTimeout(resolve, 300));
 
           const userData = await getUser(session.user.id);
