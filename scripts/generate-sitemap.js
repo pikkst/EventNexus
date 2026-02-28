@@ -110,25 +110,22 @@ async function generateSitemap() {
       console.log(`✅ Found ${blogPosts?.length || 0} blog posts`);
     }
 
-    // Build XML sitemap with AI-optimized namespaces
+    // Build strict sitemap XML — only standard namespace, no extras
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->\n';
-    xml += '<!-- Last generated: ' + new Date().toISOString() + ' -->\n';
-    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
-    // Add static pages with AI-friendly descriptions
-    xml += '  <!-- Core Platform Pages (Public & AI-crawlable) -->\n';
+    // Add static pages
     for (const page of staticPages) {
       xml += '  <url>\n';
       xml += `    <loc>${baseUrl}${page.path}</loc>\n`;
       xml += `    <lastmod>${now}</lastmod>\n`;
       xml += `    <changefreq>${page.changefreq}</changefreq>\n`;
-      xml += `    <priority>${page.priority}</priority>\n`;
+      xml += `    <priority>${page.priority.toFixed(1)}</priority>\n`;
       xml += '  </url>\n';
     }
 
-    // Add published events (Dynamic content for AI discovery)
-    xml += '\n  <!-- Published Public Events (Live Data) -->\n';
+    // Add published events
+    xml += '\n';
     if (events && events.length > 0) {
       for (const event of events) {
         const lastmod = event.updated_at ? event.updated_at.split('T')[0] : now;
@@ -138,26 +135,13 @@ async function generateSitemap() {
         xml += `    <changefreq>weekly</changefreq>\n`;
         xml += `    <priority>0.8</priority>\n`;
         
-        // Add news sitemap tags for recent events
-        const eventDate = new Date(lastmod);
-        const daysSinceUpdate = Math.floor((Date.now() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysSinceUpdate <= 2) {
-          xml += '    <news:news>\n';
-          xml += '      <news:publication>\n';
-          xml += '        <news:name>EventNexus</news:name>\n';
-          xml += '        <news:language>en</news:language>\n';
-          xml += '      </news:publication>\n';
-          xml += `      <news:publication_date>${event.updated_at}</news:publication_date>\n`;
-          xml += `      <news:title>${escapeXml(event.name)}</news:title>\n`;
-          xml += `      <news:keywords>${escapeXml(event.category)}</news:keywords>\n`;
-          xml += '    </news:news>\n';
-        }
+
         xml += '  </url>\n';
       }
     }
 
-    // Add organizer/agency profiles (Business entities for AI)
-    xml += '\n  <!-- User & Organizer Profiles (All registered users) -->\n';
+    // Add user profiles
+    xml += '\n';
     if (organizers && organizers.length > 0) {
       for (const org of organizers) {
         const lastmod = org.updated_at ? org.updated_at.split('T')[0] : now;
@@ -171,8 +155,8 @@ async function generateSitemap() {
       }
     }
 
-    // Add blog posts (Content for AI knowledge base)
-    xml += '\n  <!-- Blog Articles & News (AI Training Data) -->\n';
+    // Add blog posts
+    xml += '\n';
     if (blogPosts && blogPosts.length > 0) {
       for (const post of blogPosts) {
         const lastmod = post.updated_at ? post.updated_at.split('T')[0] : now;
@@ -183,31 +167,25 @@ async function generateSitemap() {
         xml += `    <changefreq>weekly</changefreq>\n`;
         xml += `    <priority>0.8</priority>\n`;
         
-        // Add news sitemap tags for recent blog posts
-        const postDate = new Date(pubDate);
-        const daysSincePublish = Math.floor((Date.now() - postDate.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysSincePublish <= 7) {
-          xml += '    <news:news>\n';
-          xml += '      <news:publication>\n';
-          xml += '        <news:name>EventNexus Blog</news:name>\n';
-          xml += '        <news:language>en</news:language>\n';
-          xml += '      </news:publication>\n';
-          xml += `      <news:publication_date>${pubDate}</news:publication_date>\n`;
-          const titleEn = typeof post.title === 'object' ? post.title.en : post.title;
-          xml += `      <news:title>${escapeXml(titleEn || 'Blog Post')}</news:title>\n`;
-          xml += '    </news:news>\n';
-        }
+
         xml += '  </url>\n';
       }
     }
 
     xml += '\n</urlset>\n';
 
-    // Write to public directory
+    // Write to public directory (for git tracking) and dist/ (for deployment)
     const publicDir = path.join(process.cwd(), 'public');
+    const distDir = path.join(process.cwd(), 'dist');
     const sitemapPath = path.join(publicDir, 'sitemap.xml');
     
     fs.writeFileSync(sitemapPath, xml, 'utf-8');
+    
+    // Also write to dist/ so Cloudflare Pages deploys the fresh version
+    if (fs.existsSync(distDir)) {
+      fs.writeFileSync(path.join(distDir, 'sitemap.xml'), xml, 'utf-8');
+      console.log('📦 Also wrote to dist/sitemap.xml for deployment');
+    }
     
     // Validate that XML ends correctly
     const content = fs.readFileSync(sitemapPath, 'utf-8');
@@ -228,11 +206,7 @@ async function generateSitemap() {
     console.log(`   - Events: ${events?.length || 0}`);
     console.log(`   - User profiles: ${organizers?.length || 0}`);
     console.log(`   - Blog posts: ${blogPosts?.length || 0}`);
-    console.log(`\n🤖 AI Optimizations:`);
-    console.log(`   - Google News sitemap support`);
-    console.log(`   - Image sitemap namespace`);
-    console.log(`   - XHTML namespace for multilingual`);
-    console.log(`   - Descriptive XML comments for crawlers`);
+
     
   } catch (error) {
     console.error('❌ Sitemap generation failed:', error);

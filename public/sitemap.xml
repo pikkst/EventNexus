@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-02-28T18:10:03.705Z -->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  <!-- Core Platform Pages (Public & AI-crawlable) -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://eventnexus.eu/</loc>
     <lastmod>2026-02-28</lastmod>
     <changefreq>daily</changefreq>
-    <priority>1</priority>
+    <priority>1.0</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/map</loc>
@@ -49,7 +46,7 @@
     <loc>https://eventnexus.eu/host</loc>
     <lastmod>2026-02-28</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://eventnexus.eu/data-source</loc>
@@ -112,7 +109,6 @@
     <priority>0.5</priority>
   </url>
 
-  <!-- Published Public Events (Live Data) -->
   <url>
     <loc>https://eventnexus.eu/event/11b79180-d265-4f14-b209-1783da0cca5e</loc>
     <lastmod>2026-02-10</lastmod>
@@ -570,6 +566,24 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/d0e84f9b-281a-4e17-8329-0a919ad7ca5e</loc>
+    <lastmod>2026-02-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/8563b272-c117-46b2-9e0f-3ca82e3b3a82</loc>
+    <lastmod>2026-02-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/f1e8a608-a684-4876-9565-305e9a1f6943</loc>
+    <lastmod>2026-02-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/cf2530e5-baed-42a0-b2f5-9fe54bfcec2c</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
@@ -754,30 +768,12 @@
     <lastmod>2026-02-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-02-28T17:58:50.068287+00:00</news:publication_date>
-      <news:title>Het Noordbrabants Museum (Brabantse Nieuwe: Fedrik Vaessen Splintered Assembly)</news:title>
-      <news:keywords>Art Exhibition</news:keywords>
-    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/66c54e62-e43d-495a-b9bd-6eade30dbe6b</loc>
     <lastmod>2026-02-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-02-28T17:59:32.952933+00:00</news:publication_date>
-      <news:title>Het Bossche Groen Doen Festival</news:title>
-      <news:keywords>Festival</news:keywords>
-    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/510a269a-75e1-4059-9a78-009cfc637432</loc>
@@ -874,15 +870,6 @@
     <lastmod>2026-02-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-02-28T17:59:22.164119+00:00</news:publication_date>
-      <news:title>Den Bosch Free Tour</news:title>
-      <news:keywords>Tour</news:keywords>
-    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/abeb2a97-b5af-4389-b9be-f4f82768e2c3</loc>
@@ -997,15 +984,6 @@
     <lastmod>2026-02-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-02-28T17:59:19.547468+00:00</news:publication_date>
-      <news:title>Open Dag - Koning Willem I College</news:title>
-      <news:keywords>Education</news:keywords>
-    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/3241a95d-1070-4238-95ba-b513388c434b</loc>
@@ -1072,15 +1050,6 @@
     <lastmod>2026-02-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-02-28T17:59:14.875632+00:00</news:publication_date>
-      <news:title>Open Dag - HAS green academy &apos;s-Hertogenbosch</news:title>
-      <news:keywords>Education</news:keywords>
-    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/3c4c0aa9-e6ac-40b9-894e-e20bc236857a</loc>
@@ -1099,30 +1068,12 @@
     <lastmod>2026-02-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-02-28T17:59:10.473038+00:00</news:publication_date>
-      <news:title>Den Bosch Free Tour</news:title>
-      <news:keywords>Tour</news:keywords>
-    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/988570f2-1fec-4e74-9ea0-9a570ad54898</loc>
     <lastmod>2026-02-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <news:news>
-      <news:publication>
-        <news:name>EventNexus</news:name>
-        <news:language>en</news:language>
-      </news:publication>
-      <news:publication_date>2026-02-28T17:58:54.934734+00:00</news:publication_date>
-      <news:title>Open avond - Avans Hogeschool</news:title>
-      <news:keywords>Education</news:keywords>
-    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/47ecfb18-8b03-48db-bafe-6a4eb4d0be2b</loc>
@@ -1131,7 +1082,6 @@
     <priority>0.8</priority>
   </url>
 
-  <!-- User & Organizer Profiles (All registered users) -->
   <url>
     <loc>https://eventnexus.eu/user/65ec142d-1ccc-4b8d-829e-ec25a6cb3125</loc>
     <lastmod>2025-12-25</lastmod>
@@ -1175,7 +1125,6 @@
     <priority>0.6</priority>
   </url>
 
-  <!-- Blog Articles & News (AI Training Data) -->
   <url>
     <loc>https://eventnexus.eu/blog/breaking-barriers-with-technology</loc>
     <lastmod>2026-01-28</lastmod>
