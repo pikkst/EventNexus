@@ -1052,17 +1052,17 @@ Check Agent Logs to monitor progress.
       const result = await response.json();
       console.log('🛡️ Guardian result:', result);
       
-      // Show results
-      const actionsCount = result.actions?.length || 0;
-      const cities = result.cities_checked || 0;
-      const interventions = result.actions?.map((a: any) => 
-        `${a.city_name}: ${a.action} (${a.health_score}%)`
-      ).join('\n') || 'No interventions needed';
+      // Parse response: { status, evaluated, healed, results[] }
+      const evaluated = result.evaluated || 0;
+      const healed = result.healed || 0;
+      const interventions = result.results?.map((r: any) => 
+        `${r.city}: ${r.action} → ${r.status || r.reason || 'done'}`
+      ).join('\n') || 'All cities healthy — no interventions needed';
       
       alert(
         `✅ Guardian Test Complete!\n\n` +
-        `Cities Checked: ${cities}\n` +
-        `Interventions: ${actionsCount}\n\n` +
+        `Cities Evaluated: ${evaluated}\n` +
+        `Healed: ${healed}\n\n` +
         `${interventions}\n\n` +
         `Check Agent Logs for details.`
       );
@@ -2471,7 +2471,30 @@ ${results.failed.length > 0 ? '\nFailed:\n' + results.failed.map(f => `✗ ${f.c
                       </button>
                       
                       <button
-                        onClick={() => runManualJob('ensure-free-events')}
+                        onClick={async () => {
+                          setRunningManualJob(true);
+                          try {
+                            const cities = cityMetrics.filter(m => m.city_id && selectedCities.has(m.city_id));
+                            const targets = cities.length > 0 ? cities : cityMetrics.filter(m => m.city_id);
+                            const results: string[] = [];
+                            for (const city of targets) {
+                              const { data, error } = await supabase.functions.invoke('ensure-free-events', {
+                                body: { city_id: city.city_id, target_free_events: 5 }
+                              });
+                              if (error) {
+                                results.push(`❌ ${city.city?.city_name || city.city_id}: ${error.message}`);
+                              } else {
+                                results.push(`${data?.success ? '✅' : '⚠️'} ${data?.city_name || city.city_id}: ${data?.message || 'done'}`);
+                              }
+                            }
+                            alert(`🎯 Ensure Free Events\n\n${results.join('\n')}`);
+                            await loadDashboardData();
+                          } catch (err: any) {
+                            alert(`❌ Ensure Free Events failed: ${err.message}`);
+                          } finally {
+                            setRunningManualJob(false);
+                          }
+                        }}
                         disabled={runningManualJob}
                         className="w-full px-3 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-30 text-sm text-left font-bold shadow-lg transition-all"
                       >

@@ -18,10 +18,20 @@ fi
 echo "🚀 Deploying Edge Functions to Supabase..."
 echo "Project: $SUPABASE_PROJECT_ID"
 
-# List of functions to deploy
+# List of functions to deploy (AI pipeline + supporting agents)
 FUNCTIONS=(
     "discover-events-ai"
     "publish-event"
+    "city-guardian"
+    "ensure-free-events"
+    "archive-expired-events"
+    "auto-archive-events"
+    "diagnostic-scan"
+    "bootstrap-city"
+    "validate-event"
+    "parse-event-ai"
+    "fetch-sources"
+    "discover-sources"
 )
 
 for FUNC in "${FUNCTIONS[@]}"; do

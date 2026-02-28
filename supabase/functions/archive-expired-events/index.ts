@@ -98,16 +98,20 @@ serve(async (req) => {
 
     // Log decision for each archived event
     for (const event of toArchive) {
-      await supabaseClient
-        .from('ai_decision_log')
-        .insert({
-          decision_type: 'archive_expired',
-          ai_model: 'system_cron',
-          confidence_score: 100,
-          reasoning: `Event ended on ${event.date} at ${event.time || '23:59'}. Automatically archived.`,
-          input_data: { event_id: event.id, event_name: event.name },
-          output_data: { status: 'archived', archived_at: now }
-        })
+      try {
+        await supabaseClient
+          .from('ai_decision_log')
+          .insert({
+            event_id: event.id,
+            decision_type: 'archive_expired',
+            decision_result: 'archived',
+            ai_model: 'system_cron',
+            confidence_score: 100,
+            reasoning: { reason: `Event ended on ${event.date} at ${event.time || '23:59'}`, action: 'auto_archive' }
+          })
+      } catch (logErr) {
+        console.warn(`⚠️ Failed to log archive decision for ${event.id}:`, logErr)
+      }
     }
 
     console.log(`✅ Archived ${toArchive.length} expired events`)
