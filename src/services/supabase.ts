@@ -27,20 +27,15 @@ if (typeof window !== 'undefined') {
       }
     });
     
-    // On OAuth callback (?code= in URL), clear stale data.
-    // Previous failed login attempts may have stored partial/corrupted tokens.
-    // Also clear user cache so the component initializes with user=null,
-    // allowing onAuthStateChange handlers (which check !user) to process.
+    // On OAuth callback (?code= in URL), clear UI caches so React
+    // initializes with user=null, letting onAuthStateChange handlers process.
+    // IMPORTANT: Do NOT clear 'eventnexus-auth-token' — Supabase stores the
+    // PKCE code_verifier at 'eventnexus-auth-token-code-verifier' and manages
+    // the session exchange internally via detectSessionInUrl + _initialize().
+    // Clearing the session key can create race conditions where the exchange
+    // succeeds but the INITIAL_SESSION event fires with a stale/null session.
     if (window.location.search.includes('code=')) {
-      const authKey = 'eventnexus-auth-token';
-      
-      // Keep the code-verifier (needed for PKCE exchange) but nuke the session
-      const existingSession = localStorage.getItem(authKey);
-      if (existingSession) {
-        console.warn('[AUTH] Clearing stale session before OAuth code exchange');
-        localStorage.removeItem(authKey);
-      }
-      // Clear user cache so useState initializes user as null
+      console.log('[AUTH] OAuth callback detected — clearing UI caches only');
       localStorage.removeItem('eventnexus-user-cache');
       sessionStorage.removeItem('eventnexus-notifications-cache');
       sessionStorage.removeItem('eventnexus-events-cache');

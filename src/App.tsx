@@ -387,6 +387,11 @@ const App: React.FC = () => {
   });
   const sessionRestoreAttempted = useRef(false);
   const isMountedRef = useRef(true);
+  // Track OAuth callback at mount time — Supabase removes ?code= from the URL
+  // during _initialize(), so re-checking window.location.search later is unreliable.
+  const isOAuthCallbackRef = useRef(
+    typeof window !== 'undefined' && window.location.search.includes('code=')
+  );
   const cleanupNetworkRef = useRef<(() => void) | null>(null);
   const cleanupSessionTimeoutRef = useRef<(() => void) | null>(null);
   
@@ -488,7 +493,9 @@ const App: React.FC = () => {
       // Detect OAuth callback — Supabase handles ?code= exchange internally
       // via detectSessionInUrl: true. We just skip normal session loading here
       // and let onAuthStateChange fire INITIAL_SESSION/SIGNED_IN with the session.
-      const isOAuthCallback = window.location.search.includes('code=');
+      // Use the ref captured at mount time because Supabase may have already
+      // removed ?code= from the URL by the time this effect runs.
+      const isOAuthCallback = isOAuthCallbackRef.current;
       
       if (isOAuthCallback) {
         console.warn('[AUTH] OAuth callback detected, Supabase will handle PKCE exchange internally');
@@ -597,10 +604,10 @@ const App: React.FC = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[AUTH DEBUG] 🔐 Auth event:', event, '| user email:', session?.user?.email || 'no session', '| current path:', window.location.pathname, '| search:', window.location.search);
       
-      // Handle OAuth callback - detect OAuth params in URL
-      // Check if this is an OAuth callback (for URL cleanup)
-      const hasOAuthCode = window.location.search.includes('code=');
-      console.log('[AUTH DEBUG] hasOAuthCode:', hasOAuthCode, '| current user state:', user?.email || 'null');
+      // Use the ref captured at mount time — Supabase removes ?code= from the
+      // URL during the PKCE exchange, so window.location.search is unreliable.
+      const hasOAuthCode = isOAuthCallbackRef.current;
+      console.log('[AUTH DEBUG] hasOAuthCode (from ref):', hasOAuthCode, '| current user state:', user?.email || 'null');
 
       
       if (event === 'INITIAL_SESSION' && session?.user && !user) {
@@ -650,36 +657,45 @@ const App: React.FC = () => {
             
             // Clean URL - remove OAuth params and redirect to profile
             window.history.replaceState({}, '', '/profile');
+            // Reset OAuth ref so SIGNED_IN handler doesn't re-process
+            isOAuthCallbackRef.current = false;
             console.log('[AUTH DEBUG] ✅ OAuth login successful, redirected to /profile');
           } else {
             console.error('[AUTH DEBUG] ⚠️ Failed to load user profile for:', session.user.id);
             setIsLoading(false);
+            isOAuthCallbackRef.current = false;
           }
         } catch (error) {
           console.error('[AUTH DEBUG] OAuth callback error:', error);
           setIsLoading(false);
+          isOAuthCallbackRef.current = false;
         }
         return;
       }
       
       // INITIAL_SESSION without session — user not authenticated
       if (event === 'INITIAL_SESSION') {
-        // If we're on an OAuth callback URL but got no session,
+        // Clear safety timeout in all cases
+        if ((window as any).__oauthTimeout) {
+          clearTimeout((window as any).__oauthTimeout);
+          delete (window as any).__oauthTimeout;
+        }
+        // If we were on an OAuth callback URL but got no session,
         // the PKCE exchange failed (code expired, code_verifier mismatch, etc.)
         if (hasOAuthCode) {
           console.error('[AUTH DEBUG] ⚠️ OAuth code exchange failed — no session returned');
-          // Clear safety timeout
-          if ((window as any).__oauthTimeout) {
-            clearTimeout((window as any).__oauthTimeout);
-            delete (window as any).__oauthTimeout;
-          }
           if (isMountedRef.current) {
             setIsLoading(false);
             // Clean the URL so user can retry
             window.history.replaceState({}, '', '/');
+            // Reset the ref so subsequent events don't re-detect as OAuth
+            isOAuthCallbackRef.current = false;
           }
         } else {
           console.log('[AUTH DEBUG] ✅ No active session on page load (unauthenticated)');
+          if (isMountedRef.current) {
+            setIsLoading(false);
+          }
         }
         return;
       }
