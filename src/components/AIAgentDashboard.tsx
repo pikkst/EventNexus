@@ -245,21 +245,6 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     // Auto-refresh every 30 seconds
     const interval = setInterval(loadDashboardData, 30000);
     
-    // Keep-alive: Aggressively ping Supabase auth every 15 seconds to prevent auto-logout during long pipeline runs
-    // This ensures admin sessions stay active while running multi-city pipelines that can take 10+ minutes
-    const keepAliveInterval = setInterval(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          // Refresh session to keep it alive and prevent inactivity timeout
-          await supabase.auth.refreshSession();
-          console.log('🔄 Auth session refreshed (keep-alive)');
-        }
-      } catch (error) {
-        console.error('Keep-alive refresh failed:', error);
-      }
-    }, 15000); // Every 15 seconds (more aggressive than before)
-    
     // Subscribe to real-time activity updates
     const subscription = supabase
       .channel('ai_activity')
@@ -273,7 +258,6 @@ export default function AIAgentDashboard({ user }: AIAgentDashboardProps) {
     
     return () => {
       clearInterval(interval);
-      clearInterval(keepAliveInterval);
       subscription.unsubscribe();
     };
   }, []);

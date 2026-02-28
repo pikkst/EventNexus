@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- EventNexus Dynamic Sitemap - Optimized for Google, Bing, Gemini, Claude, GPT and other AI crawlers -->
-<!-- Last generated: 2026-02-28T17:36:29.288Z -->
+<!-- Last generated: 2026-02-28T18:03:22.330Z -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Core Platform Pages (Public & AI-crawlable) -->
   <url>
@@ -750,6 +750,36 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/4e36c2b7-390d-4d59-9c35-61c34b178918</loc>
+    <lastmod>2026-02-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-28T17:58:50.068287+00:00</news:publication_date>
+      <news:title>Het Noordbrabants Museum (Brabantse Nieuwe: Fedrik Vaessen Splintered Assembly)</news:title>
+      <news:keywords>Art Exhibition</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/66c54e62-e43d-495a-b9bd-6eade30dbe6b</loc>
+    <lastmod>2026-02-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-28T17:59:32.952933+00:00</news:publication_date>
+      <news:title>Het Bossche Groen Doen Festival</news:title>
+      <news:keywords>Festival</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/510a269a-75e1-4059-9a78-009cfc637432</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
@@ -838,6 +868,21 @@
     <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/c3aa4757-ec65-483b-b505-d05ff29183ba</loc>
+    <lastmod>2026-02-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-28T17:59:22.164119+00:00</news:publication_date>
+      <news:title>Den Bosch Free Tour</news:title>
+      <news:keywords>Tour</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/abeb2a97-b5af-4389-b9be-f4f82768e2c3</loc>
@@ -948,6 +993,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/b8b18500-4786-4913-84eb-3769d11446d3</loc>
+    <lastmod>2026-02-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-28T17:59:19.547468+00:00</news:publication_date>
+      <news:title>Open Dag - Koning Willem I College</news:title>
+      <news:keywords>Education</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/3241a95d-1070-4238-95ba-b513388c434b</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
@@ -1008,6 +1068,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://eventnexus.eu/event/1e57a97a-1d7b-4984-aff6-7fcd0906d0ac</loc>
+    <lastmod>2026-02-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-28T17:59:14.875632+00:00</news:publication_date>
+      <news:title>Open Dag - HAS green academy &apos;s-Hertogenbosch</news:title>
+      <news:keywords>Education</news:keywords>
+    </news:news>
+  </url>
+  <url>
     <loc>https://eventnexus.eu/event/3c4c0aa9-e6ac-40b9-894e-e20bc236857a</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
@@ -1018,6 +1093,36 @@
     <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/58d6d3c2-1fcd-4432-a3f8-12db3082e789</loc>
+    <lastmod>2026-02-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-28T17:59:10.473038+00:00</news:publication_date>
+      <news:title>Den Bosch Free Tour</news:title>
+      <news:keywords>Tour</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://eventnexus.eu/event/988570f2-1fec-4e74-9ea0-9a570ad54898</loc>
+    <lastmod>2026-02-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <news:news>
+      <news:publication>
+        <news:name>EventNexus</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-28T17:58:54.934734+00:00</news:publication_date>
+      <news:title>Open avond - Avans Hogeschool</news:title>
+      <news:keywords>Education</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://eventnexus.eu/event/47ecfb18-8b03-48db-bafe-6a4eb4d0be2b</loc>
