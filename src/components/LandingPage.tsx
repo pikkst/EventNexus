@@ -1026,7 +1026,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                   <div>
                     <h3 className="font-black text-white mb-3 text-xl">Fair Pricing, Always</h3>
                     <p className="text-slate-300 leading-relaxed text-base">
-                      Platform fees as low as 1.5%. No hidden costs. What you see is what you pay. Start free, upgrade when you grow.
+                      0% platform fees on ticket sales. No hidden costs. What you see is what you pay. Start free, upgrade when you grow.
                     </p>
                   </div>
                 </div>
@@ -1498,7 +1498,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
                 </li>
                 <li className="flex items-start gap-2 text-sm">
                   <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-slate-300">{(details.commissionRate * 100).toFixed(1)}% platform fee</span>
+                  <span className="text-slate-300">0% platform fee on tickets</span>
                 </li>
                 {details.analytics && (
                   <li className="flex items-start gap-2 text-sm">
@@ -1695,7 +1695,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
           {[
             {
               question: 'Is EventNexus really free to use?',
-              answer: 'Yes! You can create a free account and browse all events. Attendees pay no platform fees. Organizers can start with our Free tier (100 welcome credits) or upgrade to unlock more features.'
+              answer: 'Yes! You can create a free account and browse all events. Attendees pay no platform fees. Organizers keep 100% of ticket revenue — only standard Stripe processing fees apply.'
             },
             {
               question: 'What happens during checkout?',
@@ -1711,7 +1711,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onOpenAuth }) => {
             },
             {
               question: 'What are the platform fees?',
-              answer: 'Platform fees range from 1.5% to 5% depending on your subscription tier. Free tier: 5%, Pro: 3%, Premium: 2.5%, Enterprise: 1.5%. No hidden costs - what you see is what you pay.'
+              answer: 'EventNexus charges 0% platform fees on ticket sales. You keep 100% of your ticket revenue. Only standard Stripe payment processing fees (2.9% + €0.25 per transaction) apply. The platform earns revenue through monthly subscription plans.'
             },
             {
               question: 'How do refunds work?',

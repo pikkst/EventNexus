@@ -1112,7 +1112,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onBroadcast, onUpdateUser }
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Platform Fees</p>
                   <h4 className="text-3xl font-black text-orange-400">€{revenueSummary.total_platform_fees.toFixed(2)}</h4>
-                  <p className="text-xs text-slate-400 font-medium">{user.subscription_tier} tier rate</p>
+                  <p className="text-xs text-slate-400 font-medium">0% — no platform commission</p>
                 </div>
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stripe Fees</p>

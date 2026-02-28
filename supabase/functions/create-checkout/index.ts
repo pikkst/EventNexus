@@ -20,12 +20,12 @@ const PRICE_IDS = {
   enterprise: Deno.env.get('STRIPE_PRICE_ENTERPRISE') || '',
 };
 
-// Commission rates by subscription tier (for Stripe Connect payouts)
+// Platform no longer charges commission on ticket sales - revenue comes from subscriptions only
 const COMMISSION_RATES: Record<string, number> = {
-  free: 0.05,      // 5%
-  pro: 0.03,       // 3%
-  premium: 0.025,  // 2.5%
-  enterprise: 0.015, // 1.5%
+  free: 0,
+  pro: 0,
+  premium: 0,
+  enterprise: 0,
 };
 
 // Build a safe, short statement descriptor suffix

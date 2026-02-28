@@ -25,10 +25,10 @@ const getAI = (): GoogleGenerativeAI => {
 // Safe information that can be shared with all tiers
 const SAFE_PLATFORM_INFO = {
   pricing: {
-    free: { price: 0, events: 3, commission: '5%' },
-    pro: { price: 19.99, events: 20, commission: '3%' },
-    premium: { price: 49.99, events: 100, commission: '2.5%' },
-    enterprise: { price: 149.99, events: 'Unlimited', commission: '1.5%' }
+    free: { price: 0, events: 3, commission: '0%' },
+    pro: { price: 19.99, events: 20, commission: '0%' },
+    premium: { price: 49.99, events: 100, commission: '0%' },
+    enterprise: { price: 149.99, events: 'Unlimited', commission: '0%' }
   },
   features: {
     free: ['Browse events', 'Purchase tickets', 'Basic profile', 'Mobile check-in', 'Proximity radar', 'Follow organizers'],
@@ -199,7 +199,7 @@ const executeHelpCenterTool = async (toolName: string, args: any, user: User): P
             'Payouts processed via Stripe Connect',
             'Automatic transfer 2 days after event',
             'Minimum payout: $10',
-            'Commission deducted automatically'
+            '0% platform commission — you receive 100% of ticket revenue'
           ]
         },
         privacy: {
@@ -221,13 +221,13 @@ const executeHelpCenterTool = async (toolName: string, args: any, user: User): P
           ]
         },
         fees: {
-          policy: `Your commission rate: ${(tierInfo.commissionRate * 100).toFixed(1)}%`,
+          policy: `Platform fee: 0% — EventNexus does not charge commission on ticket sales`,
           details: [
-            `Free tier: 5% commission`,
-            `Pro tier: 3% commission`,
-            `Premium tier: 2.5% commission`,
-            `Enterprise tier: 1.5% commission`,
-            'Stripe payment processing: 2.9% + $0.30 per transaction'
+            `All tiers: 0% platform commission on ticket sales`,
+            'You keep 100% of your ticket revenue',
+            'Platform revenue comes from monthly subscription plans',
+            'Stripe payment processing: 2.9% + $0.30 per transaction (charged by Stripe)',
+            'Upgrade your subscription for more features, not lower fees'
           ]
         }
       };

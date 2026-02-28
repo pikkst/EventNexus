@@ -232,13 +232,13 @@ INSERT INTO public.ai_knowledge_base (category, question, answer, language, is_p
 ('platform_overview', 'How many events are on EventNexus?', 'EventNexus currently features hundreds of active events across 1,100+ cities worldwide, with 700+ new events discovered every 24 hours. The platform includes a mix of paid and free events, with over 1,600 free events available at any time.', 'en', true, 9),
 
 -- Features
-('features', 'What are the main features?', 'EventNexus offers: 1) AI-powered multilingual promotion (50+ languages), 2) Smart QR code ticketing with fraud prevention, 3) Real-time analytics and audience insights, 4) Zero upfront costs (only 2.5% per ticket sold), 5) Integrated payment processing, 6) Social features (communities, achievements, gamification), 7) Mobile apps (iOS & Android), 8) Marketing automation tools.', 'en', true, 10),
+('features', 'What are the main features?', 'EventNexus offers: 1) AI-powered multilingual promotion (50+ languages), 2) Smart QR code ticketing with fraud prevention, 3) Real-time analytics and audience insights, 4) 0% platform fees on ticket sales (keep 100% of revenue), 5) Integrated payment processing via Stripe, 6) Social features (communities, achievements, gamification), 7) Mobile apps (iOS & Android), 8) Marketing automation tools.', 'en', true, 10),
 ('features', 'Do you support multiple languages?', 'Yes! EventNexus automatically translates event descriptions into 50+ languages using advanced AI, making events accessible to international audiences without manual translation work.', 'en', true, 9),
 ('features', 'What ticketing features do you offer?', 'Our smart ticketing system includes: QR code tickets, automatic validation, fraud detection, ticket transfers, refund management, capacity tracking, and real-time attendance monitoring.', 'en', true, 8),
 
 -- Pricing
-('pricing', 'How much does EventNexus cost?', 'EventNexus operates on a success-based model with ZERO upfront costs. We charge only 2.5% per ticket sold. For example, on a €50 ticket, our fee is just €1.25. Organizers keep 97.5% of ticket revenue.', 'en', true, 10),
-('pricing', 'Are there setup fees or monthly costs?', 'No! EventNexus has zero setup fees, zero monthly subscriptions, and zero hidden costs. You only pay when you successfully sell tickets (2.5% per ticket).', 'en', true, 9),
+('pricing', 'How much does EventNexus cost?', 'EventNexus charges 0% platform fees on ticket sales — organizers keep 100% of ticket revenue. The platform earns revenue from subscription plans only. Stripe processing fees (2.9% + €0.25 per transaction) still apply.', 'en', true, 10),
+('pricing', 'Are there setup fees or monthly costs?', 'No! EventNexus has zero setup fees and zero hidden costs. There are 0% platform fees on ticket sales — keep 100% of your revenue. The platform offers optional subscription plans (Free, Pro at €29/month, Enterprise). Stripe processing fees (2.9% + €0.25) apply to transactions.', 'en', true, 9),
 ('pricing', 'What subscription tiers do you offer?', 'We offer three tiers: Free (basic features), Pro (€29/month with advanced analytics and priority support), and Enterprise (custom pricing for large organizations with dedicated account management).', 'en', true, 7),
 
 -- Technology
@@ -254,8 +254,8 @@ INSERT INTO public.ai_knowledge_base (category, question, answer, language, is_p
 ('target_audience', 'What types of events work best on EventNexus?', 'EventNexus works for all event types: music concerts, conferences, corporate events, theater performances, festivals, workshops, sports events, cultural exhibitions, and community gatherings.', 'en', true, 7),
 
 -- Competitive Advantages
-('competitive_advantages', 'How is EventNexus different from Eventbrite?', 'EventNexus offers: 1) Lower fees (2.5% vs 3.5-5%), 2) AI-powered multilingual promotion (50+ languages), 3) Focus on Baltic/Nordic markets, 4) Better mobile experience, 5) Gamification & social features, 6) Real-time analytics included free.', 'en', true, 9),
-('competitive_advantages', 'Why choose EventNexus over competitors?', 'EventNexus combines the best of modern technology with local market expertise. We offer lower fees, AI-powered tools, multilingual support, and personalized customer service - all designed specifically for the Baltic and Northern European markets.', 'en', true, 8)
+('competitive_advantages', 'How is EventNexus different from Eventbrite?', 'EventNexus offers: 1) 0% platform fees on ticket sales (vs Eventbrite 3.5-5%), 2) AI-powered multilingual promotion (50+ languages), 3) Focus on Baltic/Nordic markets, 4) Better mobile experience, 5) Gamification & social features, 6) Real-time analytics included free.', 'en', true, 9),
+('competitive_advantages', 'Why choose EventNexus over competitors?', 'EventNexus combines the best of modern technology with local market expertise. We offer 0% platform fees on ticket sales, AI-powered tools, multilingual support, and personalized customer service - all designed specifically for the Baltic and Northern European markets.', 'en', true, 8)
 
 ON CONFLICT DO NOTHING;
 

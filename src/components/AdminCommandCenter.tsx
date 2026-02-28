@@ -87,7 +87,7 @@ const AdminCommandCenter: React.FC<{ user: User; supportUnread?: number; onOpenS
   const [showMasterAuthModal, setShowMasterAuthModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [pendingOperation, setPendingOperation] = useState<string>('');
-  const [globalTicketFee, setGlobalTicketFee] = useState(2.5);
+  const [globalTicketFee, setGlobalTicketFee] = useState(0);
   const [creditValue, setCreditValue] = useState(0.50);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
 

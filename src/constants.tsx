@@ -11,7 +11,7 @@ export const SUBSCRIPTION_TIERS = {
     customBranding: false, 
     support: 'community',
     price: 0,
-    commissionRate: 0.05, // 5% platform fee
+    commissionRate: 0, // No platform fee on ticket sales
     description: 'Perfect for exploring and attending events',
     welcomeCredits: 100 // 100 welcome credits (€50 value)
   },
@@ -21,7 +21,7 @@ export const SUBSCRIPTION_TIERS = {
     customBranding: false, 
     support: 'email',
     price: 19.99,
-    commissionRate: 0.03, // 3% platform fee
+    commissionRate: 0, // No platform fee on ticket sales
     description: 'The standard for creators and promoters'
   },
   premium: { 
@@ -30,7 +30,7 @@ export const SUBSCRIPTION_TIERS = {
     customBranding: true, 
     support: 'priority',
     price: 49.99,
-    commissionRate: 0.025, // 2.5% platform fee
+    commissionRate: 0, // No platform fee on ticket sales
     description: 'Ultimate power for professional agencies',
     featuredPlacement: true, // Featured on map
     affiliateTools: true, // Affiliate marketing
@@ -49,7 +49,7 @@ export const SUBSCRIPTION_TIERS = {
     customBranding: true, 
     support: 'dedicated',
     price: 149.99,
-    commissionRate: 0.015, // 1.5% platform fee
+    commissionRate: 0, // No platform fee on ticket sales
     description: 'White-labeling & Global Infrastructure',
     featuredPlacement: true,
     affiliateTools: true,
@@ -78,7 +78,7 @@ export const PLATFORM_CONFIG = {
   minEventPrice: 0,
   maxEventCapacity: 100000,
   ticketQRCodePrefix: 'EVNX-',
-  platformFeePercentage: 2.5,
+  platformFeePercentage: 0, // Platform earns revenue from subscriptions only
   supportEmail: 'support@mail.eventnexus.eu',
   // Refund policy (days before event)
   refundPolicy: {

@@ -417,11 +417,12 @@ export const calculatePlatformFee = (
   totalAmount: number,
   organizerTier: string
 ): { totalAmount: number; platformFee: number; organizerNet: number } => {
+  // Platform no longer charges commission on ticket sales - revenue comes from subscriptions only
   const COMMISSION_RATES: Record<string, number> = {
-    free: 0.05,        // 5%
-    pro: 0.03,         // 3%
-    premium: 0.025,    // 2.5%
-    enterprise: 0.015, // 1.5%
+    free: 0,
+    pro: 0,
+    premium: 0,
+    enterprise: 0,
   };
 
   const rate = COMMISSION_RATES[organizerTier] || COMMISSION_RATES.free;

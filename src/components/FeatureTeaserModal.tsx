@@ -85,8 +85,8 @@ const FeatureTeaserModal: React.FC<FeatureTeaserModalProps> = ({ feature, user, 
   // Calculate savings
   const currentTier = user.subscription_tier;
   const savings = currentTier === 'free' ? 
-    'Save €2 on platform fees per event' : 
-    'Lower commission rates mean more revenue';
+    'Unlock more features with a subscription' : 
+    'Get more tools and capabilities for your events';
 
   return (
     <>

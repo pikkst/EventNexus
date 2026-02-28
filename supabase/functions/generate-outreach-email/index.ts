@@ -263,8 +263,8 @@ serve(async (req) => {
 
 **About EventNexus (VERIFIED FACTS - Use these ONLY):**
 - **Revolutionary AI-powered event platform** (Launched 2025)
-- **Platform fees: ${platformFacts?.platform_fee_range || '1.5% - 5%'}** (vs industry standard ${platformFacts?.industry_fee_avg || '10-15%'})
-- **Cost savings: ${platformFacts?.cost_savings || 'Up to 80%'}** compared to traditional ticketing platforms
+- **Platform fees: 0% on ticket sales** (revenue from subscription plans only; Stripe processing fees of 2.9% + €0.25 still apply)
+- **Cost savings: 100% on platform fees** compared to traditional ticketing platforms (industry standard 10-15%)
 - **Global reach: ${platformFacts?.total_cities || '1,169+'}** cities mapped worldwide
 - **AI features:** 
   * ${platformFacts?.ai_translation_model || 'Gemini 3.0'} translation (${platformFacts?.languages_supported || '50+'} languages)
@@ -354,14 +354,14 @@ ${template.body_template}
 - DO NOT invent features that aren't listed
 - DO NOT exaggerate numbers beyond what's stated
 - If uncertain about a claim, use general benefit language instead
-- Cite specific numbers ONLY from verified facts (e.g., "1,169 cities", "1.5%-5% fees")
+- Cite specific numbers ONLY from verified facts (e.g., "1,169 cities", "0% platform fees")
 
 **Content Rules - STRUCTURE:**
 - Start with "${greeting}," (or appropriate ${languageName} greeting)
 - Personalize with "${prospect.name}" and their specific "${prospect.category}" work
 - Show you researched them (mention their country/work if relevant)
 - Lead with VALUE PROPOSITION not features:
-  * If large venue/festival → emphasize ${platformFacts?.cost_savings || '80%'} cost savings (${platformFacts?.platform_fee_range || '1.5%-5%'} vs ${platformFacts?.industry_fee_avg || '10-15%'})
+  * If large venue/festival → emphasize 0% platform fees on ticket sales — keep 100% of ticket revenue (vs industry standard 10-15%)
   * If tourism/international → emphasize global reach and ${platformFacts?.languages_supported || '50+'} language translation
   * If agency/corporate → emphasize AI marketing automation and time savings
 - Context rule (mandatory):
@@ -389,8 +389,8 @@ ${prospect.country === 'Estonia' || language === 'et' ? `
 `}
 
 **Pricing Communication (translate to ${languageName}):**
-- Primary message: "Platform fees ${platformFacts?.platform_fee_range || '1.5% - 5%'} (industry standard is ${platformFacts?.industry_fee_avg || '10-15%'})"
-- Secondary: "${platformFacts?.cost_savings || 'Up to 80%'} savings on ticketing fees"
+- Primary message: "0% platform fees on ticket sales — keep 100% of your ticket revenue (industry standard is 10-15%)"
+- Secondary: "Revenue from subscription plans only; Stripe processing fees of 2.9% + €0.25 still apply"
 - Tertiary: "Transparent pricing, no hidden costs"
 DO NOT list all tier prices unless specifically relevant to template strategy.
 - Include 2-3 key benefits maximum (not a feature dump)
@@ -400,8 +400,8 @@ DO NOT list all tier prices unless specifically relevant to template strategy.
 - Keep body under 350 words (brevity = respect for their time)
 
 **Pricing Communication (translate to ${languageName}):**
-- Primary message: "Platform fees 1.5% - 5% (industry standard is 10-15%)"
-- Secondary: "Up to 80% savings on ticketing fees"
+- Primary message: "0% platform fees on ticket sales — keep 100% of your ticket revenue (industry standard is 10-15%)"
+- Secondary: "Revenue from subscription plans only; Stripe processing fees of 2.9% + €0.25 still apply"
 - Tertiary: "Transparent pricing, no hidden costs"
 DO NOT list all tier prices unless specifically relevant to template strategy.
 

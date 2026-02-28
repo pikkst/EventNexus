@@ -113,7 +113,7 @@ const OrganizerHubPage: React.FC<OrganizerHubProps> = ({ user, onOpenAuth }) => 
               {
                 icon: DollarSign,
                 title: 'Transparent Pricing',
-                description: 'Start free with 100 welcome credits. Upgrade to Pro (€19.99/mo) for unlimited creation. Platform fees from 1.5-3% based on tier.',
+                description: 'Start free with 100 welcome credits. Upgrade to Pro (€19.99/mo) for unlimited creation. 0% platform fees on ticket sales.',
                 color: 'from-green-600/20 to-green-600/5'
               },
               {
@@ -250,7 +250,7 @@ const OrganizerHubPage: React.FC<OrganizerHubProps> = ({ user, onOpenAuth }) => 
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>3% platform fee</span>
+                  <span>0% platform fee on tickets</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
@@ -272,7 +272,7 @@ const OrganizerHubPage: React.FC<OrganizerHubProps> = ({ user, onOpenAuth }) => 
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>2.5% platform fee</span>
+                  <span>0% platform fee on tickets</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
@@ -312,8 +312,8 @@ const OrganizerHubPage: React.FC<OrganizerHubProps> = ({ user, onOpenAuth }) => 
                 <tbody className="divide-y divide-slate-700">
                   {[
                     { feature: 'Starting Price', nexus: 'Free + Credits', eventbrite: 'Free' },
-                    { feature: 'Platform Fee (Pro)', nexus: '3%', eventbrite: '3.5% + €0.99' },
-                    { feature: 'Platform Fee (Premium)', nexus: '2.5%', eventbrite: '3.5% + €0.99' },
+                    { feature: 'Platform Fee (Pro)', nexus: '0%', eventbrite: '3.5% + €0.99' },
+                    { feature: 'Platform Fee (Premium)', nexus: '0%', eventbrite: '3.5% + €0.99' },
                     { feature: 'AI Event Translation', nexus: '17 Languages', eventbrite: 'Not available' },
                     { feature: 'Geospatial Discovery', nexus: 'Map-First Interface', eventbrite: 'List Only' },
                     { feature: 'QR Check-In', nexus: 'All Plans', eventbrite: 'Premium only' },
@@ -355,11 +355,11 @@ const OrganizerHubPage: React.FC<OrganizerHubProps> = ({ user, onOpenAuth }) => 
             {[
               {
                 q: 'How much does it cost to host an event?',
-                a: 'Start free with 100 welcome credits. Pro plan is €19.99/mo with 3% platform fee, Premium is €49.99/mo with 2.5% fee, and Enterprise is €149.99/mo with 1.5% fee. Free tier can create events using credits.'
+                a: 'Start free with 100 welcome credits. Pro plan is €19.99/mo, Premium is €49.99/mo, and Enterprise is €149.99/mo. All plans have 0% platform fee on ticket sales — you keep 100% of your revenue (only Stripe processing fees apply).'
               },
               {
                 q: 'What are platform fees?',
-                a: 'Platform fees are charged per ticket sale and vary by plan: Free/Pro 3%, Premium 2.5%, Enterprise 1.5%. This covers payment processing, hosting, and AI features.'
+                a: 'EventNexus charges 0% platform fees on ticket sales — you keep 100% of your ticket revenue. Only standard Stripe payment processing fees (2.9% + €0.25) apply. Platform revenue comes from monthly subscription plans.'
               },
               {
                 q: 'Do I need to promote my event?',

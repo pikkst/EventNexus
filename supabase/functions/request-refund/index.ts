@@ -144,7 +144,7 @@ serve(async (req: Request) => {
     // Calculate refund amounts
     const originalAmountCents = Math.round(ticket.price * 100);
     const refundAmountCents = Math.round(originalAmountCents * (refundPercent / 100));
-    const platformFeeRefunded = Math.round(refundAmountCents * 0.025); // 2.5% platform fee
+    const platformFeeRefunded = 0; // Platform no longer charges commission on ticket sales
     const organizerAmountReversed = refundAmountCents - platformFeeRefunded;
 
     console.log(`Refund amount: €${(refundAmountCents / 100).toFixed(2)} (${refundPercent}%)`);
