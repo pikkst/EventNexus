@@ -67,8 +67,8 @@ export function validateAIEvent(eventData: {
   } else {
     const descLength = eventData.description.length;
     
-    if (descLength < 50) {
-      errors.push('Description must be at least 50 characters');
+    if (descLength < 20) {
+      errors.push('Description must be at least 20 characters');
     } else if (descLength > 5000) {
       warnings.push('Description is very long - may affect readability');
     } else {
