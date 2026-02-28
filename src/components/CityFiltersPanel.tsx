@@ -64,7 +64,7 @@ export default function CityFiltersPanel({
           placeholder="Search cities..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400"
         />
         {searchQuery && (
           <button
@@ -84,7 +84,7 @@ export default function CityFiltersPanel({
           <select
             value={filterCountry}
             onChange={(e) => onFilterCountryChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900"
           >
             <option value="all">All Countries</option>
             {uniqueCountries.map(country => (
@@ -99,7 +99,7 @@ export default function CityFiltersPanel({
           <select
             value={filterHealth}
             onChange={(e) => onFilterHealthChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900"
           >
             <option value="all">All Statuses</option>
             <option value="healthy">Healthy (≥80%)</option>
@@ -116,7 +116,7 @@ export default function CityFiltersPanel({
           <select
             value={filterActive}
             onChange={(e) => onFilterActiveChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900"
           >
             <option value="all">All</option>
             <option value="active">Active Only</option>
@@ -130,7 +130,7 @@ export default function CityFiltersPanel({
           <select
             value={filterBootstrap}
             onChange={(e) => onFilterBootstrapChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900"
           >
             <option value="all">All</option>
             <option value="pending">Pending</option>
@@ -147,7 +147,7 @@ export default function CityFiltersPanel({
             <select
               value={sortBy}
               onChange={(e) => onSortByChange(e.target.value as any)}
-              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500"
+              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900"
             >
               <option value="name">Name A-Z</option>
               <option value="country">Country</option>
