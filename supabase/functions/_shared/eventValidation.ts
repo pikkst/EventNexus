@@ -38,16 +38,19 @@ export function validateAIEvent(eventData: {
     
     if (nameLength < 10) {
       errors.push('Event name must be at least 10 characters');
-    } else if (nameLength > 100) {
-      errors.push('Event name must not exceed 100 characters');
+    } else if (nameLength > 150) {
+      errors.push('Event name must not exceed 150 characters');
     } else {
       // SEO scoring for title (25%)
+      // Bilingual names with translations in parentheses can be 100-140 chars
       if (nameLength >= 40 && nameLength <= 60) {
         seoScore += 25;
-      } else if (nameLength >= 30 && nameLength <= 70) {
+      } else if (nameLength >= 30 && nameLength <= 80) {
         seoScore += 15;
-      } else {
+      } else if (nameLength <= 120) {
         seoScore += 10;
+      } else {
+        seoScore += 5; // Very long but still valid
       }
     }
 
