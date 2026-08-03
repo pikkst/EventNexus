@@ -36,13 +36,10 @@ CREATE POLICY "Users can view their own tickets"
     TO authenticated
     USING (user_id = auth.uid());
 
--- Live Map: Authenticated users can purchase tickets
+-- Do not grant INSERT on tickets to authenticated clients.
+-- Ticket creation remains the responsibility of trusted Edge Functions using service-role access.
 DROP POLICY IF EXISTS "Authenticated users can purchase tickets" ON public.tickets;
-
-CREATE POLICY "Authenticated users can purchase tickets"
-    ON public.tickets FOR INSERT
-    TO authenticated
-    WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
+REVOKE INSERT ON public.tickets FROM authenticated;
 
 -- Scanner: Organizers can view tickets for their events
 DROP POLICY IF EXISTS "Organizers can view tickets for their events" ON public.tickets;
