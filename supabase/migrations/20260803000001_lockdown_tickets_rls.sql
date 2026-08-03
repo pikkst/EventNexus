@@ -1,29 +1,23 @@
--- Remove the permissive public policies that allowed anonymous/authenticated clients to create or update tickets.
--- Service-role Edge Functions do not need RLS policies to bypass row security.
+-- Lock down public ticket mutation access and ensure only least-privilege policies remain.
+-- This migration is designed to be run on existing deployments.
 
 DO $$
 BEGIN
-    IF EXISTS (
-        SELECT 1 FROM pg_policies
-        WHERE tablename = 'tickets'
-        AND policyname = 'Service role can create pending tickets'
-    ) THEN
+    IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'tickets' AND policyname = 'Service role can create pending tickets') THEN
         DROP POLICY "Service role can create pending tickets" ON public.tickets;
     END IF;
 
-    IF EXISTS (
-        SELECT 1 FROM pg_policies
-        WHERE tablename = 'tickets'
-        AND policyname = 'Service role can update tickets'
-    ) THEN
+    IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'tickets' AND policyname = 'Service role can update tickets') THEN
         DROP POLICY "Service role can update tickets" ON public.tickets;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'tickets' AND policyname = 'Authenticated users can purchase tickets') THEN
+        DROP POLICY "Authenticated users can purchase tickets" ON public.tickets;
     END IF;
 END $$;
 
--- Ensure no public-facing allow-all inserts or updates remain on the tickets table.
 REVOKE INSERT, UPDATE ON public.tickets FROM anon, authenticated;
 
--- Keep the table usable for authenticated self-service reads and organizer scanning via scoped policies.
 DROP POLICY IF EXISTS "Users can view their own tickets" ON public.tickets;
 CREATE POLICY "Users can view their own tickets"
     ON public.tickets FOR SELECT
