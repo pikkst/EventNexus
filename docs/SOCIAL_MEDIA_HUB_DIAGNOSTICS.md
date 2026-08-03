@@ -146,7 +146,7 @@ If accounts don't display:
 2. Open browser console (F12)
 3. Click "Setup Tokens" button
 4. Enter your Facebook credentials:
-   - App ID: `1527493881796179`
+   - App ID: `REPLACE_WITH_FACEBOOK_APP_ID`
    - App Secret: [from your Meta developer account]
    - User Access Token: [from Graph API Explorer]
 5. Click "Auto-Connect Facebook & Instagram"

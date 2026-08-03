@@ -3,7 +3,7 @@
 
 UPDATE social_media_accounts
 SET 
-  access_token = 'EAAVtP2I4llMBQfNMyqxZC1icE7CFvBzZA53gyZB6H9Lwa17feg5JW9KDTlqZAMLUZCZAKzgWOSLgHJCUxmktk1MZCgix2peP6VK7qVrZA7wqGm9REuaO82YtSuTDpTkWAGDVpvYPZALfQ1aiiLJ4fgpKjdLS2aWC1x9SJ8bCbURRiRq6PxztDbq31txs4bkmuvrpcWbqZB2UhcX7F740quwvXrDzoWzjyXAeirjeUHW0ABvZCcZD',
+  access_token = 'REPLACE_WITH_BACKEND_SECRET',
   updated_at = NOW()
 WHERE 
   user_id = 'f2ecf6c6-14c1-4dbd-894b-14ee6493d807'

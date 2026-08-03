@@ -2,7 +2,7 @@
 # Get long-lived Page access token for EventNexus Facebook Page
 
 # Your Facebook App credentials
-APP_ID="1527493881796179"
+APP_ID="REPLACE_WITH_FACEBOOK_APP_ID"
 # Note: You need to add APP_SECRET here manually
 APP_SECRET="YOUR_APP_SECRET_HERE"
 

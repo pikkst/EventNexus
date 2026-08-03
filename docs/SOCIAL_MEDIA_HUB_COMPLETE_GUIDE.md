@@ -13,10 +13,10 @@
 
 ### Samm 1: Meta App Seadistus
 
-1. **Mine:** https://developers.facebook.com/apps/1527493881796179/settings/basic/
+1. **Mine:** https://developers.facebook.com/apps/REPLACE_WITH_FACEBOOK_APP_ID/settings/basic/
 2. **Kontrolli:**
-   - App ID: `1527493881796179` ✅
-   - App Secret: `6d56544a86f98e40365d560139e489c1` ✅
+   - App ID: `REPLACE_WITH_FACEBOOK_APP_ID` ✅
+   - App Secret: `REPLACE_WITH_BACKEND_SECRET` ✅
    - App Domains: `www.eventnexus.eu` ✅
    - Valid OAuth Redirect URIs: `https://www.eventnexus.eu/oauth-callback.html` ✅
 
@@ -27,8 +27,8 @@ Käivita Supabase SQL Editoris:
 ```sql
 INSERT INTO system_config (key, value, description, updated_at)
 VALUES
-  ('facebook_client_id', '"1527493881796179"', 'Facebook/Instagram App ID', NOW()),
-  ('facebook_client_secret', '"6d56544a86f98e40365d560139e489c1"', 'Facebook/Instagram App Secret', NOW())
+  ('facebook_client_id', '"REPLACE_WITH_FACEBOOK_APP_ID"', 'Facebook/Instagram App ID', NOW()),
+  ('facebook_client_secret', '"REPLACE_WITH_BACKEND_SECRET"', 'Facebook/Instagram App Secret', NOW())
 ON CONFLICT (key) 
 DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
 ```
@@ -56,7 +56,7 @@ curl -X GET "https://graph.facebook.com/v18.0/864504226754704?fields=access_toke
 Vastus:
 ```json
 {
-  "access_token": "EAAVtP2I4llMBQfNMyqxZC1icE7CFv...",
+  "access_token": "REPLACE_WITH_BACKEND_SECRET",
   "id": "864504226754704"
 }
 ```

@@ -282,7 +282,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
                 value={appId}
                 onChange={(e) => setAppId(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
-                placeholder="Enter your App ID (e.g., 1527493881796179)"
+                placeholder="Enter your App ID"
                 aria-label="Facebook App ID"
                 aria-required="true"
               />
@@ -302,7 +302,7 @@ export const SimplifiedSocialMediaManager: React.FC<SimplifiedSocialMediaManager
                 aria-required="true"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Get from: <a href="https://developers.facebook.com/apps/1527493881796179/settings/basic/" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">Facebook Developer Console</a>
+                Get from: <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">Facebook Developer Console</a>
               </p>
             </div>
 

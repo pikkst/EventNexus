@@ -22,7 +22,7 @@ INSERT INTO social_media_accounts (
     'facebook',
     '864504226754704',
     'EventNexus',
-    'EAAVtP2I4llMBQfNMyqxZC1icE7CFvBzZA53gyZB6H9Lwa17feg5JW9KDTlqZAMLUZCZAKzgWOSLgHJCUxmktk1MZCgix2peP6VK7qVrZA7wqGm9REuaO82YtSuTDpTkWAGDVpvYPZALfQ1aiiLJ4fgpKjdLS2aWC1x9SJ8bCbURRiRq6PxztDbq31txs4bkmuvrpcWbqZB2UhcX7F740quwvXrDzoWzjyXAeirjeUHW0ABvZCcZD',
+    'REPLACE_WITH_BACKEND_SECRET',
     NULL,
     NOW() + INTERVAL '60 days', -- Token expires in ~60 days based on script output
     true,

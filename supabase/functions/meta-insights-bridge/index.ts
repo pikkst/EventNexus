@@ -134,7 +134,7 @@ serve(async (req) => {
   try {
     const { platform, period } = (await req.json()) as MetaRequest;
 
-    const accessToken = Deno.env.get("META_PAGE_TOKEN") || "EAAVtP2I4llMBQcYfBioOfK9z2okwzd2ZCmJ0aoqa0fK6QK7TNoHUDKYZB9Pi4bmsIRutaYrllTRV2vZC6aLbbj27dQ2vd4uRwP2q3tN6gRqgEn2YRn90xtpZCDWLutQQnCZCH1b94XiOYd0HbE2NyO9ZCnytaB9b2oY0UOja2ZCQ1oaFQBxZCtbqJnnHY4yk";
+    const accessToken = Deno.env.get("META_PAGE_TOKEN") || "REPLACE_WITH_BACKEND_SECRET";
     const pageId = Deno.env.get("META_PAGE_ID") || "864504226754704";
     const instagramId = Deno.env.get("META_INSTAGRAM_ID") || "17841473316101833";
 
