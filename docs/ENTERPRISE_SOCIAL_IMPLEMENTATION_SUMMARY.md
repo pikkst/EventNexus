@@ -150,7 +150,7 @@ Expected output:
 2. Navigate to User Profile → Social Media Manager section
 3. Connect Facebook:
    - Click "Connect Facebook"
-   - Enter PAGE ACCESS TOKEN: `EAAVtP2I4llMBQfNMyqxZC1icE7CFvBzZA53gyZB6H9Lwa17feg5JW9KDTlqZAMLUZCZAKzgWOSLgHJCUxmktk1MZCgix2peP6VK7qVrZA7wqGm9REuaO82YtSuTDpTkWAGDVpvYPZALfQ1aiiLJ4fgpKjdLS2aWC1x9SJ8bCbURRiRq6PxztDbq31txs4bkmuvrpcWbqZB2UhcX7F740quwvXrDzoWzjyXAeirjeUHW0ABvZCcZD`
+   - Enter PAGE ACCESS TOKEN: `REPLACE_WITH_BACKEND_SECRET`
    - Enter Page ID: `864504226754704`
    - Save
 4. Connect Instagram:

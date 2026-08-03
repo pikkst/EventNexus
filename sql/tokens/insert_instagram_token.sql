@@ -23,7 +23,7 @@ INSERT INTO social_media_accounts (
     'instagram',
     '17841473316101833',
     'blogpieesti',
-    'EAAVtP2I4llMBQd9Vc1ATNZCdD1GAYjyvMMFK9QTL1DaJV4UI6zbWBmHOPYqCbpmIsdZCtXNHfpjZBWZAr6J0cHfuHMvVnJT5pBS7TrOChBzdxvrk7bkFgh9fwzqzZBvAL87XyMaJsBWLSM9jZCcuDge70ZC12yGu0dXjCzyUoBsgopmPDXlimLYk3SudDt42HppNWlY',
+    'REPLACE_WITH_BACKEND_SECRET',
     NULL,
     NOW() + INTERVAL '60 days',
     true,

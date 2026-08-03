@@ -16,8 +16,8 @@ SELECT
   value,
   value #>> '{}' as plain_text,
   CASE 
-    WHEN value #>> '{}' = '1527493881796179' THEN '✅ CORRECT'
-    WHEN value #>> '{}' = '6d56544a86f98e40365d560139e489c1' THEN '✅ CORRECT'
+    WHEN value #>> '{}' = 'REPLACE_WITH_FACEBOOK_APP_ID' THEN '✅ CORRECT'
+    WHEN value #>> '{}' = 'REPLACE_WITH_BACKEND_SECRET' THEN '✅ CORRECT'
     ELSE '❌ WRONG'
   END as status
 FROM system_config

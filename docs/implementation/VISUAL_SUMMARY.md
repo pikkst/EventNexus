@@ -49,7 +49,7 @@ User: Clicks "Social Media Hub" in Admin
    └─ Setup form appears with input fields
 
 5️⃣ User Enters Credentials
-   ├─ Facebook App ID: 1527493881796179
+   ├─ Facebook App ID: REPLACE_WITH_FACEBOOK_APP_ID
    ├─ App Secret: ***** (hidden)
    └─ User Access Token: ******* (hidden)
 

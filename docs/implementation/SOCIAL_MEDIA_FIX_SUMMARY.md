@@ -52,7 +52,7 @@ The Social Media Connections section in the admin dashboard (Admin → Social Me
 2. Open browser **F12 → Console**
 3. Click **"Setup Tokens"** button
 4. Enter Facebook credentials:
-   - **App ID**: `1527493881796179`
+   - **App ID**: `REPLACE_WITH_FACEBOOK_APP_ID`
    - **App Secret**: [your Meta app secret]
    - **User Token**: [from Graph API Explorer]
 5. Click **"Auto-Connect Facebook & Instagram"**

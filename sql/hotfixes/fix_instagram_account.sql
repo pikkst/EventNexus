@@ -27,7 +27,7 @@ INSERT INTO social_media_accounts (
   'instagram',
   '17841473316101833', -- Instagram Business Account ID (blogpieesti)
   'blogpieesti',
-  'EAAVtP2I4llMBQUmHTj2PKacvDfWJBnJtnRfZA1ejFbYVnr1ULNg1BTG3BWQq8G9rPvGrpwoSgYBsdvUWXSXGeILoNrobziH3LwDZB3mKraSYaHLdwsFqNBok1ZCzWZCiPOmO94XFJ3PLK5TxS7HlWeQXZAVUN3eZCUu0FZAARrkZAHo0KTi5blm5uA6Qw64ZCkZCqxXvtnBPtLz1dkoZARZC8vTGRulm63aAgaWZCzj9i0wDzzPMVOBYm3k5KzxWwK9MeeebCkIVGBOtDzQq389iL45ZARXI0cAHN1myih', -- Facebook token (works for Instagram too)
+  'REPLACE_WITH_BACKEND_SECRET', -- Facebook token (works for Instagram too)
   NULL,
   NOW() + INTERVAL '60 days', -- Token expires in 60 days
   true,
